@@ -1,0 +1,70 @@
+{
+  "name": "yaozhitong-personal",
+  "version": "0.1.0",
+  "private": true,
+  "overrides": {
+    "uuid@<11.1.1": "^11.1.1"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "tsx watch --env-file-if-exists=.env server/index.ts",
+    "dev:web": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build && esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server/index.mjs",
+    "start": "node --env-file-if-exists=.env dist/server/index.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check:local": "npm test && npm run test:e2e && npm run check:lifecycle",
+    "check:lifecycle": "tsx tools/check-local-lifecycle.ts",
+    "check:local:ai": "tsx --env-file-if-exists=.env tools/check-local-ai.ts",
+    "check:vision": "tsx --env-file-if-exists=.env tools/check-local-vision.ts",
+    "prepare:local:leaflets": "tsx --env-file-if-exists=.env tools/prepare-local-leaflets.ts",
+    "import:catalog": "tsx --env-file-if-exists=.env tools/import-catalog.ts",
+    "import:leaflet": "tsx --env-file-if-exists=.env tools/import-leaflet.ts",
+    "admin": "tsx --env-file-if-exists=.env tools/admin.ts",
+    "smoke:nvidia": "tsx --env-file-if-exists=.env tools/smoke-nvidia.ts",
+    "smoke:vision": "tsx --env-file-if-exists=.env tools/smoke-vision.ts",
+    "smoke:grounding": "tsx --env-file-if-exists=.env tools/smoke-grounding.ts",
+    "smoke:generation": "tsx --env-file-if-exists=.env tools/smoke-generation.ts",
+    "compare:ranking": "tsx tools/compare-ranking.ts",
+    "evaluate:run": "tsx --env-file-if-exists=.env tools/run-evaluation.ts",
+    "collect:leaflets": "tsx --env-file-if-exists=.env tools/collect-leaflets.ts",
+    "fixtures": "tsx tools/generate-fixtures.ts",
+    "evaluate": "tsx tools/evaluate.ts"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^8.1.0",
+    "@google-cloud/tasks": "^6.2.0",
+    "@hono/node-server": "^1.19.0",
+    "fflate": "^0.8.3",
+    "firebase": "^12.0.0",
+    "firebase-admin": "^13.4.0",
+    "google-auth-library": "^10.3.0",
+    "hono": "^4.9.0",
+    "lucide-react": "^0.468.0",
+    "luxon": "^3.7.0",
+    "pdfjs-dist": "^6.2.108",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/luxon": "^3.7.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.0",
+    "esbuild": "^0.25.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
+    "vitest": "^4.1.11"
+  }
+}

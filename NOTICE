@@ -1,0 +1,18 @@
+藥智通個人專題版
+
+Workflow reference: Sean-Fang178/yaozhitong-web-demo
+https://github.com/Sean-Fang178/yaozhitong-web-demo
+Reference commit: 440850bc77e11419a98c1850beba5ac278d07233
+Upstream notice: Copyright 2026 Sean Fang.
+Upstream license: Apache License, Version 2.0 (retained in LICENSE).
+
+The reference checkout is retained separately under reference/ and excluded from
+the new application build. The React, Hono, Firebase and NVIDIA implementation
+in this workspace is newly written, except the explicitly attributed ranking
+baseline in tools/compare-ranking.ts adapted for experiment comparison.
+Do not attribute the original team's work
+to the individual project author; see docs/CONTRIBUTIONS.md.
+
+Official drug catalog and leaflet sources: Taiwan Food and Drug Administration.
+Their documents, logos and data remain subject to their respective source terms.
+Each imported leaflet retains its license number, official URL and SHA-256 hash.

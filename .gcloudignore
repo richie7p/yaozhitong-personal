@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+.local
+reference
+node_modules
+dist
+test-results
+playwright-report
+infra
+tests
+docs
+tools
