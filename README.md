@@ -6,6 +6,32 @@
 
 先看 [本機操作與驗收指南](docs/LOCAL-TESTING.md)。
 
+## 在其他裝置接續開發
+
+在另一台電腦安裝 Git、Node.js 22.16 以上，下載專案：
+
+```powershell
+git clone https://github.com/richie7p/yaozhitong-personal.git
+cd yaozhitong-personal
+npm ci
+cp .env.example .env
+npm run dev
+```
+
+開啟 <http://127.0.0.1:5173>。需要 AI 功能時，在該裝置的 `.env` 填入自己的 `NVIDIA_API_KEY`。`.env`、本機帳號資料、藥袋照片及下載的 PDF 都不會隨 GitHub 同步；新裝置的本機資料從空白開始，官方資料匯入方式見 [資料說明](docs/DATA.md)。
+
+每次開始修改前，在沒有未提交變更時執行 `git pull --ff-only`。修改完成後，把變更存成 commit 並推送：
+
+```powershell
+git add .
+git commit -m "說明這次修改"
+git push
+```
+
+推送需要登入有寫入權限的 GitHub 帳號（例如 `gh auth login`）。換裝置前先提交並推送；若拉取時提示衝突或分支分歧，先保留本機修改再處理，避免強制覆蓋。
+
+新裝置要跑瀏覽器驗收，先執行 `npx playwright install chromium`，再執行 `npm run check:local`。目前驗收狀態見 [GitHub Actions](https://github.com/richie7p/yaozhitong-personal/actions)。
+
 ## 本機啟動
 
 使用 Node.js 22.16 以上與 npm：
