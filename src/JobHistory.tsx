@@ -34,10 +34,17 @@ export function JobHistory() {
           <div className="card small" key={job.id}>
             <div className="row spread">
               <h3>{names[job.kind]}</h3>
-              <span className="tag">{states[job.status]}</span>
+              <span className="tag">
+                {job.kind === "recognition" && job.result?.status === "failed"
+                  ? "未能辨識"
+                  : states[job.status]}
+              </span>
             </div>
             <small>{new Date(job.createdAt).toLocaleString("zh-TW")}</small>
             {job.error && <p>{job.error.message}</p>}
+            {job.kind === "recognition" && job.result?.guidance && (
+              <p>{job.result.guidance}</p>
+            )}
             {job.status === "failed" &&
               job.kind !== "recognition" &&
               job.attempts < 3 && (
@@ -55,25 +62,28 @@ export function JobHistory() {
                   使用原輸入重試
                 </Button>
               )}
-            {job.status === "failed" && job.kind === "recognition" && (
-              <a className="btn" href="#add">
-                重新上傳藥袋
-              </a>
-            )}
+            {(job.status === "failed" || job.result?.status === "failed") &&
+              job.kind === "recognition" && (
+                <a className="btn" href="#add">
+                  重新上傳藥袋
+                </a>
+              )}
             {job.status === "succeeded" && job.result?.claims && (
               <details>
                 <summary>查看當時結果（個人資料或仿單可能已更新）</summary>
                 <Evidence result={job.result} />
               </details>
             )}
-            {job.status === "succeeded" && job.kind === "recognition" && (
-              <details>
-                <summary>查看辨識原文</summary>
-                {job.result.medications.map((m: any, i: number) => (
-                  <p key={i}>{m.rawText}</p>
-                ))}
-              </details>
-            )}
+            {job.status === "succeeded" &&
+              job.kind === "recognition" &&
+              job.result?.status === "succeeded" && (
+                <details>
+                  <summary>查看辨識原文</summary>
+                  {job.result.medications.map((m: any, i: number) => (
+                    <p key={i}>{m.rawText}</p>
+                  ))}
+                </details>
+              )}
           </div>
         ))
       )}

@@ -215,13 +215,17 @@ export function AddMedication() {
     if (!file) return;
     setBusy("正在上傳藥袋…");
     setError("");
+    setRecognized([]);
+    setDraft(null);
     try {
       const j = await submitJob(
         "/recognitions",
         { image: await fileBase64(file), mediaType: file.type },
         setBusy,
       );
-      setRecognized(j.result.medications);
+      setRecognized(
+        j.result.status === "succeeded" ? j.result.medications : [],
+      );
       if (j.result.guidance || j.result.status === "failed")
         setError(j.result.guidance || "無法辨識，請重新拍攝。");
     } catch (e: any) {
@@ -277,7 +281,13 @@ export function AddMedication() {
                 className="visually-hidden"
                 type="file"
                 accept="image/jpeg,image/png"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                disabled={!!busy}
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] || null);
+                  setRecognized([]);
+                  setDraft(null);
+                  setError("");
+                }}
               />
             </label>
             {file && <span>{file.name}</span>}

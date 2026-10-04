@@ -30,6 +30,7 @@ const cases = [
     medicines: [medicine("5mg"), medicine("10mg", true)],
     style: "",
   },
+  { id: "not-medication", medicines: [], style: "", expectRejected: true },
 ];
 const browser = await chromium.launch();
 try {
@@ -95,10 +96,13 @@ for (const c of cases.filter(
         ),
       };
     });
-    const passed =
-      output.status === "succeeded" &&
-      output.medications.length === c.medicines.length &&
-      comparisons.every((c) => Object.values(c.fields).every((f) => f.match));
+    const passed = c.expectRejected
+      ? output.status === "failed" &&
+        output.medications.length === 0 &&
+        !!output.guidance
+      : output.status === "succeeded" &&
+        output.medications.length === c.medicines.length &&
+        comparisons.every((c) => Object.values(c.fields).every((f) => f.match));
     results.push({
       id: c.id,
       passed,
@@ -128,7 +132,7 @@ for (const c of cases.filter(
         scoring:
           "藥名與含量允許分欄，其餘欄位逐字／數值比對；保留 strictMatch。",
         limitation:
-          "七張合成開發案例，不代表真實藥袋準確率，未使用保留測試集。",
+          "八張合成開發案例，包含非藥袋拒絕；不代表真實藥袋準確率，未使用保留測試集。",
         results,
       },
       null,

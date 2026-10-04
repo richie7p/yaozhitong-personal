@@ -32,12 +32,44 @@ it("rejects malformed JSON without exposing model content", async () => {
     code: "invalid_ai_output",
   });
 });
+it("rejects an invalid HTTP JSON envelope without exposing its contents", async () => {
+  vi.stubGlobal(
+    "fetch",
+    async () => new Response("private upstream failure", { status: 200 }),
+  );
+  await expect(new Nvidia().json("test", "test")).rejects.toMatchObject({
+    code: "invalid_ai_output",
+  });
+});
+it.each([
+  null,
+  {},
+  { choices: [] },
+  { choices: [{ message: { content: 5 } }] },
+])("rejects malformed completion envelopes safely: %j", async (body) => {
+  vi.stubGlobal("fetch", async () => Response.json(body));
+  await expect(new Nvidia().json("test", "test")).rejects.toMatchObject({
+    code: "invalid_ai_output",
+  });
+});
 it("maps network timeout to a retryable error", async () => {
   vi.stubGlobal("fetch", async () => {
     throw Error("TimeoutError");
   });
   await expect(new Nvidia().json("test", "test")).rejects.toMatchObject({
     code: "ai_timeout",
+  });
+});
+it("does not accept truncated output even when it happens to be valid JSON", async () => {
+  vi.stubGlobal("fetch", async () =>
+    Response.json({
+      choices: [
+        { message: { content: '{"ok":true}' }, finish_reason: "length" },
+      ],
+    }),
+  );
+  await expect(new Nvidia().json("test", "test")).rejects.toMatchObject({
+    code: "invalid_ai_output",
   });
 });
 it("preserves missing doses and normalizes literal null text", async () => {
