@@ -108,6 +108,7 @@ npm audit --omit=dev
 
 `src/` 是繁體中文手機優先介面；`shared/` 是共用型別与驗證；`server/` 是登入、資料與 AI；`tools/` 是資料匯入與評估；`infra/` 是 Google Cloud 部署、預算範例與還原演練指令。
 
+- [技術稽核修復與後續工作](docs/AUDIT-FOLLOWUP.md)
 - [部署與帳號設定](docs/DEPLOYMENT.md)
 - [實作完成狀態與未完成驗收](docs/IMPLEMENTATION-STATUS.md)
 - [測試、模型實测與評估限制](docs/VALIDATION.md)
@@ -119,3 +120,5 @@ npm audit --omit=dev
 原作：[Sean-Fang178/yaozhitong-web-demo](https://github.com/Sean-Fang178/yaozhitong-web-demo)，原連結 `find-med-web-demo` 已轉向新名稱。參考版本 `440850bc77e11419a98c1850beba5ac278d07233` 保留在 `reference/`，不納入新應用建置。
 
 程式使用 Apache-2.0；見 `LICENSE`、`NOTICE`。TFDA 資料及官方仿單的權利與使用條款獨立於程式授權，保留官方來源網址和版本雜湊。
+
+真實 NVIDIA 連線與合成流程測試、重跑方式及限制見 [測試紀錄](docs/LIVE-NVIDIA-TEST.md)。

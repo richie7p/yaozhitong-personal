@@ -1,8 +1,15 @@
 name: validate
 on: [push, pull_request]
+permissions:
+  contents: read
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -10,13 +17,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm audit --audit-level=moderate
       - run: npm run typecheck
       - run: npm test
+      - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npm run check:lifecycle
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: browser-test-results
+          name: browser-test-results-${{ matrix.os }}
           path: test-results/
