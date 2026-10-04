@@ -7,7 +7,7 @@
 | PDF 項目 | 優先級 | 本輪狀態 |
 | --- | --- | --- |
 | Firebase／Firestore／gRPC production 依賴公告 | P1 | 已修補依賴樹，本機測試通過；Firebase staging 的真實相容性待驗證 |
-| 外部服務與健康 domain 尚未完成正式驗證 | P1 | 待 Firebase／NVIDIA 憑證、部署環境與藥師審閱 |
+| 外部服務與健康 domain 尚未完成正式驗證 | P1 | NVIDIA 合成流程 smoke 已通過；Firebase staging、部署及藥師審閱仍待驗證 |
 | 核心產品測試與分列測試範圍 | P2 | 已重跑 48 項產品／API／隔離及 provider mock 測試；測試與真實服務的邊界列於下方，完整覆蓋仍不作保證 |
 | npm full-tree 的 brace-expansion 公告 | P2 | 已更新；npm 全樹掃描為零項 |
 | 可重現品質門檻 | P3 | CI 新增 Windows、production build 及依賴掃描；現有專案未配置 lint，維持型別、測試與建置檢查 |
@@ -44,7 +44,7 @@ npm audit --omit=dev
 ## 後續優先順序
 
 1. 在隔離 Firebase staging 專案驗證登入、Firestore／Storage rules、Cloud Tasks 與 gRPC 升級後的實際讀寫及存取控制。
-2. 真實 NVIDIA 模型測試：合成藥袋、欄位缺漏、劑量原文核對、來源支持／否定案例；需獨立 API Key 與使用額度。
+2. 真實 NVIDIA 小樣本流程已測（見下方紀錄）；持續擴充欄位缺漏、劑量原文與支持／否定資料集，需另做領域品質驗證。
 3. 仿單保持既有草稿／發布狀態；目前 30 份中 2 份僅供本機軟體測試，仍需藥師審閱及正式發布驗收。
 4. 完成備份／還原、帳號刪除與並行任務的正式環境演練。
 
@@ -58,3 +58,7 @@ npm audit --omit=dev
 ## 本輪本機驗證結果
 
 2026-10-04，Windows／Node.js 22.23.2：48 項應用／API／provider mock 測試與 10 項桌機／手機 E2E 通過；型別檢查、production build、本機服務重啟／任務恢復／帳號刪除驗證通過。npm 全樹掃描由 5 項 high 降為零項。Ubuntu／Windows CI 結果見本 PR 的 Actions。
+
+## 授權真實 API 後續測試
+
+已補上 [NVIDIA 真實測試紀錄](LIVE-NVIDIA-TEST.md) 與可手動重跑的工具。詳列首次失敗、修正、最後一輪結果及驗證限制；不得由小樣本通過推論醫療或飼養正確率。

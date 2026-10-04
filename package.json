@@ -31,6 +31,7 @@
     "smoke:vision": "tsx --env-file-if-exists=.env tools/smoke-vision.ts",
     "smoke:grounding": "tsx --env-file-if-exists=.env tools/smoke-grounding.ts",
     "smoke:generation": "tsx --env-file-if-exists=.env tools/smoke-generation.ts",
+    "smoke:live": "tsx --env-file-if-exists=.env tools/smoke-live.ts",
     "compare:ranking": "tsx tools/compare-ranking.ts",
     "evaluate:run": "tsx --env-file-if-exists=.env tools/run-evaluation.ts",
     "collect:leaflets": "tsx --env-file-if-exists=.env tools/collect-leaflets.ts",

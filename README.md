@@ -120,3 +120,5 @@ npm audit --omit=dev
 原作：[Sean-Fang178/yaozhitong-web-demo](https://github.com/Sean-Fang178/yaozhitong-web-demo)，原連結 `find-med-web-demo` 已轉向新名稱。參考版本 `440850bc77e11419a98c1850beba5ac278d07233` 保留在 `reference/`，不納入新應用建置。
 
 程式使用 Apache-2.0；見 `LICENSE`、`NOTICE`。TFDA 資料及官方仿單的權利與使用條款獨立於程式授權，保留官方來源網址和版本雜湊。
+
+真實 NVIDIA 連線與合成流程測試、重跑方式及限制見 [測試紀錄](docs/LIVE-NVIDIA-TEST.md)。
