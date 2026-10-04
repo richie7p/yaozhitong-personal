@@ -108,6 +108,7 @@ npm audit --omit=dev
 
 `src/` 是繁體中文手機優先介面；`shared/` 是共用型別与驗證；`server/` 是登入、資料與 AI；`tools/` 是資料匯入與評估；`infra/` 是 Google Cloud 部署、預算範例與還原演練指令。
 
+- [技術稽核修復與後續工作](docs/AUDIT-FOLLOWUP.md)
 - [部署與帳號設定](docs/DEPLOYMENT.md)
 - [實作完成狀態與未完成驗收](docs/IMPLEMENTATION-STATUS.md)
 - [測試、模型實测與評估限制](docs/VALIDATION.md)
