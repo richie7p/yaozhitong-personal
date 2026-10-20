@@ -16,6 +16,8 @@
 
 首次GitHub完整CI（commit `2b06c8d`）的679項單元測試中678項通過、1項帳號切換非同步測試未通過，涵蓋42個測試檔；工作流程在此停止，該次沒有執行瀏覽器回歸或生命週期檢查。以100毫秒真實digest延遲重現後，確認測試工具在原生Web Crypto尚未完成時消耗了模擬時鐘的輪詢次數。修正僅調整 `tests/api-jobs.test.ts` 的等待工具：沒有待執行模擬timer時等待原生事件迴圈，不消耗250次輪詢額度，另設2秒真實等待期限；保留原生Web Crypto及帳號、操作識別碼、token隔離斷言，實驗延遲stub已移除。3個API測試檔 **35／35**、型別與差異空白檢查通過；這是專項重測，尚未聲稱後續GitHub完整CI成功。此CI結果不改寫前述已完成的真雲端驗收；[失敗執行紀錄](https://github.com/richie7p/yaozhitong-personal/actions/runs/39435234739)保留，最新結果以[GitHub Actions](https://github.com/richie7p/yaozhitong-personal/actions)為準。
 
+第二次GitHub CI（commit `c97845e`）已通過 **679／679單元測試（42檔）**，瀏覽器回歸為58項通過、2項失敗：`recognition-prn.spec.ts` 的首個案例在桌面與手機尺寸皆未取得預期合成辨識工作，觀察到測試路由404。生命週期階段因瀏覽器階段失敗而未執行。後續僅針對新草稿模擬請求案例停用測試瀏覽器的service worker，並斷言模擬請求確實命中1次；既有藥品案例與離線覆蓋不變，沒有修改產品或雲端。4項專項瀏覽器測試、型別、建置與差異空白檢查通過。相同CI故障未能在本機重現，這是測試隔離加強，不能視為service worker根因已確證。[該次失敗紀錄](https://github.com/richie7p/yaozhitong-personal/actions/runs/39436170029)保留，前述真雲端結果保持原驗收範圍；最新完整CI狀態以[GitHub Actions](https://github.com/richie7p/yaozhitong-personal/actions)為準。
+
 `20261020-cloud-acceptance` 的4角色API矩陣 **24／24** 通過：管理員、有資格成員、無資格成員及未驗證信箱測試者均以Firebase密碼登入；匿名與非管理員拒絕、未驗證／無資格的辨識拒絕、管理員也不能讀取他人的私人任務，並核對測試後權限、工作、額度與上傳物件沒有殘留變動。此矩陣新增0任務、0模型呼叫，也沒有寄出驗證信。該映像瀏覽器已重新登入合成管理員，確認帳號搜尋、用量與任務頁；資格開關與停用／恢復操作只在較早GIS映像測過，本輪沒有冒列為新版重測。暫時管理員在登出後已於12:58:42Z撤除管理員claim與應用角色、停用帳號並移除AI資格；未更動真實擁有者。
 
 `20261020-cloud-acceptance` 的真雲端受控恢復 **6／6** 通過：在正常Firestore入列交易後，注入本機派送模組失敗，已保存工作由已部署的Scheduler、Cloud Tasks與worker恢復；另以交易式條件檢查建立模擬過期工作租約，真worker第2次嘗試得到預期「尚未確認藥品」失敗，修正同一合成藥品後經公開API重試原工作，第3次成功。兩筆無許可證測試藥品都安全回覆資料不足，**新增2個應用工作、0模型呼叫／tokens**；使用者及全站額度各加2，重試不再加次。這項測試沒有停掉真正worker程序，也沒有製造Cloud Tasks服務故障，不能冒列為上述災難情境已驗收。

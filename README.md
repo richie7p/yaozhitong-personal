@@ -1,6 +1,6 @@
 # 藥智通 · 個人專題版
 
-藥智通是 React／Hono 的個人用藥管理與學習系統，支援藥袋拍照／上傳、藥品核對、官方仿單說明、理解測驗、提醒及家庭藥箱。**目前為受控 Google Cloud TEST，尚未開放大眾正式使用**；[雲端入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)現行映像是 `20261020-cloud-prn`。本輪已完成API完整流程、4角色權限與受控雲端恢復驗收，最終映像版本檢查 **8／8**、入口與原資料保存 **27／27**、瀏覽器結果回讀 **10／10** 通過。瀏覽器實測發現的PRN草稿問題已修正，並完成上傳辨識、核對保存、仿單引用、4題答錯改正及重新登入後4／4進度保存；各版本、模型呼叫與測試範圍見[本輪摘要](docs/acceptance/cloud-extended-20261020.json)及[部署紀錄](docs/DEPLOYMENT.md)。首次GitHub完整CI發現的非同步測試等待問題已修正，最新狀態請看[GitHub Actions](https://github.com/richie7p/yaozhitong-personal/actions)。
+藥智通是 React／Hono 的個人用藥管理與學習系統，支援藥袋拍照／上傳、藥品核對、官方仿單說明、理解測驗、提醒及家庭藥箱。**目前為受控 Google Cloud TEST，尚未開放大眾正式使用**；[雲端入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)現行映像是 `20261020-cloud-prn`。本輪已完成API完整流程、4角色權限與受控雲端恢復驗收，最終映像版本檢查 **8／8**、入口與原資料保存 **27／27**、瀏覽器結果回讀 **10／10** 通過。瀏覽器實測發現的PRN草稿問題已修正，並完成上傳辨識、核對保存、仿單引用、4題答錯改正及重新登入後4／4進度保存；各版本、模型呼叫與測試範圍見[本輪摘要](docs/acceptance/cloud-extended-20261020.json)及[部署紀錄](docs/DEPLOYMENT.md)。CI單元修正後679項通過；瀏覽器模擬請求案例已加強隔離，歷史結果見[本輪摘要](docs/acceptance/cloud-extended-20261020.json)，最新狀態以[GitHub Actions](https://github.com/richie7p/yaozhitong-personal/actions)為準。
 
 相機與上傳入口已分開，推播權限／連線等待與API逾時可恢復操作，過期辨識工作也不會誤刪接手工作仍需使用的照片。**實體手機拍攝及真實前／背景推播送達仍未驗收**；雲端目前只發布1份仿單，驗證信、備份還原、負載及長期觀測也待完成。本輪內容驗收為官方來源核對，不是臨床驗證；無可確認來源的藥品呈現資料不足。既有Google正向登入已完成一次，本輪不重測，詳見[首次雲端與登入紀錄](docs/acceptance/cloud-first-deploy-20261020.json)。
 

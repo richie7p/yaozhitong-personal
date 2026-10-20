@@ -873,9 +873,37 @@
         "lifecycleValidation": "not_run_after_unit_stage_failure",
         "deployedCloudAcceptanceInvalidated": false,
         "rootCause": "The test helper spent its fixed fake-clock polling budget while native Web Crypto was still preparing the new-account request on the real event loop."
+      },
+      {
+        "runId": 39436170029,
+        "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39436170029",
+        "commit": "c97845e",
+        "conclusion": "failure",
+        "programTests": {
+          "status": "passed",
+          "passed": 679,
+          "failed": 0,
+          "files": 42
+        },
+        "browserRegression": {
+          "status": "failed",
+          "passed": 58,
+          "failed": 2,
+          "mockedAi": true,
+          "failureFile": "tests/e2e/recognition-prn.spec.ts",
+          "failureCase": "new PRN recognition defaults stay editable and unconfirmed through both review entries",
+          "affectedProjects": [
+            "desktop",
+            "mobile"
+          ],
+          "observedSymptom": "The fixture recognition route returned not_found/404 instead of the expected synthetic job."
+        },
+        "rootCauseConfirmed": false,
+        "lifecycleValidation": "not_run_after_browser_stage_failure",
+        "deployedCloudAcceptanceInvalidated": false
       }
     ],
-    "status": "historical_failure_and_focused_test_harness_correction_recorded",
+    "status": "historical_ci_failures_recorded_latest_result_on_actions",
     "followupCorrection": {
       "scope": "tests/api-jobs.test.ts only",
       "productionCodeChanged": false,
@@ -895,6 +923,25 @@
         "files": 3,
         "scope": "API unit test files",
         "typecheck": "passed",
+        "diffWhitespaceCheck": "passed"
+      },
+      "subsequentGitHubCiPassClaimed": false
+    },
+    "browserHarnessCorrection": {
+      "scope": "tests/e2e/recognition-prn.spec.ts new-recognition-draft mocked-route case only",
+      "productionCodeChanged": false,
+      "cloudDeploymentChanged": false,
+      "change": "Block service workers only for the new-draft mocked-route case and assert exactly one fixture route hit before reviewing its results.",
+      "existingMedicationCaseAndOfflineCoveragePreserved": true,
+      "sameCiFailureReproducedLocally": false,
+      "serviceWorkerRootCauseConfirmed": false,
+      "interpretation": "Strengthens fixture isolation without claiming that the observed CI route failure has a confirmed service-worker cause.",
+      "focusedValidation": {
+        "passed": 4,
+        "failed": 0,
+        "scope": "PRN browser cases across desktop and mobile viewports",
+        "typecheck": "passed",
+        "build": "passed",
         "diffWhitespaceCheck": "passed"
       },
       "subsequentGitHubCiPassClaimed": false
