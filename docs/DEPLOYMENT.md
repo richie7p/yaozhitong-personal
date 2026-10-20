@@ -32,6 +32,24 @@
 4. Authentication 啟用 Google 和 Email／密碼。設定驗證信、密碼重設樣板與授權網域。
 5. 為落實「不只憑相同 Email 自動合併」，Authentication 的 User account linking 設為 **Create multiple accounts for each identity provider**。使用者須登入原帳號，從「帳號與設定」明確連結另一登入方式。若另一方式已屬於獨立 UID，介面回傳 Firebase 連結衝突，不會搬移健康資料；需保留原登入方式，不做隱性合併。此設定會影響供應商個人資料回傳，顯示名稱可在健康資料頁自行填寫。[官方設定說明](https://support.google.com/firebase/answer/9134820?hl=en)、[明確連結流程](https://firebase.google.com/docs/auth/web/account-linking)。
 6. Cloud Messaging → Web Push certificates 產生公開 VAPID Key。
+7. 先在目標專案建立／確認 `asia-east1` 的預設 Firestore 資料庫，部署下方四組索引並等待 READY，再更新服務。新資料庫也需要索引。
+
+## 提醒查詢索引與舊資料升級
+
+本版改為資料庫端的到期查詢，必須先部署版本庫的索引：
+
+```powershell
+npx firebase-tools deploy --only firestore:indexes --project YOUR_TEST_PROJECT
+gcloud firestore indexes composite list --database='(default)' --project YOUR_TEST_PROJECT
+```
+
+四組索引為 `schedules(active,nextAt)`、`schedules(active,nextFamilyAt)`、`notifications(status,leaseUntil)`、`jobs(status,leaseUntil)`，欄位均為升冪、集合範圍。等待四組狀態都是 READY；索引建立指令返回不一定代表已建好。`infra/deploy.ps1` 會在建立／確認資料庫後、建置映像與更新服務前檢查索引；缺少、仍在建立或讀取失敗會停止，保留舊服務。`-ValidateOnly` 仍只驗本機設定，不檢查真實雲端索引。
+
+第一個背景檢查會為舊啟用中排程補上獨立家人檢查時間，保存 `settings/reminder-due-v1` 完成標記。升級租約五分鐘，當機可恢復；一般冷啟動只讀完成標記，不再全掃。大量既有排程需在測試環境驗證升級耗時及中斷接續，禁止為省事刪除真實使用者排程。
+
+設定變更會交易式建立 `reminderRefresh` 待辦，背景只重新安排該使用者的排程，成功後刪除待辦；帳號刪除也會清除此資料。若回復到不理解新欄位的舊版本且仍持續寫入排程，再升回新版前需安排受控資料遷移，不能沿用已完成標記而忽略舊版新增的排程。
+
+每分鐘仍有少量空查詢及升級標記讀取。合成的 50 人 × 3 個每日個人提醒量測為 12,028 次文件讀取／日，含裝置查詢；相較舊版僅排程讀取保守估算減少約 98.6%。這不是費用硬上限或雲端帳單實測，家人通知及其他流量應另量測。實際上雲時需核對查詢成功、讀取量、交易重試、背景推播與帳單。
 
 ## 供應商、模型與金鑰
 

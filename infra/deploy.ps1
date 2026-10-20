@@ -58,6 +58,52 @@ if ($LASTEXITCODE -ne 0) { throw 'Secret upload failed.' }
 Invoke-Gcloud secrets add-iam-policy-binding $secret --project=$ProjectId --member="serviceAccount:$runtime" --role=roles/secretmanager.secretAccessor --quiet | Out-Null
 $databases = @(Invoke-Gcloud firestore databases list --project=$ProjectId --format='value(name)')
 if (-not ($databases -match '/databases/\(default\)$')) { Invoke-Gcloud firestore databases create --project=$ProjectId --database='(default)' --location=$Region --type=firestore-native }
+# A new reminder worker must not replace the running service while its due-query
+# indexes are missing or still building. This checks readiness; it never creates
+# or changes indexes, and ValidateOnly returns before any cloud access above.
+function Get-YztIndexSignature {
+  param($Index, [switch]$CloudResult)
+  $collection = [string]$Index.collectionGroup
+  if (-not $collection -and [string]$Index.name -match '/collectionGroups/([^/]+)/indexes/[^/]+$') {
+    $collection = [Uri]::UnescapeDataString($Matches[1])
+  }
+  if (-not $collection -or -not $Index.queryScope) { return $null }
+  $fields = @($Index.fields)
+  # Firestore appends a document-name field in the last ordered field's
+  # direction. Ignore only that automatic suffix, preserving explicit ordering.
+  if ($CloudResult -and $fields.Count -gt 1 -and $fields[-1].fieldPath -ceq '__name__' -and $fields[-1].order -ceq $fields[-2].order) {
+    $fields = @($fields[0..($fields.Count - 2)])
+  }
+  $specifications = @(foreach ($field in $fields) {
+    [ordered]@{
+      fieldPath = [string]$field.fieldPath
+      order = [string]$field.order
+      arrayConfig = [string]$field.arrayConfig
+      vectorConfig = $field.vectorConfig
+    }
+  })
+  [ordered]@{
+    collectionGroup = $collection
+    queryScope = [string]$Index.queryScope
+    fields = $specifications
+  } | ConvertTo-Json -Compress -Depth 10
+}
+$indexConfiguration = Get-Content -Raw -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'firestore.indexes.json') | ConvertFrom-Json
+$indexJson = (Invoke-Gcloud firestore indexes composite list --database='(default)' --project=$ProjectId --format=json) -join [Environment]::NewLine
+try { $parsedIndexes = $indexJson | ConvertFrom-Json; $cloudIndexes = @($parsedIndexes) }
+catch { throw 'Cannot verify Firestore index readiness: gcloud returned invalid JSON. No application build or service deployment was started.' }
+$readyIndexSignatures = @(foreach ($index in $cloudIndexes) {
+  if ($index.state -ceq 'READY') { Get-YztIndexSignature $index -CloudResult }
+})
+$unreadyIndexes = @(foreach ($index in $indexConfiguration.indexes) {
+  $signature = Get-YztIndexSignature $index
+  if (-not $signature -or $readyIndexSignatures -cnotcontains $signature) {
+    "$($index.collectionGroup) [$((@($index.fields | ForEach-Object fieldPath)) -join ', ')]"
+  }
+})
+if ($unreadyIndexes.Count -gt 0) {
+  throw "Required Firestore indexes are missing or not READY: $($unreadyIndexes -join '; '). From the repository root, run: npx firebase-tools deploy --only firestore:indexes --project $ProjectId . Wait until these indexes show READY, then rerun this script. No application build or service deployment was started."
+}
 $repos = @(Invoke-Gcloud artifacts repositories list --project=$ProjectId --location=$Region --format='value(name)')
 if (-not ($repos -match '/yaozhitong$')) { Invoke-Gcloud artifacts repositories create yaozhitong --project=$ProjectId --location=$Region --repository-format=docker }
 $image="$Region-docker.pkg.dev/$ProjectId/yaozhitong/app:$(Get-Date -Format 'yyyyMMdd-HHmmss')"

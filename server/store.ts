@@ -24,6 +24,12 @@ export interface Store {
     where?: [string, unknown],
     and?: [string, unknown],
   ): Promise<T[]>;
+  queryDue<T = Doc>(
+    collection: string,
+    field: string,
+    cutoff: string | number,
+    where?: [string, unknown],
+  ): Promise<T[]>;
   set(collection: string, id: string, value: unknown): Promise<void>;
   delete(collection: string, id: string): Promise<void>;
   transaction<T>(fn: (tx: Tx) => Promise<T>): Promise<T>;
@@ -67,6 +73,35 @@ export class MemoryStore implements Store {
           (!where || x[where[0]] === where[1]) &&
           (!and || x[and[0]] === and[1]),
       ),
+    );
+  }
+  async queryDue<T = Doc>(
+    c: string,
+    field: string,
+    cutoff: string | number,
+    where?: [string, unknown],
+  ): Promise<T[]> {
+    if (this.file) await this.load();
+    return structuredClone(
+      Object.entries(this.data[c] || {})
+        .filter(([, value]) => {
+          const due = value[field];
+          // Firestore comparison filters do not coerce strings, numbers or null.
+          return (
+            due != null &&
+            typeof due === typeof cutoff &&
+            due <= cutoff &&
+            (!where || value[where[0]] === where[1])
+          );
+        })
+        .sort(([aId, a], [bId, b]) =>
+          a[field] < b[field]
+            ? -1
+            : a[field] > b[field]
+              ? 1
+              : Buffer.compare(Buffer.from(aId), Buffer.from(bId)),
+        )
+        .map(([, value]) => value),
     );
   }
   async set(c: string, id: string, v: unknown) {
@@ -162,6 +197,21 @@ export class FirestoreStore implements Store {
       ? this.db.collection(c).where(where[0], "==", where[1])
       : this.db.collection(c);
     if (and) q = q.where(and[0], "==", and[1]);
+    const rows: T[] = [];
+    for await (const d of q.stream()) rows.push((d as any).data() as T);
+    return rows;
+  }
+  async queryDue<T = Doc>(
+    c: string,
+    field: string,
+    cutoff: string | number,
+    where?: [string, unknown],
+  ): Promise<T[]> {
+    let q = this.db.collection(c).where(field, "<=", cutoff);
+    if (where) q = q.where(where[0], "==", where[1]);
+    // Firestore implicitly orders equal field values by document ID ascending.
+    // Keep a single explicit range field so the query uses the due-time index.
+    q = q.orderBy(field, "asc");
     const rows: T[] = [];
     for await (const d of q.stream()) rows.push((d as any).data() as T);
     return rows;

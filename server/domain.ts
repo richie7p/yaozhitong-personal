@@ -29,6 +29,9 @@ import {
 import { firebaseApp, type Store, type Doc } from "./store.js";
 import { Blobs } from "./blobs.js";
 import { localWorkerBootTime } from "./local-runner.js";
+import { nextTime, initialFamilyTime } from "./schedule-time.js";
+import { requestReminderRefresh } from "./reminder-state.js";
+export { nextTime } from "./schedule-time.js";
 import { Catalog } from "./catalog.js";
 import {
   grounded,
@@ -40,25 +43,6 @@ import {
 export const hash = (s: string | Buffer) =>
   createHash("sha256").update(s).digest("hex");
 export const now = () => new Date().toISOString();
-export function nextTime(
-  s: Pick<Schedule, "startDate" | "endDate" | "times" | "timezone">,
-  after: string,
-): string | null {
-  const t = DateTime.fromISO(after, { zone: s.timezone });
-  const start = DateTime.fromISO(s.startDate, { zone: s.timezone });
-  if (!start.isValid || (s.endDate && !DateTime.fromISO(s.endDate).isValid))
-    return fail("invalid_date", "日期無效。");
-  let day = t.startOf("day") < start ? start : t.startOf("day");
-  for (let i = 0; i < 3; i++, day = day.plus({ days: 1 })) {
-    if (s.endDate && day.toISODate()! > s.endDate) return null;
-    for (const clock of s.times) {
-      const [hour, minute] = clock.split(":").map(Number);
-      const at = day.set({ hour, minute });
-      if (at > t) return at.toUTC().toISO();
-    }
-  }
-  return null;
-}
 export class Domain {
   catalog: Catalog;
   enqueue: ((id: string) => Promise<void>) | null = null;
@@ -130,7 +114,10 @@ export class Domain {
       const u = await tx.get<Account>("users", uid);
       if (!u || u.disabled || u.deleting)
         return fail("account_disabled", "帳號已停用。", 403);
+      const previous = await tx.get("profiles", uid);
       tx.set("profiles", uid, { ...p, id: uid, ownerId: uid });
+      if (!!previous?.notifyFamily !== p.notifyFamily)
+        requestReminderRefresh(tx, uid);
       tx.set("users", uid, {
         ...u,
         displayName: p.displayName,
@@ -278,13 +265,17 @@ export class Domain {
         "請先確認定時用法；需要時服用的藥不排固定提醒。",
       );
     const id = hash(uid + "|" + s.medicationId);
+    const clock = new Date();
     const result: Schedule = {
       ...s,
       id,
       ownerId: uid,
       active: true,
       medicationRevision: med.revision,
-      nextAt: nextTime(s, now()),
+      nextAt: nextTime(s, clock.toISOString()),
+      nextFamilyAt: initialFamilyTime(s, clock),
+      reminderSchemaVersion: 1,
+      reminderVersion: randomUUID(),
     };
     await this.writePrivate(uid, "schedules", id, result);
     return result;
@@ -487,6 +478,7 @@ export class Domain {
       };
       tx.set("relationships", id, r);
       tx.set("invites", inv.id, { ...inv, usedBy: uid });
+      requestReminderRefresh(tx, inv.ownerId);
       return r;
     });
   }
@@ -1009,6 +1001,7 @@ export class Domain {
       if (members.size > 50) return fail("capacity", "測試名額已滿。");
       tx.set("settings", "testerSeats", { uids: [...members] });
       tx.set("users", id, next);
+      if (u.disabled !== next.disabled) requestReminderRefresh(tx, id);
     });
     if (config.mode === "firebase" && data.disabled !== undefined) {
       await getAuth(firebaseApp()).updateUser(id, { disabled: data.disabled });
@@ -1158,6 +1151,7 @@ export class Domain {
       "profiles",
       "medications",
       "schedules",
+      "reminderRefresh",
       "doseLogs",
       "doseCorrections",
       "cabinet",

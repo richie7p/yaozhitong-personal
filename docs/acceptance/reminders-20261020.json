@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-20",
+  "scope": "Due-only reminder queries, durable migration and refresh, notification recovery",
+  "synthetic": true,
+  "cloudDeployed": false,
+  "realPushSent": false,
+  "realAiCalled": false,
+  "validation": {
+    "typecheck": "passed",
+    "build": "passed",
+    "testFiles": 35,
+    "unitAndIntegrationTestsPassed": 535,
+    "desktopAndMobileBrowserTestsPassed": 54,
+    "offlineDeploymentChecksPassed": 39,
+    "offlineDeploymentShells": ["PowerShell 7", "Windows PowerShell 5.1"],
+    "serviceRestart": {
+      "medicationsPreserved": 12,
+      "profilePreserved": true,
+      "oldTokenRejected": true,
+      "queuedJobRecovered": true,
+      "expiredRunningJobRecovered": true
+    },
+    "accountDeletion": {
+      "browserLogout": true,
+      "oldTokenRejected": true,
+      "privateDataCleared": true
+    }
+  },
+  "readModel": {
+    "owners": 50,
+    "schedules": 150,
+    "dosesPerSchedulePerDay": 1,
+    "familyNotifications": false,
+    "registeredDevicesPerOwner": 1,
+    "minutes": 1440,
+    "previousScheduleReadsPerDayEstimate": 864000,
+    "measuredWholeTickReadsPerDay": 12028,
+    "previousScheduleReadsPer30DaysEstimate": 25920000,
+    "measuredWholeTickReadsPer30Days": 360840,
+    "reductionPercent": 98.608,
+    "queries": 8790,
+    "emptyQueries": 8638,
+    "directReads": 1440,
+    "transactionReads": 1500,
+    "writes": 600,
+    "deliveries": 150,
+    "duplicateDeliveries": 0,
+    "exclusions": [
+      "one-time migration and user changes",
+      "Firestore transaction retries and index-entry billing",
+      "web/API traffic, AI jobs, family reminders, backup, storage and networking"
+    ],
+    "notAnActualCloudBill": true
+  },
+  "remainingCloudAcceptance": [
+    "Build all four composite indexes and verify READY before updating services",
+    "Verify real Firestore queries, upgrade duration and transaction behavior",
+    "Verify Cloud Scheduler and real foreground/background FCM delivery",
+    "Measure load, actual billed usage and alerts"
+  ]
+}

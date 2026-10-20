@@ -79,6 +79,10 @@ export type Schedule = z.infer<typeof ScheduleSchema> & {
   medicationRevision: number;
   active: boolean;
   nextAt: string | null;
+  /** Independent one-hour family check; absent only on pre-migration records. */
+  nextFamilyAt?: string | null;
+  reminderSchemaVersion?: 1;
+  reminderVersion?: string;
 };
 export const CabinetSchema = z.object({
   name: z.string().trim().min(1).max(150),

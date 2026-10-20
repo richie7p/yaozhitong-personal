@@ -6,6 +6,17 @@ $firebaseConfigPath = Join-Path $temporaryDirectory 'firebase-public.json'
 $projectId = 'yzt-offline-12345'
 $openaiSentinel = 'synthetic-openai-secret-offline-check-only'
 $nvidiaSentinel = 'synthetic-nvidia-secret-offline-check-only'
+$requiredIndexes = @((Get-Content -Raw -LiteralPath (Join-Path $repository 'firestore.indexes.json') | ConvertFrom-Json).indexes)
+$readyIndexes = @(for ($indexNumber = 0; $indexNumber -lt $requiredIndexes.Count; $indexNumber++) {
+  $index = $requiredIndexes[$indexNumber]
+  [ordered]@{
+    name = "projects/$projectId/databases/(default)/collectionGroups/$($index.collectionGroup)/indexes/synthetic-$indexNumber"
+    queryScope = $index.queryScope
+    fields = @($index.fields) + @([ordered]@{ fieldPath = '__name__'; order = $index.fields[-1].order })
+    state = 'READY'
+  }
+})
+$readyIndexJson = ConvertTo-Json -InputObject $readyIndexes -Depth 10
 $environmentNames = @(
   'AI_PROVIDER', 'AI_TEXT_MODEL', 'AI_VISION_MODEL',
   'OPENAI_API_KEY', 'OPENAI_TEXT_MODEL', 'OPENAI_VISION_MODEL', 'OPENAI_BASE_URL',
@@ -72,6 +83,9 @@ function global:gcloud {
     if ($arguments[3] -like '*-worker') { return 'https://synthetic-worker.example.invalid' }
     return 'https://synthetic-web.example.invalid'
   }
+  if ($joined.StartsWith('firestore indexes composite list ')) {
+    return $global:YztOfflineDeploymentState.IndexJson
+  }
   # Empty list responses exercise resource creation without contacting Google Cloud.
 }
 
@@ -81,6 +95,7 @@ function Invoke-DeploymentScenario {
     [hashtable]$Environment = @{},
     [hashtable]$Parameters = @{},
     [string]$FailPrefix = '',
+    [string]$IndexJson = $readyIndexJson,
     [switch]$NoGcloudCommand,
     [switch]$ExpectFailure
   )
@@ -93,6 +108,7 @@ function Invoke-DeploymentScenario {
   $global:YztOfflineDeploymentState = @{
     Calls = [Collections.Generic.List[object]]::new()
     FailPrefix = $FailPrefix
+    IndexJson = $IndexJson
   }
   $arguments = @{
     ProjectId = $projectId
@@ -162,6 +178,12 @@ function Assert-CloudRunCalls {
   $otherKey = if ($Provider -eq 'openai') { 'NVIDIA_API_KEY' } else { 'OPENAI_API_KEY' }
   $secretValue = if ($Provider -eq 'openai') { $openaiSentinel } else { $nvidiaSentinel }
   $runCalls = @($Result.Calls | Where-Object EnvironmentPath)
+  $indexCalls = @($Result.Calls | Where-Object { ($_.Arguments[0..3] -join ' ') -eq 'firestore indexes composite list' })
+  Assert-Deployment ($indexCalls.Count -eq 1) "$($Result.Name): readiness must be checked exactly once."
+  Assert-Deployment ($indexCalls[0].Arguments -contains '--database=(default)' -and $indexCalls[0].Arguments -contains "--project=$projectId" -and $indexCalls[0].Arguments -contains '--format=json') "$($Result.Name): readiness query must target the selected database/project and full JSON."
+  $indexPosition = [array]::IndexOf($Result.Calls, $indexCalls[0])
+  $buildCalls = @($Result.Calls | Where-Object { ($_.Arguments[0..1] -join ' ') -eq 'builds submit' })
+  Assert-Deployment ($buildCalls.Count -eq 1 -and [array]::IndexOf($Result.Calls, $buildCalls[0]) -gt $indexPosition) "$($Result.Name): application build preceded index readiness."
   if (-not $Partial) {
     Assert-Deployment ($runCalls.Count -eq 4) "$($Result.Name): expected two deploys and two updates."
     Assert-Deployment (($runCalls[0].Arguments[0..2] -join ' ') -ceq "run deploy yzt-$Environment-worker") "$($Result.Name): worker deployment missing or resource case changed."
@@ -208,6 +230,21 @@ function Assert-CloudRunCalls {
         Assert-Deployment ($resource.Value -ceq $resource.Value.ToLowerInvariant()) "$($Result.Name): a generated resource name contains uppercase letters."
       }
     }
+  }
+  $script:passedChecks++
+  Write-Host "PASS $($Result.Name)"
+}
+
+function Assert-IndexGateFailure {
+  param($Result, [switch]$ExpectRepairInstruction)
+  $indexCalls = @($Result.Calls | Where-Object { ($_.Arguments[0..3] -join ' ') -eq 'firestore indexes composite list' })
+  Assert-Deployment ($indexCalls.Count -eq 1) "$($Result.Name): readiness was not checked."
+  Assert-Deployment (@($Result.Calls | Where-Object { $_.Arguments[0] -in @('builds', 'run', 'scheduler') }).Count -eq 0) "$($Result.Name): deployment continued beyond the index-readiness gate."
+  Assert-Deployment (@($Result.Calls | Where-Object EnvironmentPath).Count -eq 0) "$($Result.Name): a deployment environment file was used before index readiness."
+  Assert-Deployment (@($Result.Calls | Where-Object { ($_.Arguments[0..2] -join ' ') -eq 'firestore indexes composite' -and $_.Arguments[3] -ne 'list' }).Count -eq 0) "$($Result.Name): the readiness gate modified cloud indexes."
+  if ($ExpectRepairInstruction) {
+    $message = [string]$Result.Failure
+    Assert-Deployment ($message.Contains("npx firebase-tools deploy --only firestore:indexes --project $projectId") -and $message.Contains('READY') -and $message.Contains('rerun')) "$($Result.Name): missing actionable index-repair instructions."
   }
   $script:passedChecks++
   Write-Host "PASS $($Result.Name)"
@@ -273,6 +310,38 @@ try {
   }
 
   $bothKeys = @{ OPENAI_API_KEY = $openaiSentinel; NVIDIA_API_KEY = $nvidiaSentinel }
+  Assert-Deployment ($requiredIndexes.Count -eq 4) 'Expected four due-query indexes in the repository manifest.'
+  $result = Invoke-DeploymentScenario 'No cloud indexes stops before build, Cloud Run and Scheduler' -Environment $bothKeys -IndexJson '[]' -ExpectFailure
+  Assert-IndexGateFailure $result -ExpectRepairInstruction
+  $partialIndexes = @($readyIndexes | Select-Object -Skip 1)
+  $result = Invoke-DeploymentScenario 'One missing required index blocks deployment' -Environment $bothKeys -IndexJson (ConvertTo-Json -InputObject $partialIndexes -Depth 10) -ExpectFailure
+  Assert-IndexGateFailure $result -ExpectRepairInstruction
+  foreach ($indexState in @('CREATING', 'NEEDS_REPAIR')) {
+    $changedIndexes = $readyIndexJson | ConvertFrom-Json
+    $changedIndexes[0].state = $indexState
+    $result = Invoke-DeploymentScenario "An index in $indexState state blocks deployment" -Environment $bothKeys -IndexJson (ConvertTo-Json -InputObject $changedIndexes -Depth 10) -ExpectFailure
+    Assert-IndexGateFailure $result -ExpectRepairInstruction
+  }
+  foreach ($change in @('field order', 'field direction', 'query scope', 'collection group')) {
+    $changedIndexes = $readyIndexJson | ConvertFrom-Json
+    switch ($change) {
+      'field order' { $fields = $changedIndexes[0].fields; $changedIndexes[0].fields = @($fields[1], $fields[0], $fields[2]) }
+      'field direction' { $changedIndexes[0].fields[1].order = 'DESCENDING'; $changedIndexes[0].fields[2].order = 'DESCENDING' }
+      'query scope' { $changedIndexes[0].queryScope = 'COLLECTION_GROUP' }
+      'collection group' { $changedIndexes[0].name = "projects/$projectId/databases/(default)/collectionGroups/unrelated/indexes/synthetic-0" }
+    }
+    $result = Invoke-DeploymentScenario "A READY index with wrong $change does not satisfy the gate" -Environment $bothKeys -IndexJson (ConvertTo-Json -InputObject $changedIndexes -Depth 10) -ExpectFailure
+    Assert-IndexGateFailure $result -ExpectRepairInstruction
+  }
+  $result = Invoke-DeploymentScenario 'Index listing CLI failure stops before application changes' -Environment $bothKeys -FailPrefix 'firestore indexes composite list ' -ExpectFailure
+  Assert-IndexGateFailure $result
+  $result = Invoke-DeploymentScenario 'Malformed index-list JSON stops before application changes' -Environment $bothKeys -IndexJson '{invalid-synthetic-json' -ExpectFailure
+  Assert-IndexGateFailure $result
+  $reversedIndexes = @($readyIndexes)
+  [array]::Reverse($reversedIndexes)
+  $result = Invoke-DeploymentScenario 'READY index list order and automatic document-name suffix are ignored' -Environment $bothKeys -IndexJson (ConvertTo-Json -InputObject $reversedIndexes -Depth 10)
+  Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
+
   $result = Invoke-DeploymentScenario 'OpenAI default full mocked deployment' -Environment $bothKeys
   Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
   $result = Invoke-DeploymentScenario 'NVIDIA default full mocked deployment' -Environment $bothKeys -Parameters @{ AiProvider = 'nvidia' }
