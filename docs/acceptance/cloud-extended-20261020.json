@@ -12,7 +12,8 @@
     "credentialsIncluded": false,
     "accountEmailsOrUidsIncluded": false,
     "personalPhotosIncluded": false,
-    "privateReportsAndScreenshotsCommitted": false
+    "privateReportsAndScreenshotsCommitted": false,
+    "androidFollowupUsedUserAccountAndPhysicalDevice": true
   },
   "changes": [
     "Separate camera and image upload actions; apply the rear-camera capture hint in the initiating user gesture and retain JPEG/PNG upload fallback",
@@ -488,18 +489,34 @@
       ],
       "physicalCameraCapturePerformed": false
     },
-    "physicalAndroidCamera": "not_tested",
+    "physicalAndroidCamera": "passed_user_observed_screen_displayed_synthetic_bag_names_only",
     "physicalIphoneCamera": "not_tested",
     "newPhysicalPhonePhotoFullFlow": "not_tested",
-    "heicSupported": false
+    "heicSupported": false,
+    "realPaperBagPhotography": "not_tested",
+    "androidRealDeviceObservation": {
+      "date": "2026-10-20",
+      "status": "passed_limited_scope",
+      "imageTag": "20261020-cloud-prn",
+      "evidence": "User photographed the supplied synthetic medication bag displayed on a computer screen with a physical Android phone and confirmed both recognized medication names.",
+      "recognizedNames": [
+        "酵素膠囊",
+        "咳服錠"
+      ],
+      "fullDoseAndFrequencyConfirmed": false,
+      "paperMedicationBagUsed": false,
+      "physicalPhoneUsed": true,
+      "lightingAndAngleCoverage": "not_verified",
+      "fullRecognitionSaveLearningQuizFlowOnPhone": "not_verified"
+    }
   },
   "push": {
     "localPermissionTimeoutAccountChangeAndServiceWorkerRegression": "passed",
     "cloudBrowserPermissionAndTokenRegistration": "permission_prompt_did_not_complete_token_registration_not_reached",
-    "realFcmDelivery": "not_tested_permission_not_completed",
+    "realFcmDelivery": "passed_user_reported_android_locked_generic_notification",
     "physicalPhoneForegroundDelivery": "not_tested",
-    "physicalPhoneBackgroundDelivery": "not_tested",
-    "notificationClickOnPhysicalPhone": "not_tested",
+    "physicalPhoneBackgroundDelivery": "passed_user_reported_android_locked_generic_notification",
+    "notificationClickOnPhysicalPhone": "passed_user_reported_android_generic_notification",
     "cloudBrowserFailureRecovery": {
       "status": "passed",
       "browser": "Codex in-app browser",
@@ -508,11 +525,71 @@
       "realFcmDeliveryProven": false,
       "physicalPhoneUsed": false,
       "imageTag": "20261020-cloud-acceptance"
+    },
+    "androidGenericNotification": {
+      "status": "passed_user_reported",
+      "sentAt": "2026-10-20T14:38:22.877Z",
+      "localTimeZone": "Asia/Taipei",
+      "physicalPlatform": "Android",
+      "targetDeviceCount": 1,
+      "notificationCount": 1,
+      "providerAccepted": true,
+      "phoneLockedForTest": true,
+      "receivedWhileLockedUserConfirmed": true,
+      "notificationClickUserConfirmed": true,
+      "userReply": "有通知都正常",
+      "instrumentedDeliveryLatencyAvailable": false,
+      "notificationContent": "Generic test reminder without medication details",
+      "sentByNormalReminderScheduler": false
+    },
+    "androidScheduledReminderFollowup": {
+      "status": "passed_user_observed_delivery_and_click_with_cleanup_verified",
+      "imageTag": "20261020-cloud-prn",
+      "scheduledLocalTime": "2026-10-20T22:45:00+08:00",
+      "scheduledDueAt": "2026-10-20T14:45:00.000Z",
+      "sentAt": "2026-10-20T14:45:02.304Z",
+      "route": "Deployed normal reminder Scheduler",
+      "oneTimeSyntheticFixture": true,
+      "fixtureCreatedBy": "Local Domain using Firebase Firestore and the production reminder methods",
+      "fixtureCreationThroughUiOrAuthenticatedPublicApi": false,
+      "manualCronInvocation": false,
+      "modelCalls": 0,
+      "normalSchedulerRegisteredDeviceCount": 2,
+      "receiptConfirmedDevicePlatform": "Android",
+      "otherDeviceReceiptConfirmed": false,
+      "familyNotificationTested": false,
+      "userDeliveryConfirmationClaimed": true,
+      "notificationClickUserConfirmed": true,
+      "userReply": "已收到，點擊返回也正常",
+      "instrumentedDeliveryLatencyAvailable": false,
+      "nextMinuteReadback": {
+        "checkedAt": "2026-10-20T14:46:22.653Z",
+        "notificationCount": 1,
+        "sentAtUnchanged": true,
+        "nextAt": null,
+        "duplicateObserved": false,
+        "longTermDeduplicationProven": false
+      },
+      "cleanup": {
+        "status": "passed",
+        "finishedAt": "2026-10-20T14:46:26.629Z",
+        "fixtureMedicationArchivedAndScheduleDeactivatedBeforeRemoval": true,
+        "exactKnownFixtureRecordsRemoved": 3,
+        "recordTypes": [
+          "medication",
+          "reminder schedule",
+          "notification"
+        ],
+        "baselineMedicationHashesUnchanged": true,
+        "cleanupWritesRestrictedToKnownFixtureRecords": true,
+        "otherRecordsOrDevicesWrittenByCleanup": false,
+        "allOtherRecordsAndDevicesBaselineCompared": false
+      }
     }
   },
   "remainingPublicReleaseAcceptance": [
-    "Actual phone camera and photo flow under different lighting and angles",
-    "Actual foreground and background push receipt and notification interaction",
+    "Actual paper medication bag photographs, complete dose/frequency checks, phone recognition-to-learning flow, and varying lighting and angles",
+    "Foreground push, additional devices, family reminders, and longer-term scheduled delivery and deduplication reliability",
     "Real email verification delivery, password reset, two-device behavior and explicit provider linking",
     "Backup restoration, cloud process interruption, load and longer-term stability and cost observation",
     "Broader cloud medication and official leaflet coverage",
@@ -851,7 +928,8 @@
     "totalNewProviderHttpRequests": 6,
     "newJobQuotaIsNotModelHttpRequestCount": true,
     "allNewProviderHttpResponses": 200,
-    "allModelJobsSingleAttempt": true
+    "allModelJobsSingleAttempt": true,
+    "scopeNote": "Synthetic-account API/browser acceptance and controlled recovery before the separate user-operated Android camera follow-up; its additional model usage is not included in these totals."
   },
   "ciValidation": {
     "latestResultSource": "https://github.com/richie7p/yaozhitong-personal/actions",
@@ -945,6 +1023,24 @@
         "diffWhitespaceCheck": "passed"
       },
       "subsequentGitHubCiPassClaimed": false
+    },
+    "verifiedSuccessfulRun": {
+      "runId": 39438092871,
+      "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39438092871",
+      "commit": "a7fa881",
+      "conclusion": "success",
+      "programTests": {
+        "passed": 679,
+        "failed": 0,
+        "files": 42
+      },
+      "browserRegression": {
+        "passed": 60,
+        "failed": 0,
+        "mockedAi": true
+      },
+      "lifecycleValidation": "passed",
+      "previousFailuresPreserved": true
     }
   }
 }
