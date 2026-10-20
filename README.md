@@ -22,7 +22,19 @@
 
 GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的彙總。文件中的 `.local/` 證據連結只在原驗收電腦可用；金鑰、本機帳號與藥品資料、照片、下載 PDF、原始測試報告及歷史 UI 截圖均不隨 Git 同步。新裝置需另設金鑰並準備資料；一般本機模式從空白資料開始。
 
-Google Cloud 部署尚未執行。現有部署腳本仍使用舊 NVIDIA 設定，上雲前需對齊目前的 OpenAI 模型與金鑰接法，並完成正式登入、官方資料匯入及雲端流程驗收；詳見 [部署現況與待辦](docs/DEPLOYMENT.md)。
+Google Cloud 部署接法已準備，**尚未實際部署或驗收雲端可用性**。`infra/deploy.ps1` 新增 `-AiProvider openai`（預設）／`nvidia`、`-TextModel`、`-VisionModel` 與 `-ValidateOnly`，保留原有專案、Firebase Web 設定、VAPID、環境及地區參數。Web／worker 會使用相同供應商、模型與對應 Secret，失敗時不自動跨供應商備援。Firebase Auth、官方資料匯入、Cloud Tasks／Scheduler、通知及備份還原仍待雲端驗收，詳見 [部署設定與未完成驗收](docs/DEPLOYMENT.md)。
+
+雲端模型解析順序為明確的 `-TextModel`／`-VisionModel` → 目前程序的 `AI_TEXT_MODEL`／`AI_VISION_MODEL` → 所選供應商專用環境變數 → 腳本預設值。OpenAI 預設文字與影像皆為 `gpt-6-luna`；NVIDIA 皆為 `nvidia/nemotron-3.5-super-vl-120b-a12b`。部署腳本不自動讀取 `.env`；實際部署只要求目前程序中所選供應商的 `OPENAI_API_KEY` 或 `NVIDIA_API_KEY`，透過標準輸入上傳至 `yzt-<test|prod>-<openai|nvidia>-key`，不放進指令參數或設定輸出。
+
+先準備與測試專案相符的 Firebase Web 公開設定 JSON，再只檢查設定：
+
+```powershell
+./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -ValidateOnly
+```
+
+`-ValidateOnly` 會在任何 `gcloud` 指令前輸出去敏 JSON 並返回，可無 Cloud CLI、可缺金鑰；不建立資源或呼叫模型，也不驗證模型存取權、額度與雲端權限。[日後實際部署範例與完整參數](docs/DEPLOYMENT.md)另列，這次沒有執行部署。
+
+部署明確沿用目前的逾時、回覆長度與 OpenAI `none` 思考設定，端點固定為所選供應商的官方網址，不載入整份 `.env` 或終端自訂端點。`./tools/check-deployment.ps1` 提供全用假金鑰與模擬 CLI 的離線回歸，不連雲端或呼叫模型。
 
 ## 在其他裝置接續開發
 
