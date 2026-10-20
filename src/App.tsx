@@ -9,34 +9,23 @@ import {
   Settings,
   ShieldCheck,
   ArrowRight,
-  Plus,
   Bell,
   LogOut,
-  Heart,
   Menu,
   X,
   Package,
-  CheckCircle2,
   Sparkles,
   BookOpen,
   Presentation,
   History as HistoryIcon,
 } from "lucide-react";
 import { useAuth } from "./auth";
-import { api } from "./api";
-import {
-  Button,
-  Busy,
-  Empty,
-  Field,
-  Notice,
-  SectionTitle,
-  useData,
-} from "./components";
+import { Button, Busy, Field, Notice, SectionTitle } from "./components";
 import { Medications, AddMedication, Learning, Chat } from "./MedicationViews";
 import { Care, Cabinet, Profile, Admin, History } from "./ManagementViews";
 import { JobHistory } from "./JobHistory";
 import { Demo } from "./Demo";
+import { Home, BagDrawing } from "./Home";
 const navigation = [
   ["home", "今日總覽", House],
   ["medications", "我的藥品", Pill],
@@ -52,6 +41,19 @@ export function App() {
     [menu, setMenu] = useState(false),
     [scale, setScale] = useState(1),
     [online, setOnline] = useState(navigator.onLine);
+  const [pageName, pageQuery = ""] = page.split("?");
+  useEffect(() => {
+    if (!auth.me) return;
+    const frame = requestAnimationFrame(() => {
+      const heading = document.querySelector<HTMLElement>("#main h1");
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+      }
+      window.scrollTo(0, 0);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pageName, auth.me?.account.id]);
   const menuTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!menu) return;
@@ -99,7 +101,6 @@ export function App() {
   if (auth.loading) return <Busy />;
   if (!auth.me) return <Login />;
   const account = auth.me.account;
-  const [pageName, pageQuery = ""] = page.split("?");
   const pages: Record<string, React.ReactNode> = {
     home: <Home />,
     medications: <Medications />,
@@ -186,18 +187,20 @@ export function App() {
             藥智通<small>看懂用藥・記錄日常</small>
           </div>
         </a>
-        <span className="nav-label">我的健康日常</span>
+        <span className="nav-label">日常紀錄與閱讀</span>
         <nav aria-label="主要導覽">
-          {navigation.map(([id, label, Icon]) => (
+          {navigation.map(([id, label, Icon], index) => (
             <a
               href={"#" + id}
               key={id}
               className={pageName === id ? "active" : ""}
               aria-current={pageName === id ? "page" : undefined}
             >
-              <Icon size={20} />
+              <span className="nav-number" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <Icon size={18} />
               {label}
-              {id === "chat" && <span className="tiny-tag">AI</span>}
             </a>
           ))}
         </nav>
@@ -241,7 +244,23 @@ export function App() {
             >
               {menu ? <X /> : <Menu />}
             </button>
-            <span className="top-label">看懂用藥，記錄日常</span>
+            <span className="top-label">
+              <span>個人用藥手帳</span>
+              <i>/</i>
+              <strong>
+                {navigation.find(([id]) => id === pageName)?.[1] ||
+                  (
+                    {
+                      add: "新增用藥",
+                      demo: "研討會展示",
+                      jobs: "處理紀錄",
+                      profile: "帳號與設定",
+                      admin: "管理員後台",
+                    } as Record<string, string>
+                  )[pageName] ||
+                  "藥智通"}
+              </strong>
+            </span>
           </div>
           <div className="row">
             <button
@@ -279,7 +298,7 @@ export function App() {
           {pages[pageName] || pages.home}
         </main>
         <footer className="site-footer">
-          <span>藥智通 YAOZHITONG</span>
+          <span>藥智通・用藥手帳</span>
           <span>以官方仿單為依據，陪你看懂每一份用藥資訊。</span>
         </footer>
       </div>
@@ -365,48 +384,48 @@ function Login() {
         <a className="brand" href="/">
           <img src="/icon.svg" alt="" />
           <div>
-            藥智通<small>YOUR DAILY CARE</small>
+            藥智通<small>用藥有據，日常有序。</small>
           </div>
         </a>
         <div>
-          <span className="eyebrow">少一點疑惑，多一點安心</span>
+          <span className="eyebrow">你的個人用藥手帳</span>
           <h1>
-            看懂每一顆藥，
+            把用藥，
             <br />
-            照顧每一天的你。
+            看清楚。
           </h1>
           <p>
-            從藥袋到仿單，讓用藥資訊更清楚。
+            從藥袋、仿單，到每一天的服藥紀錄。
             <br />
-            把日常的照顧，留給自己與在乎的人。
+            一份資訊，一步一步讀懂。
           </p>
           <div className="story-steps">
             <span>
-              <ScanLine />
-              拍下藥袋
+              <b>01</b>辨識藥袋
             </span>
             <ArrowRight />
             <span>
-              <Pill />
-              確認用法
+              <b>02</b>閱讀說明
             </span>
             <ArrowRight />
             <span>
-              <Heart />
-              安心記錄
+              <b>03</b>理解與記錄
             </span>
           </div>
         </div>
+        <div className="login-illustration">
+          <BagDrawing />
+        </div>
         <div className="story-bottom">
           <ShieldCheck size={18} />
-          資訊有出處，照護有連結。
+          官方仿單依據・使用者逐項確認
         </div>
       </section>
       <section className="login-panel">
         <div className="login-card">
-          <span className="eyebrow">WELCOME TO YAOZHITONG</span>
+          <span className="eyebrow">藥智通 / 個人用藥</span>
           <h2>{mode === "register" ? "開始你的健康日常" : "歡迎回來"}</h2>
-          <p className="muted">登入後，繼續照顧今天的自己。</p>
+          <p className="muted">開啟你的藥品、說明與服藥紀錄。</p>
           {config?.error && <Notice error>{config.error}</Notice>}
           {config?.error ? (
             <Button className="primary full" onClick={() => location.reload()}>
@@ -419,7 +438,7 @@ function Login() {
               </Notice>
               {config.localAccounts.map((p: any) => (
                 <Button
-                  className={p.admin ? "secondary" : "primary"}
+                  className={p.uid === "local-owner" ? "primary" : "secondary"}
                   key={p.uid}
                   disabled={busy}
                   onClick={() => go(p.uid)}
@@ -510,235 +529,3 @@ function Login() {
     </div>
   );
 }
-function Home() {
-  const { me } = useAuth();
-  const today = useData("/today"),
-    meds = useData("/medications"),
-    learning = useData("/learning");
-  const [message, setMessage] = useState("");
-  useEffect(() => {
-    const timer = setInterval(() => {
-      today.refresh();
-    }, 30000);
-    return () => clearInterval(timer);
-  }, []);
-  const rows = today.data?.items || [];
-  const done = rows.filter((r: any) => r.log?.status === "taken").length;
-  const date = new Intl.DateTimeFormat("zh-TW", {
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-    timeZone: "Asia/Taipei",
-  }).format(new Date());
-  async function log(row: any, status: string) {
-    try {
-      await api("/dose-logs", "POST", {
-        medicationId: row.medicationId,
-        dueAt: row.dueAt,
-        status,
-      });
-      await today.refresh();
-    } catch (e: any) {
-      setMessage(e.message);
-    }
-  }
-  return (
-    <>
-      <SectionTitle
-        eyebrow={date}
-        title={`${me.account.displayName}，今天的用藥日常。`}
-        action={
-          <a className="btn primary" href="#add">
-            <Plus size={18} />
-            新增藥品
-          </a>
-        }
-      >
-        看懂藥袋、核對用法，照自己的排程記錄。
-      </SectionTitle>
-      <div className="home-grid">
-        <div className="home-main">
-          <div className="daily-actions">
-            <a className="daily-action capture-action" href="#add">
-              <span className="action-icon">
-                <ScanLine size={27} />
-              </span>
-              <div>
-                <span className="eyebrow">第一步，從藥袋開始</span>
-                <h2>拍藥袋，整理用藥</h2>
-                <p>選擇照片，再逐項確認辨識結果。</p>
-              </div>
-              <ArrowRight size={22} />
-            </a>
-            <a className="daily-action learn-action" href="#learning">
-              <span className="action-icon">
-                <BookOpen size={27} />
-              </span>
-              <div>
-                <span className="eyebrow">接著，看懂再練習</span>
-                <h2>閱讀說明與理解測驗</h2>
-                <p>
-                  {learning.error
-                    ? "暫時無法讀取學習進度，點此重試。"
-                    : learning.loading
-                      ? "正在讀取學習進度…"
-                      : learning.data?.items?.length
-                        ? `已有 ${learning.data.items.length} 份說明，隨時繼續。`
-                        : "從我的藥品開啟仿單說明。"}
-                </p>
-              </div>
-              <ArrowRight size={22} />
-            </a>
-          </div>
-          <div className="stats">
-            <div>
-              <span>目前藥品</span>
-              <strong>
-                {meds.loading || meds.error
-                  ? "—"
-                  : meds.data?.items?.length || 0}
-                <small>款</small>
-              </strong>
-              <span className="stat-caption">集中管理，隨時查閱</span>
-            </div>
-            <div>
-              <span>今日已記錄服用</span>
-              <strong>
-                {today.loading || today.error ? "—" : done}
-                <small>
-                  / {today.loading || today.error ? "—" : rows.length} 次
-                </small>
-              </strong>
-              <span className="stat-caption">依你確認的排程</span>
-            </div>
-            <div>
-              <span>待確認用法</span>
-              <strong>
-                {meds.loading || meds.error
-                  ? "—"
-                  : meds.data?.items?.filter((m: any) => !m.confirmed).length ||
-                    0}
-                <small>款</small>
-              </strong>
-              <span className="stat-caption">確認後再設定提醒</span>
-            </div>
-          </div>
-          {meds.error && <Notice error>無法讀取藥品清單：{meds.error}</Notice>}
-          <section className="card">
-            <div className="row spread">
-              <h2>
-                <CalendarCheck size={20} />
-                今天的用藥
-              </h2>
-              <a className="text-link" href="#history">
-                全部紀錄 <ArrowRight size={15} />
-              </a>
-            </div>
-            {today.loading ? (
-              <Busy />
-            ) : today.error ? (
-              <>
-                <Notice error>{today.error}</Notice>
-                <Button className="secondary" onClick={today.refresh}>
-                  重新讀取今天的用藥
-                </Button>
-              </>
-            ) : rows.length === 0 ? (
-              <Empty
-                title="今天還沒有用藥排程"
-                action={
-                  <a className="btn secondary" href="#medications">
-                    設定我的用藥 <ArrowRight size={16} />
-                  </a>
-                }
-              >
-                先新增藥品、確認用法，再選擇適合你的提醒時間。
-              </Empty>
-            ) : (
-              <div className="timeline">
-                {rows.map((r: any) => (
-                  <div key={r.id} className="dose-row">
-                    <span className="dose-time">{r.time}</span>
-                    <div className="dose-dot" />
-                    <div className="dose-info">
-                      <h3>{r.name}</h3>
-                      <p>{doseLabel(r)}</p>
-                    </div>
-                    <div className="dose-action">
-                      {r.log ? (
-                        <span
-                          className={
-                            "tag " + (r.log.status === "taken" ? "green" : "")
-                          }
-                        >
-                          {r.log.status === "taken" ? "已記錄服用" : "已略過"}
-                        </span>
-                      ) : (
-                        <>
-                          <Button
-                            className="secondary"
-                            onClick={() => log(r, "taken")}
-                          >
-                            <CheckCircle2 size={16} />
-                            已服用
-                          </Button>
-                          <button
-                            className="text-button"
-                            onClick={() => log(r, "skipped")}
-                          >
-                            略過
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {message && <Notice error>{message}</Notice>}
-          </section>
-        </div>
-        <aside className="home-side">
-          <section className="card next-step-card">
-            <span className="eyebrow">我的下一步</span>
-            <h2>用藥資訊，逐步確認</h2>
-            <ol className="daily-checklist">
-              <li>拍攝或選擇清楚的藥袋照片</li>
-              <li>核對藥名、劑量與服用方式</li>
-              <li>對照仿單，完成理解測驗</li>
-            </ol>
-            <a className="text-link" href="#medications">
-              查看我的藥品 <ArrowRight size={16} />
-            </a>
-          </section>
-          <section className="card family-card">
-            <div className="circle-icon">
-              <Users size={24} />
-            </div>
-            <h3>關心，可以更靠近</h3>
-            <p>邀請家人查看你的用藥紀錄，分享每一天的安心。</p>
-            <a className="text-link" href="#care">
-              設定家人照護 <ArrowRight size={16} />
-            </a>
-          </section>
-          <div className="trust-note">
-            <ShieldCheck size={22} />
-            <div>
-              <strong>每一份說明，都有出處</strong>
-              <p>AI 整理內容可對照官方仿單原文。</p>
-            </div>
-          </div>
-          <a className="seminar-entry" href="#demo">
-            <Presentation size={20} />
-            <div>
-              <strong>研討會展示</strong>
-              <span>從辨識結果走完整個流程</span>
-            </div>
-            <ArrowRight size={17} />
-          </a>
-        </aside>
-      </div>
-    </>
-  );
-}
-import { doseLabel } from "../shared/medication";

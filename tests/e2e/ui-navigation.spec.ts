@@ -214,7 +214,14 @@ test("learning index, one record and saved demo deep links retain the selected c
   }
   for (const section of ["reading", "warnings", "quiz"]) {
     const url = `/#learning?record=${encodeURIComponent(first.id)}&section=${section}&from=demo`;
-    await page.goto(url);
+    await page.evaluate((hash) => {
+      location.hash = hash;
+    }, url.slice(1));
+    const target = page.locator(`[id="${section}-${first.id}"]`);
+    await expect(
+      section === "quiz" ? target.locator("legend") : target,
+    ).toBeFocused();
+    await expect(page.locator("main h1")).not.toBeFocused();
     await page.reload();
     await expect(page).toHaveURL(
       new RegExp(
@@ -223,7 +230,6 @@ test("learning index, one record and saved demo deep links retain the selected c
     );
     await expect(detail).toHaveCount(1);
     await expect(detail).toHaveAttribute("data-learning-id", first.id);
-    const target = page.locator(`[id="${section}-${first.id}"]`);
     await expect(
       section === "quiz" ? target.locator("legend") : target,
     ).toBeFocused();
@@ -263,7 +269,7 @@ test("learning index, one record and saved demo deep links retain the selected c
     );
     const stage = page.getByRole("region", { name: heading, exact: true });
     await expect(
-      stage.getByRole("heading", { name: heading, exact: true }),
+      stage.getByRole("heading", { name: heading, exact: true, level: 2 }),
     ).toBeVisible();
     if (step === "recognition")
       await expect(
@@ -283,6 +289,30 @@ test("learning index, one record and saved demo deep links retain the selected c
   await expect(page).toHaveURL(
     new RegExp(`#learning\\?record=${second.id}&section=reading&from=demo$`),
   );
+  await page.evaluate(() =>
+    window.scrollTo(0, document.documentElement.scrollHeight),
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+  const mobile = info.project.name === "mobile";
+  await page
+    .getByRole("navigation", {
+      name: mobile ? "手機主要導覽" : "主要導覽",
+      exact: true,
+    })
+    .locator(`a[href="#${mobile ? "add" : "medications"}"]`)
+    .click();
+  const destinationTitle = page.getByRole("heading", {
+    name: mobile ? "新增藥品" : "我的藥品",
+    exact: true,
+    level: 1,
+  });
+  await expect(destinationTitle).toBeFocused();
+  await expect
+    .poll(async () => (await destinationTitle.boundingBox())?.y ?? -1)
+    .toBeGreaterThanOrEqual(0);
+  await expect(destinationTitle).toBeInViewport();
   await page.goto(
     "/#learning?record=synthetic-missing-record&section=quiz&from=demo",
   );

@@ -3,7 +3,6 @@ import {
   Plus,
   Search,
   ScanLine,
-  Pill,
   ArrowRight,
   Save,
   BookOpen,
@@ -375,8 +374,8 @@ export function AddMedication({
     });
   return (
     <>
-      <SectionTitle eyebrow="建立用藥資訊" title="新增一份用藥資訊">
-        拍照或搜尋藥名，確認之後再加入你的藥品清單。
+      <SectionTitle eyebrow="藥品建檔" title="新增藥品">
+        拍攝藥袋或搜尋藥名，再核對藥名與用法。
       </SectionTitle>
       {tab === "photo" && (
         <FlowSteps
@@ -424,12 +423,14 @@ export function AddMedication({
         </Notice>
       )}
       {tab === "photo" && !draft && (
-        <section className="card">
-          <div className="upload-area">
-            <ScanLine size={44} />
-            <h2>讓藥袋的字，清楚留在照片裡</h2>
-            <p>
-              平放、光線均勻，避開反光。請先遮住姓名、身分證號等不需要辨識的資訊。
+        <section className="card capture-station" aria-label="藥袋辨識工作區">
+          <div className="upload-area capture-workspace">
+            <div className="capture-station-heading">
+              <ScanLine size={32} aria-hidden="true" />
+              <h2>藥袋照片</h2>
+            </div>
+            <p className="capture-instructions">
+              遮住姓名與身分證號，讓藥名、用法清楚入鏡。請平放藥袋，避開反光。
             </p>
             <label className="btn secondary">
               {file ? "更換或重新拍攝照片" : "選擇或拍攝照片"}
@@ -451,13 +452,15 @@ export function AddMedication({
               </figure>
             )}
             <Button
-              className="primary"
+              className="primary capture-submit"
               disabled={!file || !!busy || saving}
               onClick={scan}
             >
               開始辨識 <ArrowRight size={17} />
             </Button>
-            <small>限 JPEG／PNG，8 MB 以內；圖片完成辨識後刪除。</small>
+            <small className="capture-format">
+              限 JPEG／PNG，8 MB 以內；圖片完成辨識後刪除。
+            </small>
           </div>
           {recognized.length > 0 && (
             <h2 id="capture-results" tabIndex={-1}>
@@ -465,7 +468,7 @@ export function AddMedication({
             </h2>
           )}
           {recognized.map(({ key, medication: m }) => (
-            <div className="card small" key={key}>
+            <div className="card small capture-result-sheet" key={key}>
               <div className="row spread">
                 <h3>{m.name}</h3>
                 <span className="tag amber">請逐項確認</span>
@@ -698,7 +701,7 @@ export function Medications() {
   return (
     <>
       <SectionTitle
-        eyebrow="我的用藥"
+        eyebrow="藥品檔案"
         title="我的藥品"
         action={
           <a className="btn primary" href="#add">
@@ -707,7 +710,7 @@ export function Medications() {
           </a>
         }
       >
-        把每一款藥的用法確認清楚，再放心記錄日常。
+        藥品、藥袋用法與仿單說明，集中保存在這裡。
       </SectionTitle>
       {fromDemo && (
         <div className="demo-context">
@@ -749,35 +752,50 @@ export function Medications() {
         </section>
       ) : (
         <div className="med-grid">
-          {data?.items.map((m: any) => (
+          {data?.items.map((m: any, index: number) => (
             <article
               className="card med-card"
               key={m.id}
               data-medication-id={m.id}
             >
-              <div className="row spread">
-                <div className="pill-icon">
-                  <Pill size={23} />
-                </div>
+              <div className="medication-file-heading">
+                <span className="medication-file-number" aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="medication-file-label">用藥檔案</span>
                 <span className={"tag " + (m.confirmed ? "green" : "amber")}>
                   {m.confirmed ? "用法已確認" : "待確認用法"}
                 </span>
               </div>
-              <h2 id={`medication-${m.id}`} tabIndex={-1}>
-                {m.name}
-              </h2>
-              {m.id === demoMedicationId && (
-                <span className="tag">本次展示新增</span>
-              )}
-              <p className="muted med-license">
-                {m.licenseNo || "尚未匹配許可證"}
-              </p>
-              <div className="usage-box">
-                <strong>{doseLabel(m) || "待確認"}</strong>
-                <span>{m.frequencyRaw || "頻次待確認"}</span>
-                {m.prn && <span>需要時使用</span>}
+              <div className="medication-file-name">
+                <h2 id={`medication-${m.id}`} tabIndex={-1}>
+                  {m.name}
+                </h2>
+                {m.id === demoMedicationId && (
+                  <span className="tag">本次展示新增</span>
+                )}
+                <p className="muted med-license">
+                  {m.licenseNo || "尚未匹配許可證"}
+                </p>
               </div>
-              <div className="row wrap">
+              <dl className="usage-box medication-file-usage">
+                <div>
+                  <dt>每次用量</dt>
+                  <dd>
+                    <strong>{doseLabel(m) || "待確認"}</strong>
+                  </dd>
+                </div>
+                <div>
+                  <dt>使用頻次</dt>
+                  <dd>{m.frequencyRaw || "頻次待確認"}</dd>
+                </div>
+                <div>
+                  <dt>使用途徑</dt>
+                  <dd>{m.route || "待確認"}</dd>
+                </div>
+              </dl>
+              {m.prn && <p className="medication-file-note">需要時使用</p>}
+              <div className="row wrap medication-file-actions">
                 <Button
                   className="secondary"
                   disabled={!m.confirmed || !!busy}
@@ -1039,8 +1057,11 @@ export function Learning() {
   }, [activeRecord?.id, section, loading, meds.loading]);
   return (
     <>
-      <SectionTitle eyebrow="看懂再確認" title="用藥小教室">
-        對照原文、理解警語，用幾個小問題確認自己看懂了。
+      <SectionTitle
+        eyebrow={activeRecord ? "仿單閱讀" : "閱讀目錄"}
+        title="用藥小教室"
+      >
+        選擇藥品閱讀仿單，接續已保存的理解題。
       </SectionTitle>
       <div className="row wrap learning-toolbar">
         {recordId ? (
@@ -1135,31 +1156,35 @@ export function Learning() {
         </section>
       ) : (
         <div className="learning-index">
-          {data.items.map((r) => {
+          {data.items.map((r, index) => {
             const progress = recordProgress(r);
             return (
               <article
-                className="card learning-index-card"
+                className="learning-index-card learning-directory-row"
                 key={r.id}
                 data-learning-id={r.id}
               >
-                <div className="row spread">
-                  <BookOpen size={22} aria-hidden="true" />
-                  <span
-                    className={"tag " + (progress.passed ? "green" : "amber")}
-                  >
-                    {learningStateLabels[progress.status]}
-                  </span>
+                <span className="learning-directory-number" aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div className="learning-directory-main">
+                  <div className="learning-directory-heading">
+                    <h2>{recordName(r)}</h2>
+                    <span
+                      className={"tag " + (progress.passed ? "green" : "amber")}
+                    >
+                      {learningStateLabels[progress.status]}
+                    </span>
+                  </div>
+                  {r.medicationIds.length === 2 && (
+                    <p className="muted">交互作用核對</p>
+                  )}
+                  <p className="learning-progress">
+                    已作答 {progress.answered}／{progress.total} 題 · 已答對{" "}
+                    {progress.correct} 題
+                  </p>
                 </div>
-                <h2>{recordName(r)}</h2>
-                {r.medicationIds.length === 2 && (
-                  <p className="muted">交互作用核對</p>
-                )}
-                <p className="learning-progress">
-                  已作答 {progress.answered}／{progress.total} 題 · 已答對{" "}
-                  {progress.correct} 題
-                </p>
-                <div className="row wrap">
+                <div className="row wrap learning-directory-actions">
                   <a
                     className="btn primary"
                     href={recordHref(
@@ -1243,7 +1268,7 @@ export function Chat() {
     [error, setError] = useState("");
   return (
     <>
-      <SectionTitle eyebrow="有依據的回答" title="用藥問答">
+      <SectionTitle eyebrow="仿單問答" title="用藥問答">
         把看不懂的地方說出來，一起回到仿單找依據。
       </SectionTitle>
       {meds.error && <Notice error>無法讀取藥品：{meds.error}</Notice>}

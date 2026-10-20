@@ -90,8 +90,8 @@ function HealthReferences({
 
 function EducationSummary({ medications }: { medications: Medication[] }) {
   return (
-    <section className="education-card confirmed-usage">
-      <h3>你已確認的用法</h3>
+    <section className="education-card confirmed-usage reading-prescription">
+      <h4 className="reading-note-label">你已確認的用法</h4>
       {!medications.some((m) => m.confirmed) && (
         <p className="muted">回到「我的藥品」查看已確認的用法。</p>
       )}
@@ -182,7 +182,7 @@ function UnderstandingQuiz({
   return (
     <section
       id={"quiz-" + learningId}
-      className="card quiz question-section"
+      className="quiz question-section"
       aria-label="理解確認"
       tabIndex={-1}
       onFocus={(event) => {
@@ -190,12 +190,12 @@ function UnderstandingQuiz({
           questionRef.current.focus({ preventScroll: true });
       }}
     >
-      <div className="row spread">
-        <h3>逐題確認你對用藥資訊的理解</h3>
+      <header className="question-heading">
+        <h3>理解測驗</h3>
         <span className={"tag " + (progress.passed ? "green" : "amber")}>
           {learningStateLabels[progress.status]}
         </span>
-      </div>
+      </header>
       <p className="muted">
         一次一題，檢查答案後保存進度，並顯示解說。不影響用藥提醒。
       </p>
@@ -238,7 +238,10 @@ function UnderstandingQuiz({
         <>
           <fieldset disabled={saving} className="question-fieldset">
             <legend ref={questionRef} tabIndex={-1}>
-              第 {index + 1}／{progress.total} 題：{q.q}
+              <span className="question-position">
+                第 {index + 1}／{progress.total} 題：
+              </span>
+              <span className="question-text">{q.q}</span>
             </legend>
             {q.learningObjective === "warning" && (
               <p className="muted">
@@ -494,28 +497,24 @@ export function Evidence({
               type="button"
               onClick={() => focusReadingTarget(readingRef.current)}
             >
-              <span>01</span> 用途與用法
+              用途與用法
             </button>
             <button
               type="button"
               onClick={() => focusReadingTarget(warningsRef.current)}
             >
-              <span>02</span> 完整警語
+              完整警語
             </button>
             {hasQuiz && (
               <button type="button" onClick={goToQuiz}>
-                <span>03</span> 理解測驗
+                理解測驗
               </button>
             )}
           </nav>
           {hasQuiz && (
             <div className="reading-quiz-entry">
               <div>
-                <strong>
-                  {progress.passed
-                    ? "已完成理解測驗"
-                    : "用幾個問題確認自己看懂了"}
-                </strong>
+                <span className="reading-kicker">閱讀之後 · 理解測驗</span>
                 <p>
                   共 {progress.total} 題 · 已答對 {progress.correct}{" "}
                   題。可隨時回來閱讀完整警語。
@@ -534,27 +533,29 @@ export function Evidence({
             aria-labelledby={sectionName + "-reading"}
           >
             <div className="reading-section-heading">
-              <span className="reading-step">01</span>
+              <span className="reading-step reading-kicker">01</span>
               <div>
                 <h3 id={sectionName + "-reading"}>用途與用法</h3>
                 <p>先了解藥品用途，再對照你核對過的藥袋用法。</p>
               </div>
             </div>
-            <div className="education-summary">
-              <section className="education-card reading-purpose">
-                <h3>藥品用途</h3>
-                {purposes.length ? (
-                  purposes.map(renderClaim)
-                ) : (
-                  <p className="muted">
-                    目前沒有可引用的用途說明，請對照可用的仿單原文。
-                  </p>
-                )}
-                <small>仿單用途不代表醫師為你開藥的原因。</small>
-              </section>
-              {medications && <EducationSummary medications={medications} />}
+            <div className="reading-body">
+              <div className="education-summary reading-context">
+                <section className="education-card reading-purpose">
+                  <h4 className="reading-note-label">藥品用途</h4>
+                  {purposes.length ? (
+                    purposes.map(renderClaim)
+                  ) : (
+                    <p className="muted">
+                      目前沒有可引用的用途說明，請對照可用的仿單原文。
+                    </p>
+                  )}
+                  <small>仿單用途不代表醫師為你開藥的原因。</small>
+                </section>
+                {medications && <EducationSummary medications={medications} />}
+              </div>
+              {otherReading.map(renderClaim)}
             </div>
-            {otherReading.map(renderClaim)}
           </section>
           <section
             id={learningId ? "warnings-" + learningId : undefined}
@@ -564,61 +565,66 @@ export function Evidence({
             aria-labelledby={sectionName + "-warnings"}
           >
             <div className="reading-section-heading">
-              <span className="reading-step">02</span>
+              <span className="reading-step reading-kicker">02</span>
               <div>
                 <h3 id={sectionName + "-warnings"}>完整警語</h3>
                 <p>保留已整理的警語全文；每項都可以展開對照自己的仿單依據。</p>
               </div>
             </div>
-            {result.safetyCoverage && result.status === "supported" && (
-              <p className="fine" aria-label="警語與測驗範圍">
-                {result.safetyCoverage.status === "no_sections"
-                  ? "這份已匯入仿單沒有獨立的警語或注意事項欄目；本次測驗確認藥品用途。"
-                  : `已列出 ${result.safetyCoverage.coveredSectionCount} 個警語與注意事項欄目，其中 ${result.safetyCoverage.quizCoveredSectionCount} 個有理解題。題目只抽查各欄重點，請完整閱讀下列提醒。`}
-              </p>
-            )}
-            <div className="personal-precautions reading-personal">
-              <h4>對照你填寫資料的提醒</h4>
-              {personalWarnings.length ? (
-                personalWarnings.map(renderClaim)
-              ) : (
-                <p className="muted">
-                  目前沒有可確認與你健康資料相關的提醒，請繼續閱讀一般警語。這不代表沒有風險。
+            <div className="reading-body">
+              {result.safetyCoverage && result.status === "supported" && (
+                <p className="fine" aria-label="警語與測驗範圍">
+                  {result.safetyCoverage.status === "no_sections"
+                    ? "這份已匯入仿單沒有獨立的警語或注意事項欄目；本次測驗確認藥品用途。"
+                    : `已列出 ${result.safetyCoverage.coveredSectionCount} 個警語與注意事項欄目，其中 ${result.safetyCoverage.quizCoveredSectionCount} 個有理解題。題目只抽查各欄重點，請完整閱讀下列提醒。`}
                 </p>
               )}
-            </div>
-            {generalWarnings.map(renderClaim)}
-            {!personalWarnings.length && !generalWarnings.length && (
-              <p className="muted">
-                目前沒有可列出的獨立警語內容；請以可用的仿單原文核對。
-              </p>
-            )}
-            {result.followups?.map((f, i) => (
-              <details className="card small" key={i}>
-                <summary>{f.question}</summary>
-                {result.claims[f.claimIndex] && (
-                  <Button
-                    className="ghost"
-                    onClick={() =>
-                      focusReadingTarget(
-                        claimRefs.current.get(f.claimIndex) || null,
-                      )
-                    }
-                  >
-                    回看相關說明 <ArrowDown size={15} />
-                  </Button>
+              <div
+                className={
+                  "personal-precautions reading-personal" +
+                  (personalWarnings.length ? "" : " reading-personal-empty")
+                }
+              >
+                {personalWarnings.length > 0 && <h4>對照你填寫資料的提醒</h4>}
+                {personalWarnings.length ? (
+                  personalWarnings.map(renderClaim)
+                ) : (
+                  <p className="muted">
+                    目前沒有可確認與你健康資料相關的提醒，請繼續閱讀一般警語。這不代表沒有風險。
+                  </p>
                 )}
-                <small>若這項情況與你有關，請向藥師確認。</small>
-              </details>
-            ))}
+              </div>
+              {generalWarnings.map(renderClaim)}
+              {!personalWarnings.length && !generalWarnings.length && (
+                <p className="muted">
+                  目前沒有可列出的獨立警語內容；請以可用的仿單原文核對。
+                </p>
+              )}
+              {result.followups?.map((f, i) => (
+                <details className="reading-followup" key={i}>
+                  <summary>{f.question}</summary>
+                  {result.claims[f.claimIndex] && (
+                    <Button
+                      className="ghost"
+                      onClick={() =>
+                        focusReadingTarget(
+                          claimRefs.current.get(f.claimIndex) || null,
+                        )
+                      }
+                    >
+                      回看相關說明 <ArrowDown size={15} />
+                    </Button>
+                  )}
+                  <small>若這項情況與你有關，請向藥師確認。</small>
+                </details>
+              ))}
+            </div>
           </section>
         </>
       )}
       {view === "quiz" && medications && (
         <div className="reading-quiz-context">
-          <p className="reading-context-label">
-            答題時可對照：你已確認的藥袋用法
-          </p>
+          <p className="reading-context-label reading-kicker">作答參考</p>
           <EducationSummary medications={medications} />
         </div>
       )}

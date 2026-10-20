@@ -1,12 +1,12 @@
 /** Saved-results UI check after a service restart; never claims a Windows reboot. */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { mkdir, readFile, realpath, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { chromium, expect, type Browser, type Page } from "@playwright/test";
 import { config } from "../server/config.js";
 
-// Usage: tsx --env-file-if-exists=.env tools/check-seminar-saved-demo.ts .local/seminar-demo-... 8085 [prior-launcher.json]
+// Usage: tsx --env-file-if-exists=.env tools/check-seminar-saved-demo.ts .local/seminar-demo-... 8085 [prior-launcher.json or ""] [output-directory under .local/reports]
 const directory = resolve(process.argv[2] || "");
 const directoryRelative = relative(resolve(".local"), directory).replaceAll(
   "\\",
@@ -26,7 +26,25 @@ const priorLauncherFile = process.argv[4]
   ? resolve(process.argv[4])
   : undefined;
 const base = "http://127.0.0.1:" + port;
-const reportFile = resolve(".local/reports/seminar-saved-demo-ui.json");
+const reportsRoot = resolve(".local/reports");
+const outputDirectory = process.argv[5] ? resolve(process.argv[5]) : undefined;
+function inside(root: string, path: string) {
+  const pathRelative = relative(root, path).replaceAll("\\", "/");
+  return (
+    pathRelative !== ".." &&
+    !pathRelative.startsWith("../") &&
+    !isAbsolute(pathRelative)
+  );
+}
+if (outputDirectory && !inside(reportsRoot, outputDirectory))
+  throw Error(
+    "The output directory must remain under this repository's .local/reports.",
+  );
+const reportFile = join(
+  outputDirectory || reportsRoot,
+  "seminar-saved-demo-ui.json",
+);
+const screenshotDirectory = outputDirectory || directory;
 const canonical = (value: any): any =>
   Array.isArray(value)
     ? value.map(canonical)
@@ -100,7 +118,31 @@ const report: any = {
   unexpectedAiRequests: [],
   screenshots: [],
 };
-await mkdir(resolve(".local/reports"), { recursive: true });
+await mkdir(reportsRoot, { recursive: true });
+if (outputDirectory) {
+  const canonicalRoot = await realpath(reportsRoot);
+  if (relative(resolve(await realpath("."), ".local/reports"), canonicalRoot))
+    throw Error(
+      "The reports directory must not redirect outside .local/reports.",
+    );
+  // Check existing ancestors before creating anything through a symlink/junction.
+  let ancestor = outputDirectory;
+  while (true) {
+    try {
+      if (!inside(canonicalRoot, await realpath(ancestor)))
+        throw Error(
+          "The output directory must not escape through a symlink or junction.",
+        );
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      ancestor = dirname(ancestor);
+    }
+  }
+  await mkdir(outputDirectory, { recursive: true });
+  if (!inside(canonicalRoot, await realpath(outputDirectory)))
+    throw Error("The output directory must remain under .local/reports.");
+}
 const save = () => writeFile(reportFile, JSON.stringify(report, null, 2));
 await save();
 let browser: Browser | undefined;
@@ -157,7 +199,7 @@ async function step<T>(name: string, action: () => Promise<T>): Promise<T> {
 }
 async function screenshot(name: string) {
   if (!page) return;
-  const path = join(directory, "saved-demo-" + name + ".png");
+  const path = join(screenshotDirectory, "saved-demo-" + name + ".png");
   await page.screenshot({ path, fullPage: true, animations: "disabled" });
   report.screenshots.push(path);
 }
@@ -427,7 +469,11 @@ try {
           exact: true,
         });
         await expect(
-          section.getByRole("heading", { name: heading, exact: true }),
+          section.getByRole("heading", {
+            name: heading,
+            exact: true,
+            level: 2,
+          }),
         ).toBeVisible();
         if (stage === "recognition") {
           await section

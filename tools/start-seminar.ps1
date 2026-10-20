@@ -60,4 +60,4 @@ if ($running) {
     Set-Location -LiteralPath $previousDirectory.Path
   }
 }
-if (-not $NoBrowser) { Start-Process "$baseUrl/#learning" }
+if (-not $NoBrowser) { Start-Process "$baseUrl/#home" }

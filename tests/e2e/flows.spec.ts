@@ -38,7 +38,7 @@ test("offline keeps the public shell without caching private APIs", async ({
   await context.setOffline(true);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: /看懂每一顆藥/ }),
+    page.getByRole("heading", { name: /把用藥，\s*看清楚/, level: 1 }),
   ).toBeVisible();
   await expect(page.locator(".login-page")).toHaveCSS("display", onlineDisplay);
   await expect(
@@ -88,7 +88,7 @@ test("manual medication, scheduling, log, isolation and care revocation", async 
   await expect(
     page.getByRole("heading", { name: name, exact: true }),
   ).toBeVisible();
-  const row = page.locator(".dose-row").filter({ hasText: name });
+  const row = page.locator(".agenda-row").filter({ hasText: name });
   await row.getByRole("button", { name: "已服用", exact: true }).click();
   await expect(row.getByText("已記錄服用", { exact: true })).toBeVisible();
   await page.goto("/#care");
