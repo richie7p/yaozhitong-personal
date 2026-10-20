@@ -1,10 +1,20 @@
 # 藥智通 · 個人專題版
 
-以團隊黑客松作品為流程參考，重新建立的 React／Hono 應用。提供藥袋辨識、官方藥品搜尋、人工確認、附來源問答、用藥提醒與紀錄、家庭藥箱及唯讀家人照護。
+以團隊黑客松作品為流程參考，重新建立的 React／Hono 應用。提供藥袋辨識、官方藥品搜尋、使用者確認、附來源問答、用藥提醒與紀錄、家庭藥箱及唯讀家人照護。
 
-**目前交付的是可在本機操作、附雲端部署工具的開發版本。** 目前先完成本機驗收，不需要先註冊 Google Cloud。已收集 30 份官方仿單，其中 2 份經逐頁文字核對後供本機軟體測試，其餘 28 份保持草稿。尚未完成藥師審閱與正式環境驗收。未發布仿單的藥品會呈現資料不足。
+**目前交付的是可在本機操作、附雲端部署工具的開發版本。** 本輪是研討會軟體流程與來源自測，不含臨床驗證，也不把藥師簽核列為展示前置。未發布或無法確認來源的藥品呈現資料不足。
 
-先看 [本機操作與驗收指南](docs/LOCAL-TESTING.md)。
+2026-10-20 現行版本使用 **GPT-6 Luna（`gpt-6-luna`，推理設定 `none`）**，策略為 `grounded-v11-whole-warning-source-sections`。藥袋辨識、仿單說明及理解測驗的本輪固定 **9／9 流程通過**：新增三藥各兩次手動建檔、同一張公開 Bubdel 實拍兩次，以及原兩藥合成袋一次；13 個任務、23 次真實模型請求均成功，0 逾時／重試／備援。共 10 份學習內容的 22 條說明、12 題及 34 次引用通過逐項來源核對。有限樣本不能代表所有藥品、照片或現場網路的穩定性。
+
+程式驗收為 **328／328 單元測試、36／36 桌面／手機回歸**，型別檢查及正式建置通過；本機假上游故障恢復 **10／10**，與上述真實模型測試分開。這次已修正濃度分母、文字用量、仿單節名及整頁來源與完整警語引用，防止半句警語被發布。
+
+目前此電腦的展示副本為 `.local/seminar-demo-expanded-v11-20261020`，含 66,511 筆藥品主檔、6 款藥品、6 份說明及 7 題。所選內容另經第二次逐項核對；服務重啟保存介面 **22／22**、真正 Windows 重開後介面 **14／14** 通過，兩項保存驗收均無新增 AI 請求，資料、原內容及最終答案保留。雙擊 `啟動研討會展示.cmd` 開啟 [展示頁](http://127.0.0.1:8085/#learning)；此指令需要本機已準備好的指定副本，不會在新裝置自動還原它，也未設定開機自動常駐。
+
+**剩餘限制**：短說明未涵蓋全部仿單警語，七題僅一題警語題；息咳寧口味／版本及多欄抽字仍未完成說明與測驗驗收。實拍僅兩張歷史公開照片，正式完整實拍流程只重複同一張 Bubdel，尚未測本人的手機與更多光線／角度；HEIC 不支援。Bubdel 掃描仿單使用經核對的人工轉錄，不能視為通用 OCR 已解決。
+
+先看 [本輪擴充驗收與限制](docs/SEMINAR-EXPANDED-20261020.md)、[五分鐘展示與開場檢查](docs/SEMINAR.md)及 [可隨 GitHub 保存的驗收彙總](docs/acceptance/seminar-v11-20261020.json)。舊批次失敗與版本歷史保留於 [既有驗收紀錄](docs/SEMINAR-ACCEPTANCE.md)；日常操作見 [本機操作與驗收指南](docs/LOCAL-TESTING.md)。
+
+GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的彙總。文件中的 `.local/` 證據連結只在原驗收電腦可用；金鑰、本機帳號與藥品資料、照片、下載 PDF、原始測試報告及歷史 UI 截圖均不隨 Git 同步。新裝置需另設金鑰並準備資料；一般本機模式從空白資料開始。
 
 ## 在其他裝置接續開發
 
@@ -18,7 +28,7 @@ cp .env.example .env
 npm run dev
 ```
 
-開啟 <http://127.0.0.1:5173>。需要 AI 功能時，在該裝置的 `.env` 填入自己的 `NVIDIA_API_KEY`。`.env`、本機帳號資料、藥袋照片及下載的 PDF 都不會隨 GitHub 同步；新裝置的本機資料從空白開始，官方資料匯入方式見 [資料說明](docs/DATA.md)。
+開啟 <http://127.0.0.1:5173>。需要 AI 功能時，在該裝置的 `.env` 選擇供應商並填入對應金鑰，設定見下方。`.env`、本機帳號資料、藥袋照片及下載的 PDF 都不會隨 GitHub 同步；新裝置的本機資料從空白開始，官方資料匯入方式見 [資料說明](docs/DATA.md)。
 
 每次開始修改前，在沒有未提交變更時執行 `git pull --ff-only`。修改完成後，把變更存成 commit 並推送：
 
@@ -54,16 +64,63 @@ npm start
 
 開啟 <http://127.0.0.1:8080>。開發模式需要程式保持執行才能檢查站內提醒；關閉程式後沒有背景通知服務。
 
-## NVIDIA
+## AI 供應商與本機設定
 
-後端讀取 `NVIDIA_API_KEY` 環境變數，或未追蹤的 `.env`。不要將金鑰加入前端設定、Git 或部署指令參數。
+目前本機設定已切為 `AI_PROVIDER=openai`，文字與影像均使用 `gpt-6-luna`，金鑰僅由後端讀取 Git 忽略的 `.env`。下列模型設定不包含金鑰：
 
-| 用途                 | 目前預設模型                                    |
-| -------------------- | ----------------------------------------------- |
-| 文字、問答、證據審核 | `nvidia/nemotron-3.5-lightning-30b-a3b`         |
-| 藥袋影像             | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` |
+```dotenv
+AI_PROVIDER=openai
+OPENAI_TEXT_MODEL=gpt-6-luna
+OPENAI_VISION_MODEL=gpt-6-luna
+```
 
-原計畫的兩個模型端點在本次帳號實測回傳 410，因此換成可用模型。模型名稱與端點皆可用 `.env.example` 中的設定替換；不自動切換其他供應商。文字 JSON、七種合成藥袋情境與證據否定案例已實測，完整紀錄見 `docs/VALIDATION.md`。
+OpenAI API 金鑰只存入 `.env` 的 `OPENAI_API_KEY`。文字、影像與審核目標均為 `gpt-6-luna`；通用 `AI_TEXT_MODEL`、`AI_VISION_MODEL` 仍優先於 `OPENAI_TEXT_MODEL`、`OPENAI_VISION_MODEL`，本次啟用已通過舊模型覆寫預檢。只使用明確選擇的供應商，失敗時**不自動跨 NVIDIA／OpenAI 切換**。金鑰不放前端、Git、日誌或指令參數。
+
+Luna 沿用 Chat Completions 接法，明確指定 `reasoning_effort=none`、`store=false`、`max_completion_tokens` 與 JSON 模式；藥袋欄位、來源、必要條件、唯一答案與測驗原文解釋檢查保持。呼叫 45 秒／任務 120 秒期限不放寬。官方能力與參數見 [GPT-6 Luna 模型頁](https://developers.openai.com/api/docs/models/gpt-6-luna)及[GPT-6 使用指南](https://developers.openai.com/api/docs/guides/latest-model)。本次先通過[最小連線](.local/reports/openai-connection.json)，再另行完成固定五輪真實完整流程及來源驗收；各階段證據分開。
+
+本機準備檢查：
+
+```powershell
+npm run build
+npm run check:openai:ready
+```
+
+這項檢查只讀取模型設定、官方端點、`.env` 的 Git 忽略規則與建置版本，**0 次供應商呼叫**；結果寫入 `.local/reports/openai-readiness.json`。金鑰只記是否存在，不輸出內容，也不代表有效性已驗證。
+
+| 準備狀態 | 意義 |
+| --- | --- |
+| `prepared_pending_key` | 接法與模型已備妥，等待金鑰 |
+| `prepared_pending_activation` | 已有金鑰，尚未啟用 OpenAI |
+| `prepared_pending_real_acceptance` | 已啟用，仍須真實模型與完整流程驗收 |
+| `blocked_preparation` | 模型覆寫、端點或建置等本機設定需要修正 |
+
+`npm run check:openai:ready -- --require-key` 在缺金鑰時回非零狀態；`--no-report` 只輸出結果，不寫報告。這些準備狀態皆不等於真實驗收通過；本次固定五輪、內容 QA 及恢復結果另記於[驗收摘要](docs/SEMINAR-ACCEPTANCE.md)，不改寫準備工具的狀態定義。
+
+OpenAI 帳戶額度／計費限制以 `ai_quota_exceeded` 結束，不重複重試；模型拒絕或內容過濾以 `ai_refused` 結束，不發布內容。暫時限流與 5xx 才在既有期限內重試，仍不切回 NVIDIA。JSON 模式的請求明確附上 JSON 輸出指令，原審核規則保持；OpenAI 快取政策為 `openai-chat-json-none-v2`，避免沿用修正前結果。
+
+每次生成、審核或辨識呼叫的所有模型嘗試，共用預設 45 秒期限（`AI_REQUEST_TIMEOUT_MS`），每次最多 3 個 HTTP 請求；單一任務共用 120 秒整體期限（`AI_JOB_TIMEOUT_MS`）。有備援時，文字主模型最多等 12 秒（`AI_TEXT_PRIMARY_TIMEOUT_MS`），影像主模型最多等 22 秒（`AI_PRIMARY_TIMEOUT_MS`），均依剩餘時間縮短，將時間留給備援；讀取回應本文也受期限約束。生成另保留必要的審核時間。重試與換模型都不重設期限；同一任務已失敗的主模型不會在後續審核再等一次。
+
+先前 NVIDIA 模型設定（歷史保存展示來源，未作 OpenAI 自動備援）：
+
+| 用途 | 主模型 | 同 NVIDIA 備援 |
+| --- | --- | --- |
+| 文字、問答、證據審核 | `nvidia/nemotron-3.5-super-vl-120b-a12b` | `z-ai/glm-5.3-flash` |
+| 藥袋影像 | `nvidia/nemotron-3.5-super-vl-120b-a12b` | `z-ai/glm-5.3-flash` |
+
+主模型可用 `NVIDIA_TEXT_MODEL`、`NVIDIA_VISION_MODEL` 設定；備援順序如下，可用逗號分隔最多兩款，明確留白可關閉。程式預設備援清單為空，這份工作區及 `.env.example` 採下列設定；通用 `AI_TEXT_MODEL`、`AI_VISION_MODEL` 仍優先於供應商專屬主模型設定。
+
+```dotenv
+NVIDIA_TEXT_FALLBACK_MODELS=z-ai/glm-5.3-flash
+NVIDIA_VISION_FALLBACK_MODELS=z-ai/glm-5.3-flash
+AI_PRIMARY_TIMEOUT_MS=22000
+AI_TEXT_PRIMARY_TIMEOUT_MS=12000
+```
+
+SuperVL 使用官方 `chat_template_kwargs.enable_thinking=false`；GLM 使用 `reasoning_effort=low`、`chat_template_kwargs.clear_thinking=true`。只在逾時、429／5xx 或網路故障時切換；金鑰權限、JSON／結構驗證失敗或內容截斷不會靠換模型掩蓋，也不會跨到 OpenAI。讀取回應本文時若已超過中止期限，亦明確歸為逾時。每次嘗試的模型、階段、延遲、狀態與用量存於任務 `aiRequests`；沒有 usage 時記為未知，不當零消耗。快取包含模型順序、12／22 秒設定、`nvidia-fallback-v2` 路由政策與 `literal-conditions-v1` 來源提及規則，變更設定不會誤沿用舊路由結果。
+
+完整 v9 文字探測中，SuperVL 兩份來源均保留用途與測驗（18.360／8.223 秒）；GLM 酵素備援探測 5.160 秒通過。DiffusionGemma 兩來源逾時，Lightning 一次逾時、另一次沒有可發布測驗，失敗保留。這是選型探測，尚不等於五輪完整展示驗收；[選型報告](.local/reports/text-model-comparison-20261019-summary.json)與歷史三輪結果均保留。
+
+GLM 影像候選以正式辨識提示、欄位驗證與完整 66,509 筆主檔，固定兩次探測均通過（6.214／6.395 秒，無重試或替換）。因此影像備援由 Omni 改為 GLM，維持主模型加一款備援；[原始探測](.local/seminar-vision-candidate-1792423328834/report.json)不等於完整流程通過。當時 NVIDIA 路由的[固定五輪](.local/seminar-stability-1792423389971-9fa17316/summary.json)仍僅 1／5 完整通過，不能因候選兩次成功便宣稱更換模型已解決服務可用性。先前兩批各自保留於驗收摘要；當時 OpenAI 尚無金鑰，2026-10-20 已啟用並另行驗收，結果不混算。
 
 ```powershell
 npm run smoke:nvidia
@@ -81,7 +138,7 @@ npm run import:catalog
 npm run collect:leaflets -- 30
 ```
 
-主檔索引保存到本機檔案或 Cloud Storage，後端載入記憶體搜尋。此次匯入 **66,478 筆**。收集工具只產生仿單草稿，不會代替審核者發布。
+主檔索引保存到本機檔案或 Cloud Storage，後端載入記憶體搜尋。本機目前的匯入快照為 **66,509 筆**。收集工具只產生仿單草稿，不會代替審核者發布。
 
 登入本機管理員，前往管理後台 → 仿單資料；核對官方 PDF、許可證、頁碼、抽取文字與表格閱讀順序，必要時修正文字，再勾選確認並發布。源資料清單在 `data/leaflets/`，完整 PDF 在 `.local/blobs/leaflets/`。操作說明見 [仿單資料審核](docs/DATA.md)。
 
@@ -89,7 +146,8 @@ npm run collect:leaflets -- 30
 
 - 每筆私人資料以後端驗證的 UID 歸屬，瀏覽器不能指定其他擁有者。管理員帳號清單、任務用量不包含健康問卷與問答內容。
 - 藥袋缺漏保持空白；劑量與單位必須能在移除藥名、含量後的辨識原文中核對，否則清空。使用者確認後才能排提醒。需要時服用獨立提供手動記錄。此檢查不能取代人對照片的核對。
-- 每條生成陳述先檢查段落歸屬與原文，再由 NVIDIA 做語意支持審核；不通過就移除。模型審核仍可能犯錯，不能把字串吻合或模型同意當成醫療正確率。
+- 每條生成陳述先檢查段落歸屬與原文，再由所選供應商模型做語意支持審核；不通過就移除。模型審核仍可能犯錯，不能把字串吻合或模型同意當成醫療正確率。
+- 已確認的警語與其原文都逐字提到所填健康狀況時，可標示「仿單原文提到…；請對照原文中的適用條件」。這與通過相關性審核的個人標籤分開，不推論症狀原因，也不恢復被審核拒絕的個人化標籤。
 - 個人化快取包含 UID、健康資料版本、藥品版本、仿單版本、模型與提示版本。歷史回答保留當時來源，最新學習內容會排除已更新來源。
 - 邀請碼一次使用、24 小時有效；家人只能查看授權藥品、排程與紀錄。新讀取即時檢查撤銷狀態，照護頁前景每 30 秒更新。
 - Cloud Tasks 處理長任務；錯誤保留可重試輸入。辨識照片處理後刪除，重試辨識需重新上傳。帳號與設定頁提供 AI 處理紀錄。

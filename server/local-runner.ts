@@ -1,4 +1,25 @@
+import { uptime } from "node:os";
+
+// Approximate boot time prevents a reused PID after a computer reboot from
+// keeping a dead worker's lease. Allow clock/uptime rounding differences.
+export const localWorkerBootTime = Date.now() - uptime() * 1000;
 /** Local jobs use a bounded queue; persisted jobs are recovered by the scheduler. */
+export function localWorkerAlive(pid: number, bootTime?: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) return true;
+  if (
+    Number.isFinite(bootTime) &&
+    Math.abs(localWorkerBootTime - bootTime!) > 60000
+  )
+    return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error: any) {
+    // Permission failures do not prove that another local worker has stopped.
+    return error.code !== "ESRCH";
+  }
+}
+
 export class LocalRunner {
   private pending = new Set<string>();
   private running = new Set<string>();

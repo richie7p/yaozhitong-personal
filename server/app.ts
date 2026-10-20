@@ -3,8 +3,9 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import { z, ZodError } from "zod";
+import { learningProgress, validAnswers } from "../shared/learning.js";
 import type { Account, Identity, Job, JobKind } from "../shared/schema.js";
-import { config, AppError, fail } from "./config.js";
+import { aiConnection, config, AppError, fail } from "./config.js";
 import { authenticate, localPeople, localToken, verifyWorker } from "./auth.js";
 import { Domain, hash, now } from "./domain.js";
 import { extractLeaflet } from "./leaflets.js";
@@ -46,7 +47,15 @@ export function createApp(d: Domain, auth = authenticate) {
       mode: config.mode,
       firebase: JSON.parse(process.env.FIREBASE_WEB_CONFIG || "{}"),
       vapidKey: process.env.FIREBASE_VAPID_KEY || "",
-      ai: !!config.nvidiaKey,
+      ai: !!aiConnection().key,
+      aiProvider: config.aiProvider,
+      aiProviderLabel: aiConnection().label,
+      aiTextModel: config.textModel,
+      aiVisionModel: config.visionModel,
+      aiTextFallbackModels:
+        config.aiProvider === "nvidia" ? config.nvidiaTextFallbackModels : [],
+      aiVisionFallbackModels:
+        config.aiProvider === "nvidia" ? config.nvidiaVisionFallbackModels : [],
       localAccounts: config.mode === "local" ? localPeople : [],
       appVersion: "0.1.0",
     }),
@@ -111,6 +120,23 @@ export function createApp(d: Domain, auth = authenticate) {
   app.post("/api/v1/medications", async (c) =>
     c.json(await d.saveMedication(uid(c), await c.req.json()), 201),
   );
+  app.post("/api/v1/recognitions/:id/medications/:index", async (c) => {
+    const index = z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(99)
+      .parse(c.req.param("index"));
+    return c.json(
+      await d.saveRecognizedMedication(
+        uid(c),
+        c.req.param("id"),
+        index,
+        await c.req.json(),
+      ),
+      201,
+    );
+  });
   app.put("/api/v1/medications/:id", async (c) =>
     c.json(
       await d.saveMedication(uid(c), await c.req.json(), c.req.param("id")),
@@ -332,33 +358,20 @@ export function createApp(d: Domain, auth = authenticate) {
       items.map((x) => d.learningCurrent(uid(c), x)),
     );
     return c.json({
-      items: items.filter((_, i) => valid[i]),
+      items: items
+        .filter((_, i) => valid[i])
+        .sort((a, b) => b.createdAt?.localeCompare(a.createdAt) || 0)
+        .map((row) => {
+          const answers = validAnswers(row.result.quiz, row.answers);
+          const progress = learningProgress(row.result.quiz, answers);
+          return { ...row, answers, passed: progress.passed, progress };
+        }),
     });
   });
   app.post("/api/v1/learning/:id/answers", async (c) => {
-    const row = await d.owned<any>("learning", c.req.param("id"), uid(c));
-    if (!(await d.learningCurrent(uid(c), row)))
-      return fail(
-        "stale_content",
-        "仿單或個人資料已更新，請重新產生測驗。",
-        409,
-      );
-    const b = z
-      .object({ answers: z.record(z.string(), z.number().int().nonnegative()) })
-      .parse(await c.req.json());
-    const quiz = row.result.quiz;
-    const results = quiz.map((q: any) => ({
-      id: q.id,
-      correct: b.answers[q.id] === q.answer,
-      answer: q.answer,
-      explain: q.explain,
-    }));
-    await d.store.set("learning", row.id, {
-      ...row,
-      answers: b.answers,
-      passed: quiz.length > 0 && results.every((x: any) => x.correct),
-    });
-    return c.json({ results });
+    return c.json(
+      await d.answerLearning(uid(c), c.req.param("id"), await c.req.json()),
+    );
   });
   app.use("/api/v1/admin/*", async (c, next) => {
     if (!c.get("identity").admin)

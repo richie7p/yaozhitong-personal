@@ -90,16 +90,14 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
     page.getByRole("heading", { name: /今天也照顧好自己/ }),
   ).toBeVisible();
   await page.goto("/#add");
-  await page
-    .locator('input[type="file"]')
-    .setInputFiles({
-      name: "synthetic.png",
-      mimeType: "image/png",
-      buffer: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aE1cAAAAASUVORK5CYII=",
-        "base64",
-      ),
-    });
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "synthetic.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aE1cAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  });
   await page.getByRole("button", { name: "開始辨識" }).click();
   await page
     .locator(".search-result")
@@ -124,8 +122,10 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await expect(evidence.getByText("已附仿單依據", { exact: true })).toBeVisible(
     { timeout: 20000 },
   );
-  await evidence.getByText("對照仿單原文", { exact: true }).click();
-  await expect(evidence.locator("blockquote")).toContainText("SYNTHETIC-E2E-5");
+  await evidence.getByText("對照仿單原文", { exact: true }).first().click();
+  await expect(evidence.locator("blockquote").first()).toContainText(
+    "SYNTHETIC-E2E-5",
+  );
   await evidence.getByLabel("可以", { exact: true }).check();
   await evidence.getByRole("button", { name: "檢查答案" }).click();
   await expect(evidence.getByText(/再看一下：/)).toBeVisible();
@@ -167,7 +167,9 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await page.goto("/#profile");
   await page.getByRole("button", { name: "使用原輸入重試" }).click();
   await expect(
-    page.getByText("已重新排入處理，稍後請重新整理。", { exact: true }),
+    page.getByText("已使用原輸入重新排入處理，進度會自動更新。", {
+      exact: true,
+    }),
   ).toBeVisible();
   await expect
     .poll(async () => {

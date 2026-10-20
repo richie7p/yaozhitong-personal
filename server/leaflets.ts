@@ -3,6 +3,36 @@ import type { Leaflet, Chunk } from "../shared/schema.js";
 import { hash } from "./domain.js";
 import { fail } from "./config.js";
 import path from "node:path";
+import {
+  SOURCE_CHUNKING_VERSION,
+  SOURCE_PAGE_CHAR_LIMIT,
+} from "../shared/source.js";
+
+export function canonicalPageChunk(
+  leafletId: string,
+  licenseNo: string,
+  version: string,
+  page: number,
+  text: string,
+): Chunk | null {
+  if (!Number.isSafeInteger(page) || page < 1)
+    return fail("invalid_source_page", "仿單頁碼無法確認。", 400);
+  if (text.length > SOURCE_PAGE_CHAR_LIMIT)
+    return fail(
+      "leaflet_page_too_large",
+      "單頁仿單超出完整來源上限，請先核對版面；系統不會截斷警語。",
+      400,
+    );
+  if (!text.trim()) return null;
+  return {
+    id: `${leafletId.slice(0, 16)}-${page}-0-${SOURCE_CHUNKING_VERSION}-${hash(text).slice(0, 16)}`,
+    licenseNo,
+    version,
+    page,
+    start: 0,
+    text,
+  };
+}
 export async function extractLeaflet(
   bytes: Buffer,
   licenseNo: string,
@@ -45,18 +75,8 @@ export async function extractLeaflet(
         )
         .join("")
         .trim();
-      for (let start = 0; start < text.length; start += 1000) {
-        const part = text.slice(start, start + 1000);
-        if (part.trim().length < 8) continue;
-        chunks.push({
-          id: `${id.slice(0, 16)}-${p}-${start}`,
-          licenseNo,
-          version,
-          page: p,
-          start,
-          text: part,
-        });
-      }
+      const chunk = canonicalPageChunk(id, licenseNo, version, p, text);
+      if (chunk) chunks.push(chunk);
     }
   } finally {
     await task.destroy();

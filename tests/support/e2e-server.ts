@@ -17,7 +17,8 @@ const drugs: Drug[] = [5, 10].map((n) => ({
   ingredients: ["synthetic-only"],
   revoked: false,
 }));
-const quote = "本文件完全為合成資料，僅供軟體流程測試，不可作為用藥依據。";
+const quote =
+  "注意事項：本文件完全為合成資料，僅供軟體流程測試，不可作為用藥依據。合成情境A的讀者應閱讀說明；未記載不能判斷安全。";
 for (const drug of drugs) {
   const c: Chunk = {
     id: drug.licenseNo + "-p1",
@@ -80,18 +81,46 @@ const upstream = createServer(async (req, res) => {
   else {
     const p = JSON.parse(input);
     if (body.messages[0].content.includes("證據審核器"))
-      result = { verdicts: p.claims.map((c: any) => ({ id: c.id, supported: true })) };
+      result = {
+        verdicts: p.claims.map((c: any) => ({ id: c.id, supported: true })),
+      };
     else if (p.question.includes("測試一次失敗") && !failures.has(p.question)) {
       failures.add(p.question);
       result = "malformed";
     } else {
-      const citations = [{ chunkId: p.chunks[0].id, quote }];
+      const citations = p.sources
+        .slice(0, 6)
+        .map((s: any) => ({ sourceId: s.id }));
       result = {
         status: "supported",
         claims: [
           {
+            text: "這份合成文件用於軟體流程測試。",
+            category: "purpose",
+            citations,
+          },
+          {
             text: "此文件只供軟體測試，不能用來決定用藥。",
             kind: "warning",
+            category: "warning",
+            profileRefs: p.profileFacts?.filter(
+              (f: any) => f.field === "conditions" && f.value === "合成情境A",
+            ),
+            citations,
+          },
+          {
+            text: "一般提醒：未記載不能判斷安全。",
+            category: "warning",
+            citations,
+          },
+          {
+            text: "一般提醒：合成情境A的讀者應閱讀說明。",
+            category: "warning",
+            citations,
+          },
+          {
+            text: "完整提醒：這份資料不可作為用藥依據。",
+            category: "warning",
             citations,
           },
         ],
@@ -99,17 +128,34 @@ const upstream = createServer(async (req, res) => {
           p.kind === "bundle"
             ? [
                 {
-                  q: "這份文件可用來決定用藥嗎？",
+                  claimIndex: 1,
+                  learningObjective: "warning",
+                  sourceSection: "注意事項",
+                  requiredConditions: ["合成情境A的讀者"],
+                  q: "依注意事項，合成情境A的讀者應閱讀說明；這份文件可用來決定用藥嗎？",
                   options: ["不可以，只供軟體測試", "可以"],
                   answer: 0,
-                  explain: "原文指出不可作為用藥依據。",
+                  explain:
+                    "依注意事項，合成情境A的讀者應閱讀說明；原文指出不可作為用藥依據。",
+                  citations,
+                },
+                {
+                  claimIndex: 2,
+                  learningObjective: "warning",
+                  sourceSection: "注意事項",
+                  requiredConditions: ["合成情境A的讀者"],
+                  q: "依注意事項，合成情境A的讀者應閱讀說明；沒有記載就能判斷安全嗎？",
+                  options: ["不可以，需確認資料", "可以直接判定安全"],
+                  answer: 0,
+                  explain:
+                    "依注意事項，合成情境A的讀者應閱讀說明；原文指出未記載不能判斷安全。",
                   citations,
                 },
               ]
             : [],
         followups:
           p.kind === "bundle"
-            ? [{ question: "這份資料的使用限制？", claimIndex: 0 }]
+            ? [{ question: "這份資料的使用限制？", claimIndex: 1 }]
             : [],
       };
     }
@@ -131,6 +177,7 @@ const upstream = createServer(async (req, res) => {
 });
 await new Promise<void>((r) => upstream.listen(0, "127.0.0.1", r));
 config.nvidiaBase = `http://127.0.0.1:${(upstream.address() as any).port}/v1`;
+config.aiProvider = "nvidia";
 config.nvidiaKey = "isolated-test-only";
 config.userLimit = 100;
 await import("../../server/index.js");

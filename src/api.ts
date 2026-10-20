@@ -20,18 +20,40 @@ export async function api<T = any>(
   if (!navigator.onLine)
     throw new ApiError("offline", "目前離線，請連線後再操作。");
   const token = await tokenProvider();
-  const response = await fetch("/api/v1" + path, {
-    method,
-    headers: {
-      ...(token ? { Authorization: "Bearer " + token } : {}),
-      ...(body ? { "Content-Type": "application/json" } : {}),
-      ...(key ? { "Idempotency-Key": key } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-  });
-  const data = await response.json();
-  if (!response.ok) throw new ApiError(data.code, data.message, data.requestId);
+  let response: Response;
+  try {
+    response = await fetch("/api/v1" + path, {
+      method,
+      headers: {
+        ...(token ? { Authorization: "Bearer " + token } : {}),
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        ...(key ? { "Idempotency-Key": key } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError(
+      "network_error",
+      "無法連線到服務，請確認連線與藥智通服務已啟動後再試。",
+    );
+  }
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    throw new ApiError(
+      "invalid_response",
+      "服務暫時無法回應，請稍後重試。",
+      response.headers.get("X-Request-Id") || "",
+    );
+  }
+  if (!response.ok)
+    throw new ApiError(
+      data?.code || "service_error",
+      data?.message || "服務暫時無法回應，請稍後重試。",
+      data?.requestId || "",
+    );
   return data;
 }
 export async function submitJob(
@@ -52,7 +74,7 @@ export async function submitJob(
       });
     onProgress?.(
       job.status === "running"
-        ? "正在處理，請保留此頁面…"
+        ? "正在核對內容與引用，背景工作持續處理中…"
         : "已排入處理，請稍候…",
     );
   }

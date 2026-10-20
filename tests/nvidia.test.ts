@@ -40,6 +40,28 @@ it("maps network timeout to a retryable error", async () => {
     code: "ai_timeout",
   });
 });
+it("requests JSON mode for the supported text model without sending it to vision models", async () => {
+  const originalModel = config.textModel;
+  config.textModel = "nvidia/nemotron-3.5-lightning-30b-a3b";
+  const requests: any[] = [];
+  vi.stubGlobal("fetch", async (_url: unknown, request: RequestInit) => {
+    requests.push(JSON.parse(String(request.body)));
+    return Response.json({
+      choices: [{ message: { content: '{"ok":true}' } }],
+    });
+  });
+  try {
+    await expect(new Nvidia().json("JSON", {})).resolves.toEqual({ ok: true });
+    await expect(new Nvidia().json("JSON", [], true)).resolves.toEqual({
+      ok: true,
+    });
+    expect(requests[0].response_format).toEqual({ type: "json_object" });
+    expect(requests[1]).not.toHaveProperty("response_format");
+    expect(requests[0].chat_template_kwargs.enable_thinking).toBe(false);
+  } finally {
+    config.textModel = originalModel;
+  }
+});
 it("preserves missing doses and normalizes literal null text", async () => {
   const r = await recognize(
     {

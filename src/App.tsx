@@ -66,10 +66,15 @@ export function App() {
   if (auth.loading) return <Busy />;
   if (!auth.me) return <Login />;
   const account = auth.me.account;
+  const [pageName, pageQuery = ""] = page.split("?");
   const pages: Record<string, React.ReactNode> = {
     home: <Home />,
     medications: <Medications />,
-    add: <AddMedication />,
+    add: (
+      <AddMedication
+        recognitionId={new URLSearchParams(pageQuery).get("recognition")}
+      />
+    ),
     learning: <Learning />,
     chat: <Chat />,
     care: <Care />,
@@ -87,7 +92,14 @@ export function App() {
       className="app"
       style={{ "--font-scale": scale } as React.CSSProperties}
     >
-      <a className="skip" href="#main">
+      <a
+        className="skip"
+        href="#main"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("main")?.focus();
+        }}
+      >
         跳到主要內容
       </a>
       <aside className={menu ? "sidebar open" : "sidebar"}>
@@ -141,6 +153,7 @@ export function App() {
             <button
               className="icon-button mobile-menu"
               aria-label="開啟選單"
+              aria-expanded={menu}
               onClick={() => setMenu(!menu)}
             >
               {menu ? <X /> : <Menu />}
@@ -169,16 +182,18 @@ export function App() {
             </button>
           </div>
         </header>
-        <main id="main" key={account.id + page}>
+        <main id="main" tabIndex={-1} key={account.id + page}>
           {!online && <Notice error>目前離線，請連線後讀取或更新資料。</Notice>}
           {auth.config.mode === "local" && (
             <div className="local-banner">
               <span className="dot" />
               本機開發模式 · 資料保存在這台電腦 ·{" "}
-              {auth.config.ai ? "NVIDIA API 已設定" : "AI 尚未設定"}
+              {auth.config.ai
+                ? `${auth.config.aiProviderLabel || "AI"} API 已設定`
+                : "AI 尚未設定"}
             </div>
           )}
-          {pages[page] || pages.home}
+          {pages[pageName] || pages.home}
         </main>
         <footer className="site-footer">
           <span>藥智通 YAOZHITONG</span>
@@ -275,7 +290,11 @@ function Login() {
           <h2>{mode === "register" ? "開始你的健康日常" : "歡迎回來"}</h2>
           <p className="muted">登入後，繼續照顧今天的自己。</p>
           {config?.error && <Notice error>{config.error}</Notice>}
-          {config?.mode === "local" ? (
+          {config?.error ? (
+            <Button className="primary full" onClick={() => location.reload()}>
+              重新連線
+            </Button>
+          ) : config?.mode === "local" ? (
             <>
               <Notice>
                 本機開發帳號，資料互相隔離；新帳號沒有預載健康資料。
@@ -477,6 +496,7 @@ function Home() {
               <span className="stat-caption">確認後再設定提醒</span>
             </div>
           </div>
+          {meds.error && <Notice error>無法讀取藥品清單：{meds.error}</Notice>}
           <section className="card">
             <div className="row spread">
               <h2>
@@ -508,9 +528,7 @@ function Home() {
                     <div className="dose-dot" />
                     <div className="dose-info">
                       <h3>{r.name}</h3>
-                      <p>
-                        {r.doseAmount} {r.doseUnit}
-                      </p>
+                      <p>{doseLabel(r)}</p>
                     </div>
                     <div className="dose-action">
                       {r.log ? (
@@ -584,3 +602,4 @@ function Home() {
     </>
   );
 }
+import { doseLabel } from "../shared/medication";

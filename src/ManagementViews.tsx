@@ -103,7 +103,16 @@ export function Care() {
               <button
                 aria-label="複製邀請碼"
                 className="icon-button"
-                onClick={() => navigator.clipboard.writeText(invite.code)}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(invite.code);
+                    setMessage("");
+                  } catch {
+                    setMessage(
+                      "無法複製邀請碼，請直接選取畫面上的邀請碼複製。",
+                    );
+                  }
+                }}
               >
                 <Copy size={18} />
               </button>
@@ -167,8 +176,13 @@ export function Care() {
                 <Button
                   onClick={async () => {
                     if (confirm("取消後，對方將無法再讀取你的用藥資料。")) {
-                      await api("/care/" + r.id, "DELETE");
-                      refresh();
+                      try {
+                        setMessage("");
+                        await api("/care/" + r.id, "DELETE");
+                        await refresh();
+                      } catch (e: any) {
+                        setMessage(e.message);
+                      }
                     }
                   }}
                 >
@@ -349,11 +363,16 @@ export function Cabinet() {
               {!r.disposed && (
                 <Button
                   onClick={async () => {
-                    await api("/cabinet/" + r.id, "PUT", {
-                      ...r,
-                      disposed: true,
-                    });
-                    refresh();
+                    try {
+                      setMessage("");
+                      await api("/cabinet/" + r.id, "PUT", {
+                        ...r,
+                        disposed: true,
+                      });
+                      await refresh();
+                    } catch (e: any) {
+                      setMessage(e.message);
+                    }
                   }}
                 >
                   標記已處理

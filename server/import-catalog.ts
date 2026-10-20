@@ -5,6 +5,32 @@ import { Blobs } from "./blobs.js";
 import type { Store } from "./store.js";
 export const CATALOG_SOURCE =
   "https://data.fda.gov.tw/opendata/exportDataList.do?method=ExportData&InfoId=36&logType=5";
+
+function titleStrength(title: string): string {
+  const text = title.normalize("NFKC");
+  if (text.includes("複方")) return "";
+  const number = "(?:\\d+(?:\\.\\d+)?|\\.\\d+)";
+  const unit = "(?:mcg|mg|ug|μg|g|ml|毫克|微克|公克|毫升|公絲|克)";
+  const denominator = "(?:ml|g|毫升|公克|克)";
+  const percentBasis = "(?:\\s*(?:\\([wv]\\s*/\\s*[wv]\\)|[wv]\\s*/\\s*[wv]))?";
+  const expression = new RegExp(
+    `(?<![a-z0-9.,/])${number}\\s*(?:%${percentBasis}|${unit}(?:\\s*/\\s*(?:${number}\\s*)?${denominator})?)(?![a-z0-9.])`,
+    "gi",
+  );
+  const matches = [...text.matchAll(expression)];
+  // A partial concentration or one component of a combination is misleading.
+  if (matches.length !== 1) return "";
+  const match = matches[0];
+  const before = text.slice(0, match.index);
+  const after = text.slice(match.index! + match[0].length);
+  if (
+    /\d\s*(?:[/+、&~～–—-]|加|及|與|至)\s*$/.test(before) ||
+    /^\s*\//.test(after)
+  )
+    return "";
+  return match[0];
+}
+
 export async function refreshCatalog(
   store: Store,
   blobs = new Blobs(),
@@ -27,29 +53,29 @@ export async function refreshCatalog(
   if (!Array.isArray(raw) || !raw.length)
     throw Error("Invalid catalog records");
   const mapped: Drug[] = raw
-    .map((r) => ({
-      licenseNo: String(r["許可證字號"] || r.licenseNo || ""),
-      nameZh: String(r["中文品名"] || r.nameZh || ""),
-      nameEn: String(r["英文品名"] || r.nameEn || ""),
-      strength: String(
-        r.strength ||
-          String(r["中文品名"] || "")
-            .normalize("NFKC")
-            .match(
-              /[\d.]+(?:\/[\d.]+)*\s*(?:mg|mcg|g|ml|毫克|微克|公克|毫升|%)/i,
-            )?.[0] ||
-          "",
-      ),
-      form: String(r["劑型"] || r.form || ""),
-      ingredients: Array.isArray(r.ingredients)
+    .map((r) => {
+      const ingredients = Array.isArray(r.ingredients)
         ? r.ingredients
         : String(r["主成分略述"] || "")
             .split(/;;|;|；/)
             .map((x) => x.trim())
-            .filter(Boolean),
-      revoked:
-        r.revoked === true || String(r["註銷狀態"] || "").includes("已註銷"),
-    }))
+            .filter(Boolean);
+      return {
+        licenseNo: String(r["許可證字號"] || r.licenseNo || ""),
+        nameZh: String(r["中文品名"] || r.nameZh || ""),
+        nameEn: String(r["英文品名"] || r.nameEn || ""),
+        strength: String(
+          r.strength ||
+            (ingredients.length > 1
+              ? ""
+              : titleStrength(String(r["中文品名"] || ""))),
+        ),
+        form: String(r["劑型"] || r.form || ""),
+        ingredients,
+        revoked:
+          r.revoked === true || String(r["註銷狀態"] || "").includes("已註銷"),
+      };
+    })
     .filter((r) => r.licenseNo && r.nameZh);
   const rows = [...new Map(mapped.map((r) => [r.licenseNo, r])).values()];
   const encoded = Buffer.from(JSON.stringify(rows));

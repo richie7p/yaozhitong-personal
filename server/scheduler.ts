@@ -4,6 +4,7 @@ import type { Schedule, Medication, Account } from "../shared/schema.js";
 import { config } from "./config.js";
 import { firebaseApp } from "./store.js";
 import { Domain, hash, nextTime, now } from "./domain.js";
+import { localWorkerAlive } from "./local-runner.js";
 export type Sender = (
   uid: string,
   id: string,
@@ -190,6 +191,27 @@ export async function tick(
       });
     }
   }
+  // A dead local worker cannot finish its job. Release its lease immediately
+  // after a crash instead of making a restarted demo wait up to nine minutes.
+  // Do not reclaim another live process's work or infer ownership of old jobs.
+  if (config.mode === "local")
+    for (const job of await d.store.list("jobs", ["status", "running"])) {
+      if (
+        !job.localWorkerPid ||
+        localWorkerAlive(job.localWorkerPid, job.localWorkerBootTime)
+      )
+        continue;
+      await d.store.transaction(async (tx) => {
+        const current = await tx.get("jobs", job.id);
+        if (
+          current?.status === "running" &&
+          current.localWorkerPid === job.localWorkerPid &&
+          current.localWorkerBootTime === job.localWorkerBootTime &&
+          current.attempts === job.attempts
+        )
+          tx.set("jobs", job.id, { ...current, leaseUntil: 0 });
+      });
+    }
   // Recover tasks whose queue dispatch failed or whose worker lease expired.
   for (const job of [
     ...(await d.store.list("jobs", ["status", "queued"])),

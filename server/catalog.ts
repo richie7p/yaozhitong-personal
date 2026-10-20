@@ -6,7 +6,169 @@ export const normalize = (s: string) =>
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[\s「」"“”]/g, "");
+// Deliberately limited identity support: unit aliases, never dose conversion.
+const singleMilligrams = (text: string) => {
+  const match = normalize(text).match(/^(\d+(?:\.\d+)?)(?:mg|毫克)$/);
+  return match && Number(match[1]) > 0 ? Number(match[1]) : null;
+};
+function titleQuantities(text: string) {
+  const title = text.normalize("NFKC").toLowerCase();
+  const quantities = [
+    ...title.matchAll(
+      /(?<![\dA-Za-z.])(\d+(?:\.\d+)?)\s*(毫克|微克|公克|國際單位|毫升|mcg|mg|gm|ml|iu|g|μg|克|單位|%)(?![A-Za-z])/gu,
+    ),
+  ];
+  return { title, quantities };
+}
+function withoutSingleStrength(text: string, milligrams: number) {
+  const { title, quantities } = titleQuantities(text);
+  if (/[/%]/.test(title) || quantities.length > 1) return null;
+  if (!quantities.length) return normalize(title);
+  const quantity = quantities[0];
+  if (singleMilligrams(quantity[0]) !== milligrams) return null;
+  return normalize(
+    title.slice(0, quantity.index) +
+      title.slice(quantity.index! + quantity[0].length),
+  );
+}
+function strengthIdentity(
+  d: Drug,
+  query: string,
+  strength: string,
+  form: string,
+) {
+  const supplied = singleMilligrams(strength);
+  if (supplied === null)
+    return { conflict: false, equivalent: false, splitNameMatch: false };
+  const metadata = singleMilligrams(d.strength);
+  const titles = [d.nameZh, d.nameEn].map(titleQuantities);
+  const known = [
+    metadata,
+    ...titles
+      .filter((t) => t.quantities.length === 1)
+      .map((t) => singleMilligrams(t.quantities[0][0])),
+  ].filter((value): value is number => value !== null);
+  const queryQuantities = titleQuantities(query).quantities;
+  const queryStrength =
+    queryQuantities.length === 1
+      ? singleMilligrams(queryQuantities[0][0])
+      : null;
+  if (
+    known.some((value) => value !== supplied) ||
+    (queryStrength !== null && queryStrength !== supplied)
+  )
+    return { conflict: true, equivalent: false, splitNameMatch: false };
+  const equivalent = known.length > 0;
+  // Additional matching must not simplify a combination, concentration, unknown
+  // strength notation, ingredient qualifier, dosage form, or numbered brand.
+  if (
+    !equivalent ||
+    d.ingredients.length > 1 ||
+    (d.strength.trim() && metadata === null) ||
+    titles.some((t) => t.quantities.length > 1 || /[/%]/.test(t.title)) ||
+    (form && !normalize(d.form).includes(normalize(form)))
+  )
+    return { conflict: false, equivalent, splitNameMatch: false };
+  const strippedQuery = withoutSingleStrength(query, supplied);
+  const splitNameMatch =
+    !!strippedQuery &&
+    [d.nameZh, d.nameEn].some((title) => {
+      const strippedTitle = withoutSingleStrength(title, supplied);
+      return strippedTitle !== null && strippedTitle === strippedQuery;
+    });
+  return { conflict: false, equivalent, splitNameMatch };
+}
+
+function bilingualNameMatch(
+  d: Drug,
+  query: string,
+  strength: string,
+  form: string,
+) {
+  if (
+    !d.nameZh ||
+    !d.nameEn ||
+    d.ingredients.length > 1 ||
+    (form && !normalize(d.form).includes(normalize(form))) ||
+    [d.nameZh, d.nameEn, d.strength].some((text) => /[/%]/.test(text))
+  )
+    return false;
+  // A per-tablet strength may still identify a candidate for manual checking,
+  // but it is never made equivalent to plain mg or stripped from the query.
+  const perTablet = strength
+    .normalize("NFKC")
+    .match(/^(\d+(?:\.\d+)?)\s*mg\s*\/\s*(?:tab|tablet|tablets|錠)$/i);
+  if (/[/%]/.test(strength) && !perTablet) return false;
+  const knownMilligrams = [
+    singleMilligrams(d.strength),
+    ...[d.nameZh, d.nameEn].flatMap((text) =>
+      titleQuantities(text).quantities.map((quantity) =>
+        singleMilligrams(quantity[0]),
+      ),
+    ),
+  ].filter((value): value is number => value !== null);
+  const queryMilligrams = [
+    ...(perTablet ? [Number(perTablet[1])] : []),
+    ...titleQuantities(query).quantities.map((quantity) =>
+      singleMilligrams(quantity[0]),
+    ),
+  ].filter((value): value is number => value !== null);
+  if (
+    queryMilligrams.some((value) =>
+      knownMilligrams.some((known) => known !== value),
+    )
+  )
+    return false;
+
+  const matchesPart = (title: string, part: string, english: boolean) => {
+    const candidate = normalize(title),
+      prefix = normalize(part);
+    if (!candidate.startsWith(prefix)) return false;
+    const remainder = candidate.slice(prefix.length);
+    if (!remainder) return true;
+    // Only a complete brand prefix followed by a known dosage form and optional
+    // single strength is supported. Never discard ingredient/brand qualifiers.
+    const dosageForm = english
+      ? "(?:film-coatedtablets?|tablets?|capsules?|syrup|cream|drops?|solution)"
+      : "(?:腸溶膜衣錠|膜衣錠|腸溶錠|緩釋錠|錠劑?|膠囊劑?|糖漿劑?|乳膏劑?|滴劑|口服液劑?)";
+    return new RegExp(`^${dosageForm}(?:\\d+(?:\\.\\d+)?(?:mg|毫克))?$`).test(
+      remainder,
+    );
+  };
+  const text = query
+    .normalize("NFKC")
+    .replace(/[「」"“”]/g, "")
+    .trim();
+  const boundaries = [
+    ...text.matchAll(
+      /\s+|(?<=[A-Za-z0-9])(?=\p{Script=Han})|(?<=\p{Script=Han})(?=[A-Za-z])/gu,
+    ),
+  ];
+  return boundaries.some((boundary) => {
+    const parts = [
+      text.slice(0, boundary.index).trim(),
+      text.slice(boundary.index! + boundary[0].length).trim(),
+    ];
+    for (const [english, chinese] of [parts, [...parts].reverse()]) {
+      if (
+        !/^[A-Za-z][A-Za-z0-9\s.,'()/-]*$/.test(english) ||
+        (english.match(/[A-Za-z]/g)?.length || 0) < 3 ||
+        (chinese.match(/\p{Script=Han}/gu)?.length || 0) < 2
+      )
+        continue;
+      if (
+        matchesPart(d.nameEn, english, true) &&
+        matchesPart(d.nameZh, chinese, false)
+      )
+        return true;
+    }
+    return false;
+  });
+}
+
 export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
+  const identity = strengthIdentity(d, q, strength, form);
+  if (identity.conflict) return 0;
   const n = normalize(q),
     zh = normalize(d.nameZh),
     en = normalize(d.nameEn);
@@ -18,9 +180,15 @@ export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
         : zh.includes(n) || en.includes(n)
           ? 35
           : 0;
+  if (identity.splitNameMatch) s = Math.max(s, 85);
+  if (s === 0 && bilingualNameMatch(d, q, strength, form)) s = 85;
   if (d.licenseNo === q) s = 150;
   if (s === 0) return 0;
-  if (strength) s += normalize(d.strength) === normalize(strength) ? 50 : -80;
+  if (strength)
+    s +=
+      normalize(d.strength) === normalize(strength) || identity.equivalent
+        ? 50
+        : -80;
   if (form) s += normalize(d.form).includes(normalize(form)) ? 30 : -80;
   if (d.revoked) s -= 20;
   return s;

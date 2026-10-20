@@ -1522,3 +1522,91 @@ details summary {
     transition: none !important;
   }
 }
+.education-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0;
+}
+.education-card {
+  background: #f5f8f1;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 0;
+}
+.education-card h3 {
+  margin: 0 0 14px;
+}
+.education-card p,
+.claim p,
+.quiz p,
+.quiz .choice,
+.quiz legend {
+  font-size: calc(16px * var(--font-scale, 1));
+  line-height: 1.7;
+}
+.education-card small {
+  display: block;
+  color: #596653;
+  line-height: 1.6;
+}
+.education-card > div + div {
+  margin-top: 16px;
+}
+.education-card summary {
+  margin: 12px 0;
+}
+.profile-reference {
+  color: var(--green);
+  padding: 9px 12px;
+  border-left: 3px solid var(--green);
+  background: #ecf3e3;
+}
+.evidence,
+.learning-record,
+.quiz fieldset {
+  min-width: 0;
+}
+.evidence {
+  overflow-wrap: anywhere;
+}
+.quiz fieldset {
+  margin: 20px 0;
+}
+.quiz .choice {
+  min-height: 44px;
+}
+.quiz-feedback {
+  margin: 18px 0;
+}
+.quiz-feedback h4 {
+  margin: 18px 0 10px;
+}
+.quiz-progress {
+  color: var(--green);
+}
+.quiz-actions {
+  margin-top: 18px;
+}
+.learning-toolbar {
+  margin-bottom: 22px;
+}
+.learning-record .row.spread {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.learning-record h2 {
+  max-width: 100%;
+}
+.job-notice {
+  margin: 16px 0;
+}
+.job-notice .busy {
+  margin-bottom: 8px;
+}
+@media (max-width: 1050px) {
+  .education-summary {
+    grid-template-columns: 1fr;
+  }
+}

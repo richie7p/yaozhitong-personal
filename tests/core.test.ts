@@ -7,6 +7,7 @@ import {
   grounded,
   RecognitionSchema,
   selectChunks,
+  GROUNDING_VERSION,
   type Llm,
 } from "../server/ai";
 import { scoreDrug } from "../server/catalog";
@@ -594,6 +595,7 @@ describe("revision and concurrent operation regressions", () => {
       ownerId: "a",
       medicationRevisions: [{ id: m.id, revision: m.revision }],
       profileVersion: 0,
+      groundingVersion: GROUNDING_VERSION,
       result: { sourceVersions: { [drug.licenseNo]: "v1" }, quiz: [] },
     };
     await store.set("leaflets", "l", { version: "v2" });

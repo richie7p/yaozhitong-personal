@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "overrides": {
-    "uuid@<11.1.1": "^11.1.1"
+    "uuid@<11.1.1": "^11.1.1",
+    "@grpc/grpc-js": "^1.14.6"
   },
   "type": "module",
   "engines": {
@@ -11,7 +12,7 @@
   },
   "scripts": {
     "dev": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:api": "tsx watch --env-file-if-exists=.env server/index.ts",
+    "dev:api": "node --watch --import tsx --env-file-if-exists=.env server/index.ts",
     "dev:web": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build && esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server/index.mjs",
     "start": "node --env-file-if-exists=.env dist/server/index.mjs",
@@ -20,9 +21,16 @@
     "test:e2e": "playwright test",
     "check:local": "npm test && npm run test:e2e && npm run check:lifecycle",
     "check:lifecycle": "tsx tools/check-local-lifecycle.ts",
+    "check:seminar": "tsx --env-file-if-exists=.env tools/check-seminar.ts",
+    "prepare:seminar:flow": "tsx --env-file-if-exists=.env tools/check-seminar-flow.ts",
+    "check:seminar:flow": "tsx --env-file-if-exists=.env tools/check-seminar-flow.ts --run-real-ai",
+    "check:seminar:recovery": "tsx tools/check-seminar-recovery.ts",
+    "check:openai:ready": "tsx --env-file-if-exists=.env tools/check-openai-ready.ts",
     "check:local:ai": "tsx --env-file-if-exists=.env tools/check-local-ai.ts",
     "check:vision": "tsx --env-file-if-exists=.env tools/check-local-vision.ts",
     "prepare:local:leaflets": "tsx --env-file-if-exists=.env tools/prepare-local-leaflets.ts",
+    "prepare:local:demo": "tsx --env-file-if-exists=.env tools/prepare-local-demo.ts",
+    "check:learning:ai": "tsx --env-file-if-exists=.env tools/check-local-learning-ai.ts",
     "import:catalog": "tsx --env-file-if-exists=.env tools/import-catalog.ts",
     "import:leaflet": "tsx --env-file-if-exists=.env tools/import-leaflet.ts",
     "admin": "tsx --env-file-if-exists=.env tools/admin.ts",

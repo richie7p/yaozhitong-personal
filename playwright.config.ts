@@ -9,6 +9,8 @@ export default defineConfig({
     command: "npm run build && tsx tests/support/e2e-server.ts",
     env: {
       APP_MODE: "local",
+      AI_PROVIDER: "nvidia",
+      OPENAI_API_KEY: "",
       PORT: "5190",
       LOCAL_DATA_PATH: ".local/e2e-run-" + Date.now(),
       NVIDIA_API_KEY: "",

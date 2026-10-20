@@ -1,5 +1,6 @@
 import { createHash, randomUUID, randomBytes } from "node:crypto";
 import { DateTime } from "luxon";
+import { z } from "zod";
 import { getAuth } from "firebase-admin/auth";
 import {
   ProfileSchema,
@@ -14,10 +15,20 @@ import {
   type JobKind,
   type Leaflet,
   type GroundedResult,
+  type LearningRecord,
 } from "../shared/schema.js";
-import { config, fail, AppError } from "./config.js";
+import { learningProgress, validAnswers } from "../shared/learning.js";
+import { doseLabel } from "../shared/medication.js";
+import {
+  aiConnection,
+  aiRoutingIdentity,
+  config,
+  fail,
+  AppError,
+} from "./config.js";
 import { firebaseApp, type Store, type Doc } from "./store.js";
 import { Blobs } from "./blobs.js";
+import { localWorkerBootTime } from "./local-runner.js";
 import { Catalog } from "./catalog.js";
 import {
   grounded,
@@ -163,6 +174,74 @@ export class Domain {
     await this.invalidateMedication(uid, key);
     return med;
   }
+  async saveRecognizedMedication(
+    uid: string,
+    jobId: string,
+    index: number,
+    data: unknown,
+  ) {
+    const m = MedicationSchema.parse(data);
+    if (m.licenseNo && !(await this.catalog.get(m.licenseNo)))
+      return fail(
+        "unknown_license",
+        "請從官方藥品索引選擇許可證，或先以未匹配草稿保存。",
+      );
+    return this.store.transaction(async (tx) => {
+      const user = await tx.get<Account>("users", uid);
+      if (!user || user.disabled || user.deleting)
+        return fail("account_disabled", "帳號已停用。", 403);
+      const job = await tx.get<Job>("jobs", jobId);
+      if (!job || job.ownerId !== uid || job.kind !== "recognition")
+        return fail("not_found", "找不到辨識紀錄。", 404);
+      const rows = (job.result as any)?.medications;
+      if (
+        job.status !== "succeeded" ||
+        !Number.isInteger(index) ||
+        index < 0 ||
+        !Array.isArray(rows) ||
+        !rows[index]
+      )
+        return fail("invalid_recognition", "這筆辨識尚未完成或已無法核對。");
+      const key = hash(uid + "|recognition-medication|" + jobId + "|" + index);
+      const old = await tx.get<Medication>("medications", key);
+      // A lost response or a second tab must not duplicate or overwrite a saved row.
+      if (old) {
+        if (old.archived)
+          return fail(
+            "already_saved",
+            "這筆辨識曾儲存後已移除，請先到我的藥品確認；需要新增時可重新建檔。",
+            409,
+          );
+        if (JSON.stringify(MedicationSchema.parse(old)) !== JSON.stringify(m))
+          return fail(
+            "recognition_saved_conflict",
+            "這筆辨識已儲存，與目前編輯內容不同。請到我的藥品編輯已儲存的資料。",
+            409,
+          );
+        return old;
+      }
+      if (job.savedMedications?.[String(index)])
+        return fail("already_saved", "這筆辨識已儲存，請到我的藥品查看。", 409);
+      const med: Medication = {
+        ...m,
+        id: key,
+        ownerId: uid,
+        revision: 1,
+        archived: false,
+        createdAt: now(),
+        updatedAt: now(),
+      };
+      tx.set("medications", key, med);
+      tx.set("jobs", jobId, {
+        ...job,
+        savedMedications: {
+          ...job.savedMedications,
+          [String(index)]: { id: key, name: m.name },
+        },
+      });
+      return med;
+    });
+  }
   async invalidateMedication(uid: string, id: string) {
     for (const s of await this.store.list<Schedule>("schedules", [
       "ownerId",
@@ -251,6 +330,7 @@ export class Domain {
             name: med.name,
             doseAmount: med.doseAmount,
             doseUnit: med.doseUnit,
+            doseText: med.doseText || "",
             dueAt,
             time,
             log: logs.find((l) => l.id === id) || null,
@@ -446,11 +526,21 @@ export class Domain {
     return {
       displayName: owner.displayName,
       medications: (await this.medications(ownerId)).map(
-        ({ id, name, doseAmount, doseUnit, frequencyRaw, confirmed, prn }) => ({
+        ({
           id,
           name,
           doseAmount,
           doseUnit,
+          doseText,
+          frequencyRaw,
+          confirmed,
+          prn,
+        }) => ({
+          id,
+          name,
+          doseAmount,
+          doseUnit,
+          doseText: doseText || "",
           frequencyRaw,
           confirmed,
           prn,
@@ -495,10 +585,10 @@ export class Domain {
     const u = await this.active(uid);
     if (!u.eligible)
       return fail("not_eligible", "此帳號尚未取得測試資格。", 403);
-    if (!config.nvidiaKey && this.llmFactory().constructor === Nvidia)
+    if (!aiConnection().key && this.llmFactory().constructor === Nvidia)
       return fail(
         "ai_not_configured",
-        "尚未設定 NVIDIA 金鑰，可先手動建檔。",
+        `尚未設定 ${aiConnection().label} 金鑰，可先手動建檔。`,
         503,
       );
     const id = hash(uid + "|" + kind + "|" + key);
@@ -576,13 +666,17 @@ export class Domain {
     return job;
   }
   async processJob(id: string) {
+    let exhaustedImagePath: string | undefined;
     const claimed = await this.store.transaction(async (tx) => {
       const j = await tx.get<Job>("jobs", id);
       if (!j || j.status === "succeeded" || j.status === "failed") return null;
       if (j.status === "running" && j.leaseUntil > Date.now()) return null;
       if (j.attempts >= 3 && j.kind !== "delete-account") {
+        if (j.kind === "recognition" && j.input.imagePath)
+          exhaustedImagePath = String(j.input.imagePath);
         tx.set("jobs", id, {
           ...j,
+          input: j.kind === "recognition" ? {} : j.input,
           status: "failed",
           leaseUntil: 0,
           error: {
@@ -598,11 +692,15 @@ export class Domain {
         status: "running" as const,
         leaseUntil: Date.now() + 540000,
         attempts: j.attempts + 1,
+        ...(config.mode === "local"
+          ? { localWorkerPid: process.pid, localWorkerBootTime }
+          : {}),
         updatedAt: now(),
       };
       tx.set("jobs", id, n);
       return n;
     });
+    if (exhaustedImagePath) await this.blobs.delete(exhaustedImagePath);
     if (!claimed) return;
     const j = claimed;
     const startedAt = Date.now();
@@ -683,12 +781,7 @@ export class Domain {
                 ].filter((s): s is string => !!s),
               ),
             ],
-            usage: [
-              m.doseAmount,
-              m.doseUnit,
-              m.frequencyRaw,
-              m.instructions,
-            ].join(" "),
+            usage: [doseLabel(m), m.frequencyRaw, m.instructions].join(" "),
           })),
           profile: profile
             ? {
@@ -710,7 +803,10 @@ export class Domain {
             medications: meds.map((m) => [m.id, m.revision]),
             identities: context.medications.map((m) => m.identityTerms),
             versions: leaflets.map((l) => [l?.sha256, l?.version]),
+            provider: config.aiProvider,
+            endpoint: aiConnection().base,
             model: config.textModel,
+            routing: aiRoutingIdentity(),
             prompt: GROUNDING_VERSION,
           }),
         );
@@ -774,6 +870,7 @@ export class Domain {
                 revision: m.revision,
               })),
               profileVersion: u.profileVersion,
+              groundingVersion: GROUNDING_VERSION,
               result,
               answers: {},
               createdAt: now(),
@@ -825,6 +922,9 @@ export class Domain {
           leaseUntil: 0,
           updatedAt: now(),
           tokens: llm instanceof Nvidia ? llm.tokens : 0,
+          ...(llm instanceof Nvidia
+            ? { aiRequests: JSON.parse(JSON.stringify(llm.requests)) }
+            : {}),
           latencyMs: Date.now() - startedAt,
         });
       });
@@ -833,6 +933,11 @@ export class Domain {
         e instanceof AppError
           ? { code: e.code, message: e.message }
           : { code: "generation_failed", message: "處理失敗，請稍後重試。" };
+      if (j.kind === "recognition")
+        error.message = error.message.replace(
+          "輸入已保留，請稍後重試。",
+          "請重新上傳藥袋再試。",
+        );
       await this.store.transaction(async (tx) => {
         const currentUser = await tx.get<Account>("users", j.ownerId);
         const currentJob = await tx.get<Job>("jobs", id);
@@ -852,6 +957,9 @@ export class Domain {
           leaseUntil: 0,
           updatedAt: now(),
           tokens: llm instanceof Nvidia ? llm.tokens : 0,
+          ...(llm instanceof Nvidia
+            ? { aiRequests: JSON.parse(JSON.stringify(llm.requests)) }
+            : {}),
           latencyMs: Date.now() - startedAt,
         });
       });
@@ -908,23 +1016,66 @@ export class Domain {
     }
     await this.audit(actor, "account.update", id);
   }
-  async learningCurrent(uid: string, row: Doc) {
-    const u = await this.active(uid);
+  async learningCurrent(
+    uid: string,
+    row: Doc,
+    reader: Pick<Store, "get"> = this.store,
+  ) {
+    const u = await reader.get<Account>("users", uid);
+    if (!u || u.disabled || u.deleting)
+      return fail("account_disabled", "帳號已停用。", 403);
+    if (row.groundingVersion !== GROUNDING_VERSION) return false;
     if (row.profileVersion !== u.profileVersion) return false;
-    const meds = await this.medications(uid);
-    if (
-      !row.medicationRevisions.every((r: { id: string; revision: number }) =>
-        meds.some((m) => m.id === r.id && m.revision === r.revision),
-      )
-    )
-      return false;
+    if (!Array.isArray(row.medicationRevisions)) return false;
+    for (const r of row.medicationRevisions) {
+      const m = await reader.get<Medication>("medications", r.id);
+      if (!m || m.ownerId !== uid || m.archived || m.revision !== r.revision)
+        return false;
+    }
     for (const [license, version] of Object.entries(
       row.result.sourceVersions || {},
     )) {
-      const current = await this.published(license);
-      if (current?.version !== version) return false;
+      const pointer = await reader.get("published", hash(license));
+      const current = pointer
+        ? await reader.get<Leaflet>("leaflets", pointer.leafletId)
+        : null;
+      if (current?.status !== "published" || current.version !== version)
+        return false;
     }
     return true;
+  }
+  async answerLearning(uid: string, id: string, data: unknown) {
+    const b = z
+      .object({
+        answers: z.record(z.string(), z.number().int().nonnegative()),
+      })
+      .parse(data);
+    return this.store.transaction(async (tx) => {
+      const row = await tx.get<LearningRecord>("learning", id);
+      if (!row || row.ownerId !== uid)
+        return fail("not_found", "找不到學習內容。", 404);
+      if (!(await this.learningCurrent(uid, row, tx)))
+        return fail(
+          "stale_content",
+          "內容規則、仿單、藥品或個人資料已更新，請重新產生測驗。",
+          409,
+        );
+      for (const [questionId, answer] of Object.entries(b.answers)) {
+        const q = row.result.quiz.find((q) => q.id === questionId);
+        if (!q || answer >= q.options.length)
+          return fail(
+            "invalid_answer",
+            "題目或選項不存在，請重新載入學習內容。",
+          );
+      }
+      const answers = {
+        ...validAnswers(row.result.quiz, row.answers),
+        ...b.answers,
+      };
+      const progress = learningProgress(row.result.quiz, answers);
+      tx.set("learning", id, { ...row, answers, passed: progress.passed });
+      return { answers, results: progress.results, progress };
+    });
   }
   async publish(actor: string, id: string) {
     const l = await this.store.get<Leaflet>("leaflets", id);
