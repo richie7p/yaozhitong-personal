@@ -60,6 +60,8 @@ test("daily navigation, More and the separate saved demonstration are reachable"
     await link.click();
     await expect(page).toHaveURL(new RegExp(`/#${route}$`));
     await expect(link).toHaveAttribute("aria-current", "page");
+    if (mobile && route !== "home")
+      await expect(page.locator("#main h1")).toBeFocused();
   }
   for (const route of ["care", "chat"]) {
     if (mobile) {
@@ -82,10 +84,12 @@ test("daily navigation, More and the separate saved demonstration are reachable"
         exact: true,
       }),
     ).toBeVisible();
-    if (mobile)
+    if (mobile) {
+      await expect(page.locator("#main h1")).toBeFocused();
       await expect(
         navigation.getByRole("button", { name: "更多功能", exact: true }),
       ).toHaveAttribute("aria-expanded", "false");
+    }
   }
   if (mobile)
     await navigation
