@@ -36,7 +36,9 @@ function SourceQuotes({
           <blockquote key={i}>
             {x.quote}
             <footer>
-              {chunk?.licenseNo} · 第 {chunk?.page} 頁 · 版本{" "}
+              {chunk?.licenseNo} · {chunk?.sourceFormat === "html"
+                ? `官方網頁 · 區塊 ${chunk.page}`
+                : `第 ${chunk?.page} 頁`} · 版本{" "}
               {chunk?.version.slice(0, 8)}
             </footer>
           </blockquote>
@@ -199,7 +201,7 @@ function UnderstandingQuiz({
   return (
     <section className="card quiz" aria-label="理解確認">
       <div className="row spread">
-        <h3>花一分鐘，確認自己看懂了</h3>
+        <h3>逐題確認你對用藥資訊的理解</h3>
         <span className={"tag " + (progress.passed ? "green" : "amber")}>
           {learningStateLabels[progress.status]}
         </span>
@@ -232,6 +234,9 @@ function UnderstandingQuiz({
             <legend>
               第 {index + 1}／{progress.total} 題：{q.q}
             </legend>
+            {q.learningObjective === "warning" && (
+              <p className="muted">警語理解：{q.sourceSection}（抽查一個重點）</p>
+            )}
             {q.options.map((option, i) => (
               <label className="choice" key={i}>
                 <input
@@ -374,11 +379,24 @@ export function Evidence({
       {medications && result.claims.length > 0 && (
         <h3>已核對的說明與注意事項</h3>
       )}
+      {result.safetyCoverage && result.status === "supported" && (
+        <p className="fine" aria-label="警語與測驗範圍">
+          {result.safetyCoverage.status === "no_sections"
+            ? "這份已匯入仿單沒有獨立的警語或注意事項欄目；本次測驗確認藥品用途。"
+            : `已列出 ${result.safetyCoverage.coveredSectionCount} 個警語與注意事項欄目，其中 ${result.safetyCoverage.quizCoveredSectionCount} 個有理解題。題目只抽查各欄重點，請完整閱讀下列提醒。`}
+        </p>
+      )}
       {result.claims.map((c, i) => (
         <article className="claim" key={i}>
           <div className="claim-number">{String(i + 1).padStart(2, "0")}</div>
           <div>
             {c.category === "use" && <span className="tag">仿單一般用法</span>}
+            {c.kind === "source_exact_purpose" &&
+              c.citations.length === 1 &&
+              c.text === c.citations[0].quote.trim() && (
+                <span className="tag">仿單用途原文</span>
+              )}
+            {c.category === "warning" && <span className="tag">警語與注意事項</span>}
             <HealthReferences claim={c} />
             <p>{c.text}</p>
             <CitationDetails citations={c.citations} result={result} />

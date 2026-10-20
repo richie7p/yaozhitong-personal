@@ -30,6 +30,31 @@ const manifest = () => ({
     },
   ],
 });
+
+describe("review-only photograph scope", () => {
+  it("accepts a predeclared synonymous route only when the complete returned words occur in the image transcript", () => {
+    const expected = [{licenseNo: "TEST-ROUTE", fields: {route: "口服"},
+      fieldAlternatives: {route: ["口服", "內服藥，口服"]}}];
+    const row = {name: "Literal bag", route: "內服藥，口服", rawText: "使用方法：內服藥，口服；每次1粒。",
+      candidates: [{licenseNo: "TEST-ROUTE"}]};
+    expect(compareRecognition([row], expected)).toMatchObject({passed: true, strictPassed: false});
+    expect(compareRecognition([{...row, rawText: "使用方法：外用。"}], expected).passed).toBe(false);
+  });
+  it("cannot turn an unconfirmed photo into a full workflow with no drug expectations", () => {
+    const input: any = manifest();
+    input.cases[0].expected = [];
+    expect(expandedManifestSchema.safeParse(input).success).toBe(false);
+  });
+  it("keeps a usage-review photo separate from confirmed official identities", () => {
+    const input: any = manifest();
+    input.cases[0].scope = "usage_review";
+    input.cases[0].reviewNameMustInclude = "ETOFENAMATE";
+    input.cases[0].expected = [];
+    expect(expandedManifestSchema.safeParse(input).success).toBe(true);
+    input.cases[0].expected = manifest().cases[0].expected;
+    expect(expandedManifestSchema.safeParse(input).success).toBe(false);
+  });
+});
 describe("expanded acceptance evidence and denominator", () => {
   it("requires a provenance attestation before calling a file a real camera photo", () => {
     const input = manifest();
@@ -356,5 +381,49 @@ describe("new-source citation validation", () => {
     const altered = result();
     altered.claims[0].sourceMentions = [{ field: "conditions", value: "氣喘" }];
     expect(validateGroundedSource(altered, source).passed).toBe(false);
+  });
+  const completeSafetyCase = () => {
+    const original = structuredClone(source);
+    const body = "孕婦及授乳期婦女使用前請先諮詢醫師。";
+    const field = { sourceSection: "注意事項", quote: "注意事項：" + body, body };
+    original.chunks[0].text += "\n" + field.quote;
+    const actual = result();
+    actual.chunks = structuredClone(original.chunks);
+    actual.quiz[0].learningObjective = "purpose";
+    actual.quiz[0].sourceSection = "適應症";
+    actual.claims.push({ text: field.quote, category: "warning", citations: [{chunkId: "c1", quote: field.quote}] });
+    actual.quiz.push({ id: "safety-1", q: "孕婦及授乳期婦女使用前應如何處理？",
+      options: [body, "孕婦及授乳期婦女使用前不必諮詢醫師。"], answer: 0,
+      explain: "依仿單「注意事項」原文：" + field.quote, explanationKind: "source_quote",
+      citations: [{chunkId: "c1", quote: field.quote}], learningObjective: "warning",
+      sourceSection: "注意事項", coverageSectionId: "safety-1", assessmentScope: "one_key_point" });
+    actual.safetyCoverage = { scope: "recognized_source_sections", assessmentScope: "one_key_point_per_section",
+      status: "complete", sourceSectionCount: 1, coveredSectionCount: 1, quizCoveredSectionCount: 1,
+      sections: [{id: "safety-1", chunkId: "c1", sourceSection: "注意事項", claimIndex: 1, quizIds: ["safety-1"]}] };
+    return { original, actual, required: [field] };
+  };
+  it("checks predeclared safety fields against full displayed text and each field's own question", () => {
+    const { original, actual, required } = completeSafetyCase();
+    expect(validateGroundedSource(actual, original, required).passed).toBe(true);
+  });
+  it("does not accept a complete label when another original safety field was omitted", () => {
+    const { original, actual, required } = completeSafetyCase();
+    const missing = {sourceSection: "過量", quote: "過量：誤服過量應立即就醫。", body: "誤服過量應立即就醫。"};
+    original.chunks[0].text += "\n" + missing.quote;
+    actual.chunks = structuredClone(original.chunks);
+    expect(validateGroundedSource(actual, original, [...required, missing]).passed).toBe(false);
+  });
+  it("rejects truncated displayed conditions despite an intact citation and reported coverage", () => {
+    const { original, actual, required } = completeSafetyCase();
+    actual.claims[1].text = "使用前請先諮詢醫師。";
+    expect(validateGroundedSource(actual, original, required).passed).toBe(false);
+  });
+  it("does not count a purpose-only or orphaned question as a warning understanding check", () => {
+    const { original, actual, required } = completeSafetyCase();
+    actual.quiz[1].learningObjective = "purpose";
+    expect(validateGroundedSource(actual, original, required).passed).toBe(false);
+    actual.quiz[1].learningObjective = "warning";
+    actual.quiz[1].coverageSectionId = "different-field";
+    expect(validateGroundedSource(actual, original, required).passed).toBe(false);
   });
 });

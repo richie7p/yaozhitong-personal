@@ -109,8 +109,23 @@ describe("complete warning citation boundaries", () => {
       },
     };
     const result = await grounded(llm, "合成來源驗收", [chunk], {}, "bundle");
-    expect(result.claims).toEqual([]);
-    expect(result.quiz).toEqual([]);
+    expect(
+      result.claims.some(
+        (claim) => claim.text === "如果出現這些症狀，請依合成來源處理。",
+      ),
+    ).toBe(false);
+    expect(
+      result.claims.every((claim) => claim.kind?.startsWith("source_exact_")),
+    ).toBe(true);
+    expect(
+      result.claims.find((claim) => claim.category === "warning")?.citations,
+    ).toEqual([
+      {
+        chunkId: chunk.id,
+        quote: passages.find((p) => p.sourceSection === "警語")!.quote,
+      },
+    ]);
+    expect(result.quiz.every((q) => q.id.startsWith("purpose-"))).toBe(true);
     expect(reviewCalled).toBe(false);
     expect(result.rejectedCount).toBe(1);
   });

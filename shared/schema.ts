@@ -98,6 +98,7 @@ export interface Drug {
   revoked: boolean;
 }
 export interface Chunk {
+  sourceFormat?: "pdf" | "html";
   id: string;
   licenseNo: string;
   version: string;
@@ -106,6 +107,7 @@ export interface Chunk {
   text: string;
 }
 export interface Leaflet {
+  sourceMediaType?: "application/pdf" | "text/html";
   id: string;
   licenseNo: string;
   version: string;
@@ -153,7 +155,27 @@ export interface GroundedResult {
     explain: string;
     explanationKind?: "source_quote";
     citations: Citation[];
+    learningObjective?: "purpose" | "warning";
+    sourceSection?: string;
+    coverageSectionId?: string;
+    assessmentScope?: "one_key_point";
   }[];
+  /** Covers recognized source fields, not every clinical scenario or list item. */
+  safetyCoverage?: {
+    scope: "recognized_source_sections";
+    assessmentScope: "one_key_point_per_section";
+    status: "complete" | "partial" | "no_sections";
+    sourceSectionCount: number;
+    coveredSectionCount: number;
+    quizCoveredSectionCount: number;
+    sections: {
+      id: string;
+      chunkId: string;
+      sourceSection: string;
+      claimIndex: number;
+      quizIds: string[];
+    }[];
+  };
   followups: { question: string; claimIndex: number }[];
   rejectedCount: number;
   sourceVersions: Record<string, string>;

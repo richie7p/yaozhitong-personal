@@ -1,7 +1,7 @@
 param(
   [switch]$NoBrowser,
   [int]$Port = 8085,
-  [string]$DataDirectory = '.local/seminar-demo-expanded-v11-20261020'
+  [string]$DataDirectory = '.local/seminar-demo-expanded-v13-20261020'
 )
 $ErrorActionPreference = 'Stop'
 $repoDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))

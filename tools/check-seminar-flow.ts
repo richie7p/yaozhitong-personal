@@ -14,6 +14,7 @@ import { chromium, expect, type Browser, type Page } from "@playwright/test";
 import { aiConnection, aiModelRoute, config } from "../server/config.js";
 import { GROUNDING_VERSION } from "../server/ai.js";
 import { hash } from "../server/domain.js";
+import { nextReviewedQuestion } from "./quiz-navigation.js";
 import type {
   Drug,
   GroundedResult,
@@ -269,7 +270,6 @@ function assertSupported(result: GroundedResult, source: Leaflet) {
     true,
   );
   expect(result.quiz.length).toBeGreaterThan(0);
-  expect(result.quiz.length).toBeLessThanOrEqual(2);
   expect(result.sourceVersions[source.licenseNo]).toBe(source.version);
   for (const chunk of result.chunks) {
     const canonical = source.chunks.find(
@@ -337,7 +337,7 @@ function assertSupported(result: GroundedResult, source: Leaflet) {
       question.explanationKind,
       "Published explanations must be identified as original source text",
     ).toBe("source_quote");
-    const heading = /^依仿單「(?:適應症|警語|注意事項|副作用)」原文：/;
+    const heading = /^依仿單「(?:適應症|用途\(適應症\)|效能|警語|警語及注意事項|注意事項|使用上注意事項|副作用|副作用\/不良反應|附記|禁忌|禁忌症|交互作用|過量)」原文：/;
     expect(question.explain).toMatch(heading);
     const lines = question.explain
       .replace(heading, "")
@@ -985,14 +985,7 @@ try {
                 if (qIndex < row.result.quiz.length - 1) {
                   // On the second viewport later questions may already be correct.
                   // Reopen review if correcting this question completed the record.
-                  const completed = quiz.getByRole("button", {
-                    name: "重新複習",
-                    exact: true,
-                  });
-                  if (await completed.count()) await completed.click();
-                  await quiz
-                    .getByRole("button", { name: "下一題", exact: true })
-                    .click();
+                  await nextReviewedQuestion(quiz, qIndex);
                 }
               }
               // A reviewed completed quiz stays in review mode until explicitly finished.

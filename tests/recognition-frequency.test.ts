@@ -45,7 +45,9 @@ describe("literal frequency field extraction", () => {
       const result = await transcribe(provided, raw);
       expect(result.medications[0].frequencyRaw).toBe(expected);
       expect(raw).toContain(expected);
-      expect(result.medications[0].confidence).toBe("high");
+      expect(result.medications[0].confidence).toBe(
+        expected === "PRN" ? "high" : "low",
+      );
     },
   );
 
@@ -63,10 +65,10 @@ describe("literal frequency field extraction", () => {
     expect(result.medications[0].confidence).toBe("low");
   });
 
-  it("does not fill a missing model field from source text", async () => {
+  it("recovers a unique literal PRN field while leaving other missing usage for review", async () => {
     expect(
       (await transcribe(null, "頻次：PRN")).medications[0].frequencyRaw,
-    ).toBeNull();
+    ).toBe("PRN");
   });
 
   it("preserves a verbatim source field without rewriting it", async () => {

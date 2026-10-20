@@ -58,7 +58,8 @@ export const expandedManifestSchema = z
               })
               .strict(),
             repeat: z.number().int().min(1).max(3).default(1),
-            scope: z.enum(["full_flow", "recognition"]).default("full_flow"),
+            scope: z.enum(["full_flow", "recognition", "usage_review"]).default("full_flow"),
+            reviewNameMustInclude: z.string().min(1).optional(),
             expected: z
               .array(
                 z
@@ -77,10 +78,24 @@ export const expandedManifestSchema = z
                           .min(1)
                           .max(4)
                           .optional(),
+                        route: z
+                          .array(z.string().min(1))
+                          .min(1)
+                          .max(4)
+                          .optional(),
                       })
                       .strict()
                       .optional(),
                     rawTextMustInclude: z.array(z.string().min(1)).optional(),
+                    /** Predeclared, independently checked complete safety fields. */
+                    requiredSafety: z
+                      .array(z.object({
+                        sourceSection: z.string().min(1),
+                        quote: z.string().min(1),
+                        body: z.string().min(1),
+                      }).strict())
+                      .max(40)
+                      .optional(),
                     identity: z
                       .object({
                         policy: z.enum([
@@ -134,7 +149,6 @@ export const expandedManifestSchema = z
                   })
                   .strict(),
               )
-              .min(1)
               .max(8),
           })
           .strict(),
@@ -158,6 +172,11 @@ export const expandedManifestSchema = z
         message: "A fixed batch may contain at most 15 attempts.",
       });
     for (const [index, entry] of manifest.cases.entries()) {
+      if (entry.scope === "usage_review"
+        ? entry.expected.length !== 0 || entry.skipRecognition || !entry.reviewNameMustInclude
+        : entry.expected.length === 0)
+        ctx.addIssue({ code: "custom", path: ["cases", index, "expected"],
+          message: "Usage-review photos declare no confirmed identity and require a visible name; normal cases require drug expectations." });
       if (!entry.skipRecognition && !entry.image && !entry.notAvailableReason)
         ctx.addIssue({
           code: "custom",
@@ -207,7 +226,7 @@ export const expandedManifestSchema = z
           reference.fieldAlternatives || {},
         )) {
           const primary =
-            reference.fields[field as "frequencyRaw" | "strength"];
+            reference.fields[field as "frequencyRaw" | "strength" | "route"];
           if (typeof primary !== "string" || !values.includes(primary))
             ctx.addIssue({
               code: "custom",
@@ -292,7 +311,7 @@ export function compareRecognition(
         const found = actual?.[key] ?? null;
         const strictMatch = actual !== undefined && value === found;
         const alternatives =
-          reference.fieldAlternatives?.[key as "frequencyRaw" | "strength"];
+          reference.fieldAlternatives?.[key as "frequencyRaw" | "strength" | "route"];
         const literalInRaw =
           typeof found === "string" &&
           compact(String(actual?.rawText || "")).includes(compact(found));
@@ -364,6 +383,7 @@ export function compareRecognition(
 export function validateGroundedSource(
   result: GroundedResult,
   source: Leaflet,
+  requiredSafety?: { sourceSection: string; quote: string; body: string }[],
 ) {
   const compact = (value: string) => value.normalize("NFKC").replace(/\s/g, "");
   const checks: { check: string; passed: boolean }[] = [];
@@ -374,8 +394,7 @@ export function validateGroundedSource(
     result.status === "supported" &&
       result.claims.length > 0 &&
       result.claims.some((claim) => claim.category === "purpose") &&
-      result.quiz.length > 0 &&
-      result.quiz.length <= 2,
+      result.quiz.length > 0,
   );
   add(
     "canonical-source-version",
@@ -435,7 +454,7 @@ export function validateGroundedSource(
         question.answer < question.options.length,
     );
     const heading =
-      /^依仿單「(?:適應症|效能|警語|注意事項|使用上注意事項|副作用|附記)」原文：/;
+      /^依仿單「(?:適應症|用途\(適應症\)|效能|警語|警語及注意事項|注意事項|使用上注意事項|副作用|副作用\/不良反應|附記|禁忌|禁忌症|交互作用|過量|藥物過量)」原文：/;
     const lines = question.explain
       .replace(heading, "")
       .split(/\r?\n/)
@@ -452,6 +471,43 @@ export function validateGroundedSource(
           ),
         ),
     );
+  }
+  if (requiredSafety) {
+    const coverage = result.safetyCoverage;
+    add("purpose-understanding-question", result.quiz.some(question =>
+      question.learningObjective === "purpose" && result.claims.some(claim =>
+        claim.category === "purpose" && claim.citations.length === question.citations.length &&
+        claim.citations.every(citation => question.citations.some(support =>
+          support.chunkId === citation.chunkId && compact(support.quote) === compact(citation.quote))))));
+    add("all-canonical-source-chunks-retained", result.chunks.length === source.chunks.length &&
+      source.chunks.every(chunk => result.chunks.some(actual => actual.id === chunk.id)));
+    add("declared-safety-counts", !!coverage &&
+      coverage.scope === "recognized_source_sections" &&
+      coverage.assessmentScope === "one_key_point_per_section" &&
+      coverage.sourceSectionCount === requiredSafety.length &&
+      coverage.coveredSectionCount === requiredSafety.length &&
+      coverage.quizCoveredSectionCount === requiredSafety.length &&
+      coverage.sections.length === requiredSafety.length &&
+      coverage.status === (requiredSafety.length ? "complete" : "no_sections"));
+    for (const [index, field] of requiredSafety.entries()) {
+      const original = source.chunks.find(chunk => compact(chunk.text).includes(compact(field.quote)));
+      const exactCitation = (item: GroundedResult["claims"][number] | GroundedResult["quiz"][number]) =>
+        item.citations.some(c => c.chunkId === original?.id && compact(c.quote) === compact(field.quote));
+      const section = coverage?.sections.find(section => {
+        const claim = result.claims[section.claimIndex];
+        return section.sourceSection === field.sourceSection && section.chunkId === original?.id &&
+          !!claim && claim.category === "warning" && exactCitation(claim) &&
+          compact(claim.text).includes(compact(field.body));
+      });
+      add("complete-safety-field:" + index + ":" + field.sourceSection, !!original && !!section);
+      const questions = result.quiz.filter(question =>
+        exactCitation(question) && question.learningObjective === "warning" &&
+        question.sourceSection === field.sourceSection && question.coverageSectionId === section?.id &&
+        question.assessmentScope === "one_key_point" && !!section?.quizIds.includes(question.id));
+      add("specific-safety-quiz:" + index + ":" + field.sourceSection,
+        !!section && questions.length > 0 && questions.every(question =>
+          question.options.every(option => option.length <= 400)));
+    }
   }
   return {
     passed: checks.every((check) => check.passed),

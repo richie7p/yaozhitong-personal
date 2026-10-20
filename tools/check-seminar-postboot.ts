@@ -3,9 +3,10 @@ import { readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { chromium, expect } from "@playwright/test";
 import { resolve } from "node:path";
+import { nextReviewedQuestion } from "./quiz-navigation.js";
 
 const directory = resolve(
-  process.argv[2] || ".local/seminar-demo-expanded-v11-20261020",
+  process.argv[2] || ".local/seminar-demo-expanded-v13-20261020",
 );
 const port = Number(process.argv[3] || 8085);
 if (!Number.isInteger(port) || port < 1024 || port > 65535)
@@ -206,14 +207,7 @@ try {
           .click();
         await expect(quiz.getByText(/^答對了。/)).toBeVisible();
         if (index < row.result.quiz.length - 1) {
-          const review = quiz.getByRole("button", {
-            name: "重新複習",
-            exact: true,
-          });
-          if (await review.count()) await review.click();
-          await quiz
-            .getByRole("button", { name: "下一題", exact: true })
-            .click();
+          await nextReviewedQuestion(quiz, index);
         }
       }
       const finish = quiz.getByRole("button", {

@@ -9,6 +9,7 @@ import { chromium, expect, type Browser, type Page } from "@playwright/test";
 import { aiConnection, aiModelRoute, config } from "../server/config.js";
 import { GROUNDING_VERSION } from "../server/ai.js";
 import { hash } from "../server/domain.js";
+import { nextReviewedQuestion } from "./quiz-navigation.js";
 import type {
   Drug,
   GroundedResult,
@@ -78,6 +79,7 @@ report.softwareEvidence = Object.fromEntries(
       "server/config.ts",
       "tools/check-seminar-expanded.ts",
       "tools/seminar-expanded-support.ts",
+      "tools/quiz-navigation.ts",
       "tools/trace-seminar-expanded.mjs",
     ].map(async (file) => [
       file,
@@ -382,14 +384,31 @@ async function runAttempt(
           async () => {
             const result = recognition!.result as any;
             expect(result.status).toBe("succeeded");
-            entry.recognitionComparison = compareRecognition(
-              result.medications,
-              testCase.expected,
-            );
-            expect(
-              entry.recognitionComparison.passed,
-              "Every manually supplied field and official identity must match.",
-            ).toBe(true);
+            if (testCase.scope === "usage_review") {
+              const compact = (s: string) => s.normalize("NFKC").replace(/\s/gu, "").toUpperCase();
+              const row = result.medications.find((row: any) => row.name?.trim() &&
+                compact(row.name + " " + row.rawText).includes(compact(testCase.reviewNameMustInclude!)));
+              expect(row, "The visible drug name must remain readable.").toBeTruthy();
+              for (const field of ["doseAmount", "doseUnit", "doseText", "frequencyRaw"])
+                expect(row[field], "Conflicting usage must stay unconfirmed: " + field).toBeNull();
+              expect([null, "外用"]).toContain(row.route);
+              expect(row.durationDays === null || (row.durationDays === 1 && /1\s*日份/.test(row.rawText))).toBe(true);
+              expect(row.confidence).toBe("low");
+              expect(result.guidance).toMatch(/核對|確認/);
+              expect((await call<{items: Medication[]}>("/medications")).items).toHaveLength(0);
+              entry.usageReview = { passed: true, confirmedIdentity: false, guidance: result.guidance,
+                doseAndFrequencyLeftBlank: true, route: row.route, durationDays: row.durationDays,
+                conflictDetected: /矛盾|衝突/.test(result.guidance), medicationsCreated: 0 };
+              await expect(page!.getByText(result.guidance, {exact: true})).toBeVisible();
+              await page!.goto(base + "/#add?recognition=" + recognition!.id);
+              await page!.reload();
+              await expect(page!.getByText(result.guidance, {exact: true})).toBeVisible();
+              expect((await call<{items: Medication[]}>("/medications")).items).toHaveLength(0);
+            } else {
+              entry.recognitionComparison = compareRecognition(result.medications, testCase.expected);
+              expect(entry.recognitionComparison.passed,
+                "Every manually supplied field and official identity must match.").toBe(true);
+            }
             for (const width of [1280, 375]) {
               await page!.setViewportSize({
                 width,
@@ -411,7 +430,7 @@ async function runAttempt(
     entry.photographStatus = testCase.skipRecognition
       ? "not_applicable_manual_medication"
       : recognitionMatches
-        ? "passed"
+        ? testCase.scope === "usage_review" ? "review_required_as_expected" : "passed"
         : "failed";
     const confirmed: Medication[] = [];
     if (
@@ -537,6 +556,7 @@ async function runAttempt(
               leaflets.find(
                 (source) => source.licenseNo === medication.licenseNo,
               )!,
+              testCase.expected.find(expected => expected.licenseNo === medication.licenseNo)?.requiredSafety,
             );
             entry.sourceValidation.push({
               licenseNo: medication.licenseNo,
@@ -627,14 +647,7 @@ async function runAttempt(
                   .click();
                 await expect(quiz.getByText(/^答對了。/)).toBeVisible();
                 if (index < row.result.quiz.length - 1) {
-                  const completed = quiz.getByRole("button", {
-                    name: "重新複習",
-                    exact: true,
-                  });
-                  if (await completed.count()) await completed.click();
-                  await quiz
-                    .getByRole("button", { name: "下一題", exact: true })
-                    .click();
+                  await nextReviewedQuestion(quiz, index);
                 }
               }
               const finish = quiz.getByRole("button", {
@@ -850,7 +863,7 @@ try {
               copiedBytes.get(leaflet.storagePath) ||
               (await readFile(fixtureBlob(blobRoot, leaflet.storagePath)));
             if (hash(bytes) !== leaflet.sha256)
-              throw Error("Official source PDF hash changed.");
+              throw Error("Official source bytes hash changed.");
             copiedBytes.set(leaflet.storagePath, bytes);
             const file = fixtureBlob(
               resolve(target, "blobs"),
@@ -971,10 +984,17 @@ try {
       attemptedCameraPhotographRuns: photoAttempts.filter(
         (entry: any) =>
           entry.photographStatus === "passed" ||
-          entry.photographStatus === "failed",
+          entry.photographStatus === "failed" ||
+          entry.photographStatus === "review_required_as_expected",
       ).length,
       actualCameraPhotographPassed: photoAttempts.filter(
+        (entry: any) => entry.photographStatus === "passed" && entry.status === "passed",
+      ).length,
+      literalCameraRecognitionPassed: photoAttempts.filter(
         (entry: any) => entry.photographStatus === "passed",
+      ).length,
+      usageReviewPhotoPassed: photoAttempts.filter(
+        (entry: any) => entry.photographStatus === "review_required_as_expected",
       ).length,
       manualMedicationAttempts: report.attempts.filter(
         (entry: any) => entry.skipRecognition,
@@ -1048,6 +1068,9 @@ try {
         (entry: any) => !!entry.image,
       ).length,
       actualCameraPhotographPassed: photoAttempts.filter(
+        (entry: any) => entry.photographStatus === "passed" && entry.status === "passed",
+      ).length,
+      literalCameraRecognitionPassed: photoAttempts.filter(
         (entry: any) => entry.photographStatus === "passed",
       ).length,
       manualMedicationAttempts: report.attempts.filter(

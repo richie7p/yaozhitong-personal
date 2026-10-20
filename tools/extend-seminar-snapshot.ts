@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { GROUNDING_VERSION } from "../server/ai.js";
 import { Domain } from "../server/domain.js";
 import { MemoryStore } from "../server/store.js";
+import { equivalentSourceLayoutAudit } from "./source-equivalence.js";
 
 const digest = (value: any) =>
   createHash("sha256")
@@ -183,13 +184,33 @@ for (const argument of caseArgs) {
     ),
   });
 }
-for (const key of ["leaflets", "published"]) {
-  db[key] ||= {};
-  for (const [id, value] of Object.entries(fixture[key] || {})) {
-    if (db[key][id] && digest(db[key][id]) !== digest(value))
-      throw Error("Source collision: " + id);
-    db[key][id] = value;
+const equivalentSourceLayouts: ReturnType<
+  typeof equivalentSourceLayoutAudit
+>[] = [];
+db.leaflets ||= {};
+for (const [id, value] of Object.entries<any>(fixture.leaflets || {})) {
+  if (value.id !== id || (db.leaflets[id] && db.leaflets[id].id !== id))
+    throw Error("Source record key differs from its identity: " + id);
+  if (db.leaflets[id]) {
+    if (digest(db.leaflets[id]) !== digest(value)) {
+      try {
+        equivalentSourceLayouts.push(
+          equivalentSourceLayoutAudit(db.leaflets[id], value),
+        );
+      } catch (error) {
+        throw Error("Source collision: " + id, { cause: error });
+      }
+    }
+    // Keep the entire existing record, including old citation ids and review.
+    continue;
   }
+  db.leaflets[id] = value;
+}
+db.published ||= {};
+for (const [id, value] of Object.entries(fixture.published || {})) {
+  if (db.published[id] && digest(db.published[id]) !== digest(value))
+    throw Error("Published source mapping collision: " + id);
+  db.published[id] = value;
 }
 const catalog = fixture.settings?.catalog;
 if (!catalog?.path || catalog.path.includes(".."))
@@ -231,7 +252,7 @@ for (const leaflet of Object.values<any>(db.leaflets || {}))
     digest(await readFile(join(target, "blobs", leaflet.storagePath))) !==
       leaflet.sha256
   )
-    throw Error("A source PDF checksum differs.");
+    throw Error("An official source checksum differs.");
 const expectedCounts = Object.fromEntries(
   ["medications", "learning", "jobs", "generated"].map((key) => [
     key,
@@ -262,8 +283,12 @@ await writeFile(
       expectedCounts,
       originalOutputsPreserved: true,
       acceptanceScope:
-        "Workflow and published-content source support. Known limits in short-form warning coverage remain in the original linked QA reports; this is not complete medical coverage.",
+        "Workflow and published-content source support. Oracle-checked safety fields are shown in full, with at least one key-point question per field; this does not assess every subordinate item or clinical scenario.",
       appendedPassedCases: provenance,
+      equivalentSourceLayouts: [
+        ...(originalPreparation.equivalentSourceLayouts || []),
+        ...equivalentSourceLayouts,
+      ],
       officialSourceFixture: fixturePath,
       note: "All existing and appended model outputs and answers are retained exactly; the combined copy requires a fresh service and UI acceptance.",
     },

@@ -501,7 +501,7 @@ describe("verified personalization and task output", () => {
       ),
     ).rejects.toMatchObject({ code: "verification_failed" });
   });
-  it("limits bundles to two questions and does not verify or return chat quizzes", async () => {
+  it("allows more than two verified bundle questions and does not verify or return chat quizzes", async () => {
     const counts: number[] = [];
     const llm: Llm = {
       json: async (system, input: any) => {
@@ -523,11 +523,11 @@ describe("verified personalization and task output", () => {
       },
     };
     const bundle = await grounded(llm, "合成提醒", [chunk], {}, "bundle");
-    expect(bundle.quiz).toHaveLength(2);
+    expect(bundle.quiz).toHaveLength(3);
     const chat = await grounded(llm, "合成提醒", [chunk], {}, "chat");
     expect(chat.quiz).toEqual([]);
     expect(chat.followups).toEqual([]);
-    expect(counts).toEqual([3, 1]);
+    expect(counts).toEqual([4, 1]);
   });
   it("returns insufficient data without calling a model when no source exists", async () => {
     const r = await grounded(
@@ -770,9 +770,10 @@ describe("question scope and the three acceptance counterexamples", () => {
       ...purposeQuestion,
       q: "本品主要功效為何？",
     });
-    expect(r.quiz).toEqual([]);
+    expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
+    expect(r.safetyCoverage?.quizCoveredSectionCount).toBe(1);
     const corrected = await generate([purpose], purposeQuestion);
-    expect(corrected.quiz).toHaveLength(1);
+    expect(corrected.quiz).toHaveLength(2);
     expect(corrected.quiz[0].q).toBe(purposeQuestion.q);
   });
   it("rejects a lost causal condition even when it was omitted from declared conditions", async () => {
@@ -781,9 +782,19 @@ describe("question scope and the three acceptance counterexamples", () => {
       q: "依警語，對於氣喘病人，本藥使用有何注意事項？",
       requiredConditions: ["氣喘"],
     });
-    expect(r.claims).toHaveLength(1);
-    expect(r.quiz).toEqual([]);
-    expect((await generate([warning], warningQuestion)).quiz).toHaveLength(1);
+    expect(r.claims).toHaveLength(2);
+    expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
+    expect(r.quiz.some((q) => q.q.includes("對於氣喘病人"))).toBe(false);
+    expect(
+      r.quiz
+        .find((q) => q.id.startsWith("safety-"))
+        ?.options.every((option) => option.includes("所引起之咳嗽")),
+    ).toBe(true);
+    expect(
+      (await generate([warning], warningQuestion)).quiz.filter((q) =>
+        q.id.startsWith("q"),
+      ),
+    ).toHaveLength(1);
   });
   it("uses the cited original conditions instead of an incomplete provider explanation, and rejects failed linked claims", async () => {
     const quoted = await generate([warning], {
@@ -791,12 +802,19 @@ describe("question scope and the three acceptance counterexamples", () => {
       explain: "氣喘病人請勿自行使用。",
       requiredConditions: [],
     });
-    expect(quoted.quiz).toHaveLength(1);
+    expect(quoted.quiz).toHaveLength(2);
     expect(quoted.quiz[0].explanationKind).toBe("source_quote");
     expect(quoted.quiz[0].explain).toContain("所引起之咳嗽");
     const rejected = await generate([warning], warningQuestion, source, false);
-    expect(rejected.claims).toEqual([]);
-    expect(rejected.quiz).toEqual([]);
+    expect(
+      rejected.claims.every((claim) => claim.kind?.startsWith("source_exact_")),
+    ).toBe(true);
+    expect(rejected.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
+    expect(
+      rejected.quiz.every((q) =>
+        q.citations.every((citation) => source.text.includes(citation.quote)),
+      ),
+    ).toBe(true);
   });
   it("repairs an incorrect index only through a unique identical citation and category", async () => {
     // The real-model trace pointed its indication question at a mechanism
@@ -806,12 +824,14 @@ describe("question scope and the three acceptance counterexamples", () => {
         ...purposeQuestion,
         claimIndex,
       });
-      expect(r.quiz).toHaveLength(1);
+      expect(r.quiz).toHaveLength(2);
       expect(r.quiz[0].q).toBe(purposeQuestion.q);
       expect(r.quiz[0].explain).toBe("依仿單「適應症」原文：適應症：袪痰。");
     }
     expect(
-      (await generate([warning, purpose], purposeQuestion, source, false)).quiz,
+      (
+        await generate([warning, purpose], purposeQuestion, source, false)
+      ).quiz.filter((q) => q.id.startsWith("q")),
     ).toEqual([]);
   });
   it("refuses index repair when matching explanations are ambiguous or only partially overlap", async () => {
@@ -819,20 +839,24 @@ describe("question scope and the three acceptance counterexamples", () => {
       [warning, purpose, { ...purpose, text: "仿單所列用途為袪痰。" }],
       purposeQuestion,
     );
-    expect(ambiguous.quiz).toEqual([]);
+    expect(ambiguous.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
+    expect(ambiguous.safetyCoverage?.quizCoveredSectionCount).toBe(1);
     expect(
       (
         await generate([{ ...purpose, category: "other" }], {
           ...purposeQuestion,
           claimIndex: 17,
         })
-      ).quiz,
+      ).quiz.filter((q) => q.id.startsWith("q")),
     ).toEqual([]);
     const partial = await generate(
       [{ ...purpose, citations: [...purpose.citations, ...warning.citations] }],
       { ...purposeQuestion, claimIndex: 17 },
     );
-    expect(partial.quiz).toEqual([]);
+    expect(partial.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
+    expect(
+      partial.quiz.find((q) => q.id.startsWith("purpose-"))?.options,
+    ).toContain("袪痰。");
   });
   it("rejects missing metadata, invalid links, duplicate options and citations from another explanation", async () => {
     for (const candidate of [
@@ -847,8 +871,9 @@ describe("question scope and the three acceptance counterexamples", () => {
       { ...purposeQuestion, citations: warning.citations },
     ]) {
       const r = await generate([purpose], candidate);
-      expect(r.quiz).toEqual([]);
-      expect(r.claims).toHaveLength(1);
+      expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
+      expect(r.claims).toHaveLength(2);
+      expect(r.safetyCoverage?.quizCoveredSectionCount).toBe(1);
     }
   });
   it("does not display a personalized warning that generalizes a causal condition", async () => {
@@ -864,8 +889,17 @@ describe("question scope and the three acceptance counterexamples", () => {
         ],
         warningQuestion,
       );
-      expect(r.claims).toEqual([]);
-      expect(r.quiz).toEqual([]);
+      expect(
+        r.claims.some((claim) => claim.text === "氣喘病人請勿自行使用。"),
+      ).toBe(false);
+      expect(
+        r.claims.every(
+          (claim) =>
+            claim.kind?.startsWith("source_exact_") &&
+            !claim.profileRefs?.length,
+        ),
+      ).toBe(true);
+      expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
     }
   });
   it("preserves causal, conditional and exception clauses without requiring all OR conditions", () => {
@@ -907,7 +941,7 @@ describe("compact generation with trusted source metadata", () => {
   };
   it("identifies bracketed indication aliases and keeps dosage outside the indication citation", () => {
     const source = sourcePassages([aliasSource]);
-    const purpose = source.find((s) => s.sourceSection === "適應症")!;
+    const purpose = source.find((s) => s.sourceSection === "用途(適應症)")!;
     expect(purpose.quote).toContain(indication);
     expect(purpose.quote).not.toContain("用法用量");
     expect(purpose.requiredConditions).toEqual([]);
@@ -962,7 +996,7 @@ describe("compact generation with trusted source metadata", () => {
           generation = input;
           prompt = system;
           const source = input.sources.find(
-            (s: any) => s.sourceSection === "適應症",
+            (s: any) => s.sourceSection === "用途(適應症)",
           );
           const reference = [{ sourceId: source.id }];
           return {
@@ -976,7 +1010,7 @@ describe("compact generation with trusted source metadata", () => {
             ],
             quiz: [
               {
-                q: "依仿單適應症欄記載的用途是哪一項？",
+                q: "依仿單用途(適應症)欄記載的用途是哪一項？",
                 claimIndex: 0,
                 learningObjective: "purpose",
                 sourceSection: source.sourceSection,
@@ -1008,13 +1042,13 @@ describe("compact generation with trusted source metadata", () => {
     expect(r.quiz).toHaveLength(1);
     expect(r.quiz[0].citations[0].quote).toContain(indication);
     expect(generation.sources.map((s: any) => s.sourceSection)).toEqual([
-      "適應症",
+      "用途(適應症)",
     ]);
     expect(generation.context).toEqual({
       medications: [{ name: "合成測試藥", licenseNo: chunk.licenseNo }],
     });
     expect(generation.profileFacts).toEqual([{ field: "age", value: "32" }]);
-    expect(prompt).toContain("claims 最多4條");
+    expect(prompt).toContain("claims最多2條");
     expect(audited.sourceChunks).toBeUndefined();
     expect(JSON.stringify(audited)).not.toContain("成人一天三次");
     expect(
@@ -1195,8 +1229,28 @@ describe("complete citation coverage for formulation details", () => {
         {},
         "bundle",
       );
-      expect(r.claims).toEqual([purpose]);
-      expect(r.quiz).toHaveLength(expectedQuestions);
+      expect(r.claims).toEqual(
+        expectedQuestions
+          ? [purpose]
+          : [
+              {
+                ...purpose,
+                text: purpose.citations[0].quote,
+                kind: "source_exact_purpose",
+              },
+            ],
+      );
+      expect(r.quiz.filter((q) => q.id.startsWith("q"))).toHaveLength(
+        expectedQuestions,
+      );
+      expect(r.quiz).toHaveLength(1);
+      if (!expectedQuestions) {
+        expect(r.quiz[0].id).toMatch(/^purpose-/);
+        expect(r.quiz[0].options[r.quiz[0].answer]).toBe("合成症狀甲。");
+        expect(
+          r.quiz[0].options.some((option) => option.includes("複方")),
+        ).toBe(false);
+      }
       if (r.quiz.length) {
         expect(r.quiz[0].explanationKind).toBe("source_quote");
         expect(r.quiz[0].explain).not.toContain("複方");
@@ -1257,7 +1311,7 @@ describe("source-quote quiz explanations", () => {
         {},
         "bundle",
       );
-      expect(r.quiz).toHaveLength(1);
+      expect(r.quiz).toHaveLength(2);
       expect(r.quiz[0].explain).toBe("依仿單「適應症」原文：適應症：袪痰。");
       expect(r.quiz[0].explanationKind).toBe("source_quote");
       expect(r.quiz[0].citations).toEqual(c.citations);

@@ -8,7 +8,7 @@ const mode = process.argv[2];
 if (mode !== "prepare" && mode !== "verify")
   throw Error("Use prepare or verify.");
 const directory = resolve(
-  process.argv[3] || ".local/seminar-demo-expanded-v11-20261020",
+  process.argv[3] || ".local/seminar-demo-expanded-v13-20261020",
 );
 const rel = relative(resolve(".local"), directory);
 if (!rel || rel.startsWith("..") || isAbsolute(rel))

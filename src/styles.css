@@ -943,6 +943,7 @@ main {
   flex: 1;
 }
 .claim p {
+  white-space: pre-line;
   margin-bottom: 10px;
 }
 .claim details summary {

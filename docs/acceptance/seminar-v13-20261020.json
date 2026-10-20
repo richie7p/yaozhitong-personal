@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 2,
+  "checkedAt": "2026-10-20T03:13:52.760Z",
+  "status": "fixed_scope_source_fields_and_workflows_passed_with_remaining_limits",
+  "scope": "Seminar software, literal source-field coverage and source-reading comprehension. No pharmacist signoff requirement; not clinical validation or exhaustive clinical-item assessment.",
+  "groundingVersion": "grounded-v13-complete-safety-literal-recognition",
+  "provider": "openai",
+  "textModel": "gpt-6-luna",
+  "visionModel": "gpt-6-luna",
+  "reasoningEffort": "none",
+  "officialSources": {
+    "drugs": 8,
+    "pdf": 6,
+    "html": 2,
+    "reviewedSafetyMainFields": 17,
+    "questionScope": "At least one key point per safety field; not every subordinate item."
+  },
+  "acceptedComponentFlows": {
+    "total": 21,
+    "fullFlows": 19,
+    "manualFullFlows": 12,
+    "publicPositiveFullFlows": 6,
+    "syntheticTwoDrugFullFlows": 1,
+    "publicIncompleteUsageReviewFlows": 2,
+    "distinctActualPublicPhotographs": 4,
+    "newDistinctActualPublicPhotographs": 2,
+    "jobs": 29,
+    "hostedRequests": 49,
+    "allHttp200": true,
+    "timeouts": 0,
+    "retries": 0,
+    "fallbackJobs": 0,
+    "knownReportedTokens": 146656,
+    "requestsWithKnownTokens": 49,
+    "maxJobLatencyMs": 11926,
+    "content": {
+      "learning": 20,
+      "claims": 61,
+      "questions": 61,
+      "options": 122,
+      "citations": 122,
+      "safetyFieldInstances": 41
+    }
+  },
+  "retestStrategy": {
+    "kind": "affected_component_retest",
+    "description": "18 successful content records retain existing reviewed purpose and quiz unchanged. Final helper replay is a no-op for all18. Only affected Kentamin two complete flows were rerun after the exact-purpose fallback. Accepted workflows include different frozen builds; this is not a claim that all21 ran on one final build.",
+    "workflows": [
+      {
+        "cohort": "manual",
+        "id": "antiphen-drops-manual",
+        "repeat": 1,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "antiphen-drops-manual",
+        "repeat": 2,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "kemelon-cream-manual",
+        "repeat": 1,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "kemelon-cream-manual",
+        "repeat": 2,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "eukemycin-capsule-manual",
+        "repeat": 1,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "eukemycin-capsule-manual",
+        "repeat": 2,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "manual-030418",
+        "repeat": 1,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "manual-030418",
+        "repeat": 2,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "manual-000544",
+        "repeat": 1,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "manual-000544",
+        "repeat": 2,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "manual-026087",
+        "repeat": 1,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "manual",
+        "id": "manual-026087",
+        "repeat": 2,
+        "compiledServerSha256": "23c3e552e91f253a6fe979c6ebdf497b75541c0a29dbbfc341cfd7e09a87b270"
+      },
+      {
+        "cohort": "normal",
+        "id": "cgmh-bubdel-full-flow",
+        "repeat": 1,
+        "compiledServerSha256": "c49e08b78eee5e89dbabcc3f6e8d91db585bbea5c751c62644e3cad089d46321"
+      },
+      {
+        "cohort": "normal",
+        "id": "cgmh-bubdel-full-flow",
+        "repeat": 2,
+        "compiledServerSha256": "c49e08b78eee5e89dbabcc3f6e8d91db585bbea5c751c62644e3cad089d46321"
+      },
+      {
+        "cohort": "normal",
+        "id": "cathay-secorine",
+        "repeat": 1,
+        "compiledServerSha256": "c49e08b78eee5e89dbabcc3f6e8d91db585bbea5c751c62644e3cad089d46321"
+      },
+      {
+        "cohort": "normal",
+        "id": "cathay-secorine",
+        "repeat": 2,
+        "compiledServerSha256": "c49e08b78eee5e89dbabcc3f6e8d91db585bbea5c751c62644e3cad089d46321"
+      },
+      {
+        "cohort": "kent",
+        "id": "tzuchi-kentamin-full-flow",
+        "repeat": 1,
+        "compiledServerSha256": "dc7dbb3ed64bb4f96b025beb6acde4c058b6cfac9b2d8b370fbc37d694268461"
+      },
+      {
+        "cohort": "kent",
+        "id": "tzuchi-kentamin-full-flow",
+        "repeat": 2,
+        "compiledServerSha256": "dc7dbb3ed64bb4f96b025beb6acde4c058b6cfac9b2d8b370fbc37d694268461"
+      },
+      {
+        "cohort": "base",
+        "id": "synthetic-two-drug-flow",
+        "repeat": 1,
+        "compiledServerSha256": null,
+        "buildEvidence": "Corrected9 predeclared plan; base tool did not capture its own compiled hash."
+      }
+    ]
+  },
+  "failureHistory": [
+    {
+      "batch": "v12 first fixed20",
+      "passed": 7,
+      "failed": 13,
+      "note": "All original outcomes kept."
+    },
+    {
+      "batch": "v13 first fixed21",
+      "manualFullFlows": "12/12",
+      "normalPhotos": "0/6",
+      "reviewGate": "2/2 but unsupported conflict explanation; not content acceptance",
+      "base": "workflow failed obsolete validator; actual2 bundles independently reviewed"
+    },
+    {
+      "batch": "v13 corrected fixed9",
+      "acceptedFlows": 7,
+      "failedFlows": 2,
+      "normalFullFlows": "4/6",
+      "literalRecognition": "6/6",
+      "reviewGate": "2/2",
+      "base": "1/1",
+      "missingContent": "Kentamin two bundles missing purpose and four safety fields. Both original failed reports retained."
+    },
+    {
+      "batch": "v13 exact-purpose fixed2",
+      "passed": 2,
+      "failed": 0
+    }
+  ],
+  "checks": {
+    "unitPassed": 445,
+    "unitTotal": 445,
+    "desktopMobileE2E": 36,
+    "controlledRecovery": 10,
+    "buildAndTypecheckPassed": true,
+    "lifecyclePassed": true,
+    "finalHelperExistingContentUnchanged": 18,
+    "secondContentReviewPassed": true,
+    "serviceRestartStepsPassed": 58,
+    "serviceRestartStepsTotal": 58,
+    "newAiCallsDuringSavedResultsCheck": 0,
+    "mainDatabaseUnchanged": true
+  },
+  "runtimeBackendSha256": "dc7dbb3ed64bb4f96b025beb6acde4c058b6cfac9b2d8b370fbc37d694268461",
+  "demonstrationCounts": {
+    "medications": 8,
+    "learning": 8,
+    "jobs": 12,
+    "generated": 8,
+    "questions": 25,
+    "recognitionJobs": 4
+  },
+  "serviceRestart": {
+    "verifiedNewProcess": true,
+    "savedContentAndFinalAnswersUnchanged": true,
+    "newAiCalls": 0
+  },
+  "osReboot": {
+    "verifiedForThisVersion": false,
+    "performedThisRound": false,
+    "note": "Prior v11 six-drug Windows reboot evidence is retained separately. This round verifies a service restart only."
+  },
+  "remainingLimits": [
+    "MND red overlay and unchecked-template reading are not reliably recognized (actual red-conflict detection0/2); it is accepted only as incomplete usage requiring review, with no automatic medication creation.",
+    "Secorine photo lacks license/manufacturer/flavor proof. Current040833 common two-flavor source is explicitly selected as a candidate, not an inferred exact photo identity.",
+    "Kentamin tiny Chinese brand may be omitted from OCR; English brand and printed usage are checked. Bag code130 is not a strength, and no catalog strength/name is backfilled into raw OCR.",
+    "Four historical public real photographs only; current personal-phone captures, new lighting/angles and HEIC are not covered. General scanned/multi-column leaflet OCR and automatic import of arbitrary new HTML leaflets remain limited.",
+    "All17 fixed safety main fields are shown in full with at least one question each, but not every subitem or clinical situation is tested.",
+    "Live recognition/generation still depends on provider, network and API credit. Finite tests do not guarantee availability; saved demonstration results must be identified as pre-generated."
+  ],
+  "evidencePolicy": "Sanitized aggregate only. Raw local reports, photos, downloaded source files, account/medication records, environment files and credentials are excluded from Git. Original failed batches remain unchanged. Source-only official regression fixtures contain no personal records.",
+  "localEvidenceSha256": {
+    "manual": "ff173655f3dc59127bfaa1ce95800c886a5afd1d5ba1c44b78abc7584a2b39c3",
+    "manualQa": "b6800c279d51191421c3b9888712475402b93868c95964881ac0c94b8d62729d",
+    "corrected9Plan": "24496b839893395ae9936f9058e6c0ea38041c3be663b421a8f84319d511d5dd",
+    "normalFailuresPreserved": "a2762b354549cf7db94e2f419b3b7bcac924eccc9e125bb566419d7c8bd976c7",
+    "normalQa": "a0b96d0d72e7f6c317381fb2a6112e833771052fceb28496e9954edf49532efb",
+    "kentPlan": "d3a2f7676ced299c6acb00e69b510e273ca69ac2dca9e7f901dd612b36aea0a3",
+    "kent": "f4e2e0c28ca50b37218d70e8bf2710c0d3d901818db3722451622ca33af9ea13",
+    "kentQa": "697b09f97b85ea69d475b3c3189593c0f42685b6225cf850e67b3f64b58a6cdc",
+    "base": "94df5895e630d3a61112425381a616b3ca3e9a0dd2e557201d30fb7ea6ee6321",
+    "baseQa": "330b71418b9fe2c5ac7b2f30fedeef958a779af8c69df73619ac420d8fa9a429",
+    "usageReview": "5e6b9944812d00bd2bf70a6e95d53fc2934d776b88bb805f15575b407c8c6b6e",
+    "usageReviewQa": "2d881fabbc27212d205f31e33d1212fa7de9cdbc4efec7f57cdd6616921eaaf1",
+    "oracle": "da42c72e3189c76197f6df4baafe14193f937e6528cd69f900700f20fd7fb384",
+    "existing18Qa": "6689c6ffafd0da02433c79c7d5e566ecd1706e40fee0804b602b2b18ac7d9927",
+    "finalHelperNoop": "46b46713ec2f7f8d3a0360820ca794f7d0d84e841e4e13306d6d5a851d36e2fd",
+    "secondContentQa": "03f4a5d2a04de4a888e0565a5543a8ef3838fbd89c1e50a1e27a350664b22a40",
+    "serviceRestart": "bed083a2b65be183ab82b1a2174e3195aecdff31d804239d9643ed01e07c22fc",
+    "visualReview": "756ec1fe774e7681364ff11477e4c689b31dcceefd5f9e06be066fe3bdf08a2d",
+    "sourceLayoutEquivalence": "9583be964260f2e404a321a64b6b06fa94f3816156a7023710ef51851366de42",
+    "demonstrationPreparation": "5287a9e4ee1fe771685b2b244868f91775960ab79b86caada1d5d7a917750075",
+    "lifecycle": "0be815f43688c8cd428523b1fbae333fd612ec4e44c81b5583369cfb9933da9f",
+    "unit": "9e265b588060dcf2949403f66279fd4a1b851366012c2db923c495256687713b",
+    "e2e": "59f346137f021ccc4456351051b84f22fc55993d8e35731bdfd7b829ba576dc6",
+    "recovery": "d7d39de713bf46d5ebcc63e0c876669353e6abf063b4c8d4b094ffcc5560c27a"
+  }
+}

@@ -6,6 +6,85 @@ export const normalize = (s: string) =>
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[\s「」"“”]/g, "");
+
+// Candidate identity uses a small set of dosage-form aliases, never ingredient
+// strengths. A generic liquid label only matches a syrup when both official and
+// transcribed product titles explicitly say syrup; oral solutions stay distinct.
+function formMatches(d: Drug, form: string, query: string) {
+  if (!form) return true;
+  const supplied = normalize(form),
+    actual = normalize(d.form);
+  // A bare liquid label does not establish an injectable, topical or eye route.
+  if (
+    supplied === "液劑" &&
+    actual !== "液劑" &&
+    !/^(?:糖漿劑?|內服液劑?|口服液劑?)$/u.test(actual)
+  )
+    return false;
+  if (actual.includes(supplied)) return true;
+  if (/^(?:capsules?|膠囊劑?)$/u.test(supplied)) return actual.includes("膠囊");
+  if (/^(?:tablets?|tabs?|錠劑?)$/u.test(supplied))
+    return actual.includes("錠");
+  const saysSyrup = (title: string) =>
+    /(?:^|[^a-z])syrup(?:$|[^a-z])/i.test(title.normalize("NFKC")) ||
+    /糖漿/u.test(title);
+  if (
+    saysSyrup(d.nameZh + " " + d.nameEn) &&
+    /^(?:糖漿劑?|內服液劑?|口服液劑?)$/u.test(actual)
+  ) {
+    if (/^(?:syrup|糖漿劑?)$/u.test(supplied)) return true;
+    if (/^(?:液劑|內服液劑?|口服液劑?)$/u.test(supplied) && saysSyrup(query))
+      return true;
+  }
+  return false;
+}
+
+// These explicitly enumerated ingredient-name variants support candidate
+// checking only. Salt names are not converted to equal masses or dose units.
+const ingredientNames: Record<string, string> = {
+  thiamine: "thiamine",
+  thiaminemononitrate: "thiamine",
+  pyridoxine: "pyridoxine",
+  pyridoxinehcl: "pyridoxine",
+  pyridoxinehydrochloride: "pyridoxine",
+  cyanocobalamin: "cyanocobalamin",
+  "cyanocobalamin(vitb12)": "cyanocobalamin",
+};
+function fullBrandAndIngredientsMatch(
+  d: Drug,
+  query: string,
+  strength: string,
+  form: string,
+) {
+  // This additional path does not infer, discard or reconcile a stated strength.
+  if (strength || d.strength || !formMatches(d, form, query)) return false;
+  const match = query
+    .normalize("NFKC")
+    .trim()
+    .match(/^([A-Za-z][A-Za-z0-9 .'-]*?)\s*\(([^()]+)\)$/u);
+  if (!match || titleQuantities(query).quantities.length) return false;
+  const brand = normalize(match[1]);
+  const official = normalize(d.nameEn);
+  if (!official.startsWith(brand)) return false;
+  // Require the entire English brand followed only by its complete dosage form.
+  // A short prefix, extra brand modifier, official ingredient or amount fails.
+  if (!/^(?:capsules?|tablets?|syrup)$/u.test(official.slice(brand.length)))
+    return false;
+  const actual = d.ingredients.map((s) => ingredientNames[normalize(s)]);
+  const supplied = match[2]
+    .split(/\s*&\s*/u)
+    .map((s) => ingredientNames[normalize(s)]);
+  if (
+    actual.length < 2 ||
+    actual.some((s) => !s) ||
+    supplied.some((s) => !s) ||
+    new Set(actual).size !== actual.length ||
+    new Set(supplied).size !== supplied.length ||
+    actual.length !== supplied.length
+  )
+    return false;
+  return supplied.every((s) => actual.includes(s));
+}
 // Deliberately limited identity support: unit aliases, never dose conversion.
 const singleMilligrams = (text: string) => {
   const match = normalize(text).match(/^(\d+(?:\.\d+)?)(?:mg|毫克)$/);
@@ -66,7 +145,7 @@ function strengthIdentity(
     d.ingredients.length > 1 ||
     (d.strength.trim() && metadata === null) ||
     titles.some((t) => t.quantities.length > 1 || /[/%]/.test(t.title)) ||
-    (form && !normalize(d.form).includes(normalize(form)))
+    !formMatches(d, form, query)
   )
     return { conflict: false, equivalent, splitNameMatch: false };
   const strippedQuery = withoutSingleStrength(query, supplied);
@@ -89,7 +168,7 @@ function bilingualNameMatch(
     !d.nameZh ||
     !d.nameEn ||
     d.ingredients.length > 1 ||
-    (form && !normalize(d.form).includes(normalize(form))) ||
+    !formMatches(d, form, query) ||
     [d.nameZh, d.nameEn, d.strength].some((text) => /[/%]/.test(text))
   )
     return false;
@@ -167,6 +246,17 @@ function bilingualNameMatch(
 }
 
 export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
+  // An incompatible supplied form must not survive merely because an exact
+  // name's positive score outweighed the former form-mismatch penalty.
+  if (!formMatches(d, form, q)) return 0;
+  if (
+    strength &&
+    !d.strength &&
+    [d.nameZh, d.nameEn].every(
+      (title) => !titleQuantities(title).quantities.length,
+    )
+  )
+    return 0;
   const identity = strengthIdentity(d, q, strength, form);
   if (identity.conflict) return 0;
   const n = normalize(q),
@@ -182,6 +272,7 @@ export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
           : 0;
   if (identity.splitNameMatch) s = Math.max(s, 85);
   if (s === 0 && bilingualNameMatch(d, q, strength, form)) s = 85;
+  if (s === 0 && fullBrandAndIngredientsMatch(d, q, strength, form)) s = 85;
   if (d.licenseNo === q) s = 150;
   if (s === 0) return 0;
   if (strength)
@@ -189,7 +280,7 @@ export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
       normalize(d.strength) === normalize(strength) || identity.equivalent
         ? 50
         : -80;
-  if (form) s += normalize(d.form).includes(normalize(form)) ? 30 : -80;
+  if (form) s += 30;
   if (d.revoked) s -= 20;
   return s;
 }
@@ -216,7 +307,9 @@ export class Catalog {
     return (await this.all())
       .map((d) => ({ ...d, score: scoreDrug(d, q, strength, form) }))
       .filter((d) => d.score > 0)
-      .sort((a, b) => b.score - a.score)
+      .sort(
+        (a, b) => Number(a.revoked) - Number(b.revoked) || b.score - a.score,
+      )
       .slice(0, 12);
   }
   async get(lic: string) {

@@ -146,8 +146,15 @@ describe("actual leaflet section names and clinical purpose scope", () => {
       generation.quiz[0].sourceSection = "適應症";
     });
     expect(result.claims).toHaveLength(2);
-    expect(result.quiz).toHaveLength(1);
+    expect(result.quiz).toHaveLength(2);
     expect(result.quiz[0].q).toContain("附記");
+    expect(
+      result.quiz.some((q) => q.q === "依仿單適應症欄記載的用途為何？"),
+    ).toBe(false);
+    const fallback = result.quiz.find((q) => q.id.startsWith("purpose-"))!;
+    expect(fallback.sourceSection).toBe("效能");
+    expect(fallback.options[fallback.answer]).toBe("用於治療合成症狀甲。");
+    expect(fallback.explain).toMatch(/^依仿單「效能」原文：效 能：/);
   });
   it.each(["作用", "作用特點", "作用機轉", "機轉", "藥理作用"])(
     "cannot turn a %s mechanism into a purpose even if a mock verifier says yes",
@@ -185,8 +192,19 @@ describe("actual leaflet section names and clinical purpose scope", () => {
     );
     expect(checked.text).toContain("未記載");
     expect(checked.citations[0].quote).not.toContain("症狀乙");
-    expect(result.claims).toHaveLength(0);
-    expect(result.quiz).toHaveLength(0);
+    expect(result.claims).toHaveLength(2);
+    expect(
+      result.claims.every((claim) => claim.kind?.startsWith("source_exact_")),
+    ).toBe(true);
+    expect(result.claims.some((claim) => claim.text.includes("症狀乙"))).toBe(
+      false,
+    );
+    expect(result.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
+    expect(
+      result.quiz.every((q) =>
+        q.citations.every((citation) => clinical.text.includes(citation.quote)),
+      ),
+    ).toBe(true);
   });
   it("ends an old parent exception at a new 效能/附記 boundary", () => {
     const source = chunk(

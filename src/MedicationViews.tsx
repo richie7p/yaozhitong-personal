@@ -461,6 +461,9 @@ export function AddMedication({
                   <div>
                     <strong>{c.nameZh}</strong>
                     <small>{c.licenseNo}</small>
+                    {c.revoked && (
+                      <span className="tag amber">許可證已註銷</span>
+                    )}
                   </div>
                   <span className="tag">
                     {c.hasLeaflet ? "有仿單" : "未收錄仿單"}
@@ -504,6 +507,9 @@ export function AddMedication({
                 <small>
                   {d.nameEn} · {d.licenseNo}
                 </small>
+                {d.revoked && (
+                  <span className="tag amber">許可證已註銷</span>
+                )}
               </div>
               <span className={"tag " + (d.hasLeaflet ? "green" : "")}>
                 {d.hasLeaflet ? "可查看仿單" : "未收錄仿單"}

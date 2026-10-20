@@ -21,7 +21,7 @@ function body(passage: Passage) {
   if (!passage.sourceSection) return norm(passage.quote);
   const label = [...passage.sourceSection].join("\\s*");
   const heading = new RegExp(
-    `^\\s*(?:【\\s*${label}\\s*】|${label}\\s*:|${label}[^\\S\\r\\n]*\\r?\\n)\\s*`,
+    `^\\s*(?:\\d+[^\\S\\r\\n]+)?(?:【\\s*${label}\\s*】|${label}\\s*:|${label}[^\\S\\r\\n]*\\r?\\n)\\s*`,
     "u",
   );
   return norm(passage.quote.normalize("NFKC").replace(heading, ""));
