@@ -83,7 +83,7 @@ try {
   await page.goto(base);
   await page.getByRole("button", { name: "本機管理員", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   await page.goto(base + "/#admin");
   await page.getByRole("button", { name: "仿單管理", exact: true }).click();
@@ -99,7 +99,7 @@ try {
   await page.getByRole("button", { name: "登出", exact: true }).click();
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   const photoPage = await browser.newPage({
     viewport: { width: 950, height: 650 },

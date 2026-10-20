@@ -128,13 +128,13 @@ try {
   await page.goto(base);
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   await page.goto(base + "/#profile");
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "刪除帳號", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /看懂每一顆藥/ }),
+    page.getByRole("heading", { name: /把用藥，/ }),
   ).toBeVisible();
   expect((await call("/me")).status).toBe(403);
   await expect

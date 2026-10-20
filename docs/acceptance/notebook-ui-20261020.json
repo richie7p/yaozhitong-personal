@@ -6,6 +6,7 @@
   "applicationEntry": "#home",
   "presentationMode": "#demo",
   "e2e": {
+    "scope": "local pre-integration run",
     "caseViewportCombinations": 42,
     "fullRunPassed": 38,
     "fullRunFailedOnOldSelectors": 4,

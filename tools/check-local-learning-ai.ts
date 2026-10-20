@@ -297,9 +297,19 @@ try {
         (job) => {
           assertSupported(job);
           const r = job.result as GroundedResult;
-          if (!r.quiz.length || r.quiz.length > 2)
+          if (!r.quiz.length || r.quiz.some((q) => !q.citations.length))
             throw Error(
-              "The bundle needs one or two evidence-backed questions.",
+              "The bundle needs questions, each with its own source evidence.",
+            );
+          if (
+            r.safetyCoverage &&
+            (r.safetyCoverage.coveredSectionCount !==
+              r.safetyCoverage.sourceSectionCount ||
+              r.safetyCoverage.quizCoveredSectionCount !==
+                r.safetyCoverage.sourceSectionCount)
+          )
+            throw Error(
+              "Every recognized safety section needs full text and a key-point question.",
             );
           if (enzyme && r.claims.some((c) => c.profileRefs?.length))
             throw Error(
@@ -374,7 +384,7 @@ try {
     await page.goto(base);
     await page.getByRole("button", { name: "本機使用者", exact: true }).click();
     await page.goto(base + "/#learning");
-    await page.locator(".learning-record").first().waitFor();
+    await page.locator(".learning-index-card").first().waitFor();
     // Reuse the real generated questions; no additional model request or substitute content.
     const learning = (await call("/learning")).items;
     const coughMed = medications.find(
@@ -385,6 +395,12 @@ try {
         r.medicationIds.includes(coughMed?.id) && r.result.quiz.length,
     );
     if (coughRow) {
+      const recordUrl =
+        base +
+        "/#learning?record=" +
+        encodeURIComponent(coughRow.id) +
+        "&section=quiz";
+      await page.goto(recordUrl);
       for (const [viewport, width, height] of [
         ["desktop", 1280, 900],
         ["mobile", 375, 812],
@@ -396,9 +412,11 @@ try {
         report.steps.push(entry);
         try {
           await page.setViewportSize({ width, height });
-          const record = page
-            .locator(".learning-record")
-            .filter({ hasText: coughMed.name });
+          const record = page.locator(
+            `.learning-record[data-learning-id="${coughRow.id}"]`,
+          );
+          await expect(page.locator(".learning-record")).toHaveCount(1);
+          await expect(record).toContainText(coughMed.name);
           const quiz = record.locator(".quiz");
           const q = coughRow.result.quiz[0];
           const wrong = (q.answer + 1) % q.options.length;
@@ -419,7 +437,7 @@ try {
           await page
             .getByRole("button", { name: "本機使用者", exact: true })
             .click();
-          await page.goto(base + "/#learning");
+          await page.goto(recordUrl);
           await expect(quiz.getByRole("radio").nth(wrong)).toBeChecked();
           const source = record
             .getByText("對照仿單原文", { exact: true })

@@ -138,7 +138,7 @@ try {
       expect(Object.keys(job.savedMedications || {})).toHaveLength(
         job.result.medications.length,
       );
-      await page.goto(base + "/#profile");
+      await page.goto(base + "/#jobs");
       await page.locator(`a[href="#add?recognition=${job.id}"]`).click();
       await expect(
         page.getByRole("status").filter({
@@ -159,10 +159,17 @@ try {
     });
     for (const row of rows) {
       const med = meds.find((m) => row.medicationIds.includes(m.id));
-      await page.goto(base + "/#learning");
-      const record = page
-        .locator(".learning-record")
-        .filter({ hasText: med.name });
+      await page.goto(
+        base +
+          "/#learning?record=" +
+          encodeURIComponent(row.id) +
+          "&section=quiz",
+      );
+      const record = page.locator(
+        `.learning-record[data-learning-id="${row.id}"]`,
+      );
+      await expect(page.locator(".learning-record")).toHaveCount(1);
+      await expect(record).toContainText(med.name);
       const quiz = record.locator(".quiz");
       await expect(
         quiz.getByText("答對了。已完成測驗，進度已保存。", { exact: true }),
