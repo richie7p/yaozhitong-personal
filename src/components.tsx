@@ -176,7 +176,7 @@ export function JobNotice({ text }: { text: string }) {
   return (
     <div className="job-notice">
       <Busy text={text} />
-      <a href="#profile" className="btn ghost">
+      <a href="#jobs" className="btn ghost">
         查看 AI 處理紀錄與重試
       </a>
       <p className="muted">離開頁面後仍會繼續處理，可回到紀錄查看結果。</p>

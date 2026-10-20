@@ -28,7 +28,7 @@ test("completed recognition survives navigation and a lost save response without
   await expect(
     page.getByRole("button", { name: "編輯這筆資料", exact: true }),
   ).toBeVisible();
-  await page.goto("/#profile");
+  await page.goto("/#jobs");
   await page.locator(`a[href="#add?recognition=${jobId}"]`).click();
   await expect(
     page.getByRole("button", { name: "編輯這筆資料", exact: true }),

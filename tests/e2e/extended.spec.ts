@@ -8,7 +8,7 @@ test("profile, cabinet, export and cross-session persistence", async ({
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   await page.goto("/#profile");
   await page
@@ -27,7 +27,7 @@ test("profile, cabinet, export and cross-session persistence", async ({
       .getByRole("button", { name: "本機使用者", exact: true })
       .click();
     await expect(
-      other.getByRole("heading", { name: /今天也照顧好自己/ }),
+      other.getByRole("heading", { name: /今天的用藥日常/ }),
     ).toBeVisible();
     await other.goto("http://127.0.0.1:5190/#profile");
     await expect(other.getByLabel("其他健康補充")).toHaveValue(
@@ -87,7 +87,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   await page.goto("/#add");
   await page.locator('input[type="file"]').setInputFiles({
@@ -164,7 +164,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
     page.getByText("AI 輸出格式無法驗證，請重試。", { exact: true }),
   ).toBeVisible({ timeout: 20000 });
   await expect(page.locator("textarea")).toHaveValue(question);
-  await page.goto("/#profile");
+  await page.goto("/#jobs");
   await page.getByRole("button", { name: "使用原輸入重試" }).click();
   await expect(
     page.getByText("已使用原輸入重新排入處理，進度會自動更新。", {

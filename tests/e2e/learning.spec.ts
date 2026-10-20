@@ -97,10 +97,14 @@ test("personal education, one-question feedback, saved progress and keyboard ope
       })
     ).ok(),
   ).toBe(true);
-  await page.goto("/#learning");
-  const record = page
-    .locator(".learning-record")
-    .filter({ hasText: "流程測試片 5mg" });
+  const learning = (
+    await (await request.get("/api/v1/learning", { headers })).json()
+  ).items.find((row: any) => row.medicationIds.includes(med.id));
+  const recordUrl = `/#learning?record=${encodeURIComponent(learning.id)}&section=quiz`;
+  await page.goto(recordUrl);
+  const record = page.locator(
+    `.learning-record[data-learning-id="${learning.id}"]`,
+  );
   quiz = record.locator(".quiz");
   await expect(record).toHaveCount(1);
   await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
@@ -108,7 +112,7 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
   await page.getByRole("button", { name: "登出", exact: true }).click();
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#learning");
+  await page.goto(recordUrl);
   await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
   await quiz.getByLabel("不可以，只供軟體測試", { exact: true }).focus();
   await page.keyboard.press("Space");
@@ -133,10 +137,16 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await expect(
     quiz.getByText("答對了。已完成測驗，進度已保存。", { exact: true }),
   ).toBeVisible();
+  await expect(
+    quiz.getByRole("group", { name: "理解測驗完成", exact: true }),
+  ).toBeFocused();
   await page.reload();
   await expect(
     quiz.getByText("答對了。已完成測驗，進度已保存。", { exact: true }),
   ).toBeVisible();
+  await expect(
+    quiz.getByRole("group", { name: "理解測驗完成", exact: true }),
+  ).not.toBeFocused();
   await page.screenshot({
     path: "test-results/learning-" + info.project.name + ".png",
     fullPage: true,
@@ -275,8 +285,12 @@ test("literal source mentions explain the limited match while the saved quiz rem
   });
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#learning");
-  const record = page.locator(".learning-record").filter({ hasText: name });
+  await page.goto(
+    `/#learning?record=${encodeURIComponent(queued.jobId)}&section=warnings`,
+  );
+  const record = page.locator(
+    `.learning-record[data-learning-id="${queued.jobId}"]`,
+  );
   await expect(record).toHaveCount(1);
   await expect(
     record.locator(".personal-precautions .source-mention"),

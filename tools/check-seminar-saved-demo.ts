@@ -386,7 +386,7 @@ try {
           page!.locator(".med-card").filter({ hasText: med.licenseNo }),
         ).toContainText(med.name);
       for (const job of recognitions) {
-        await page!.goto(base + "/#profile");
+        await page!.goto(base + "/#jobs");
         await page!.locator(`a[href="#add?recognition=${job.id}"]`).click();
         await expect(
           page!.getByRole("status").filter({
@@ -398,14 +398,86 @@ try {
         ).toHaveCount(0);
       }
     });
+    const demoRow = rows.find((row) => row.medicationIds.length === 1)!;
+    const demoMed = meds.find((med) => demoRow.medicationIds.includes(med.id))!;
+    const demoRecognition = recognitions.find((job: any) =>
+      Object.values<any>(job.savedMedications || {}).some((med) =>
+        demoRow.medicationIds.includes(med.id),
+      ),
+    );
+    for (const [stage, heading] of [
+      ["recognition", "藥袋辨識"],
+      ["reading", "仿單說明"],
+      ["quiz", "理解測驗"],
+    ])
+      await step(`${label}:saved-demo-${stage}`, async () => {
+        await page!.goto(
+          base +
+            "/#demo?record=" +
+            encodeURIComponent(demoRow.id) +
+            "&step=" +
+            stage,
+        );
+        await page!.reload();
+        await expect(
+          page!.getByLabel("選擇展示藥品", { exact: true }),
+        ).toHaveValue(demoRow.id);
+        const section = page!.getByRole("region", {
+          name: heading,
+          exact: true,
+        });
+        await expect(
+          section.getByRole("heading", { name: heading, exact: true }),
+        ).toBeVisible();
+        if (stage === "recognition") {
+          await section
+            .getByText("查看已保存的藥袋辨識文字", { exact: true })
+            .click();
+          await expect(section.locator(".recognition-literal")).toHaveText(
+            demoMed.rawText || "這筆藥品沒有保存辨識文字。",
+          );
+          if (demoRecognition)
+            await expect(
+              section.getByRole("link", { name: "開啟辨識紀錄", exact: true }),
+            ).toHaveAttribute(
+              "href",
+              `#add?recognition=${encodeURIComponent(demoRecognition.id)}&from=demo&record=${encodeURIComponent(demoRow.id)}`,
+            );
+        } else if (stage === "reading") {
+          await expect(section.locator(".claim")).toHaveCount(
+            demoRow.result.claims.length,
+          );
+          for (const claim of demoRow.result.claims)
+            await expect(
+              section.getByText(claim.text, { exact: true }),
+            ).toBeVisible();
+          await expect(section.locator(".quiz")).toHaveCount(0);
+        } else {
+          await expect(
+            section.locator(`[id="quiz-${demoRow.id}"]`),
+          ).toBeVisible();
+          await expect(
+            section.getByText("答對了。已完成測驗，進度已保存。", {
+              exact: true,
+            }),
+          ).toBeVisible();
+        }
+      });
     for (const row of rows) {
       const med = meds.find((candidate) =>
         row.medicationIds.includes(candidate.id),
       );
-      await page.goto(base + "/#learning");
-      const record = page
-        .locator(".learning-record")
-        .filter({ hasText: med.name });
+      await page.goto(
+        base +
+          "/#learning?record=" +
+          encodeURIComponent(row.id) +
+          "&section=quiz&from=demo",
+      );
+      const record = page.locator(
+        `.learning-record[data-learning-id="${row.id}"]`,
+      );
+      await expect(page.locator(".learning-record")).toHaveCount(1);
+      await expect(record).toContainText(med.name);
       const quiz = record.locator(".quiz");
       const openQuestion = async (index: number) => {
         const review = quiz.getByRole("button", {

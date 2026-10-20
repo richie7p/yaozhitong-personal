@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Plus,
   Search,
@@ -26,6 +26,7 @@ import {
   useData,
 } from "./components";
 import { Evidence, learningStateLabels } from "./Evidence";
+import { FlowSteps } from "./UIFlow";
 import { learningProgress } from "../shared/learning";
 import { doseLabel } from "../shared/medication";
 import type {
@@ -248,7 +249,26 @@ export function AddMedication({
     [busy, setBusy] = useState(""),
     [error, setError] = useState(""),
     [file, setFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState("");
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
   const [recognitionJob, setRecognitionJob] = useState<string | null>(null);
+  const fromDemo =
+    new URLSearchParams(location.hash.split("?")[1] || "").get("from") ===
+    "demo";
+  useEffect(() => {
+    if (!file) {
+      setPhotoPreview("");
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    setPhotoPreview(preview);
+    return () => URL.revokeObjectURL(preview);
+  }, [file]);
+  useEffect(() => {
+    if (!draft && tab !== "manual") return;
+    reviewHeading.current?.focus({ preventScroll: true });
+    reviewHeading.current?.scrollIntoView({ block: "start" });
+  }, [draft, tab]);
   function loadRecognition(j: any) {
     if (
       (j.kind && j.kind !== "recognition") ||
@@ -326,9 +346,9 @@ export function AddMedication({
   }
   async function choosePhoto(input: HTMLInputElement) {
     const chosen = input.files?.[0] || null;
+    if (!chosen) return;
     setFile(null);
     setError("");
-    if (!chosen) return;
     setBusy("正在檢查照片…");
     try {
       await recognitionPhotoType(chosen);
@@ -355,9 +375,15 @@ export function AddMedication({
     });
   return (
     <>
-      <SectionTitle eyebrow="ADD MEDICATION" title="新增一份用藥資訊">
+      <SectionTitle eyebrow="建立用藥資訊" title="新增一份用藥資訊">
         拍照或搜尋藥名，確認之後再加入你的藥品清單。
       </SectionTitle>
+      {tab === "photo" && (
+        <FlowSteps
+          steps={["選擇藥袋", "辨識結果", "核對用法"]}
+          current={draft ? 2 : recognized.length || recognitionJob ? 1 : 0}
+        />
+      )}
       <div className="tabs">
         {[
           ["photo", "拍攝藥袋"],
@@ -380,7 +406,7 @@ export function AddMedication({
       </div>
       {error && <Notice error>{error}</Notice>}
       {error && (
-        <a className="btn secondary" href="#profile">
+        <a className="btn secondary" href="#jobs">
           查看 AI 處理紀錄
         </a>
       )}
@@ -397,7 +423,7 @@ export function AddMedication({
           <a href="#medications">查看我的藥品</a>
         </Notice>
       )}
-      {tab === "photo" && (
+      {tab === "photo" && !draft && (
         <section className="card">
           <div className="upload-area">
             <ScanLine size={44} />
@@ -406,7 +432,7 @@ export function AddMedication({
               平放、光線均勻，避開反光。請先遮住姓名、身分證號等不需要辨識的資訊。
             </p>
             <label className="btn secondary">
-              選擇或拍攝照片
+              {file ? "更換或重新拍攝照片" : "選擇或拍攝照片"}
               <input
                 className="visually-hidden"
                 type="file"
@@ -415,7 +441,15 @@ export function AddMedication({
                 onChange={(e) => void choosePhoto(e.currentTarget)}
               />
             </label>
-            {file && <span>{file.name}</span>}
+            {photoPreview && (
+              <figure className="capture-preview">
+                <img
+                  src={photoPreview}
+                  alt="本次選擇的藥袋照片，請確認文字清晰"
+                />
+                <figcaption>{file?.name}</figcaption>
+              </figure>
+            )}
             <Button
               className="primary"
               disabled={!file || !!busy || saving}
@@ -425,6 +459,11 @@ export function AddMedication({
             </Button>
             <small>限 JPEG／PNG，8 MB 以內；圖片完成辨識後刪除。</small>
           </div>
+          {recognized.length > 0 && (
+            <h2 id="capture-results" tabIndex={-1}>
+              辨識結果：請選擇要核對的藥品
+            </h2>
+          )}
           {recognized.map(({ key, medication: m }) => (
             <div className="card small" key={key}>
               <div className="row spread">
@@ -443,7 +482,7 @@ export function AddMedication({
               </Button>
               {m.candidates?.map((c: any) => (
                 <button
-                  className="search-result"
+                  className="search-result capture-candidate"
                   key={c.licenseNo}
                   disabled={saving}
                   onClick={() => {
@@ -461,6 +500,10 @@ export function AddMedication({
                   <div>
                     <strong>{c.nameZh}</strong>
                     <small>{c.licenseNo}</small>
+                    <small className="capture-candidate-details">
+                      含量／規格：{c.strength || "未提供"} · 劑型：
+                      {c.form || "未提供"}
+                    </small>
                     {c.revoked && (
                       <span className="tag amber">許可證已註銷</span>
                     )}
@@ -474,7 +517,7 @@ export function AddMedication({
           ))}
         </section>
       )}
-      {tab === "search" && (
+      {tab === "search" && !draft && (
         <section className="card">
           <form
             className="search-bar"
@@ -485,6 +528,7 @@ export function AddMedication({
           >
             <Search size={20} />
             <input
+              id="capture-search"
               aria-label="搜尋藥名"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -507,9 +551,11 @@ export function AddMedication({
                 <small>
                   {d.nameEn} · {d.licenseNo}
                 </small>
-                {d.revoked && (
-                  <span className="tag amber">許可證已註銷</span>
-                )}
+                <small className="capture-candidate-details">
+                  含量／規格：{d.strength || "未提供"} · 劑型：
+                  {d.form || "未提供"}
+                </small>
+                {d.revoked && <span className="tag amber">許可證已註銷</span>}
               </div>
               <span className={"tag " + (d.hasLeaflet ? "green" : "")}>
                 {d.hasLeaflet ? "可查看仿單" : "未收錄仿單"}
@@ -525,8 +571,31 @@ export function AddMedication({
         </section>
       )}
       {(tab === "manual" || draft) && (
-        <section className="card">
-          <h2>核對藥品與用法</h2>
+        <section className="card capture-review">
+          <div className="row spread">
+            <h2 ref={reviewHeading} tabIndex={-1}>
+              核對藥品與用法
+            </h2>
+            {draft && (
+              <Button
+                className="ghost"
+                disabled={saving}
+                onClick={() => {
+                  setDraft(null);
+                  setSelectedRecognition(null);
+                  window.requestAnimationFrame(() => {
+                    document
+                      .getElementById(
+                        tab === "photo" ? "capture-results" : "capture-search",
+                      )
+                      ?.focus();
+                  });
+                }}
+              >
+                {tab === "photo" ? "返回辨識結果" : "返回搜尋結果"}
+              </Button>
+            )}
+          </div>
           <Notice>
             沒有辨識到的欄位保持空白。請依藥袋或向藥師確認，切勿自行推測。
           </Notice>
@@ -539,7 +608,7 @@ export function AddMedication({
                 const row = recognized.find(
                   (item) => item.key === selectedRecognition,
                 );
-                await api(
+                const saved = await api<Medication>(
                   tab === "photo" && recognitionJob && row
                     ? `/recognitions/${encodeURIComponent(recognitionJob)}/medications/${row.index}`
                     : "/medications",
@@ -555,10 +624,15 @@ export function AddMedication({
                   setDraft(null);
                   if (remaining.length > 0) {
                     setSavedNames((names) => [...names, m.name]);
+                    window.requestAnimationFrame(() => {
+                      document.getElementById("capture-results")?.focus();
+                    });
                     return;
                   }
                 }
-                location.hash = "medications";
+                location.hash = fromDemo
+                  ? `medications?from=demo&medication=${encodeURIComponent(saved.id)}`
+                  : "medications";
               } finally {
                 setSaving(false);
               }
@@ -571,11 +645,29 @@ export function AddMedication({
 }
 export function Medications() {
   const { data, error, loading, refresh } = useData("/medications");
+  const params = new URLSearchParams(location.hash.split("?")[1] || "");
+  const fromDemo = params.get("from") === "demo";
+  const demoMedicationId = fromDemo ? params.get("medication") : null;
+  const demoMedication = data?.items.find(
+    (m: Medication) => m.id === demoMedicationId,
+  );
   const [edit, setEdit] = useState<any>(null),
     [schedule, setSchedule] = useState<any>(null),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(""),
     [result, setResult] = useState<LearningRecord | null>(null);
+  const resultHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (!result) return;
+    resultHeading.current?.focus({ preventScroll: true });
+    resultHeading.current?.scrollIntoView({ block: "start" });
+  }, [result?.id]);
+  useEffect(() => {
+    if (!demoMedicationId || loading) return;
+    const heading = document.getElementById(`medication-${demoMedicationId}`);
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
+  }, [demoMedicationId, loading]);
   async function explain(m: any) {
     setBusy("正在讀取已保存的仿單說明…");
     setMessage("");
@@ -606,7 +698,7 @@ export function Medications() {
   return (
     <>
       <SectionTitle
-        eyebrow="MY MEDICATIONS"
+        eyebrow="我的用藥"
         title="我的藥品"
         action={
           <a className="btn primary" href="#add">
@@ -617,6 +709,20 @@ export function Medications() {
       >
         把每一款藥的用法確認清楚，再放心記錄日常。
       </SectionTitle>
+      {fromDemo && (
+        <div className="demo-context">
+          <BookOpen size={18} />
+          <span>
+            研討會展示 ·{" "}
+            {demoMedication
+              ? `${demoMedication.name}已儲存。${demoMedication.confirmed ? "可開啟仿單說明。" : "目前為草稿，請先編輯並確認用法。"}`
+              : "選擇藥品，開啟說明後繼續展示。"}
+          </span>
+          <a className="text-link" href="#demo">
+            返回展示導覽
+          </a>
+        </div>
+      )}
       {(error || message) && <Notice error>{error || message}</Notice>}
       {busy && <JobNotice text={busy} />}{" "}
       {data?.duplicates?.map((x: any) => (
@@ -644,7 +750,11 @@ export function Medications() {
       ) : (
         <div className="med-grid">
           {data?.items.map((m: any) => (
-            <article className="card med-card" key={m.id}>
+            <article
+              className="card med-card"
+              key={m.id}
+              data-medication-id={m.id}
+            >
               <div className="row spread">
                 <div className="pill-icon">
                   <Pill size={23} />
@@ -653,7 +763,12 @@ export function Medications() {
                   {m.confirmed ? "用法已確認" : "待確認用法"}
                 </span>
               </div>
-              <h2>{m.name}</h2>
+              <h2 id={`medication-${m.id}`} tabIndex={-1}>
+                {m.name}
+              </h2>
+              {m.id === demoMedicationId && (
+                <span className="tag">本次展示新增</span>
+              )}
               <p className="muted med-license">
                 {m.licenseNo || "尚未匹配許可證"}
               </p>
@@ -754,14 +869,30 @@ export function Medications() {
         />
       )}{" "}
       {result && (
-        <section className="card">
-          <h2>
+        <section className="card medication-detail">
+          <h2 ref={resultHeading} tabIndex={-1}>
             {data?.items
               .filter((m: Medication) => result.medicationIds.includes(m.id))
               .map((m: Medication) => m.name)
               .join("、")}
             ｜仿單白話說明
           </h2>
+          {fromDemo && (
+            <a
+              className="btn primary"
+              href={`#demo?record=${encodeURIComponent(result.id)}&step=reading`}
+            >
+              帶這份說明繼續展示
+            </a>
+          )}
+          {result.result.quiz.length > 0 && (
+            <a
+              href={`#learning?record=${encodeURIComponent(result.id)}&section=quiz${fromDemo ? "&from=demo" : ""}`}
+              className="btn primary"
+            >
+              繼續理解測驗
+            </a>
+          )}
           <Evidence
             key={result.id}
             result={result.result}
@@ -773,7 +904,10 @@ export function Medications() {
               ) || []
             }
           />
-          <a href="#learning" className="btn secondary">
+          <a
+            href={`#learning?record=${encodeURIComponent(result.id)}${fromDemo ? "&from=demo" : ""}`}
+            className="btn secondary"
+          >
             到用藥小教室繼續學習
           </a>
         </section>
@@ -862,114 +996,241 @@ export function Learning() {
   const [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(""),
     [message, setMessage] = useState("");
+  const [learningHash, setLearningHash] = useState(location.hash);
+  const detailHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    const updateHash = () => setLearningHash(location.hash);
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
+  }, []);
+  const params = new URLSearchParams(learningHash.split("?")[1] || "");
+  const recordId = params.get("record");
+  const fromDemo = params.get("from") === "demo";
+  const section = ["reading", "warnings", "quiz"].includes(
+    params.get("section") || "",
+  )
+    ? params.get("section")!
+    : "reading";
+  const activeRecord = data?.items.find((r) => r.id === recordId);
+  const demoHref = activeRecord
+    ? `#demo?record=${encodeURIComponent(activeRecord.id)}&step=reading`
+    : "#demo";
+  const indexHref = fromDemo ? "#learning?from=demo" : "#learning";
+  const recordHref = (id: string, target = "reading") =>
+    `#learning?record=${encodeURIComponent(id)}&section=${target}${fromDemo ? "&from=demo" : ""}`;
+  const recordMedications = (r: LearningRecord) =>
+    (meds.data?.items || []).filter((m) => r.medicationIds.includes(m.id));
+  const recordProgress = (r: LearningRecord) =>
+    updates[r.id] || r.progress || learningProgress(r.result.quiz, r.answers);
+  const recordName = (r: LearningRecord) =>
+    recordMedications(r)
+      .map((m) => m.name)
+      .join("、") || "藥品";
+  useEffect(() => {
+    if (!activeRecord || loading || meds.loading) return;
+    const frame = window.requestAnimationFrame(() => {
+      const target =
+        document.getElementById(`${section}-${activeRecord.id}`) ||
+        detailHeading.current;
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeRecord?.id, section, loading, meds.loading]);
   return (
     <>
-      <SectionTitle eyebrow="LEARN WITH CONFIDENCE" title="用藥小教室">
+      <SectionTitle eyebrow="看懂再確認" title="用藥小教室">
         對照原文、理解警語，用幾個小問題確認自己看懂了。
       </SectionTitle>
       <div className="row wrap learning-toolbar">
-        <a className="btn secondary" href="#medications">
-          選擇藥品，開啟仿單說明
-        </a>
-        <a className="btn ghost" href="#profile">
+        {recordId ? (
+          <a className="btn secondary" href={indexHref}>
+            返回全部藥品
+          </a>
+        ) : (
+          <a className="btn secondary" href="#medications">
+            選擇藥品，開啟仿單說明
+          </a>
+        )}
+        {fromDemo && (
+          <a className="btn ghost" href={demoHref}>
+            返回展示入口
+          </a>
+        )}
+        <a className="btn ghost" href="#jobs">
           查看 AI 處理紀錄與重試
         </a>
       </div>
       {busy && <JobNotice text={busy} />}{" "}
       {(error || message) && <Notice error>{error || message}</Notice>}
-      {loading ? (
+      {meds.error && <Notice error>無法讀取藥品名稱：{meds.error}</Notice>}
+      {loading || meds.loading ? (
         <Busy />
+      ) : recordId && !activeRecord ? (
+        <section className="card">
+          <Empty
+            title="找不到這份學習內容"
+            action={
+              <a className="btn secondary" href={indexHref}>
+                返回全部藥品
+              </a>
+            }
+          >
+            內容可能已因藥品或健康資料更新而失效，請重新選擇藥品。
+          </Empty>
+        </section>
       ) : !data?.items.length ? (
         <section className="card">
           <Empty title="還沒有學習內容">
             在「我的藥品」開啟仿單說明，即可開始理解與練習。
           </Empty>
         </section>
-      ) : (
-        data.items.map((r) => {
-          const medications = (meds.data?.items || []).filter((m) =>
-            r.medicationIds.includes(m.id),
-          );
-          const progress =
-            updates[r.id] ||
-            r.progress ||
-            learningProgress(r.result.quiz, r.answers);
-          return (
-            <section className="card learning-record" key={r.id}>
-              <div className="row spread">
-                <h2>
-                  {r.medicationIds.length === 2
-                    ? "交互作用核對"
-                    : (medications.map((m) => m.name).join("、") || "藥品") +
-                      "｜說明與理解確認"}
-                </h2>
-                <span
-                  className={"tag " + (progress.passed ? "green" : "amber")}
-                >
-                  {learningStateLabels[progress.status]}
-                </span>
-              </div>
-              {r.medicationIds.length === 2 && (
-                <p>{medications.map((m) => m.name).join("、")}</p>
-              )}
-              <Evidence
-                result={r.result}
-                learningId={r.id}
-                initialAnswers={r.answers}
-                medications={
-                  r.medicationIds.length === 1 ? medications : undefined
-                }
-                onProgress={(p) => setUpdates((old) => ({ ...old, [r.id]: p }))}
-              />
-            </section>
-          );
-        })
-      )}
-      <section className="card">
-        <h2>兩款藥，一起核對</h2>
-        <p>選擇兩款已確認的藥品，比對其仿單交互作用記載。</p>
-        <div className="row wrap">
-          {meds.data?.items
-            .filter((m: any) => m.confirmed)
-            .map((m: any) => (
-              <label className="choice" key={m.id}>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(m.id)}
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked
-                        ? [...selected, m.id].slice(-2)
-                        : selected.filter((id) => id !== m.id),
-                    )
-                  }
-                />
-                {m.name}
-              </label>
-            ))}
-        </div>
-        <Button
-          className="secondary"
-          disabled={selected.length !== 2 || !!busy}
-          onClick={async () => {
-            setBusy("正在核對仿單…");
-            try {
-              await submitJob(
-                "/interactions",
-                { medicationIds: selected },
-                setBusy,
-              );
-              refresh();
-            } catch (e: any) {
-              setMessage(e.message);
-            } finally {
-              setBusy("");
-            }
-          }}
+      ) : activeRecord ? (
+        <section
+          className="card learning-record learning-detail"
+          key={activeRecord.id}
+          data-learning-id={activeRecord.id}
         >
-          比對交互作用
-        </Button>
-      </section>
+          <div className="row spread">
+            <h2 ref={detailHeading} tabIndex={-1}>
+              {activeRecord.medicationIds.length === 2
+                ? "交互作用核對"
+                : recordName(activeRecord) + "｜說明與理解確認"}
+            </h2>
+            <span
+              className={
+                "tag " +
+                (recordProgress(activeRecord).passed ? "green" : "amber")
+              }
+            >
+              {learningStateLabels[recordProgress(activeRecord).status]}
+            </span>
+          </div>
+          {activeRecord.medicationIds.length === 2 && (
+            <p>{recordName(activeRecord)}</p>
+          )}
+          <Evidence
+            result={activeRecord.result}
+            learningId={activeRecord.id}
+            initialAnswers={activeRecord.answers}
+            medications={
+              activeRecord.medicationIds.length === 1
+                ? recordMedications(activeRecord)
+                : undefined
+            }
+            onProgress={(p) =>
+              setUpdates((old) => ({ ...old, [activeRecord.id]: p }))
+            }
+          />
+          <div className="learning-detail-actions">
+            <a className="btn secondary" href={indexHref}>
+              返回全部藥品
+            </a>
+            {fromDemo && (
+              <a className="btn ghost" href={demoHref}>
+                返回展示入口
+              </a>
+            )}
+          </div>
+        </section>
+      ) : (
+        <div className="learning-index">
+          {data.items.map((r) => {
+            const progress = recordProgress(r);
+            return (
+              <article
+                className="card learning-index-card"
+                key={r.id}
+                data-learning-id={r.id}
+              >
+                <div className="row spread">
+                  <BookOpen size={22} aria-hidden="true" />
+                  <span
+                    className={"tag " + (progress.passed ? "green" : "amber")}
+                  >
+                    {learningStateLabels[progress.status]}
+                  </span>
+                </div>
+                <h2>{recordName(r)}</h2>
+                {r.medicationIds.length === 2 && (
+                  <p className="muted">交互作用核對</p>
+                )}
+                <p className="learning-progress">
+                  已作答 {progress.answered}／{progress.total} 題 · 已答對{" "}
+                  {progress.correct} 題
+                </p>
+                <div className="row wrap">
+                  <a
+                    className="btn primary"
+                    href={recordHref(
+                      r.id,
+                      progress.answered ? "quiz" : "reading",
+                    )}
+                  >
+                    {progress.passed
+                      ? "重新複習"
+                      : progress.answered
+                        ? "繼續學習"
+                        : "開始學習"}
+                    <ArrowRight size={16} />
+                  </a>
+                  <a className="btn ghost" href={recordHref(r.id)}>
+                    閱讀仿單說明
+                  </a>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+      {!recordId && (
+        <section className="card">
+          <h2>兩款藥，一起核對</h2>
+          <p>選擇兩款已確認的藥品，比對其仿單交互作用記載。</p>
+          <div className="row wrap">
+            {meds.data?.items
+              .filter((m: any) => m.confirmed)
+              .map((m: any) => (
+                <label className="choice" key={m.id}>
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(m.id)}
+                    onChange={(e) =>
+                      setSelected(
+                        e.target.checked
+                          ? [...selected, m.id].slice(-2)
+                          : selected.filter((id) => id !== m.id),
+                      )
+                    }
+                  />
+                  {m.name}
+                </label>
+              ))}
+          </div>
+          <Button
+            className="secondary"
+            disabled={selected.length !== 2 || !!busy}
+            onClick={async () => {
+              setBusy("正在核對仿單…");
+              try {
+                const job = await submitJob(
+                  "/interactions",
+                  { medicationIds: selected },
+                  setBusy,
+                );
+                await refresh();
+                location.hash = recordHref(job.id).slice(1);
+              } catch (e: any) {
+                setMessage(e.message);
+              } finally {
+                setBusy("");
+              }
+            }}
+          >
+            比對交互作用
+          </Button>
+        </section>
+      )}
     </>
   );
 }
@@ -982,7 +1243,7 @@ export function Chat() {
     [error, setError] = useState("");
   return (
     <>
-      <SectionTitle eyebrow="ASK WITH SOURCES" title="用藥問答">
+      <SectionTitle eyebrow="有依據的回答" title="用藥問答">
         把看不懂的地方說出來，一起回到仿單找依據。
       </SectionTitle>
       {meds.error && <Notice error>無法讀取藥品：{meds.error}</Notice>}
@@ -1008,7 +1269,7 @@ export function Chat() {
             ))}
           {busy && <JobNotice text={busy} />}{" "}
           {error && <Notice error>{error}</Notice>}
-          <a className="btn ghost" href="#profile">
+          <a className="btn ghost" href="#jobs">
             查看 AI 處理紀錄與重試
           </a>
           <form

@@ -337,7 +337,8 @@ function assertSupported(result: GroundedResult, source: Leaflet) {
       question.explanationKind,
       "Published explanations must be identified as original source text",
     ).toBe("source_quote");
-    const heading = /^依仿單「(?:適應症|用途\(適應症\)|效能|警語|警語及注意事項|注意事項|使用上注意事項|副作用|副作用\/不良反應|附記|禁忌|禁忌症|交互作用|過量)」原文：/;
+    const heading =
+      /^依仿單「(?:適應症|用途\(適應症\)|效能|警語|警語及注意事項|注意事項|使用上注意事項|副作用|副作用\/不良反應|附記|禁忌|禁忌症|交互作用|過量)」原文：/;
     expect(question.explain).toMatch(heading);
     const lines = question.explain
       .replace(heading, "")
@@ -361,11 +362,21 @@ async function login() {
     page!.getByRole("button", { name: "登出", exact: true }),
   ).toBeVisible();
 }
-async function showLearning() {
-  await page!.goto(base + "/#learning");
+async function showLearning(recordId: string) {
+  await page!.goto(
+    base +
+      "/#learning?record=" +
+      encodeURIComponent(recordId) +
+      "&section=quiz",
+  );
   await expect(
     page!.getByRole("heading", { name: "用藥小教室", exact: true }),
   ).toBeVisible();
+  await expect(page!.locator(".learning-record")).toHaveCount(1);
+  await expect(page!.locator(".learning-record")).toHaveAttribute(
+    "data-learning-id",
+    recordId,
+  );
 }
 
 try {
@@ -729,7 +740,7 @@ try {
             await step(
               "resume-partially-confirmed-recognition-no-new-ai",
               async (entry) => {
-                await page!.goto(base + "/#profile");
+                await page!.goto(base + "/#jobs");
                 const resumeLink = page!.getByRole("link", {
                   name: "繼續核對辨識結果",
                   exact: true,
@@ -923,10 +934,11 @@ try {
           await step(
             label + ":quiz-source-and-persistence:" + medication.licenseNo,
             async (entry) => {
-              await showLearning();
-              const record = page!
-                .locator(".learning-record")
-                .filter({ hasText: medication.name });
+              await showLearning(row.id);
+              const record = page!.locator(
+                `.learning-record[data-learning-id="${row.id}"]`,
+              );
+              await expect(record).toContainText(medication.name);
               const quiz = record.locator(".quiz");
               const retry = quiz.getByRole("button", {
                 name: "重新複習",
@@ -958,7 +970,7 @@ try {
                     .getByRole("button", { name: "登出", exact: true })
                     .click();
                   await login();
-                  await showLearning();
+                  await showLearning(row.id);
                   await expect(
                     quiz.getByRole("radio").nth(wrong),
                   ).toBeChecked();
@@ -1009,7 +1021,7 @@ try {
                 .getByRole("button", { name: "登出", exact: true })
                 .click();
               await login();
-              await showLearning();
+              await showLearning(row.id);
               await expect(
                 quiz.getByText("答對了。已完成測驗，進度已保存。", {
                   exact: true,

@@ -132,7 +132,7 @@ test("chat reports failed reads instead of presenting an empty medication list",
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   for (const [path, message] of [
     ["medications", "藥品讀取測試失敗"],

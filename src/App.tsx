@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Pill,
   House,
@@ -16,9 +16,11 @@ import {
   Menu,
   X,
   Package,
-  Sun,
   CheckCircle2,
   Sparkles,
+  BookOpen,
+  Presentation,
+  History as HistoryIcon,
 } from "lucide-react";
 import { useAuth } from "./auth";
 import { api } from "./api";
@@ -33,6 +35,8 @@ import {
 } from "./components";
 import { Medications, AddMedication, Learning, Chat } from "./MedicationViews";
 import { Care, Cabinet, Profile, Admin, History } from "./ManagementViews";
+import { JobHistory } from "./JobHistory";
+import { Demo } from "./Demo";
 const navigation = [
   ["home", "今日總覽", House],
   ["medications", "我的藥品", Pill],
@@ -48,6 +52,35 @@ export function App() {
     [menu, setMenu] = useState(false),
     [scale, setScale] = useState(1),
     [online, setOnline] = useState(navigator.onLine);
+  const menuTrigger = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!menu) return;
+    menuTrigger.current = document.activeElement as HTMLElement | null;
+    document.querySelector<HTMLElement>(".sidebar a")?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenu(false);
+      if (event.key !== "Tab") return;
+      const links = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          ".sidebar a[href], .sidebar button",
+        ),
+      );
+      const first = links[0],
+        last = links.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      if (menuTrigger.current?.isConnected) menuTrigger.current.focus();
+    };
+  }, [menu]);
   useEffect(() => {
     const hash = () => {
       setPage(location.hash.slice(1) || "home");
@@ -71,11 +104,39 @@ export function App() {
     home: <Home />,
     medications: <Medications />,
     add: (
-      <AddMedication
-        recognitionId={new URLSearchParams(pageQuery).get("recognition")}
-      />
+      <>
+        {new URLSearchParams(pageQuery).get("from") === "demo" && (
+          <div className="demo-context">
+            <Presentation size={18} />
+            <span>研討會展示 · 藥袋辨識</span>
+            <a
+              className="text-link"
+              href={
+                "#demo?record=" +
+                encodeURIComponent(
+                  new URLSearchParams(pageQuery).get("record") || "",
+                )
+              }
+            >
+              返回展示導覽
+            </a>
+          </div>
+        )}
+        <AddMedication
+          recognitionId={new URLSearchParams(pageQuery).get("recognition")}
+        />
+      </>
     ),
     learning: <Learning />,
+    demo: <Demo />,
+    jobs: (
+      <>
+        <SectionTitle eyebrow="接著完成手上的事" title="處理紀錄與恢復">
+          查看辨識與說明的處理狀態，從中斷的地方繼續。
+        </SectionTitle>
+        <JobHistory />
+      </>
+    ),
     chat: <Chat />,
     care: <Care />,
     cabinet: <Cabinet />,
@@ -102,21 +163,37 @@ export function App() {
       >
         跳到主要內容
       </a>
-      <aside className={menu ? "sidebar open" : "sidebar"}>
+      <aside
+        className={menu ? "sidebar open" : "sidebar"}
+        aria-label="功能選單"
+        role={menu ? "dialog" : undefined}
+        aria-modal={menu || undefined}
+        onClick={(event) => {
+          if ((event.target as Element).closest("a[href]")) setMenu(false);
+        }}
+      >
+        <button
+          type="button"
+          className="icon-button drawer-close"
+          aria-label="關閉選單"
+          onClick={() => setMenu(false)}
+        >
+          <X size={21} />
+        </button>
         <a className="brand" href="#home">
           <img src="/icon.svg" alt="" />
           <div>
-            藥智通<small>YOUR DAILY CARE</small>
+            藥智通<small>看懂用藥・記錄日常</small>
           </div>
         </a>
         <span className="nav-label">我的健康日常</span>
-        <nav>
+        <nav aria-label="主要導覽">
           {navigation.map(([id, label, Icon]) => (
             <a
               href={"#" + id}
               key={id}
-              className={page === id ? "active" : ""}
-              aria-current={page === id ? "page" : undefined}
+              className={pageName === id ? "active" : ""}
+              aria-current={pageName === id ? "page" : undefined}
             >
               <Icon size={20} />
               {label}
@@ -125,15 +202,21 @@ export function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="care-note">
-            <Heart size={22} />
-            <p>
-              照顧自己，
-              <br />
-              也讓在乎的人安心。
-            </p>
-            <span>每一天，都安心一點</span>
-          </div>
+          <a
+            href="#demo"
+            className={pageName === "demo" ? "active demo-link" : "demo-link"}
+            aria-current={pageName === "demo" ? "page" : undefined}
+          >
+            <Presentation size={19} />
+            研討會展示
+          </a>
+          <a
+            href="#jobs"
+            aria-current={pageName === "jobs" ? "page" : undefined}
+          >
+            <HistoryIcon size={18} />
+            處理紀錄與恢復
+          </a>
           <a href="#profile">
             <Settings size={18} />
             帳號與設定
@@ -158,7 +241,7 @@ export function App() {
             >
               {menu ? <X /> : <Menu />}
             </button>
-            <span className="top-label">健康，從看懂用藥開始</span>
+            <span className="top-label">看懂用藥，記錄日常</span>
           </div>
           <div className="row">
             <button
@@ -187,7 +270,7 @@ export function App() {
           {auth.config.mode === "local" && (
             <div className="local-banner">
               <span className="dot" />
-              本機開發模式 · 資料保存在這台電腦 ·{" "}
+              本機使用 · 資料保存在這台電腦 ·{" "}
               {auth.config.ai
                 ? `${auth.config.aiProviderLabel || "AI"} API 已設定`
                 : "AI 尚未設定"}
@@ -200,15 +283,50 @@ export function App() {
           <span>以官方仿單為依據，陪你看懂每一份用藥資訊。</span>
         </footer>
       </div>
-      <nav className="bottom-nav">
-        {navigation
-          .filter((x) => ["home", "medications", "care", "chat"].includes(x[0]))
-          .map(([id, label, Icon]) => (
-            <a key={id} href={"#" + id} className={page === id ? "active" : ""}>
-              <Icon size={21} />
-              <span>{label}</span>
-            </a>
-          ))}
+      <nav className="bottom-nav" aria-label="手機主要導覽">
+        <a
+          href="#home"
+          className={pageName === "home" ? "active" : ""}
+          aria-current={pageName === "home" ? "page" : undefined}
+        >
+          <House size={21} />
+          <span>今日</span>
+        </a>
+        <a
+          href="#medications"
+          className={pageName === "medications" ? "active" : ""}
+          aria-current={pageName === "medications" ? "page" : undefined}
+        >
+          <Pill size={21} />
+          <span>藥品</span>
+        </a>
+        <a
+          href="#add"
+          className={"capture-nav" + (pageName === "add" ? " active" : "")}
+          aria-current={pageName === "add" ? "page" : undefined}
+        >
+          <span className="capture-nav-icon">
+            <ScanLine size={22} />
+          </span>
+          <span>拍藥袋</span>
+        </a>
+        <a
+          href="#learning"
+          className={pageName === "learning" ? "active" : ""}
+          aria-current={pageName === "learning" ? "page" : undefined}
+        >
+          <BookOpen size={21} />
+          <span>小教室</span>
+        </a>
+        <button
+          type="button"
+          aria-label="更多功能"
+          aria-expanded={menu}
+          onClick={() => setMenu(!menu)}
+        >
+          <Menu size={21} />
+          <span>更多</span>
+        </button>
       </nav>
     </div>
   );
@@ -395,7 +513,8 @@ function Login() {
 function Home() {
   const { me } = useAuth();
   const today = useData("/today"),
-    meds = useData("/medications");
+    meds = useData("/medications"),
+    learning = useData("/learning");
   const [message, setMessage] = useState("");
   useEffect(() => {
     const timer = setInterval(() => {
@@ -427,7 +546,7 @@ function Home() {
     <>
       <SectionTitle
         eyebrow={date}
-        title={`${me.account.displayName}，今天也照顧好自己。`}
+        title={`${me.account.displayName}，今天的用藥日常。`}
         action={
           <a className="btn primary" href="#add">
             <Plus size={18} />
@@ -435,46 +554,49 @@ function Home() {
           </a>
         }
       >
-        每一個小小的記錄，都是照顧自己的開始。
+        看懂藥袋、核對用法，照自己的排程記錄。
       </SectionTitle>
       <div className="home-grid">
         <div className="home-main">
-          <section className="hero-card">
-            <div>
-              <span className="hero-label">
-                <Sun size={16} /> YOUR DAILY MOMENT
+          <div className="daily-actions">
+            <a className="daily-action capture-action" href="#add">
+              <span className="action-icon">
+                <ScanLine size={27} />
               </span>
-              <h2>
-                把用藥的事，
-                <br />
-                一件一件，放在心上。
-              </h2>
-              <p>
-                看懂、確認、記錄。
-                <br />
-                讓今天的健康日常更有把握。
-              </p>
-              <a href="#medications">
-                查看我的藥品 <ArrowRight size={18} />
-              </a>
-            </div>
-            <div className="hero-art" aria-hidden="true">
-              <div className="orbit orbit-one" />
-              <div className="orbit orbit-two" />
-              <div className="pill-art">
-                <span />
+              <div>
+                <span className="eyebrow">第一步，從藥袋開始</span>
+                <h2>拍藥袋，整理用藥</h2>
+                <p>選擇照片，再逐項確認辨識結果。</p>
               </div>
-              <div className="float-check">
-                <CheckCircle2 size={24} />
+              <ArrowRight size={22} />
+            </a>
+            <a className="daily-action learn-action" href="#learning">
+              <span className="action-icon">
+                <BookOpen size={27} />
+              </span>
+              <div>
+                <span className="eyebrow">接著，看懂再練習</span>
+                <h2>閱讀說明與理解測驗</h2>
+                <p>
+                  {learning.error
+                    ? "暫時無法讀取學習進度，點此重試。"
+                    : learning.loading
+                      ? "正在讀取學習進度…"
+                      : learning.data?.items?.length
+                        ? `已有 ${learning.data.items.length} 份說明，隨時繼續。`
+                        : "從我的藥品開啟仿單說明。"}
+                </p>
               </div>
-              <div className="leaf-art" />
-            </div>
-          </section>
+              <ArrowRight size={22} />
+            </a>
+          </div>
           <div className="stats">
             <div>
               <span>目前藥品</span>
               <strong>
-                {meds.data?.items?.length || 0}
+                {meds.loading || meds.error
+                  ? "—"
+                  : meds.data?.items?.length || 0}
                 <small>款</small>
               </strong>
               <span className="stat-caption">集中管理，隨時查閱</span>
@@ -482,15 +604,20 @@ function Home() {
             <div>
               <span>今日已記錄服用</span>
               <strong>
-                {done}
-                <small>/ {rows.length} 次</small>
+                {today.loading || today.error ? "—" : done}
+                <small>
+                  / {today.loading || today.error ? "—" : rows.length} 次
+                </small>
               </strong>
               <span className="stat-caption">依你確認的排程</span>
             </div>
             <div>
               <span>待確認用法</span>
               <strong>
-                {meds.data?.items?.filter((m: any) => !m.confirmed).length || 0}
+                {meds.loading || meds.error
+                  ? "—"
+                  : meds.data?.items?.filter((m: any) => !m.confirmed).length ||
+                    0}
                 <small>款</small>
               </strong>
               <span className="stat-caption">確認後再設定提醒</span>
@@ -509,6 +636,13 @@ function Home() {
             </div>
             {today.loading ? (
               <Busy />
+            ) : today.error ? (
+              <>
+                <Notice error>{today.error}</Notice>
+                <Button className="secondary" onClick={today.refresh}>
+                  重新讀取今天的用藥
+                </Button>
+              </>
             ) : rows.length === 0 ? (
               <Empty
                 title="今天還沒有用藥排程"
@@ -561,23 +695,20 @@ function Home() {
                 ))}
               </div>
             )}
-            {(today.error || message) && (
-              <Notice error>{today.error || message}</Notice>
-            )}
+            {message && <Notice error>{message}</Notice>}
           </section>
         </div>
         <aside className="home-side">
-          <section className="card start-card">
-            <span className="eyebrow">A LITTLE HELP</span>
-            <h2>從一張藥袋開始</h2>
-            <p>拍下藥袋，協助整理藥名與用法，再由你逐項確認。</p>
-            <div className="scan-visual">
-              <ScanLine size={56} strokeWidth={1} />
-              <span>讓複雜的資訊，變清楚</span>
-            </div>
-            <a className="btn primary full" href="#add">
-              <ScanLine size={17} />
-              辨識我的藥袋
+          <section className="card next-step-card">
+            <span className="eyebrow">我的下一步</span>
+            <h2>用藥資訊，逐步確認</h2>
+            <ol className="daily-checklist">
+              <li>拍攝或選擇清楚的藥袋照片</li>
+              <li>核對藥名、劑量與服用方式</li>
+              <li>對照仿單，完成理解測驗</li>
+            </ol>
+            <a className="text-link" href="#medications">
+              查看我的藥品 <ArrowRight size={16} />
             </a>
           </section>
           <section className="card family-card">
@@ -597,6 +728,14 @@ function Home() {
               <p>AI 整理內容可對照官方仿單原文。</p>
             </div>
           </div>
+          <a className="seminar-entry" href="#demo">
+            <Presentation size={20} />
+            <div>
+              <strong>研討會展示</strong>
+              <span>從辨識結果走完整個流程</span>
+            </div>
+            <ArrowRight size={17} />
+          </a>
         </aside>
       </div>
     </>

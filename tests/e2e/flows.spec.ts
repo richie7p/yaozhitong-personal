@@ -12,7 +12,7 @@ test("offline keeps the public shell without caching private APIs", async ({
     .evaluate((el) => getComputedStyle(el).display);
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
@@ -42,7 +42,7 @@ test("offline keeps the public shell without caching private APIs", async ({
   ).toBeVisible();
   await expect(page.locator(".login-page")).toHaveCSS("display", onlineDisplay);
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toHaveCount(0);
   await context.setOffline(false);
 });
@@ -55,7 +55,7 @@ test("manual medication, scheduling, log, isolation and care revocation", async 
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
   await page.screenshot({
     path: `test-results/home-${testInfo.project.name}.png`,
@@ -142,6 +142,6 @@ test("admin access and privacy boundary", async ({ page }) => {
   await page.getByRole("button", { name: "登出", exact: true }).click();
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: /今天也照顧好自己/ }),
+    page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
 });

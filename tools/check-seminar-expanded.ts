@@ -385,29 +385,69 @@ async function runAttempt(
             const result = recognition!.result as any;
             expect(result.status).toBe("succeeded");
             if (testCase.scope === "usage_review") {
-              const compact = (s: string) => s.normalize("NFKC").replace(/\s/gu, "").toUpperCase();
-              const row = result.medications.find((row: any) => row.name?.trim() &&
-                compact(row.name + " " + row.rawText).includes(compact(testCase.reviewNameMustInclude!)));
-              expect(row, "The visible drug name must remain readable.").toBeTruthy();
-              for (const field of ["doseAmount", "doseUnit", "doseText", "frequencyRaw"])
-                expect(row[field], "Conflicting usage must stay unconfirmed: " + field).toBeNull();
+              const compact = (s: string) =>
+                s.normalize("NFKC").replace(/\s/gu, "").toUpperCase();
+              const row = result.medications.find(
+                (row: any) =>
+                  row.name?.trim() &&
+                  compact(row.name + " " + row.rawText).includes(
+                    compact(testCase.reviewNameMustInclude!),
+                  ),
+              );
+              expect(
+                row,
+                "The visible drug name must remain readable.",
+              ).toBeTruthy();
+              for (const field of [
+                "doseAmount",
+                "doseUnit",
+                "doseText",
+                "frequencyRaw",
+              ])
+                expect(
+                  row[field],
+                  "Conflicting usage must stay unconfirmed: " + field,
+                ).toBeNull();
               expect([null, "外用"]).toContain(row.route);
-              expect(row.durationDays === null || (row.durationDays === 1 && /1\s*日份/.test(row.rawText))).toBe(true);
+              expect(
+                row.durationDays === null ||
+                  (row.durationDays === 1 && /1\s*日份/.test(row.rawText)),
+              ).toBe(true);
               expect(row.confidence).toBe("low");
               expect(result.guidance).toMatch(/核對|確認/);
-              expect((await call<{items: Medication[]}>("/medications")).items).toHaveLength(0);
-              entry.usageReview = { passed: true, confirmedIdentity: false, guidance: result.guidance,
-                doseAndFrequencyLeftBlank: true, route: row.route, durationDays: row.durationDays,
-                conflictDetected: /矛盾|衝突/.test(result.guidance), medicationsCreated: 0 };
-              await expect(page!.getByText(result.guidance, {exact: true})).toBeVisible();
+              expect(
+                (await call<{ items: Medication[] }>("/medications")).items,
+              ).toHaveLength(0);
+              entry.usageReview = {
+                passed: true,
+                confirmedIdentity: false,
+                guidance: result.guidance,
+                doseAndFrequencyLeftBlank: true,
+                route: row.route,
+                durationDays: row.durationDays,
+                conflictDetected: /矛盾|衝突/.test(result.guidance),
+                medicationsCreated: 0,
+              };
+              await expect(
+                page!.getByText(result.guidance, { exact: true }),
+              ).toBeVisible();
               await page!.goto(base + "/#add?recognition=" + recognition!.id);
               await page!.reload();
-              await expect(page!.getByText(result.guidance, {exact: true})).toBeVisible();
-              expect((await call<{items: Medication[]}>("/medications")).items).toHaveLength(0);
+              await expect(
+                page!.getByText(result.guidance, { exact: true }),
+              ).toBeVisible();
+              expect(
+                (await call<{ items: Medication[] }>("/medications")).items,
+              ).toHaveLength(0);
             } else {
-              entry.recognitionComparison = compareRecognition(result.medications, testCase.expected);
-              expect(entry.recognitionComparison.passed,
-                "Every manually supplied field and official identity must match.").toBe(true);
+              entry.recognitionComparison = compareRecognition(
+                result.medications,
+                testCase.expected,
+              );
+              expect(
+                entry.recognitionComparison.passed,
+                "Every manually supplied field and official identity must match.",
+              ).toBe(true);
             }
             for (const width of [1280, 375]) {
               await page!.setViewportSize({
@@ -430,7 +470,9 @@ async function runAttempt(
     entry.photographStatus = testCase.skipRecognition
       ? "not_applicable_manual_medication"
       : recognitionMatches
-        ? testCase.scope === "usage_review" ? "review_required_as_expected" : "passed"
+        ? testCase.scope === "usage_review"
+          ? "review_required_as_expected"
+          : "passed"
         : "failed";
     const confirmed: Medication[] = [];
     if (
@@ -556,7 +598,9 @@ async function runAttempt(
               leaflets.find(
                 (source) => source.licenseNo === medication.licenseNo,
               )!,
-              testCase.expected.find(expected => expected.licenseNo === medication.licenseNo)?.requiredSafety,
+              testCase.expected.find(
+                (expected) => expected.licenseNo === medication.licenseNo,
+              )?.requiredSafety,
             );
             entry.sourceValidation.push({
               licenseNo: medication.licenseNo,
@@ -593,10 +637,17 @@ async function runAttempt(
           await step(
             label + ":wrong-source-correct-reload:" + medication.licenseNo,
             async () => {
-              await page!.goto(base + "/#learning");
-              const record = page!
-                .locator(".learning-record")
-                .filter({ hasText: medication.name });
+              await page!.goto(
+                base +
+                  "/#learning?record=" +
+                  encodeURIComponent(row.id) +
+                  "&section=quiz",
+              );
+              const record = page!.locator(
+                `.learning-record[data-learning-id="${row.id}"]`,
+              );
+              await expect(page!.locator(".learning-record")).toHaveCount(1);
+              await expect(record).toContainText(medication.name);
               const quiz = record.locator(".quiz");
               const review = quiz.getByRole("button", {
                 name: "重新複習",
@@ -988,13 +1039,15 @@ try {
           entry.photographStatus === "review_required_as_expected",
       ).length,
       actualCameraPhotographPassed: photoAttempts.filter(
-        (entry: any) => entry.photographStatus === "passed" && entry.status === "passed",
+        (entry: any) =>
+          entry.photographStatus === "passed" && entry.status === "passed",
       ).length,
       literalCameraRecognitionPassed: photoAttempts.filter(
         (entry: any) => entry.photographStatus === "passed",
       ).length,
       usageReviewPhotoPassed: photoAttempts.filter(
-        (entry: any) => entry.photographStatus === "review_required_as_expected",
+        (entry: any) =>
+          entry.photographStatus === "review_required_as_expected",
       ).length,
       manualMedicationAttempts: report.attempts.filter(
         (entry: any) => entry.skipRecognition,
@@ -1068,7 +1121,8 @@ try {
         (entry: any) => !!entry.image,
       ).length,
       actualCameraPhotographPassed: photoAttempts.filter(
-        (entry: any) => entry.photographStatus === "passed" && entry.status === "passed",
+        (entry: any) =>
+          entry.photographStatus === "passed" && entry.status === "passed",
       ).length,
       literalCameraRecognitionPassed: photoAttempts.filter(
         (entry: any) => entry.photographStatus === "passed",
