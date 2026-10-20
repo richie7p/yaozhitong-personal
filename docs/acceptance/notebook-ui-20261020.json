@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-20",
+  "change": "Unified editorial medication notebook interface",
+  "primaryPort": 8085,
+  "previewServiceEnabled": false,
+  "applicationEntry": "#home",
+  "presentationMode": "#demo",
+  "e2e": {
+    "caseViewportCombinations": 42,
+    "fullRunPassed": 38,
+    "fullRunFailedOnOldSelectors": 4,
+    "correctedSelectorRetestPassed": 4,
+    "correctedSelectorRetestFailed": 0,
+    "single42of42Run": false,
+    "usesMockUpstream": true
+  },
+  "formalSavedResults": {
+    "passedSteps": 64,
+    "failedSteps": 0,
+    "medications": 8,
+    "questions": 25,
+    "realAiCalls": 0,
+    "newAiJobs": 0,
+    "browserErrors": 0,
+    "protectedCollectionsPreserved": true,
+    "historicalReportsAndScreenshotsPreserved": true,
+    "verifiedNewServiceProcess": true,
+    "windowsRebootPerformed": false
+  },
+  "visualReview": {
+    "initialScreenshots": 20,
+    "targetedRetestScreenshots": 3,
+    "formalScreenshots": 5,
+    "desktopWidth": 1440,
+    "mobileWidth": 375,
+    "fontScaleChecked": 1.2,
+    "blockingFindingsRemaining": 0,
+    "fullAccessibilityCertification": false
+  },
+  "limitations": "UI validation does not expand the existing v13 photograph or clinical validation scope. No new real AI photograph acceptance was performed."
+}
