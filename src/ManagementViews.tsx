@@ -14,6 +14,8 @@ import {
 import { api, fileBase64 } from "./api";
 import { useAuth } from "./auth";
 import { JobHistory } from "./JobHistory";
+import { cabinetExpiryStatus } from "../shared/dates";
+import { useTaipeiDay } from "./use-taipei-day";
 import {
   Button,
   Busy,
@@ -236,6 +238,7 @@ export function Care() {
 }
 export function Cabinet() {
   const { data, refresh, error } = useData("/cabinet");
+  const today = useTaipeiDay();
   const [edit, setEdit] = useState<any>(null),
     [message, setMessage] = useState("");
   return (
@@ -333,53 +336,48 @@ export function Cabinet() {
             記下名稱、存量與有效日期，之後隨時更新。
           </Empty>
         ) : (
-          data.items.map((r: any) => (
-            <div className="list-row" key={r.id}>
-              <div className="grow">
-                <strong>{r.name}</strong>
-                <small>
-                  {r.quantity} {r.unit} ·{" "}
-                  {r.expiresAt ? "有效至 " + r.expiresAt : "尚未填寫效期"}
-                </small>
-              </div>
-              <span
-                className={
-                  "tag " +
-                  (!r.disposed &&
-                  r.expiresAt &&
-                  r.expiresAt < new Date().toISOString().slice(0, 10)
-                    ? "amber"
-                    : "")
-                }
-              >
-                {r.disposed
-                  ? "已處理"
-                  : r.expiresAt &&
-                      r.expiresAt < new Date().toISOString().slice(0, 10)
-                    ? "已過期"
-                    : "保存中"}
-              </span>
-              <Button onClick={() => setEdit(r)}>編輯</Button>
-              {!r.disposed && (
-                <Button
-                  onClick={async () => {
-                    try {
-                      setMessage("");
-                      await api("/cabinet/" + r.id, "PUT", {
-                        ...r,
-                        disposed: true,
-                      });
-                      await refresh();
-                    } catch (e: any) {
-                      setMessage(e.message);
-                    }
-                  }}
+          data.items.map((r: any) => {
+            const expiry = cabinetExpiryStatus(r, today);
+            return (
+              <div className="list-row" key={r.id}>
+                <div className="grow">
+                  <strong>{r.name}</strong>
+                  <small>
+                    {r.quantity} {r.unit} ·{" "}
+                    {r.expiresAt ? "有效至 " + r.expiresAt : "尚未填寫效期"}
+                  </small>
+                </div>
+                <span
+                  className={"tag " + (expiry === "expired" ? "amber" : "")}
                 >
-                  標記已處理
-                </Button>
-              )}
-            </div>
-          ))
+                  {expiry === "disposed"
+                    ? "已處理"
+                    : expiry === "expired"
+                      ? "已過期"
+                      : "保存中"}
+                </span>
+                <Button onClick={() => setEdit(r)}>編輯</Button>
+                {!r.disposed && (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        setMessage("");
+                        await api("/cabinet/" + r.id, "PUT", {
+                          ...r,
+                          disposed: true,
+                        });
+                        await refresh();
+                      } catch (e: any) {
+                        setMessage(e.message);
+                      }
+                    }}
+                  >
+                    標記已處理
+                  </Button>
+                )}
+              </div>
+            );
+          })
         )}
       </section>
       <Notice>

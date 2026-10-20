@@ -29,7 +29,7 @@ import {
   deleteToken,
   isSupported,
 } from "firebase/messaging";
-import { api, setTokenProvider } from "./api";
+import { api, setJobIdentity, setTokenProvider } from "./api";
 interface AuthState {
   config: any;
   me: any;
@@ -50,7 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [me, setMe] = useState<any>(null),
     [loading, setLoading] = useState(true);
   async function reload() {
-    setMe(await api("/me"));
+    const next = await api("/me");
+    setJobIdentity(next.account.id);
+    setMe(next);
   }
   useEffect(() => {
     let stop = () => {};
@@ -65,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               await reload();
             } catch {
               sessionStorage.removeItem("yzt-local-token");
+              setJobIdentity(null);
+              setTokenProvider(async () => "");
             }
           }
           setLoading(false);
@@ -80,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               : "",
           );
           stop = onAuthStateChanged(firebaseAuth, async (u) => {
+            setJobIdentity(u?.uid || null);
             try {
               setMe(u ? await api("/me") : null);
             } catch {
@@ -119,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await reload();
   }
   async function logout() {
+    setJobIdentity(null);
     if (deviceId) {
       await api("/devices/" + deviceId, "DELETE").catch(() => {});
       if (firebaseApp)

@@ -249,6 +249,7 @@ export function AddMedication({
     [error, setError] = useState(""),
     [file, setFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const photoSelectionVersion = useRef(0);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const [recognitionJob, setRecognitionJob] = useState<string | null>(null);
   const fromDemo =
@@ -346,22 +347,26 @@ export function AddMedication({
   async function choosePhoto(input: HTMLInputElement) {
     const chosen = input.files?.[0] || null;
     if (!chosen) return;
+    const version = ++photoSelectionVersion.current;
     setFile(null);
+    setPhotoPreview("");
+    setRecognized([]);
+    setDraft(null);
+    setSelectedRecognition(null);
+    setSavedNames([]);
+    setRecognitionJob(null);
     setError("");
     setBusy("正在檢查照片…");
     try {
       await recognitionPhotoType(chosen);
+      if (version !== photoSelectionVersion.current) return;
       setFile(chosen);
-      setRecognized([]);
-      setDraft(null);
-      setSelectedRecognition(null);
-      setSavedNames([]);
-      setRecognitionJob(null);
     } catch (e: any) {
+      if (version !== photoSelectionVersion.current) return;
       input.value = "";
       setError(e.message);
     } finally {
-      setBusy("");
+      if (version === photoSelectionVersion.current) setBusy("");
     }
   }
   const select = (d: any) =>
