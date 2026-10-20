@@ -1,38 +1,59 @@
 # Google Cloud 與 Firebase 部署
 
-部署腳本已準備 OpenAI／NVIDIA 供應商選擇、模型與 Secret Manager 接法，尚未在使用者的雲端帳號實際部署或驗收。實際部署仍需要有效的 Google Cloud 專案、計費帳號、Firebase Web 設定與 FCM Web Push 憑證；本機設定檢查通過不代表已可正式營運。
+2026-10-20 已完成 `asia-east1` 的 Google Cloud TEST 首次部署，並以真實 Firebase 登入、雲端資料庫／佇列及 OpenAI API 跑通固定合成藥袋流程。目前是受控測試環境，尚未完成大眾公開使用所需的全部驗收。
 
 ## 目前狀態（2026-10-20）
 
-目前正式本機版採用 OpenAI `gpt-6-luna`，日常與研討會展示使用同一套介面。`infra/deploy.ps1` 已預設選擇 OpenAI，可明確指定供應商與文字／影像模型；Web 與 worker 會使用同一組供應商、模型及對應 Secret，不自動跨供應商備援。這次只準備程式與文件，**沒有建立雲端資源、執行部署或驗證雲端可用性**。
+雲端與本機使用同一套介面，文字／影像均採 OpenAI `gpt-6-luna`、思考設定 `none`。Web 與 worker 使用同一組供應商、模型及對應 Secret，不自動跨供應商備援。現行映像為 `20261020-google-auth`，worker／web 各有100%流量指向本次修正 revision；首次兩個AI任務的映像 `20261020-first-test` 另作歷史基準保存。兩個映像的固定 digest 與各自驗收結果見[可攜驗收摘要](acceptance/cloud-first-deploy-20261020.json)。
 
-上雲前尚需完成：
+已完成的固定雲端範圍：
 
-- 設定 Firebase 正式登入、授權網域與管理員；將官方主檔及已核對仿單受控匯入雲端，不把本機測試資料庫整份搬入。
-- 在雲端測試專案驗證所選模型的帳號存取權、金鑰與額度，再驗收辨識、仿單、理解測驗、帳號隔離、Cloud Tasks／Scheduler、失敗恢復、推播與備份還原，並建立實際費用通知。
+- Firebase Email／密碼、Google provider、授權網域、明確帳號連結策略與 Web Push VAPID 已設定。實際驗收採兩個合成帳號的 Firebase Email／密碼登入；僅其中一個透過應用管理流程取得 AI 測試資格，暫時管理員 claim 隨即移除。
+- 從官方來源匯入 **66,511筆**藥品主檔，獨立重下載並核對咳服錠 `衛署藥製字第026087號` 官方 PDF，發布 **1份**完整頁來源。`checkedBy=codex-source-verification` 表示來源逐字核對，不表示醫事審核。本機八藥示範資料庫沒有搬到雲端。
+- 同一張無個資合成藥袋辨識兩款藥，保存咳服錠後產生4條說明與4題測驗；副作用、注意事項、警語三個完整欄位均核對 claim、引用及測驗對應。兩輪 API 各 **8／8** 通過，涵蓋重送、不同內容重複保存的409拒絕、跨帳號存取拒絕、答錯再答對及重新登入保存。
+- 第一輪建立 **2個 AI 任務**，合計 **3次實際 OpenAI HTTP 呼叫**（影像、生成、核對）；無重試，任務處理時間分別約10.2秒與8.1秒。第二輪使用相同狀態與冪等鍵，沿用原任務，沒有新增模型呼叫。這不是兩次全新影像／模型推論，也不是長期可用性測試。
+- Google登入修正版部署後，再以相同合成帳號、資料及冪等鍵重送第三輪 **8／8** 通過，仍只有原來兩個任務，沒有新增模型呼叫；另有 **5／5登入安全檢查**通過，核對合成帳號登入、匿名存取拒絕、無效Google憑證拒絕、客戶端指定UID拒絕及Firebase帳號未被改動。
+- Chrome 另實際登入合成帳號，核對已保存藥品、三欄完整安全文字及4題，實際答錯再答對並保存。合成帳號由管理工具設定 `emailVerified:true`，因此**尚未驗證真實信件寄送、收信與點擊驗證**。
 
-本機展示的驗收結果不代替上述雲端驗收。下方分開列出不連雲端的設定檢查，以及日後才執行的部署指令。
+首次建置曾因 builder 缺少建置 bucket metadata 讀取權限而停止，補上該 bucket 的 Bucket Viewer 後建置／部署成功；權限修正的部署離線回歸 **43／43** 通過。535項程式測試、54項桌面／手機及39項部署檢查是先前本機提醒優化的歷史結果，不能當成本次雲端測試計數。
+
+Google provider 的 Email scope／資料補齊與登出再登入修正，已完成本機 **564／564程式測試（37檔，包含29項專項）、54／54桌面／手機流程、正式建置及生命週期檢查**。新增公開 OAuth client ID 部署預檢後，PowerShell 7與Windows PowerShell 5.1依序執行均 **46／46** 通過。最初並行跑兩種 shell 時，共用暫存檔掃描把另一程序尚未移除的檔案當成殘留；依序重跑通過，未發現實際金鑰外洩。修正映像已部署並完成雲端重送、設定及拒絕案例核對；Chrome另完成合成帳號密碼登入、學習4／4保存、登出後同頁再次登入及首頁1筆藥品保留。
+
+真實 Google popup 已到達帳號選擇頁，要求的scope包含 `openid`、`profile`、`email`，但尚未取得成功返回應用的證據。使用者回報完成操作後，應用仍顯示 `auth/popup-closed-by-user`，當時後端未出現Google provider帳號；因此不能列為成功。唯讀檢查確認Google provider已啟用、client ID相符且有client secret，HTTP為 `Cross-Origin-Opener-Policy: same-origin-allow-popups`、沒有COEP，檢查時console無錯誤輸出。這些資訊尚不足以判定原因是popup處理、瀏覽器、操作所在頁面或應用問題；仍待取得實際成功callback／登入狀態。實際擁有者帳號及管理員初始化也未完成。
+
+新版部署後唯讀基礎設施檢查 **88／88** 通過，包含初次映像86項範圍及Web／worker的Google OAuth audience設定。範圍涵蓋 Cloud Run 公開／私有邊界、服務最少0／最多2、runtime／caller／builder直接 IAM、Secret 引用、儲存生命週期、Cloud Tasks／Scheduler 設定、四組 READY 索引、每日備份保留7天及已發布的拒絕直接存取規則。初次部署後另以已登入合成使用者 token 直接讀取自己的既有 Firestore 帳號文件，得到預期 **403 `PERMISSION_DENIED`**；此個別探測沒有算成新版88項的一部分。唯讀檢查沒有新增 AI 或改動雲端資源；組織／資料夾繼承 IAM 不在這次檢查範圍。
+
+Scheduler 每分鐘檢查已有成功執行紀錄；每週主檔更新排程已啟用且目標／OIDC 正確，但尚未到首次執行時間，因此不列為排程執行成功。備份是設定核對，尚未執行還原。下方保留可重現的環境準備、離線檢查與部署指令；真實 OAuth、裝置通知與故障復原等剩餘範圍如下。
 
 ## 後續公開使用的驗收目標
 
 後續目標是讓一般使用者以拍照或上傳圖片完成辨識、核對、仿單說明與理解測驗。上雲先採小範圍受邀測試，完成下列項目後再評估全面開放：
 
-- 以真實 Firebase 帳號驗收註冊、驗證、重新登入、兩帳號／兩裝置隔離、撤銷照護、資料匯出及刪除。
-- 在雲端測試建立任務回應遺失、排入佇列失敗、輪詢斷線、冷啟動與重啟恢復；確認同一次操作只建立一個任務並計次一次。
+- 先完成實際擁有者帳號登入與管理員初始化，解決Google popup成功callback尚未確認的問題；再以真實使用者驗收註冊、驗證信、密碼重設、重新登入與兩裝置，另驗收撤銷照護、資料匯出及刪除。合成帳號已通過兩帳號應用隔離及密碼登出再登入，這不替代上述完整帳號生命週期。
+- 在雲端實際注入建立回應遺失、排入佇列失敗、輪詢斷線、程序中止及重新啟動；確認同一次操作只建立一個任務並計次一次。本次重送相同請求已通過，尚未注入這些故障。
 - 以實際手機驗收相機／圖片選取、不同光線、說明及測驗保存，並另驗收前背景推播；沒有官方來源時明示資料不足。
-- 完成備份及還原演練、錯誤告警、實際費用通知、預期同時使用人數的負載驗收，以及公開版資料使用與刪除說明。
+- 擴大雲端已核對官方仿單與藥品的覆蓋；本次僅一款藥完成說明／測驗驗收，66,511筆主檔不等於每筆都有可發布仿單。
+- 完成備份及還原演練、錯誤告警與通知送達、預期同時使用人數的負載驗收、較長時間費用／穩定性觀測，以及公開版資料使用與刪除說明。
 
-目前雲端新帳號不會自動取得 AI 資格，管理員最多核准 50 個有效測試名額；每日預設每人 20、全站 200 次 AI 任務。這些是受邀測試限制，不是公開服務容量或費用上限。全面開放時需另外決定資格、使用額度及濫用防護，不能只把網站網址公開就視為完成。本輪修正不改動這些限制，也沒有實際部署。
+目前雲端新帳號不會自動取得 AI 資格，管理員最多核准 50 個有效測試名額；每日預設每人 20、全站 200 次 AI 任務。這些是受邀測試限制，不是公開服務容量或費用上限。全面開放時需另外決定資格、使用額度及濫用防護，不能只把網站網址公開就視為完成。
 
 ## 環境準備
 
-1. 建立兩個獨立 Google Cloud／Firebase 專案，分別作為測試與正式環境。啟用計費，確認資料地區 `asia-east1` 符合專題需要。
-2. 安裝 Google Cloud CLI，登入部署帳號；本機匯入工具用 Application Default Credentials：`gcloud auth application-default login`。不要下載長期服務帳戶金鑰進專案。
+1. 先使用獨立 Google Cloud／Firebase 測試專案；正式環境日後另外建立，避免現在多維護一套資源。確認已連結可用的試用計費帳戶及資料地區 `asia-east1`。現有 Google Cloud 專案須先透過 Firebase Console 加入 Firebase；只啟用 Firebase API 並不會完成此步驟。保留免費試用狀態，不因部署自行升級付費帳戶。
+2. 安裝 Google Cloud CLI，登入部署帳號；本機匯入工具用 Application Default Credentials：`gcloud auth application-default login`。不要下載長期服務帳戶金鑰進專案。部署帳號須有建立資源、設定 IAM 及對所用服務帳戶的 `iam.serviceAccounts.actAs` 權限；專案 Owner 通常已具備。腳本不會為部署者自動增加角色。
 3. Firebase Console 建立 Web App，將公開 config 另存 JSON 檔（包括 apiKey、authDomain、projectId、storageBucket、messagingSenderId、appId）。這不是 Admin SDK 私鑰。
-4. Authentication 啟用 Google 和 Email／密碼。設定驗證信、密碼重設樣板與授權網域。
+4. Authentication 啟用 Google 和 Email／密碼。從 Google provider 的 **Web SDK configuration → Web client ID** 取得該專案的公開 OAuth client ID（形如 `123456789012-your-web-client.apps.googleusercontent.com`）。部署以 `-GoogleOAuthClientId` 傳入，或預先在目前程序設定 `GOOGLE_OAUTH_CLIENT_ID`；Web／worker 都會收到此設定。這是用來驗證 Google token audience 的公開識別碼，不是 Client secret，也不是 Firebase Web config 的 `apiKey`。不要把 Client secret 填入這個欄位。另設定驗證信、密碼重設樣板與授權網域。
 5. 為落實「不只憑相同 Email 自動合併」，Authentication 的 User account linking 設為 **Create multiple accounts for each identity provider**。使用者須登入原帳號，從「帳號與設定」明確連結另一登入方式。若另一方式已屬於獨立 UID，介面回傳 Firebase 連結衝突，不會搬移健康資料；需保留原登入方式，不做隱性合併。此設定會影響供應商個人資料回傳，顯示名稱可在健康資料頁自行填寫。[官方設定說明](https://support.google.com/firebase/answer/9134820?hl=en)、[明確連結流程](https://firebase.google.com/docs/auth/web/account-linking)。
 6. Cloud Messaging → Web Push certificates 產生公開 VAPID Key。
 7. 先在目標專案建立／確認 `asia-east1` 的預設 Firestore 資料庫，部署下方四組索引並等待 READY，再更新服務。新資料庫也需要索引。
+
+Google 登入會明確要求 `email` scope；後端驗證 Google ID token 的簽章、指定 audience、issuer、時效及 `email_verified`，並要求其 `sub` 與目前登入 UID 的 Firebase Google provider 身分一致。只有該 UID 尚無信箱時才補入，不以 Email 尋找或合併另一 UID，也不取代或驗證既有密碼登入信箱。登入介面等資料補齊完成才進入主畫面，失敗會退出該次登入；登出後重新登入會重新設定 token provider。
+
+維運限制：Firebase Admin 的 `getUser` 後接 `updateUser` 沒有原子式「信箱仍為空才寫入」條件；另一管理程序若在兩者之間替同一 UID 設定信箱，仍可能產生競態。補齊過程前已重新核對停用狀態及 provider 身分，維運時仍應避免同步進行該 UID 的信箱變更；本次不宣稱已驗證所有帳號管理併發情境。
+
+第一次部署另使用專用 `yzt-<test|prod>-build` 服務帳戶，不依賴新專案的 Compute Engine 預設帳戶。此帳戶只有同地區建置暫存／日誌 bucket 的 Object Admin、Bucket Viewer，以及 `yaozhitong` 映像倉庫的 Writer；沒有應用資料 bucket、Firestore、Secret 或 Cloud Run 部署權限。Bucket Viewer 只綁在建置 bucket，提供 Cloud Build 前置驗證必要的 `storage.buckets.get`；Object Admin 只有物件操作，單獨授權會造成 `invalid bucket / does not have access to the bucket`。目前官方 Bucket Viewer 角色只有 `storage.buckets.get`、`storage.buckets.list`，不含修改 bucket 或 IAM 的權限。[Cloud Storage IAM 角色](https://docs.cloud.google.com/storage/docs/access-control/iam-roles)。來源及日誌明確放入使用者專案的建置 bucket，建置設定使用 `GCS_ONLY`，符合自訂建置帳戶不能使用 Google 擁有的預設日誌 bucket 的限制。[Cloud Build 官方設定](https://docs.cloud.google.com/build/docs/securing-builds/configure-user-specified-service-accounts)。
+
+建置上傳前可在儲存庫根目錄執行 `gcloud meta list-files-for-upload` 核對來源清單；這只列出本機檔案。`.gcloudignore` 會沿用儲存庫 `.gitignore`，並明確排除 `.env`、`.local/`、`snapshot/`、`coverage/`、測試報告及工具／文件，避免本機截圖隨 Cloud Build 來源封存上傳。Docker 映像另以允許清單複製必要程式與前端資產。
 
 ## 提醒查詢索引與舊資料升級
 
@@ -49,7 +70,7 @@ gcloud firestore indexes composite list --database='(default)' --project YOUR_TE
 
 設定變更會交易式建立 `reminderRefresh` 待辦，背景只重新安排該使用者的排程，成功後刪除待辦；帳號刪除也會清除此資料。若回復到不理解新欄位的舊版本且仍持續寫入排程，再升回新版前需安排受控資料遷移，不能沿用已完成標記而忽略舊版新增的排程。
 
-每分鐘仍有少量空查詢及升級標記讀取。合成的 50 人 × 3 個每日個人提醒量測為 12,028 次文件讀取／日，含裝置查詢；相較舊版僅排程讀取保守估算減少約 98.6%。這不是費用硬上限或雲端帳單實測，家人通知及其他流量應另量測。實際上雲時需核對查詢成功、讀取量、交易重試、背景推播與帳單。
+每分鐘仍有少量空查詢及升級標記讀取。合成的 50 人 × 3 個每日個人提醒量測為 12,028 次文件讀取／日，含裝置查詢；相較舊版僅排程讀取保守估算減少約 98.6%。這不是費用硬上限或雲端帳單實測，家人通知及其他流量應另量測。首次部署已建立四組 READY 索引；實際提醒量、交易重試、背景推播及帳單仍需觀測。
 
 ## 供應商、模型與金鑰
 
@@ -59,6 +80,7 @@ gcloud firestore indexes composite list --database='(default)' --project YOUR_TE
 | --- | --- |
 | `-ProjectId` | 必填；要部署的 Google Cloud／Firebase 專案 |
 | `-FirebaseConfigPath` | 必填；Firebase Web 公開設定 JSON，內含的 `projectId` 必須相符 |
+| `-GoogleOAuthClientId` | 同一 Firebase 專案 Google provider 的公開 Web client ID；未傳入時使用目前程序 `GOOGLE_OAUTH_CLIENT_ID`，兩者均缺少則停止 |
 | `-VapidKey` | 必填；FCM Web Push 的公開 VAPID Key |
 | `-Environment` | `test`（預設）或 `prod` |
 | `-Region` | 預設 `asia-east1` |
@@ -78,27 +100,27 @@ gcloud firestore indexes composite list --database='(default)' --project YOUR_TE
 | `openai` | `OPENAI_TEXT_MODEL`／`OPENAI_VISION_MODEL` | 兩者皆為 `gpt-6-luna` | `OPENAI_API_KEY` | `yzt-test-openai-key`／`yzt-prod-openai-key` |
 | `nvidia` | `NVIDIA_TEXT_MODEL`／`NVIDIA_VISION_MODEL` | 兩者皆為 `nvidia/nemotron-3.5-super-vl-120b-a12b` | `NVIDIA_API_KEY` | `yzt-test-nvidia-key`／`yzt-prod-nvidia-key` |
 
-腳本**不會自動載入 `.env`**；模型覆寫與實際部署所需金鑰必須存在於執行腳本的程序環境。只要求所選供應商的金鑰；選 OpenAI 不要求 NVIDIA 金鑰，反之亦然。部署前先查看 `-ValidateOnly` 的解析結果，避免目前程序殘留的通用 `AI_*_MODEL` 蓋過專用設定。
+腳本**不會自動載入 `.env`**；模型覆寫與實際部署所需金鑰必須存在於執行腳本的程序環境。Google Web client ID 優先使用明確的 `-GoogleOAuthClientId`，否則讀取目前程序的 `GOOGLE_OAUTH_CLIENT_ID`；缺漏或不符合 Google Web client ID 格式會在任何雲端呼叫前停止，`-ValidateOnly` 也相同。格式檢查不能證明 ID 屬於目標專案，須從該 Firebase 專案的 Google provider 取得並核對。只要求所選 AI 供應商的金鑰；選 OpenAI 不要求 NVIDIA 金鑰，反之亦然。部署前先查看 `-ValidateOnly` 的解析結果，避免目前程序殘留的通用 `AI_*_MODEL` 蓋過專用設定。
 
 本次只支援上述模型覆寫，不會將整份本機環境設定搬上雲端。部署明確沿用目前請求／影像主模型／文字主模型／任務的 45／22／12／120 秒期限，以及文字 2,400／影像 2,600 token 回覆上限；OpenAI 思考設定仍沿用應用程式的 `none`。供應商端點固定為官方 `https://api.openai.com/v1` 或 `https://integrate.api.nvidia.com/v1`，不採用終端中自訂的 `OPENAI_BASE_URL`／`NVIDIA_BASE_URL`。
 
-實際部署時，金鑰只透過標準輸入上傳至對應 Secret Manager Secret，再提供給兩個後端服務；不放入部署參數、產生的環境設定檔、前端或日誌。OpenAI 建議在伺服器端由環境變數或金鑰管理服務載入金鑰；Cloud Run 的 Secret 設定與存取權限仍須在日後部署時驗證。[OpenAI API 官方驗證說明](https://developers.openai.com/api/reference/overview)、[Cloud Run Secret 官方說明](https://docs.cloud.google.com/run/docs/configuring/services/secrets)。
+實際部署時，金鑰只透過標準輸入上傳至對應 Secret Manager Secret，再提供給兩個後端服務；不放入部署參數、產生的環境設定檔、前端或日誌。首次雲端流程已成功使用後端 OpenAI Secret；設定與 IAM 另納入部署後核對。伺服器端金鑰管理方式見[OpenAI API 官方驗證說明](https://developers.openai.com/api/reference/overview)及[Cloud Run Secret 官方說明](https://docs.cloud.google.com/run/docs/configuring/services/secrets)。
 
 ## 只檢查設定，不部署
 
-在儲存庫根目錄執行，先準備與測試專案相符的 Firebase Web 設定檔：
+在儲存庫根目錄執行，先準備與測試專案相符的 Firebase Web 設定檔及 Google provider 公開 Web client ID；以下 ID 僅為格式範例，必須換成該專案的實際值：
 
 ```powershell
-./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -ValidateOnly
+./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -GoogleOAuthClientId '123456789012-your-web-client.apps.googleusercontent.com' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -ValidateOnly
 ```
 
 若要確認明確模型參數的優先順序：
 
 ```powershell
-./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -AiProvider openai -TextModel gpt-6-luna -VisionModel gpt-6-luna -ValidateOnly
+./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -GoogleOAuthClientId '123456789012-your-web-client.apps.googleusercontent.com' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -AiProvider openai -TextModel gpt-6-luna -VisionModel gpt-6-luna -ValidateOnly
 ```
 
-`-ValidateOnly` 可在沒有 Google Cloud CLI、沒有供應商金鑰的環境執行；仍需提供上述必要參數與本機設定檔。它只驗證可在本機檢查的設定並輸出去敏 JSON，**不執行任何 `gcloud`、不建立資源、不上傳 Secret、不呼叫模型**，也不驗證金鑰有效性、模型存取權／額度、計費或雲端權限。
+`-ValidateOnly` 可在沒有 Google Cloud CLI、沒有 AI 供應商金鑰的環境執行；仍需提供上述必要參數、Google Web client ID 與本機設定檔。它只驗證可在本機檢查的設定並輸出去敏 JSON，**不執行任何 `gcloud`、不建立資源、不上傳 Secret、不呼叫模型**，也不驗證 OAuth ID 實際歸屬、金鑰有效性、模型存取權／額度、計費或雲端權限。輸出 `googleOAuthClientConfigured:true` 只代表格式符合，不代表真實 Google 登入已驗收。
 
 部署腳本另有完整離線回歸：
 
@@ -108,28 +130,29 @@ gcloud firestore indexes composite list --database='(default)' --project YOUR_TE
 
 這項回歸使用假金鑰與模擬 CLI，檢查模型解析、去敏設定、Secret 輸入及兩個服務的部署參數；不連雲端、不使用真正的 Google Cloud CLI 或金鑰，也不能代替實際雲端驗收。
 
-## 日後實際部署
+## 執行或更新部署
 
-以下指令會建立或更新雲端資源，本次尚未執行。先完成環境準備與設定檢查，再在部署程序環境安全設定所選供應商的金鑰；不要把金鑰文字寫進範例或命令歷史。
+以下指令會建立或更新雲端資源；2026-10-20 首次 TEST 已依此流程完成。其他環境或後續更新仍須先完成環境準備與設定檢查，再在部署程序環境安全設定所選供應商的金鑰；不要把金鑰文字寫進範例或命令歷史。
 
 OpenAI 測試專案範例：
 
 ```powershell
-./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -TextModel gpt-6-luna -VisionModel gpt-6-luna
+./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -GoogleOAuthClientId '123456789012-your-web-client.apps.googleusercontent.com' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -TextModel gpt-6-luna -VisionModel gpt-6-luna
 ```
 
 若日後明確選用 NVIDIA，先在目前程序環境設定 `NVIDIA_API_KEY`，再執行相同流程：
 
 ```powershell
-./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider nvidia -TextModel 'nvidia/nemotron-3.5-super-vl-120b-a12b' -VisionModel 'nvidia/nemotron-3.5-super-vl-120b-a12b'
+./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -GoogleOAuthClientId '123456789012-your-web-client.apps.googleusercontent.com' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider nvidia -TextModel 'nvidia/nemotron-3.5-super-vl-120b-a12b' -VisionModel 'nvidia/nemotron-3.5-super-vl-120b-a12b'
 ```
 
 腳本建立／更新：
 
 - Web Cloud Run：提供網站和 `/api/v1`，公開網路可達，私人 API 仍驗證 Firebase ID Token。
 - Worker Cloud Run：Cloud Run IAM 私有，另外驗證 OIDC audience 和指定 service account email。
-- Runtime／caller service accounts、Cloud Tasks、每分鐘到期檢查及每週日台北 03:00 主檔更新。
-- 非公開 Cloud Storage、上傳區一天生命週期、所選供應商的 Secret、Firestore 每日備份保留 7 天。
+- Runtime／caller／build service accounts、Cloud Tasks、每分鐘到期檢查及每週日台北 03:00 主檔更新。
+- 非公開 Cloud Storage、上傳區一天生命週期、所選供應商的 Secret、Firestore 每日備份保留 7 天。應用 bucket 關閉 soft delete，避免辨識完成後已刪除的照片再保留七天；官方主檔及仿單亦位於此 bucket，因此另保存官方來源與雜湊以供重建。
+- 獨立且非公開的建置來源／日誌 bucket，七天生命週期並關閉 soft delete；不與使用者資料共用。建置失敗會停止，不更新 Cloud Run 服務；臨時建置設定檔在成功或失敗後都會移除。
 - Cloud Run 最少 0、每個服務最多 2 個執行個體。Web 120 秒、worker 600 秒逾時。
 
 兩個環境需使用不同 `ProjectId`；只改 `Environment` 名稱並不能隔離 Firebase Authentication 和預設 Firestore。
@@ -138,13 +161,15 @@ OpenAI 測試專案範例：
 
 ## 規則、管理員與資料
 
-部署 Firestore／Storage 規則與索引：
+部署 Firestore 規則與索引：
 
 ```powershell
-npx firebase-tools deploy --only firestore:rules,firestore:indexes,storage --project YOUR_TEST_PROJECT
+npx firebase-tools deploy --only firestore:rules,firestore:indexes --project YOUR_TEST_PROJECT
 ```
 
-規則拒絕瀏覽器直接讀寫；所有私人存取走後端。Admin SDK 使用 IAM，不受前端規則代替保護，所以後端仍逐次檢查 UID／角色／關係。
+Firestore 規則拒絕瀏覽器直接讀寫；所有私人存取走後端。Admin SDK 使用 IAM，不受前端規則代替保護，所以後端仍逐次檢查 UID／角色／關係。
+
+目前照片、主檔及仿單透過後端 Google Cloud Storage SDK 存取腳本建立的自訂 bucket，不使用 Firebase Storage 瀏覽器 SDK。此 bucket 以 uniform bucket-level access、public access prevention 及 runtime IAM 保護，不能以 `firebase deploy --only storage` 取代 IAM 驗證。`firebase.json` 未設定自訂 bucket 的 Firebase Storage target，直接部署 Storage 規則會指向 Firebase 預設 bucket，可能因尚未初始化而失敗；不要為這個指令另建不使用的預設 bucket。若日後改用 Firebase Storage，需先明確匯入及設定 target，再部署儲存庫的拒絕規則。[Firebase 部署目標說明](https://firebase.google.com/docs/cli/targets)。
 
 在本機的環境設定 `APP_MODE=firebase`、`GOOGLE_CLOUD_PROJECT`、`STORAGE_BUCKET`，以部署帳號 ADC 執行：
 
@@ -161,11 +186,19 @@ npm run admin -- FIREBASE_UID
 
 ## 預算、觀測與備份
 
-`infra/budget.example.json` 提供 NT$500、50%／80%／100% 範例，**尚未建立實際預算**。在 Cloud Billing 預算中選定專案、確認帳戶計費幣別及通知收件人；若帳戶不使用 TWD，需換成實際計費幣別的目標。通知不是硬性停機或費用保證。
+本次已建立 TEST 的 **NT$500 費用提醒**，並設定 Cloud Run 最少0、每服務最多2個執行個體。`infra/budget.example.json` 保留可重用的50%／80%／100%門檻範例；其他專案須另確認計費幣別、範圍與通知對象。預算提醒不會自動停機，服務執行個體上限也不是整個專案的費用硬上限；尚未以真實超額費用觸發通知驗收。
+
+部署時仍保留 Google Cloud Free Trial；當時控制台顯示試用額度 **NT$9,534／90天**，此為當時顯示的試用條件，不是可承諾的即時餘額。Firebase 顯示 Blaze 是因專案連結既有 Free Trial 計費帳戶，沒有在本次將該計費帳戶升級為付費帳戶。官方說明指出，連結試用帳戶的 Firebase 專案會使用 Blaze；若未明確升級計費帳戶，不會因試用額度耗盡自動開始收取額外使用費，但服務可用性會受試用到期影響。[Firebase 試用與計費 FAQ](https://firebase.google.com/support/faq#pricing)。
+
+官方供應商設定流程回傳 Authentication subtype 為 `IDENTITY_PLATFORM`，文件據實記錄，未把它當成另一次人工付費升級。以2026-10-20官方定價，Email／Google 等 Tier 1 登入前50,000個月活躍使用者（MAU）的認證費為零；這不包含其他雲端資源或 OpenAI 費用，也不代表所有認證方式皆免費。[Identity Platform 定價](https://cloud.google.com/identity-platform/pricing)。
 
 另有每日每人 20／全站 200 次 AI 任務建立上限，以及有限 worker 重試。所選 OpenAI／NVIDIA 帳號的額度與帳單另行查看；設定檢查不驗證額度。Cloud Run 縮到零仍可能有 Scheduler、Firestore、儲存、備份、映像及網路費用。
 
-Cloud Logging 的應用錯誤只輸出 requestId、錯誤代碼、狀態碼及非敏感 I/O 錯誤碼；不輸出照片、金鑰、健康摘要或問答全文。建立 Cloud Run 5xx、worker 失敗、Scheduler 失敗及費用通知；通知接收者尚待設定。
+實際回讀的兩個服務均採按請求計費、服務層級最多2；revision上限為3，受服務層級上限共同約束。啟動 CPU boost 目前為開啟，啟動及隨後短時間可能計入額外 CPU；每分鐘 Scheduler 也持續產生請求與資料庫操作。這次沒有用短時間成功測試推算整月費用。
+
+Cloud Logging 的應用錯誤只輸出 requestId、錯誤代碼、狀態碼及非敏感 I/O 錯誤碼；不輸出照片、金鑰、健康摘要或問答全文。費用提醒已建立；Cloud Run 5xx、worker／Scheduler 失敗等運作告警與實際送達仍待驗收。
+
+應用及建置 bucket 關閉 soft delete，否則 Cloud Storage 預設會把刪除物件額外保存七天並持續計費。關閉只影響新政策生效後刪除的物件，不會清除之前已 soft-delete 的副本；既有 bucket 更改此設定後，請先確認政策已生效再進行照片測試。[Cloud Storage 保留及計費說明](https://docs.cloud.google.com/storage/docs/soft-delete)。建置來源／日誌有七天生命週期，映像倉庫則仍保留各次版本，後續按實際用量安排清理。
 
 Firestore 備份每日一次、保留 7 天。另建還原資料庫做演練：
 
@@ -186,4 +219,4 @@ gcloud run services update-traffic yzt-prod-web --project YOUR_PROD_PROJECT --re
 gcloud run services update-traffic yzt-prod-worker --project YOUR_PROD_PROJECT --region asia-east1 --to-revisions PREVIOUS_WORKER_REVISION=100
 ```
 
-回復應用不會自動回復 Firestore 內容；涉及資料格式改變時需先安排相容遷移與還原演練。正式發布、費用與真實帳號驗收本次尚未執行。
+回復應用不會自動回復 Firestore 內容；涉及資料格式改變時需先安排相容遷移與還原演練。本次已完成 TEST 首次部署與固定合成帳號流程，尚未完成正式公開發布、真實使用者身分／裝置、還原演練及長期費用驗收。

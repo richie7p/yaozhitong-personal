@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -11,13 +12,10 @@ import {
   setPersistence,
   inMemoryPersistence,
   onAuthStateChanged,
-  signInWithPopup,
-  GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   sendPasswordResetEmail,
-  linkWithPopup,
   linkWithCredential,
   EmailAuthProvider,
   signOut,
@@ -30,6 +28,11 @@ import {
   isSupported,
 } from "firebase/messaging";
 import { api, setJobIdentity, setTokenProvider } from "./api";
+import {
+  configureFirebaseTokenProvider,
+  linkGoogle,
+  signInGoogle,
+} from "./google-auth";
 interface AuthState {
   config: any;
   me: any;
@@ -46,6 +49,7 @@ let firebaseApp: FirebaseApp;
 let firebaseAuth: Auth;
 let deviceId = sessionStorage.getItem("yzt-device-id") || "";
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const googleTransition = useRef(false);
   const [config, setConfig] = useState<any>(null),
     [me, setMe] = useState<any>(null),
     [loading, setLoading] = useState(true);
@@ -78,12 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           firebaseAuth = getAuth(firebaseApp);
           firebaseAuth.languageCode = "zh-TW";
           await setPersistence(firebaseAuth, inMemoryPersistence);
-          setTokenProvider(async () =>
-            firebaseAuth.currentUser
-              ? firebaseAuth.currentUser.getIdToken()
-              : "",
-          );
+          configureFirebaseTokenProvider(firebaseAuth);
           stop = onAuthStateChanged(firebaseAuth, async (u) => {
+            // A popup signs Firebase in before profile bootstrap completes.
+            // Keep the login form mounted until its success/error is known.
+            if (googleTransition.current) return;
             setJobIdentity(u?.uid || null);
             try {
               setMe(u ? await api("/me") : null);
@@ -108,9 +111,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await reload();
       return;
     }
-    if (method === "google")
-      await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
-    else if (method === "register") {
+    configureFirebaseTokenProvider(firebaseAuth);
+    if (method === "google") {
+      googleTransition.current = true;
+      try {
+        await signInGoogle(firebaseAuth);
+        await reload();
+      } catch (error) {
+        await signOut(firebaseAuth).catch(() => {});
+        setJobIdentity(null);
+        setMe(null);
+        throw error;
+      } finally {
+        googleTransition.current = false;
+      }
+      return;
+    } else if (method === "register") {
       const result = await createUserWithEmailAndPassword(
         firebaseAuth,
         email,
@@ -151,8 +167,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function link(method: string, password = "", email = "") {
     const u = firebaseAuth?.currentUser;
     if (!u) throw new Error("此功能需要 Firebase 帳號。");
-    if (method === "google") await linkWithPopup(u, new GoogleAuthProvider());
-    else {
+    if (method === "google") {
+      configureFirebaseTokenProvider(firebaseAuth);
+      googleTransition.current = true;
+      try {
+        await linkGoogle(u);
+        await reload();
+      } finally {
+        googleTransition.current = false;
+      }
+    } else {
       if (password.length < 8) throw new Error("請使用至少 8 個字元的密碼。");
       const address = email.trim() || u.email;
       if (!address) throw new Error("請填寫要連結的 Email。");

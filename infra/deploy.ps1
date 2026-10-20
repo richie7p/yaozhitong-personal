@@ -2,6 +2,7 @@ param(
   [Parameter(Mandatory=$true)][ValidatePattern('^[a-z][a-z0-9-]{4,61}[a-z0-9]$')][string]$ProjectId,
   [Parameter(Mandatory=$true)][string]$FirebaseConfigPath,
   [Parameter(Mandatory=$true)][string]$VapidKey,
+  [string]$GoogleOAuthClientId=$env:GOOGLE_OAUTH_CLIENT_ID,
   [ValidateSet('test','prod')][string]$Environment='test',
   [string]$Region='asia-east1',
   [ValidateSet('openai','nvidia')][string]$AiProvider='openai',
@@ -10,6 +11,9 @@ param(
   [switch]$ValidateOnly
 )
 $ErrorActionPreference='Stop'
+if ($GoogleOAuthClientId -notmatch '^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$') {
+  throw 'Set GoogleOAuthClientId (or GOOGLE_OAUTH_CLIENT_ID) to the Google sign-in Web client ID from this Firebase project.'
+}
 $Environment = $Environment.ToLowerInvariant()
 . (Join-Path $PSScriptRoot 'deploy-config.ps1')
 $webConfig = Get-Content -Raw -LiteralPath $FirebaseConfigPath | ConvertFrom-Json
@@ -25,6 +29,7 @@ if ($ValidateOnly) {
     secretName = $ai.secretName
     keyEnvironmentVariable = $ai.keyEnvironmentVariable
     keyConfigured = $ai.keyConfigured
+    googleOAuthClientConfigured = $true
   } | ConvertTo-Json
   return
 }
@@ -33,22 +38,27 @@ function Invoke-Gcloud { & gcloud @args; if ($LASTEXITCODE -ne 0) { throw "gclou
 if (-not (Get-Command gcloud -ErrorAction SilentlyContinue)) { throw 'Install Google Cloud CLI and sign in first.' }
 $name="yzt-$Environment"
 $bucket="$ProjectId-$name-data"
+$buildBucket="$ProjectId-$name-build"
 $runtime="$name-runtime@$ProjectId.iam.gserviceaccount.com"
 $caller="$name-caller@$ProjectId.iam.gserviceaccount.com"
+$builder="$name-build@$ProjectId.iam.gserviceaccount.com"
 $secret=$ai.secretName
 $secretBinding="$($ai.keyEnvironmentVariable)=$secret`:latest"
-Invoke-Gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com firestore.googleapis.com identitytoolkit.googleapis.com firebase.googleapis.com storage.googleapis.com cloudtasks.googleapis.com cloudscheduler.googleapis.com secretmanager.googleapis.com fcm.googleapis.com --project=$ProjectId
+Invoke-Gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com firestore.googleapis.com identitytoolkit.googleapis.com firebase.googleapis.com storage.googleapis.com cloudtasks.googleapis.com cloudscheduler.googleapis.com secretmanager.googleapis.com fcm.googleapis.com iam.googleapis.com --project=$ProjectId
 # Use a separate Google Cloud/Firebase project per environment, so Authentication and data are isolated.
 $accountNames = @(Invoke-Gcloud iam service-accounts list --project=$ProjectId --format='value(email)')
 if ($runtime -notin $accountNames) { Invoke-Gcloud iam service-accounts create "$name-runtime" --project=$ProjectId }
 if ($caller -notin $accountNames) { Invoke-Gcloud iam service-accounts create "$name-caller" --project=$ProjectId }
+if ($builder -notin $accountNames) { Invoke-Gcloud iam service-accounts create "$name-build" --project=$ProjectId }
 foreach ($role in @('roles/datastore.user','roles/cloudtasks.enqueuer','roles/firebaseauth.admin','roles/firebasecloudmessaging.admin')) {
   Invoke-Gcloud projects add-iam-policy-binding $ProjectId --member="serviceAccount:$runtime" --role=$role --condition=None --quiet | Out-Null
 }
 Invoke-Gcloud iam service-accounts add-iam-policy-binding $caller --project=$ProjectId --member="serviceAccount:$runtime" --role=roles/iam.serviceAccountUser --quiet | Out-Null
 $buckets = @(Invoke-Gcloud storage buckets list --project=$ProjectId --format='value(name)')
-if ($bucket -notin $buckets -and "gs://$bucket" -notin $buckets) { Invoke-Gcloud storage buckets create "gs://$bucket" --project=$ProjectId --location=$Region --uniform-bucket-level-access --public-access-prevention }
-Invoke-Gcloud storage buckets update "gs://$bucket" --lifecycle-file="$PSScriptRoot/storage-lifecycle.json"
+if ($bucket -notin $buckets -and "gs://$bucket" -notin $buckets) { Invoke-Gcloud storage buckets create "gs://$bucket" --project=$ProjectId --location=$Region --uniform-bucket-level-access --public-access-prevention --soft-delete-duration=0 }
+# Photos are temporary. Disable the seven-day soft-delete default before any
+# application upload; lifecycle deletion alone would retain billable copies.
+Invoke-Gcloud storage buckets update "gs://$bucket" --soft-delete-duration=0 --lifecycle-file="$PSScriptRoot/storage-lifecycle.json"
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$bucket" --member="serviceAccount:$runtime" --role=roles/storage.objectAdmin --quiet | Out-Null
 $secrets = @(Invoke-Gcloud secrets list --project=$ProjectId --format='value(name)')
 if ($secret -notin $secrets -and "projects/$ProjectId/secrets/$secret" -notin $secrets) { Invoke-Gcloud secrets create $secret --project=$ProjectId --replication-policy=automatic }
@@ -107,10 +117,37 @@ if ($unreadyIndexes.Count -gt 0) {
 $repos = @(Invoke-Gcloud artifacts repositories list --project=$ProjectId --location=$Region --format='value(name)')
 if (-not ($repos -match '/yaozhitong$')) { Invoke-Gcloud artifacts repositories create yaozhitong --project=$ProjectId --location=$Region --repository-format=docker }
 $image="$Region-docker.pkg.dev/$ProjectId/yaozhitong/app:$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-Invoke-Gcloud builds submit --project=$ProjectId --tag=$image .
+# A dedicated builder can access only its staging/log bucket and image
+# repository, not application data, secrets, Firestore, or runtime deployment.
+if ($buildBucket -notin $buckets -and "gs://$buildBucket" -notin $buckets) { Invoke-Gcloud storage buckets create "gs://$buildBucket" --project=$ProjectId --location=$Region --uniform-bucket-level-access --public-access-prevention --soft-delete-duration=0 }
+Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$buildBucket" --member="serviceAccount:$builder" --role=roles/storage.objectAdmin --quiet | Out-Null
+# Cloud Build validates the staging/log bucket itself before reading objects.
+# Object Admin does not include storage.buckets.get; limit metadata access to
+# this build bucket rather than granting project-wide Storage permissions.
+Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$buildBucket" --member="serviceAccount:$builder" --role=roles/storage.bucketViewer --quiet | Out-Null
+Invoke-Gcloud artifacts repositories add-iam-policy-binding yaozhitong --project=$ProjectId --location=$Region --member="serviceAccount:$builder" --role=roles/artifactregistry.writer --quiet | Out-Null
+$buildConfigFile=Join-Path ([System.IO.Path]::GetTempPath()) ("yzt-build-"+[guid]::NewGuid().ToString()+'.json')
+$buildLifecycleFile=Join-Path ([System.IO.Path]::GetTempPath()) ("yzt-build-lifecycle-"+[guid]::NewGuid().ToString()+'.json')
+try {
+  @{ rule = @(@{ action = @{ type = 'Delete' }; condition = @{ age = 7 } }) } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $buildLifecycleFile -Encoding utf8
+  Invoke-Gcloud storage buckets update "gs://$buildBucket" --soft-delete-duration=0 --lifecycle-file=$buildLifecycleFile
+  # User-managed build accounts require user-owned log storage or Cloud
+  # Logging. GCS_ONLY avoids requiring project-wide log-writing permissions.
+  @{
+    steps = @(@{ name = 'gcr.io/cloud-builders/docker'; args = @('build', '--tag', $image, '.') })
+    images = @($image)
+    options = @{ logging = 'GCS_ONLY' }
+  } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $buildConfigFile -Encoding utf8
+  Invoke-Gcloud builds submit --project=$ProjectId --region=$Region --service-account="projects/$ProjectId/serviceAccounts/$builder" --gcs-source-staging-dir="gs://$buildBucket/source" --gcs-log-dir="gs://$buildBucket/logs" --config=$buildConfigFile (Split-Path -Parent $PSScriptRoot)
+} finally {
+  foreach ($temporaryFile in @($buildConfigFile, $buildLifecycleFile)) {
+    if (Test-Path -LiteralPath $temporaryFile) { Remove-Item -LiteralPath $temporaryFile }
+  }
+}
 $envFile=Join-Path ([System.IO.Path]::GetTempPath()) ("yzt-env-"+[guid]::NewGuid().ToString()+'.yaml')
 try {
   $base=[ordered]@{APP_MODE='firebase';GOOGLE_CLOUD_PROJECT=$ProjectId;STORAGE_BUCKET=$bucket;TASKS_LOCATION=$Region;TASKS_QUEUE="$name-ai";WORKER_SERVICE_ACCOUNT=$caller;FIREBASE_WEB_CONFIG=($webConfig|ConvertTo-Json -Compress);FIREBASE_VAPID_KEY=$VapidKey;DAILY_USER_LIMIT='20';DAILY_GLOBAL_LIMIT='200';SERVICE_ROLE='worker'}
+  $base.GOOGLE_OAUTH_CLIENT_ID=$GoogleOAuthClientId
   foreach ($entry in $ai.environmentVariables.GetEnumerator()) { $base[$entry.Key] = $entry.Value }
   function SaveEnv { $lines = foreach ($entry in $base.GetEnumerator()) { '{0}: {1}' -f $entry.Key, (ConvertTo-Json -InputObject ([string]$entry.Value) -Compress) }; Set-Content -LiteralPath $envFile -Value $lines -Encoding utf8 }
   SaveEnv

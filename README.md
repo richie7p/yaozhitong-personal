@@ -2,11 +2,15 @@
 
 以團隊黑客松作品為流程參考，重新建立的 React／Hono 應用。提供藥袋辨識、官方藥品搜尋、使用者確認、附來源問答、用藥提醒與紀錄、家庭藥箱及唯讀家人照護。
 
-**目前交付的是可在本機操作、附雲端部署工具的開發版本。** 本輪是研討會軟體流程與來源自測，不含臨床驗證，也不把藥師簽核列為展示前置。未發布或無法確認來源的藥品呈現資料不足。
+**目前可在本機操作，並已完成 Google Cloud TEST 環境的首次部署與固定流程驗收；尚未開放大眾正式使用。** 驗收是軟體流程與來源逐字核對，不含臨床驗證，也不把藥師簽核列為展示前置。未發布或無法確認來源的藥品呈現資料不足。
 
-**目前使用同一套「用藥手帳」介面**，以每日用藥清單為首頁、藥品檔案與閱讀目錄為主體。紙白、墨綠、陶土色、章節編號與細分隔線構成視覺；仿單採手冊式排版，保留完整警語、引用及真實測驗保存。日常與「研討會展示」都在同一個8085服務內，沒有另一套預覽版。展示模式將已保存結果分為辨識、說明、測驗三步，也能接續現場拍照。詳見 [介面與操作說明](docs/UI-UX-REDESIGN.md)。
+2026-10-20 雲端以同一張無個資合成藥袋完成首次兩輪 API 驗收，各 **8／8 通過**；Google登入修正版部署後再重送一輪，也是 **8／8**。範圍為辨識兩款藥、確認保存咳服錠、依一份官方仿單產生說明與4題測驗、答錯再答對、重新登入保存、重送不重複及跨帳號拒絕。三輪沿用同一組任務，合計 **2個 AI 任務、3次實際 OpenAI HTTP 呼叫**；第二、三輪沒有新增任務或模型呼叫，新版重送不算再次執行模型推論。Chrome 另實際登入合成帳號，核對完整副作用／注意事項／警語及答題保存。這些結果不等於多款藥或實拍手機的雲端驗收；主檔已匯入 **66,511筆**，雲端目前只發布咳服錠 **1份**仿單。詳見[首次雲端驗收摘要](docs/acceptance/cloud-first-deploy-20261020.json)。
 
-2026-10-20 現行程式使用 **GPT-6 Luna（`gpt-6-luna`，推理設定 `none`）**，策略為 `grounded-v13-complete-safety-literal-recognition`。本輪範圍擴充為 **8 款藥、8 份官方仿單來源（6 PDF、2 HTML）**；8 份來源中的 **17 個可識別安全主欄**逐欄保留完整原文，並為每欄至少提供一個重點的理解題。這表示固定來源主欄的覆蓋，不是所有子項、臨床情境或個人適用性的驗證。沒有安全欄的來源不捏造警語。
+登入修正版部署後的唯讀基礎設施檢查 **88／88** 通過，涵蓋 Cloud Run、佇列／排程、直接 IAM、私有儲存、Secret 引用、Google OAuth audience、四組索引與每日備份設定；初次映像的86／86另保留。Google登入安全檢查 **5／5** 通過，包含未登入、無效Google憑證、由客戶端指定UID的拒絕及帳號未被更動。另在初次部署後使用已登入合成使用者的 token 直接讀取自己的 Firestore 帳號文件，得到預期403拒絕。尚未執行還原或推播送達演練。
+
+**目前使用同一套「用藥手帳」介面**，以每日用藥清單為首頁、藥品檔案與閱讀目錄為主體。紙白、墨綠、陶土色、章節編號與細分隔線構成視覺；仿單採手冊式排版，保留完整警語、引用及真實測驗保存。本機日常與「研討會展示」都在同一個8085服務內，雲端也使用相同介面。展示模式將已保存結果分為辨識、說明、測驗三步，也能接續現場拍照。詳見 [介面與操作說明](docs/UI-UX-REDESIGN.md)。
+
+2026-10-20 現行程式使用 **GPT-6 Luna（`gpt-6-luna`，推理設定 `none`）**，策略為 `grounded-v13-complete-safety-literal-recognition`。先前本機 v13 範圍擴充為 **8 款藥、8 份官方仿單來源（6 PDF、2 HTML）**；8 份來源中的 **17 個可識別安全主欄**逐欄保留完整原文，並為每欄至少提供一個重點的理解題。這表示固定來源主欄的覆蓋，不是所有子項、臨床情境或個人適用性的驗證；本機8份來源沒有整批複製到雲端。沒有安全欄的來源不捏造警語。
 
 息咳寧已改用許可證040833的現行官方共同仿單，完整保留兩種口味的賦形劑分支，照片仍須由使用者核對候選，沒有推定口味。開恩達命採現行014025官方來源，保留新增的鈷過敏警語，不沿用舊版「可長期大量使用」之類敘述。HTML來源標示官方網頁與區塊，不冒充PDF頁碼。
 
@@ -22,17 +26,19 @@
 
 GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的彙總。文件中的 `.local/` 證據連結只在原驗收電腦可用；金鑰、本機帳號與藥品資料、照片、下載 PDF、原始測試報告及歷史 UI 截圖均不隨 Git 同步。新裝置需另設金鑰並準備資料；一般本機模式從空白資料開始。
 
-Google Cloud 部署接法已準備，**尚未實際部署或驗收雲端可用性**。`infra/deploy.ps1` 新增 `-AiProvider openai`（預設）／`nvidia`、`-TextModel`、`-VisionModel` 與 `-ValidateOnly`，保留原有專案、Firebase Web 設定、VAPID、環境及地區參數。Web／worker 會使用相同供應商、模型與對應 Secret，失敗時不自動跨供應商備援。Firebase Auth、官方資料匯入、Cloud Tasks／Scheduler、通知及備份還原仍待雲端驗收，詳見 [部署設定與未完成驗收](docs/DEPLOYMENT.md)。
+Google Cloud TEST 已部署於 `asia-east1`，Web／worker 使用相同 OpenAI 模型與 Secret，失敗時不自動跨供應商備援。Firebase 已設定 Email／密碼與 Google provider、授權網域及 VAPID；首次驗收使用合成帳號的實際 Firebase 密碼登入，測試工具預先設定的 `emailVerified:true` 不當成驗證信送達測試。真實 Google OAuth／驗證信、手機相機與推播、雲端故障注入、備份還原、負載及長期觀測仍待完成。NT$500 費用提醒與 Cloud Run 最少0／每服務最多2個執行個體已設定，均不是總費用硬上限；OpenAI 費用另計。詳見[部署設定與未完成驗收](docs/DEPLOYMENT.md)。
+
+Google 登入已補上明確 Email scope，以及後端核對 Google 憑證後補齊同一 Firebase 使用者缺少的信箱；不依相同信箱自動合併帳號，也不覆寫既有信箱。本次修正的本機 **564／564程式測試、54／54桌面／手機流程、生命週期檢查**通過，包含29項登入專項測試；兩種 PowerShell 的部署離線檢查均為 **46／46**。修正版 `20261020-google-auth` 已部署；Chrome再次驗證密碼登入、測驗4／4保存、登出後同頁重新登入及1筆藥品保留。**Google popup 尚未驗證成功返回應用，原因仍待確認；實際擁有者帳號登入與管理員初始化也尚未完成。** 不把設定或拒絕案例通過當作Google成功登入的證據。
 
 雲端模型解析順序為明確的 `-TextModel`／`-VisionModel` → 目前程序的 `AI_TEXT_MODEL`／`AI_VISION_MODEL` → 所選供應商專用環境變數 → 腳本預設值。OpenAI 預設文字與影像皆為 `gpt-6-luna`；NVIDIA 皆為 `nvidia/nemotron-3.5-super-vl-120b-a12b`。部署腳本不自動讀取 `.env`；實際部署只要求目前程序中所選供應商的 `OPENAI_API_KEY` 或 `NVIDIA_API_KEY`，透過標準輸入上傳至 `yzt-<test|prod>-<openai|nvidia>-key`，不放進指令參數或設定輸出。
 
-先準備與測試專案相符的 Firebase Web 公開設定 JSON，再只檢查設定：
+先準備與測試專案相符的 Firebase Web 公開設定 JSON，以及 Firebase Authentication → Google provider → Web SDK configuration 中的 **Web client ID**。後者是以 `.apps.googleusercontent.com` 結尾的公開 OAuth 識別碼，不是 Client secret，也不是 Firebase `apiKey`；把下方範例值換成同一專案的實際 ID，再只檢查設定：
 
 ```powershell
-./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -ValidateOnly
+./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -GoogleOAuthClientId '123456789012-your-web-client.apps.googleusercontent.com' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -ValidateOnly
 ```
 
-`-ValidateOnly` 會在任何 `gcloud` 指令前輸出去敏 JSON 並返回，可無 Cloud CLI、可缺金鑰；不建立資源或呼叫模型，也不驗證模型存取權、額度與雲端權限。[日後實際部署範例與完整參數](docs/DEPLOYMENT.md)另列，這次沒有執行部署。
+`-GoogleOAuthClientId` 未傳入時使用目前程序的 `GOOGLE_OAUTH_CLIENT_ID`。這項設定在 `-ValidateOnly` 也必須提供，缺漏或格式錯誤會在任何雲端呼叫前停止。`-ValidateOnly` 會在任何 `gcloud` 指令前輸出去敏 JSON 並返回，可無 Cloud CLI、可缺 AI 金鑰；不建立資源或呼叫模型，也不驗證 OAuth ID 實際歸屬、模型存取權、額度與雲端權限。[實際部署範例與完整參數](docs/DEPLOYMENT.md)另列。首次建置缺少 builder 的 bucket metadata 讀權限，補該 bucket 的 Bucket Viewer 後為43／43；加上 Google Web client ID 檢查後為46／46，均與下方較早本機階段的39項結果分開記錄。
 
 部署明確沿用目前的逾時、回覆長度與 OpenAI `none` 思考設定，端點固定為所選供應商的官方網址，不載入整份 `.env` 或終端自訂端點。`./tools/check-deployment.ps1` 提供全用假金鑰與模擬 CLI 的離線回歸，不連雲端或呼叫模型。
 
@@ -44,9 +50,9 @@ Google Cloud 部署接法已準備，**尚未實際部署或驗收雲端可用�
 
 本人提醒停機恢復時，只補一小時內仍有效的時段；家人提醒只補台北當日應檢查的時段，包含前一晚用藥的一小時期限落在午夜後的情況。已記錄、排程已改、藥品已封存、通知關閉或授權撤銷的提醒會取消。外部推播送出後、回寫前當機仍可能重送，不能保證 FCM 絕對一次。
 
-日後部署前須先建立 `firestore.indexes.json` 的四組複合索引並等待 READY；部署腳本會檢查索引，避免缺索引就更新服務。**本次沒有部署或呼叫真實推播／AI**；完整驗收與成本範圍見[實作狀態](docs/IMPLEMENTATION-STATUS.md)及[部署說明](docs/DEPLOYMENT.md)。
+每次部署前須先建立 `firestore.indexes.json` 的四組複合索引並等待 READY；首次 TEST 部署已完成，腳本會檢查索引，避免缺索引就更新服務。**以下提醒優化歷史驗收沒有部署或呼叫真實推播／AI**；雲端首次驗收另列於本文開頭，背景推播與實際費用量測仍待完成。提醒成本範圍見[實作狀態](docs/IMPLEMENTATION-STATUS.md)及[部署說明](docs/DEPLOYMENT.md)。
 
-本輪 **535／535 程式測試、54／54 桌面／手機流程、39／39 部署離線檢查及服務重啟／帳號刪除檢查通過**。部署離線檢查另在 PowerShell 7 與 Windows PowerShell 5.1 驗證；測試使用隔離合成資料與模擬 AI／推播。可攜結果見[提醒優化驗收摘要](docs/acceptance/reminders-20261020.json)。
+該次本機提醒優化 **535／535 程式測試、54／54 桌面／手機流程、39／39 部署離線檢查及服務重啟／帳號刪除檢查通過**。部署離線檢查另在 PowerShell 7 與 Windows PowerShell 5.1 驗證；測試使用隔離合成資料與模擬 AI／推播。可攜結果見[提醒優化驗收摘要](docs/acceptance/reminders-20261020.json)。
 
 ## 2026-10-20 可靠性修正
 
@@ -54,7 +60,7 @@ Google Cloud 部署接法已準備，**尚未實際部署或驗收雲端可用�
 - 同一帳號重送相同的未完成 AI 操作會沿用識別碼。建立回應遺失時重送原操作，已知任務的查詢中斷則接續查詢；確認成功或失敗後，下一次明確送出可建立新操作。瀏覽器允許工作階段儲存時可跨重新整理接續，照片需重新選取相同原檔；不在工作階段儲存照片、問題或健康文字，只保存雜湊及操作識別資訊。登出／切換帳號會清除前帳號的接續狀態。
 - 家庭藥箱以台北日期判斷效期，頁面跨午夜及回到前景時會更新；有效日期當天維持保存中，已處理狀態優先。
 
-本輪 **488／488 單元、54／54 桌面／手機流程、28／28 部署離線檢查，以及服務重啟／帳號刪除生命週期檢查通過**。兩種斷線接續情境另在桌面／手機各連測三次，共12／12通過。瀏覽器回歸涵蓋藥袋辨識、仿單說明、測驗保存及故障恢復，使用隔離合成資料與模擬 AI，沒有新增真實模型呼叫或雲端部署。原有八藥來源驗收範圍維持本文開頭所述；後續公開使用前的工作見[雲端公開使用驗收目標](docs/DEPLOYMENT.md#後續公開使用的驗收目標)。
+該次本機可靠性修正 **488／488 單元、54／54 桌面／手機流程、28／28 部署離線檢查，以及服務重啟／帳號刪除生命週期檢查通過**。兩種斷線接續情境另在桌面／手機各連測三次，共12／12通過。瀏覽器回歸涵蓋藥袋辨識、仿單說明、測驗保存及故障恢復，使用隔離合成資料與模擬 AI，該階段沒有新增真實模型呼叫或雲端部署。原有八藥來源驗收範圍維持本文開頭所述；後續公開使用前的工作見[雲端公開使用驗收目標](docs/DEPLOYMENT.md#後續公開使用的驗收目標)。
 
 ## 在其他裝置接續開發
 

@@ -1,0 +1,391 @@
+{
+  "date": "2026-10-20",
+  "scope": "First controlled Google Cloud TEST deployment and fixed synthetic recognition-to-learning acceptance",
+  "environment": "test",
+  "region": "asia-east1",
+  "status": "fixed_cloud_flow_and_infrastructure_checks_passed",
+  "cloudDeployed": true,
+  "publicProductionReady": false,
+  "clinicalValidationPerformed": false,
+  "data": {
+    "syntheticOnly": true,
+    "localUserDatabaseCopied": false,
+    "syntheticTestAccountCount": 2,
+    "realEmailVerificationDeliveryTested": false,
+    "emailVerificationScope": "Synthetic accounts were provisioned emailVerified:true solely to exercise the verified-account path.",
+    "catalogRows": 66511,
+    "catalogVersion": "67e5fa2b80421c53",
+    "cloudPublishedLeafletCount": 1,
+    "localEightSourceAcceptanceCopiedToCloud": false
+  },
+  "deployment": {
+    "currentImage": {
+      "imageTag": "20261020-google-auth",
+      "imageDigest": "sha256:0570c46ca0c6f4e1a5dbaa8969c4823564806213e7794adecc780d5026f0e953",
+      "buildStatus": "SUCCESS",
+      "buildFinishedAt": "2026-10-20T11:05:07Z",
+      "workerRevision": "yzt-test-worker-00003-c8h",
+      "webRevision": "yzt-test-web-00003-5zt",
+      "trafficPercentPerService": 100,
+      "scope": "Post-fix same-job replay, infrastructure checks and Google-profile rejection cases; real Google popup completion remains pending"
+    },
+    "initialSmokeBaseline": {
+      "imageTag": "20261020-first-test",
+      "imageDigest": "sha256:9afc60640a811286c9a54b489b49f818c4ef22cff4006e8f281048b716ed1f4f",
+      "buildStatus": "SUCCESS",
+      "scope": "The first two-job execution, same-state replay and initial infrastructure audit"
+    },
+    "historicalFailure": {
+      "stage": "initial_cloud_build_preflight",
+      "cause": "Dedicated builder lacked storage.buckets.get on its build source/log bucket.",
+      "fix": "Added roles/storage.bucketViewer only on the build bucket; retained bucket-scoped objectAdmin and repository-scoped artifact writer.",
+      "offlineDeploymentChecksPassedAfterFix": 43,
+      "offlineDeploymentShells": ["PowerShell 7", "Windows PowerShell 5.1"],
+      "applicationRuntimeCodeChangedForThisFix": false
+    },
+    "authenticationProvidersConfigured": ["password", "google.com"],
+    "allowDuplicateEmails": true,
+    "authenticationSubtype": "IDENTITY_PLATFORM",
+    "authenticationSubtypeSource": "Official Firebase provider provisioning result",
+    "vapidConfigured": true,
+    "firestoreRequiredCompositeIndexesReady": 4
+  },
+  "fixture": {
+    "kind": "synthetic two-medication bag without personal data",
+    "sha256": "951b1cb5eb8e73bcbfce8fb8d5b01108d1b09e236a706668a5a448f8086c0f65",
+    "recognizedMedicationCount": 2,
+    "savedAndExplainedMedicationCount": 1,
+    "savedLicenseNo": "衛署藥製字第026087號",
+    "savedLiteralFields": {
+      "doseAmount": 1,
+      "doseUnit": "錠",
+      "frequencyRaw": "PRN",
+      "route": "口服",
+      "durationDays": null,
+      "prn": true
+    }
+  },
+  "officialSource": {
+    "licenseNo": "衛署藥製字第026087號",
+    "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_cad3e83d-071a-46dd-b875-e6aaf45b50ff?c=2",
+    "pdfSha256": "355931af34ccb1998ce774cda49b16e125c261d7fd697ff4d846b24477264528",
+    "version": "355931af34ccb199",
+    "wholePageTextSha256": "49cd879b5c4a63c99862cd669096b57077be4579ce390d7d2d7e86b74be03c71",
+    "independentSourcePassagesSha256": "65627e04b392c88303c5f04fbad87f621a0d3f65d3c72639c7dbb4751c7a696e",
+    "chunks": 1,
+    "status": "published",
+    "checkedBy": "codex-source-verification",
+    "verificationScope": "Literal official-source verification, not medical or pharmacist review",
+    "completeSafetySections": ["副作用", "注意事項", "警語"],
+    "claimCount": 4,
+    "quizCount": 4,
+    "safetyValidation": [
+      "Pinned source PDF, whole-page text and independently reviewed passage hashes",
+      "Positive complete coverage of all three required safety fields",
+      "Each safety claim preserves its entire source field and canonical citation",
+      "Each coverage claimIndex and quizIds points to the matching source-backed item",
+      "Unique question IDs, nonempty question/explanation/options and valid answer indexes",
+      "Safety explanations reproduce their complete cited source; indication explanation retains the reviewed indication"
+    ]
+  },
+  "apiValidation": {
+    "rounds": [
+      {
+        "kind": "first_real_ai_execution",
+        "startedAt": "2026-10-20T10:40:32.488Z",
+        "finishedAt": "2026-10-20T10:41:20.424Z",
+        "passedSteps": 8,
+        "failedSteps": 0,
+        "accountAiJobsAfterRound": 2,
+        "newAiJobs": 2,
+        "newProviderHttpRequests": 3
+      },
+      {
+        "kind": "same_state_and_idempotency_keys_replay",
+        "startedAt": "2026-10-20T10:42:11.865Z",
+        "finishedAt": "2026-10-20T10:42:32.904Z",
+        "passedSteps": 8,
+        "failedSteps": 0,
+        "accountAiJobsAfterRound": 2,
+        "newAiJobs": 0,
+        "newProviderHttpRequests": 0
+      },
+      {
+        "kind": "post_google_auth_fix_same_state_and_idempotency_keys_replay",
+        "imageTag": "20261020-google-auth",
+        "startedAt": "2026-10-20T11:07:15.930Z",
+        "finishedAt": "2026-10-20T11:07:37.777Z",
+        "passedSteps": 8,
+        "failedSteps": 0,
+        "accountAiJobsAfterRound": 2,
+        "newAiJobs": 0,
+        "newProviderHttpRequests": 0
+      }
+    ],
+    "stepsPassedInAllThreeRounds": [
+      "public_health_firebase_config_and_local_auth_disabled",
+      "published_official_source_preflight",
+      "synthetic_accounts_and_scoped_eligibility_bootstrap",
+      "recognition_job_idempotency_and_literal_fields",
+      "confirm_recognition_and_duplicate_save_no_overwrite",
+      "grounded_bundle_job_idempotency_and_source_citations",
+      "cross_account_denials_and_private_list_isolation",
+      "quiz_wrong_then_correct_and_relogin_persistence"
+    ],
+    "negativeCases": [
+      "Unauthenticated private API denied; local login disabled",
+      "Non-admin accounts denied the admin user API",
+      "Changed recognition-save payload returns 409 without changing the original medication or saved pointer",
+      "Other synthetic account cannot read jobs, overwrite the medication, save recognition, create its bundle or answer its quiz",
+      "Denied cross-account writes leave owner data unchanged",
+      "Other account lists do not expose owner medications, jobs or learning records"
+    ],
+    "temporaryAdminClaimRemoved": true,
+    "realFaultInjectionPerformed": false
+  },
+  "modelUsage": {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoningEffort": "none",
+    "uniqueApplicationAiJobs": 2,
+    "actualProviderHttpRequests": 3,
+    "providerRetries": 0,
+    "reportedTotalTokens": 7350,
+    "jobs": [
+      {
+        "kind": "recognition",
+        "attempts": 1,
+        "latencyMs": 10157,
+        "reportedTokens": 2822,
+        "providerStages": ["vision"]
+      },
+      {
+        "kind": "bundle",
+        "attempts": 1,
+        "latencyMs": 8074,
+        "reportedTokens": 4528,
+        "providerStages": ["generation", "verification"]
+      }
+    ],
+    "costScope": "Two application jobs are not a two-HTTP-request cap. Replay reused the original jobs. No currency cost is inferred from combined tokens."
+  },
+  "browserValidation": {
+    "status": "passed",
+    "imageTag": "20261020-first-test",
+    "browser": "Chrome",
+    "identity": "synthetic Firebase account",
+    "evidenceType": "Direct browser interaction and visible persisted result reported by the deployment operator",
+    "checks": [
+      "Password login to the deployed application",
+      "Saved medication is visible",
+      "Full side-effect, precaution and warning sections are visible",
+      "Four questions are visible",
+      "Wrong answer followed by correct answers is saved"
+    ],
+    "googleOAuthTested": false,
+    "realEmailVerificationTested": false,
+    "physicalDeviceCameraTested": false,
+    "foregroundBackgroundPushTested": false,
+    "postFixEmailRelogin": {
+      "status": "passed",
+      "imageTag": "20261020-google-auth",
+      "browser": "Chrome",
+      "identity": "synthetic Firebase account",
+      "checks": [
+        "Actual password login to the updated cloud application",
+        "Previously saved learning progress is four correct answers out of four",
+        "Sign out from the application",
+        "Password sign-in again from the same browser page",
+        "Home still shows the one saved medication"
+      ],
+      "newAiJobs": 0,
+      "evidenceType": "Direct browser interaction and a Git-ignored local screenshot"
+    }
+  },
+  "googleAuthFollowup": {
+    "status": "local_validation_cloud_replay_and_rejection_checks_passed_real_oauth_pending",
+    "changes": [
+      "Explicit Google email scope",
+      "Server validates Google ID token signature, exact audience, issuer, expiry and verified email",
+      "Google token subject must match the current Firebase user's linked Google provider identity",
+      "Only a missing email is populated; existing email is preserved and accounts are not automatically merged by email",
+      "Login UI waits for profile bootstrap; token provider is reconfigured after logout and relogin",
+      "Deployment requires the project's public Google OAuth Web client ID before any cloud call, including ValidateOnly"
+    ],
+    "localValidation": {
+      "status": "passed",
+      "programTestFiles": 37,
+      "programTestsPassed": 564,
+      "focusedGoogleAuthTestsPassed": 29,
+      "focusedTestsIncludedInProgramTotal": true,
+      "desktopAndMobileBrowserTestsPassed": 54,
+      "productionBuild": "passed",
+      "lifecycle": {
+        "status": "passed",
+        "checkedAt": "2026-10-20T11:01:56.175Z"
+      },
+      "offlineDeploymentChecksPassedPerShell": 46,
+      "offlineDeploymentShells": ["PowerShell 7", "Windows PowerShell 5.1"],
+      "offlineDeploymentShellsRunSequentially": true,
+      "initialParallelHarnessFailure": "Shared temporary-file scanning observed the other shell's in-progress file; sequential reruns passed, with no actual credential leak found.",
+      "independentSecurityReview": "no_blocker_reported"
+    },
+    "cloudNegativeValidation": {
+      "status": "passed",
+      "checkedAt": "2026-10-20T11:06:46.887Z",
+      "passed": 5,
+      "failed": 0,
+      "checks": [
+        "synthetic_login",
+        "anonymous_google_profile_denied",
+        "authenticated_invalid_google_credential_denied",
+        "client_selected_uid_rejected",
+        "firebase_account_unchanged"
+      ],
+      "aiRequests": 0,
+      "firebaseAccountUpdated": false,
+      "credentialOutput": false
+    },
+    "realGooglePopupObservation": {
+      "accountChooserReached": true,
+      "requestedScopes": ["openid", "profile", "email"],
+      "successfulAccountSelectionAndAppReturnVerified": false,
+      "completionStatus": "unresolved_callback_pending_verified_successful_app_return",
+      "userReportedCompletion": true,
+      "observedApplicationError": "auth/popup-closed-by-user",
+      "googleProviderAccountsObservedAfterAttempt": 0,
+      "readonlyConfigurationChecks": {
+        "providerEnabled": true,
+        "clientIdMatchesExpectedProject": true,
+        "clientSecretPresent": true,
+        "crossOriginOpenerPolicy": "same-origin-allow-popups",
+        "crossOriginEmbedderPolicyPresent": false,
+        "browserConsoleErrorOutputObserved": false
+      },
+      "cause": "unknown",
+      "possibleCausesConfirmed": false,
+      "scope": "Popup handling, browser behavior, interaction on another page and application behavior have not been distinguished; no successful Google sign-in is claimed."
+    },
+    "realCloudGoogleOAuthPassed": false,
+    "actualOwnerAccountBootstrapCompleted": false,
+    "newCloudImageDeployed": true,
+    "postDeployReplayAndInfrastructurePassed": true,
+    "firstImageApiAndInfrastructureResultsReusedAsNewImageResults": false
+  },
+  "infrastructureValidation": {
+    "status": "passed",
+    "imageTag": "20261020-google-auth",
+    "checkedAt": "2026-10-20T11:07:35.2750883Z",
+    "passed": 88,
+    "failed": 0,
+    "cloudMutations": 0,
+    "aiRequests": 0,
+    "initialImageAudit": {
+      "imageTag": "20261020-first-test",
+      "checkedAt": "2026-10-20T10:46:05.8737099Z",
+      "passed": 86,
+      "failed": 0
+    },
+    "scope": [
+      "Cloud Run readiness, traffic, scaling, request-based billing, runtime identity and timeouts",
+      "Public web and private worker IAM/request boundaries",
+      "Cloud Tasks queue bounds and worker OIDC configuration",
+      "Scheduler schedules, targets and OIDC configuration",
+      "Direct project and resource IAM, including scoped builder access",
+      "Secret reference and direct access policy",
+      "Google OAuth audience configured in both web and worker",
+      "Private data/build buckets, lifecycle, soft-delete and version-retention settings",
+      "Artifact Registry access policy",
+      "Firestore region, four READY composite indexes and daily seven-day backup schedule",
+      "Deployed Firestore deny-all rules and anonymous read denial",
+      "Public health/config and absence of AI credentials in public config"
+    ],
+    "schedulerTickLastAttemptSucceeded": true,
+    "weeklyCatalogSchedulerConfigured": true,
+    "weeklyCatalogSchedulerHasExecuted": false,
+    "backupScheduleConfigured": true,
+    "backupRestoreTested": false,
+    "organizationAndFolderInheritedIamExpanded": false,
+    "authenticatedDirectFirestoreProbe": {
+      "imageTagAtProbe": "20261020-first-test",
+      "checkedAt": "2026-10-20T10:46:10.005Z",
+      "scope": "Authenticated synthetic user attempts to directly read its own existing account document",
+      "httpStatus": 403,
+      "errorCode": "PERMISSION_DENIED",
+      "passed": true,
+      "cloudMutations": 0,
+      "aiRequests": 0
+    }
+  },
+  "costControls": {
+    "budgetAlertConfigured": true,
+    "budgetCurrency": "TWD",
+    "budgetAmount": 500,
+    "billingHardCap": false,
+    "actualBudgetAlertDeliveryTested": false,
+    "cloudRunMinimumInstancesPerService": 0,
+    "cloudRunMaximumInstancesPerService": 2,
+    "cloudRunRevisionMaximumInstancesObserved": 3,
+    "cloudRunRequestBasedBilling": true,
+    "startupCpuBoostEnabled": true,
+    "cloudRunInstanceLimitIsProjectBillingCap": false,
+    "dailyAiJobsPerUser": 20,
+    "dailyAiJobsGlobal": 200,
+    "maximumEligibleTestAccounts": 50,
+    "googleCloudFreeTrialRetained": true,
+    "paidBillingAccountUpgradePerformed": false,
+    "trialTermsObservedAtSetup": {
+      "currency": "TWD",
+      "displayedCredit": 9534,
+      "durationDays": 90,
+      "isCurrentBalanceClaim": false
+    },
+    "firebasePlan": "Blaze linked to the existing Free Trial billing account",
+    "openaiBilledSeparately": true,
+    "identityPlatformTier1NoCostMauAtDocumentationDate": 50000,
+    "actualCloudBillMeasured": false
+  },
+  "remainingAcceptance": [
+    "Verified successful real Google popup callback/app return and actual owner/admin account bootstrap",
+    "Real email verification/password-reset delivery",
+    "Real-user two-device account lifecycle, care revocation, export and deletion",
+    "Physical-device camera/image selection under varied lighting and real foreground/background FCM delivery",
+    "Broader officially verified cloud drug/leaflet coverage beyond the single explained medication",
+    "Actual cloud response-loss, queue failure, polling interruption and process-restart fault injection",
+    "Backup restore, Firebase Auth and source-file reconstruction exercises",
+    "Operational alert delivery, expected concurrent load and sustained stability/cost observation",
+    "Public-use privacy/deletion information, eligibility policy, quotas and abuse controls"
+  ],
+  "historicalResultsKeptSeparate": [
+    {
+      "scope": "local reminder optimization with mocked AI and push",
+      "reference": "reminders-20261020.json",
+      "programTestsPassed": 535,
+      "desktopAndMobileBrowserTestsPassed": 54,
+      "offlineDeploymentChecksPassed": 39
+    },
+    {
+      "scope": "local eight-medication/eight-source v13 acceptance",
+      "reference": "seminar-v13-20261020.json",
+      "notReexecutedAsEightCloudSources": true
+    }
+  ],
+  "references": [
+    {
+      "title": "Firebase trial and pricing FAQ",
+      "url": "https://firebase.google.com/support/faq#pricing",
+      "checkedOn": "2026-10-20"
+    },
+    {
+      "title": "Identity Platform pricing",
+      "url": "https://cloud.google.com/identity-platform/pricing",
+      "checkedOn": "2026-10-20"
+    }
+  ],
+  "privacy": {
+    "containsAccountIdsEmailsPasswordsTokensOrApiKeys": false,
+    "containsBillingAccountId": false,
+    "containsLocalAbsolutePathsOrPrivateState": false,
+    "rawReportsAndSyntheticCredentialsRemainGitIgnored": true
+  }
+}

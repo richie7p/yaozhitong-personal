@@ -11,6 +11,7 @@ import { Domain, hash, now } from "./domain.js";
 import { extractLeaflet } from "./leaflets.js";
 import { tick } from "./scheduler.js";
 import { refreshCatalog } from "./import-catalog.js";
+import { completeGoogleProfile } from "./google-profile.js";
 type Env = {
   Variables: { identity: Identity; account: Account; requestId: string };
 };
@@ -97,6 +98,13 @@ export function createApp(d: Domain, auth = authenticate) {
     await next();
   });
   const uid = (c: any) => c.get("identity").uid as string;
+  app.post("/api/v1/auth/google-profile", async (c) =>
+    c.json(
+      await completeGoogleProfile(uid(c), await c.req.json(), () =>
+        d.active(uid(c)),
+      ),
+    ),
+  );
   app.get("/api/v1/me", async (c) => c.json(await d.me(uid(c))));
   app.put("/api/v1/me", async (c) =>
     c.json(await d.profile(uid(c), await c.req.json())),

@@ -7,6 +7,7 @@ dist/
 coverage/
 test-results/
 playwright-report/
+firebase-debug*.log
 snapshot/
 reference/
 *.tsbuildinfo

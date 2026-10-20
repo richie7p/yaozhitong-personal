@@ -1,4 +1,5 @@
 .git
+#!include:.gitignore
 .env
 .env.*
 .local
@@ -11,3 +12,5 @@ infra
 tests
 docs
 tools
+snapshot
+coverage

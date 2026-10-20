@@ -4,6 +4,7 @@ $deploymentScript = Join-Path $repository 'infra/deploy.ps1'
 $temporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) ('yzt-deploy-check-' + [guid]::NewGuid().ToString('N'))
 $firebaseConfigPath = Join-Path $temporaryDirectory 'firebase-public.json'
 $projectId = 'yzt-offline-12345'
+$googleClientId = '123456789-synthetic-web-client.apps.googleusercontent.com'
 $openaiSentinel = 'synthetic-openai-secret-offline-check-only'
 $nvidiaSentinel = 'synthetic-nvidia-secret-offline-check-only'
 $requiredIndexes = @((Get-Content -Raw -LiteralPath (Join-Path $repository 'firestore.indexes.json') | ConvertFrom-Json).indexes)
@@ -18,7 +19,7 @@ $readyIndexes = @(for ($indexNumber = 0; $indexNumber -lt $requiredIndexes.Count
 })
 $readyIndexJson = ConvertTo-Json -InputObject $readyIndexes -Depth 10
 $environmentNames = @(
-  'AI_PROVIDER', 'AI_TEXT_MODEL', 'AI_VISION_MODEL',
+  'AI_PROVIDER', 'AI_TEXT_MODEL', 'AI_VISION_MODEL', 'GOOGLE_OAUTH_CLIENT_ID',
   'OPENAI_API_KEY', 'OPENAI_TEXT_MODEL', 'OPENAI_VISION_MODEL', 'OPENAI_BASE_URL',
   'NVIDIA_API_KEY', 'NVIDIA_TEXT_MODEL', 'NVIDIA_VISION_MODEL', 'NVIDIA_BASE_URL',
   'NVIDIA_TEXT_FALLBACK_MODELS', 'NVIDIA_VISION_FALLBACK_MODELS'
@@ -58,11 +59,18 @@ function global:gcloud {
   $environmentPath = $null
   $environmentText = $null
   $environmentValues = $null
+  $parameterFiles = @{}
   foreach ($argument in $arguments) {
     if ($argument.StartsWith('--env-vars-file=')) {
       $environmentPath = $argument.Substring('--env-vars-file='.Length)
       $environmentText = [IO.File]::ReadAllText($environmentPath)
       $environmentValues = Read-DeploymentYaml $environmentText
+    }
+    foreach ($prefix in @('--config=', '--lifecycle-file=')) {
+      if ($argument.StartsWith($prefix)) {
+        $filePath = $argument.Substring($prefix.Length)
+        $parameterFiles[$filePath] = [IO.File]::ReadAllText($filePath)
+      }
     }
   }
   $call = [pscustomobject]@{
@@ -71,6 +79,7 @@ function global:gcloud {
     EnvironmentPath = $environmentPath
     EnvironmentText = $environmentText
     EnvironmentValues = $environmentValues
+    ParameterFiles = $parameterFiles
   }
   $global:YztOfflineDeploymentState.Calls.Add($call)
   $global:LASTEXITCODE = 0
@@ -86,6 +95,14 @@ function global:gcloud {
   if ($joined.StartsWith('firestore indexes composite list ')) {
     return $global:YztOfflineDeploymentState.IndexJson
   }
+  if ($global:YztOfflineDeploymentState.ExistingResources) {
+    if ($joined.StartsWith('iam service-accounts list ')) {
+      return @('yzt-test-runtime@yzt-offline-12345.iam.gserviceaccount.com', 'yzt-test-caller@yzt-offline-12345.iam.gserviceaccount.com', 'yzt-test-build@yzt-offline-12345.iam.gserviceaccount.com')
+    }
+    if ($joined.StartsWith('storage buckets list ')) {
+      return @('gs://yzt-offline-12345-yzt-test-data', 'gs://yzt-offline-12345-yzt-test-build')
+    }
+  }
   # Empty list responses exercise resource creation without contacting Google Cloud.
 }
 
@@ -96,6 +113,7 @@ function Invoke-DeploymentScenario {
     [hashtable]$Parameters = @{},
     [string]$FailPrefix = '',
     [string]$IndexJson = $readyIndexJson,
+    [switch]$ExistingResources,
     [switch]$NoGcloudCommand,
     [switch]$ExpectFailure
   )
@@ -109,11 +127,13 @@ function Invoke-DeploymentScenario {
     Calls = [Collections.Generic.List[object]]::new()
     FailPrefix = $FailPrefix
     IndexJson = $IndexJson
+    ExistingResources = $ExistingResources
   }
   $arguments = @{
     ProjectId = $projectId
     FirebaseConfigPath = $firebaseConfigPath
     VapidKey = 'synthetic-public-vapid-key'
+    GoogleOAuthClientId = $googleClientId
   }
   foreach ($entry in $Parameters.GetEnumerator()) { $arguments[$entry.Key] = $entry.Value }
   $beforeTemporaryFiles = @(Get-ChildItem -LiteralPath ([IO.Path]::GetTempPath()) -Filter 'yzt-env-*.yaml' -File | ForEach-Object FullName)
@@ -140,10 +160,20 @@ function Invoke-DeploymentScenario {
     foreach ($call in $calls) {
       Assert-Deployment (-not (($call.Arguments -join ' ').Contains($secret))) "${Name}: a secret appeared in CLI arguments."
       Assert-Deployment (-not ([string]$call.EnvironmentText).Contains($secret)) "${Name}: a secret appeared in temporary YAML."
+      foreach ($fileText in $call.ParameterFiles.Values) {
+        Assert-Deployment (-not $fileText.Contains($secret)) "${Name}: a secret appeared in a build/lifecycle file."
+      }
     }
   }
   foreach ($call in $calls | Where-Object EnvironmentPath) {
     Assert-Deployment (-not (Test-Path -LiteralPath $call.EnvironmentPath)) "${Name}: temporary YAML was not removed."
+  }
+  foreach ($call in $calls) {
+    foreach ($filePath in $call.ParameterFiles.Keys) {
+      if ([IO.Path]::GetFileName($filePath) -like 'yzt-build-*.json') {
+        Assert-Deployment (-not (Test-Path -LiteralPath $filePath)) "${Name}: a temporary build/lifecycle file was not removed."
+      }
+    }
   }
   $afterTemporaryFiles = @(Get-ChildItem -LiteralPath ([IO.Path]::GetTempPath()) -Filter 'yzt-env-*.yaml' -File | ForEach-Object FullName)
   Assert-Deployment (@($afterTemporaryFiles | Where-Object { $_ -notin $beforeTemporaryFiles }).Count -eq 0) "${Name}: an unremoved deployment environment file was created."
@@ -184,6 +214,30 @@ function Assert-CloudRunCalls {
   $indexPosition = [array]::IndexOf($Result.Calls, $indexCalls[0])
   $buildCalls = @($Result.Calls | Where-Object { ($_.Arguments[0..1] -join ' ') -eq 'builds submit' })
   Assert-Deployment ($buildCalls.Count -eq 1 -and [array]::IndexOf($Result.Calls, $buildCalls[0]) -gt $indexPosition) "$($Result.Name): application build preceded index readiness."
+  $buildCall = $buildCalls[0]
+  $builder = "yzt-$Environment-build@$projectId.iam.gserviceaccount.com"
+  $buildBucket = "$projectId-yzt-$Environment-build"
+  $dataBucket = "$projectId-yzt-$Environment-data"
+  Assert-Deployment ($buildCall.Arguments -contains "--service-account=projects/$projectId/serviceAccounts/$builder") "$($Result.Name): build must use its dedicated service account."
+  Assert-Deployment ($buildCall.Arguments -contains '--region=asia-east1' -and $buildCall.Arguments -contains "--gcs-log-dir=gs://$buildBucket/logs" -and $buildCall.Arguments -contains "--gcs-source-staging-dir=gs://$buildBucket/source") "$($Result.Name): build must use explicit regional user-owned staging/log storage."
+  $configArgument = @($buildCall.Arguments | Where-Object { $_.StartsWith('--config=') })[0]
+  $buildConfig = $buildCall.ParameterFiles[$configArgument.Substring('--config='.Length)] | ConvertFrom-Json
+  Assert-Deployment ($buildConfig.options.logging -eq 'GCS_ONLY' -and $buildConfig.steps[0].name -eq 'gcr.io/cloud-builders/docker' -and $buildConfig.images.Count -eq 1 -and $buildConfig.steps[0].args[2] -eq $buildConfig.images[0]) "$($Result.Name): build config must produce the deployed image with GCS-only logs."
+  $buildGrants = @($Result.Calls | Where-Object { $_.Arguments -contains "--member=serviceAccount:$builder" })
+  Assert-Deployment ($buildGrants.Count -eq 3) "$($Result.Name): build account must have exactly three resource-scoped grants."
+  Assert-Deployment (@($buildGrants | Where-Object { ($_.Arguments[0..3] -join ' ') -eq "storage buckets add-iam-policy-binding gs://$buildBucket" -and $_.Arguments -contains '--role=roles/storage.objectAdmin' }).Count -eq 1) "$($Result.Name): builder can only access its build bucket."
+  $metadataGrants = @($Result.Calls | Where-Object { $_.Arguments -contains '--role=roles/storage.bucketViewer' })
+  Assert-Deployment ($metadataGrants.Count -eq 1 -and ($metadataGrants[0].Arguments[0..3] -join ' ') -eq "storage buckets add-iam-policy-binding gs://$buildBucket" -and $metadataGrants[0].Arguments -contains "--member=serviceAccount:$builder") "$($Result.Name): bucket metadata read must be granted only to the builder on its build bucket."
+  Assert-Deployment ([array]::IndexOf($Result.Calls, $metadataGrants[0]) -lt [array]::IndexOf($Result.Calls, $buildCall)) "$($Result.Name): build validation must have bucket metadata access before submission."
+  Assert-Deployment (@($buildGrants | Where-Object { ($_.Arguments[0..3] -join ' ') -eq 'artifacts repositories add-iam-policy-binding yaozhitong' -and $_.Arguments -contains '--role=roles/artifactregistry.writer' }).Count -eq 1) "$($Result.Name): builder image write access must be repository-scoped."
+  $dataUpdates = @($Result.Calls | Where-Object { ($_.Arguments[0..3] -join ' ') -eq "storage buckets update gs://$dataBucket" })
+  Assert-Deployment ($dataUpdates.Count -eq 1 -and $dataUpdates[0].Arguments -contains '--soft-delete-duration=0' -and [array]::IndexOf($Result.Calls, $dataUpdates[0]) -lt [array]::IndexOf($Result.Calls, $buildCall)) "$($Result.Name): photo soft-delete must be disabled before builds/services can upload data."
+  foreach ($bucketCreate in $Result.Calls | Where-Object { ($_.Arguments[0..2] -join ' ') -eq 'storage buckets create' }) {
+    Assert-Deployment ($bucketCreate.Arguments -contains '--soft-delete-duration=0' -and $bucketCreate.Arguments -contains '--uniform-bucket-level-access' -and $bucketCreate.Arguments -contains '--public-access-prevention') "$($Result.Name): new buckets must start private without soft-delete."
+  }
+  $buildUpdates = @($Result.Calls | Where-Object { ($_.Arguments[0..3] -join ' ') -eq "storage buckets update gs://$buildBucket" })
+  $buildLifecycle = @($buildUpdates[0].ParameterFiles.Values)[0] | ConvertFrom-Json
+  Assert-Deployment ($buildUpdates[0].Arguments -contains '--soft-delete-duration=0' -and $buildLifecycle.rule[0].condition.age -eq 7 -and $buildLifecycle.rule[0].action.type -eq 'Delete') "$($Result.Name): build staging/logs must expire after seven days without soft-delete copies."
   if (-not $Partial) {
     Assert-Deployment ($runCalls.Count -eq 4) "$($Result.Name): expected two deploys and two updates."
     Assert-Deployment (($runCalls[0].Arguments[0..2] -join ' ') -ceq "run deploy yzt-$Environment-worker") "$($Result.Name): worker deployment missing or resource case changed."
@@ -193,6 +247,7 @@ function Assert-CloudRunCalls {
     Assert-Deployment (($runCalls.EnvironmentValues.SERVICE_ROLE -join ',') -eq 'worker,web,web,worker') "$($Result.Name): service roles changed."
   }
   foreach ($call in $runCalls) {
+    Assert-Deployment ($call.EnvironmentValues.GOOGLE_OAUTH_CLIENT_ID -ceq $googleClientId) "$($Result.Name): Google token audience is missing or changed."
     Assert-Deployment ($call.EnvironmentValues.APP_MODE -eq 'firebase') "$($Result.Name): production mode changed."
     Assert-Deployment ($call.EnvironmentValues.AI_PROVIDER -ceq $Provider) "$($Result.Name): Cloud Run provider mismatch."
     Assert-Deployment ($call.EnvironmentValues.STORAGE_BUCKET -ceq "$projectId-yzt-$Environment-data") "$($Result.Name): bucket name is incorrect or not lowercase."
@@ -256,6 +311,12 @@ try {
 
   $result = Invoke-DeploymentScenario 'ValidateOnly default OpenAI without keys or installed gcloud' -Parameters @{ ValidateOnly = $true } -NoGcloudCommand
   Assert-Validation $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
+  foreach ($invalidClient in @('', 'not-a-google-client', '123-bad.apps.googleusercontent.com.attacker.invalid')) {
+    $result = Invoke-DeploymentScenario 'Missing or malformed Google OAuth audience fails before cloud access' -Parameters @{ GoogleOAuthClientId = $invalidClient; ValidateOnly = $true } -ExpectFailure
+    Assert-Deployment ($result.Calls.Count -eq 0) "$($result.Name): an invalid audience reached gcloud."
+    $script:passedChecks++
+    Write-Host "PASS $($result.Name)"
+  }
   $result = Invoke-DeploymentScenario 'ValidateOnly NVIDIA without keys' -Parameters @{ ValidateOnly = $true; AiProvider = 'nvidia'; Environment = 'prod' }
   Assert-Validation $result 'nvidia' 'nvidia/nemotron-3.5-super-vl-120b-a12b' 'nvidia/nemotron-3.5-super-vl-120b-a12b' 'prod'
   foreach ($provider in @('OPENAI', 'NVIDIA')) {
@@ -344,6 +405,9 @@ try {
 
   $result = Invoke-DeploymentScenario 'OpenAI default full mocked deployment' -Environment $bothKeys
   Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
+  $result = Invoke-DeploymentScenario 'Existing buckets and service accounts are reused with deletion policy applied' -Environment $bothKeys -ExistingResources
+  Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
+  Assert-Deployment (@($result.Calls | Where-Object { ($_.Arguments[0..2] -join ' ') -in @('storage buckets create', 'iam service-accounts create') }).Count -eq 0) "$($result.Name): existing resources were recreated."
   $result = Invoke-DeploymentScenario 'NVIDIA default full mocked deployment' -Environment $bothKeys -Parameters @{ AiProvider = 'nvidia' }
   Assert-CloudRunCalls $result 'nvidia' 'nvidia/nemotron-3.5-super-vl-120b-a12b' 'nvidia/nemotron-3.5-super-vl-120b-a12b'
   foreach ($provider in @('OPENAI', 'NVIDIA')) {
@@ -365,6 +429,18 @@ try {
   }
   $result = Invoke-DeploymentScenario 'Secret upload failure never creates an environment file' -Environment $bothKeys -FailPrefix 'secrets versions add ' -ExpectFailure
   Assert-Deployment (@($result.Calls | Where-Object EnvironmentPath).Count -eq 0) "$($result.Name): deployment continued after failed secret upload."
+  $script:passedChecks++
+  Write-Host "PASS $($result.Name)"
+
+  foreach ($prefix in @("storage buckets update gs://$projectId-yzt-test-data", 'builds submit ')) {
+    $result = Invoke-DeploymentScenario "Failure at $prefix stops before Cloud Run" -Environment $bothKeys -FailPrefix $prefix -ExpectFailure
+    Assert-Deployment (@($result.Calls | Where-Object { $_.Arguments[0] -eq 'run' }).Count -eq 0) "$($result.Name): a failed deletion policy/build must not deploy services."
+    $script:passedChecks++
+    Write-Host "PASS $($result.Name)"
+  }
+  $metadataGrantPrefix = "storage buckets add-iam-policy-binding gs://$projectId-yzt-test-build --member=serviceAccount:yzt-test-build@$projectId.iam.gserviceaccount.com --role=roles/storage.bucketViewer"
+  $result = Invoke-DeploymentScenario 'Build bucket metadata permission failure stops before build submission' -Environment $bothKeys -FailPrefix $metadataGrantPrefix -ExpectFailure
+  Assert-Deployment (@($result.Calls | Where-Object { $_.Arguments[0] -in @('builds', 'run', 'scheduler') }).Count -eq 0) "$($result.Name): deployment continued without required builder bucket metadata access."
   $script:passedChecks++
   Write-Host "PASS $($result.Name)"
 

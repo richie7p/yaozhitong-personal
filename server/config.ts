@@ -29,6 +29,7 @@ export const config = {
   mode: process.env.APP_MODE || "local",
   project: process.env.GOOGLE_CLOUD_PROJECT || "",
   bucket: process.env.STORAGE_BUCKET || "",
+  googleOAuthClientId: (process.env.GOOGLE_OAUTH_CLIENT_ID || "").trim(),
   port: Number(process.env.PORT || 8080),
   localPath: process.env.LOCAL_DATA_PATH || ".local",
   aiProvider: provider as "nvidia" | "openai",
