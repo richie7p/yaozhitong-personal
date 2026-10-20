@@ -852,5 +852,52 @@
     "newJobQuotaIsNotModelHttpRequestCount": true,
     "allNewProviderHttpResponses": 200,
     "allModelJobsSingleAttempt": true
+  },
+  "ciValidation": {
+    "latestResultSource": "https://github.com/richie7p/yaozhitong-personal/actions",
+    "latestResultPinnedInThisDocument": false,
+    "history": [
+      {
+        "runId": 39435234739,
+        "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39435234739",
+        "commit": "2b06c8d",
+        "conclusion": "failure",
+        "programTests": {
+          "passed": 678,
+          "failed": 1,
+          "files": 42
+        },
+        "failureScope": "tests/api-jobs.test.ts identity-switch case: completion of the new-account submission did not settle within the test helper limit.",
+        "rootCauseConfirmed": true,
+        "browserRegression": "not_run_after_unit_stage_failure",
+        "lifecycleValidation": "not_run_after_unit_stage_failure",
+        "deployedCloudAcceptanceInvalidated": false,
+        "rootCause": "The test helper spent its fixed fake-clock polling budget while native Web Crypto was still preparing the new-account request on the real event loop."
+      }
+    ],
+    "status": "historical_failure_and_focused_test_harness_correction_recorded",
+    "followupCorrection": {
+      "scope": "tests/api-jobs.test.ts only",
+      "productionCodeChanged": false,
+      "cloudDeploymentChanged": false,
+      "change": "Wait for real asynchronous preparation without consuming the fake-clock polling budget when no fake timer is scheduled; preserve 250 polling advances and bound real waiting to two seconds.",
+      "nativeWebCryptoPreserved": true,
+      "existingIdentityIdempotencyKeyAndAuthorizationAssertionsRetained": true,
+      "reproduction": {
+        "controlledRealDigestDelayMs": 100,
+        "previousHelperFailureReproduced": true,
+        "correctedHelperPassed": true,
+        "experimentalDelayStubRemoved": true
+      },
+      "focusedValidation": {
+        "passed": 35,
+        "failed": 0,
+        "files": 3,
+        "scope": "API unit test files",
+        "typecheck": "passed",
+        "diffWhitespaceCheck": "passed"
+      },
+      "subsequentGitHubCiPassClaimed": false
+    }
   }
 }

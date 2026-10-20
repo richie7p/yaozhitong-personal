@@ -1,4 +1,5 @@
 import { webcrypto } from "node:crypto";
+import { setTimeout as realDelay } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PENDING_JOB_STORAGE_KEY } from "../src/pending-jobs";
 
@@ -31,13 +32,24 @@ async function settle<T>(promise: Promise<T>): Promise<T> {
       result = { error };
     },
   );
-  for (let i = 0; i < 250 && !result; i++) {
-    // WebCrypto uses the real event loop; polling alone uses the fake clock.
+  let clockAdvances = 0;
+  const realDeadline = performance.now() + 2000;
+  while (!result && clockAdvances < 250 && performance.now() < realDeadline) {
+    // WebCrypto uses the real event loop. Waiting for its native thread must
+    // not consume the fake-clock budget before a poll/deadline is scheduled.
     await new Promise<void>((resolve) => setImmediate(resolve));
+    if (result) break;
+    if (!vi.getTimerCount()) {
+      await realDelay(1);
+      continue;
+    }
     await vi.advanceTimersByTimeAsync(1800);
+    clockAdvances++;
   }
-  if (!result)
+  if (!result && clockAdvances === 250)
     throw Error("Synthetic job did not settle within its polling budget.");
+  if (!result)
+    throw Error("Synthetic job's real asynchronous preparation did not settle.");
   if ("error" in result) throw result.error;
   return result.value;
 }
