@@ -4,7 +4,7 @@
 
 ## 目前狀態（2026-10-20）
 
-雲端與本機使用同一套介面，文字／影像均採 OpenAI `gpt-6-luna`、思考設定 `none`。Web 與 worker 使用同一組供應商、模型及對應 Secret，不自動跨供應商備援。現行映像為 `20261020-google-auth`，worker／web 各有100%流量指向本次修正 revision；首次兩個AI任務的映像 `20261020-first-test` 另作歷史基準保存。兩個映像的固定 digest 與各自驗收結果見[可攜驗收摘要](acceptance/cloud-first-deploy-20261020.json)。
+雲端與本機使用同一套介面，文字／影像均採 OpenAI `gpt-6-luna`、思考設定 `none`。Web 與 worker 使用同一組供應商、模型及對應 Secret，不自動跨供應商備援。現行映像為 `20261020-hosting-auth`，worker／web 各有100%流量指向本次修正 revision，兩者的 `APP_URL` 都使用[同網域 Hosting TEST 入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)。首次兩個AI任務的 `20261020-first-test` 及上一個登入修正版 `20261020-google-auth` 均保留為歷史基準；各映像的固定 digest 與各自驗收結果見[可攜驗收摘要](acceptance/cloud-first-deploy-20261020.json)。
 
 已完成的固定雲端範圍：
 
@@ -19,9 +19,13 @@
 
 Google provider 的 Email scope／資料補齊與登出再登入修正，已完成本機 **564／564程式測試（37檔，包含29項專項）、54／54桌面／手機流程、正式建置及生命週期檢查**。新增公開 OAuth client ID 部署預檢後，PowerShell 7與Windows PowerShell 5.1依序執行均 **46／46** 通過。最初並行跑兩種 shell 時，共用暫存檔掃描把另一程序尚未移除的檔案當成殘留；依序重跑通過，未發現實際金鑰外洩。修正映像已部署並完成雲端重送、設定及拒絕案例核對；Chrome另完成合成帳號密碼登入、學習4／4保存、登出後同頁再次登入及首頁1筆藥品保留。
 
-真實 Google popup 已到達帳號選擇頁，要求的scope包含 `openid`、`profile`、`email`，但尚未取得成功返回應用的證據。使用者回報完成操作後，應用仍顯示 `auth/popup-closed-by-user`，當時後端未出現Google provider帳號；因此不能列為成功。唯讀檢查確認Google provider已啟用、client ID相符且有client secret，HTTP為 `Cross-Origin-Opener-Policy: same-origin-allow-popups`、沒有COEP，檢查時console無錯誤輸出。這些資訊尚不足以判定原因是popup處理、瀏覽器、操作所在頁面或應用問題；仍待取得實際成功callback／登入狀態。實際擁有者帳號及管理員初始化也未完成。
+同網域 Hosting 版本已補 service worker 的 Firebase 保留路徑排除，本機程式測試 **578／578** 通過，包含新增14項 service worker 測試；完整部署 **74／74**、Hosting helper **17／17**離線回歸，在PowerShell 7與Windows PowerShell 5.1依序執行均通過。完整部署檢查另確認模擬CLI在測試後確實移除，以及真實模式缺CLI時會停止。這些程式與模擬 CLI 結果不取代雲端驗收，也不把前述54項瀏覽器結果當作新版本重新執行。
 
-新版部署後唯讀基礎設施檢查 **88／88** 通過，包含初次映像86項範圍及Web／worker的Google OAuth audience設定。範圍涵蓋 Cloud Run 公開／私有邊界、服務最少0／最多2、runtime／caller／builder直接 IAM、Secret 引用、儲存生命週期、Cloud Tasks／Scheduler 設定、四組 READY 索引、每日備份保留7天及已發布的拒絕直接存取規則。初次部署後另以已登入合成使用者 token 直接讀取自己的既有 Firestore 帳號文件，得到預期 **403 `PERMISSION_DENIED`**；此個別探測沒有算成新版88項的一部分。唯讀檢查沒有新增 AI 或改動雲端資源；組織／資料夾繼承 IAM 不在這次檢查範圍。
+Hosting 已實際發布純rewrite設定、0個靜態檔案；`20261020-hosting-auth` 的入口檢查於11:31:25Z完成 **18／18**：首頁／健康／設定可達、同網域Firebase helper與service worker邊界正確、合成帳號密碼登入及Bearer／POST轉送、私人回覆 `no-store` 且匿名不會取得已登入快取、原1筆藥品與4題測驗可讀。任務仍為原2筆，沒有新增模型呼叫。這是Hosting入口驗收，尚不包含真實Google popup成功callback、實機推播或長時間冷啟動測試。
+
+先前直接Cloud Run入口的真實 Google popup 已到達帳號選擇頁，要求的scope包含 `openid`、`profile`、`email`，但應用顯示 `auth/popup-closed-by-user`，當時後端未出現Google provider帳號。唯讀檢查確認Google provider已啟用、client ID相符且有client secret，HTTP為 `Cross-Origin-Opener-Policy: same-origin-allow-popups`、沒有COEP，檢查時console無錯誤輸出。改用Hosting後，先觀察到 `about:blank` 彈窗；後續確認callback已載入且彈窗自動關閉，主頁仍回報 `auth/popup-closed-by-user`，沒有完成登入。**同網域Hosting本身未解決此問題**；同頁重新導向登入的修正與驗收進行中，不能把18項入口或90項基礎設施通過當作Google登入成功。實際擁有者帳號及管理員初始化也未完成。
+
+最新 `20261020-hosting-auth` 映像部署後唯讀基礎設施檢查於11:33:18Z完成 **90／90**，涵蓋初次映像86項、上一個登入修正版的兩項Google OAuth audience及本次Web／worker的兩項公開入口設定。完整範圍包含 Cloud Run 公開／私有邊界、服務最少0／最多2、runtime／caller／builder直接 IAM、Secret 引用、儲存生命週期、Cloud Tasks／Scheduler 設定、四組 READY 索引、每日備份保留7天及已發布的拒絕直接存取規則。初次部署後另以已登入合成使用者 token 直接讀取自己的既有 Firestore 帳號文件，得到預期 **403 `PERMISSION_DENIED`**；此個別探測沒有算成90項的一部分。各映像的86／88／90項結果分開保存，唯讀檢查沒有新增 AI 或改動雲端資源；組織／資料夾繼承 IAM 不在這次檢查範圍。
 
 Scheduler 每分鐘檢查已有成功執行紀錄；每週主檔更新排程已啟用且目標／OIDC 正確，但尚未到首次執行時間，因此不列為排程執行成功。備份是設定核對，尚未執行還原。下方保留可重現的環境準備、離線檢查與部署指令；真實 OAuth、裝置通知與故障復原等剩餘範圍如下。
 
@@ -46,6 +50,7 @@ Scheduler 每分鐘檢查已有成功執行紀錄；每週主檔更新排程已�
 5. 為落實「不只憑相同 Email 自動合併」，Authentication 的 User account linking 設為 **Create multiple accounts for each identity provider**。使用者須登入原帳號，從「帳號與設定」明確連結另一登入方式。若另一方式已屬於獨立 UID，介面回傳 Firebase 連結衝突，不會搬移健康資料；需保留原登入方式，不做隱性合併。此設定會影響供應商個人資料回傳，顯示名稱可在健康資料頁自行填寫。[官方設定說明](https://support.google.com/firebase/answer/9134820?hl=en)、[明確連結流程](https://firebase.google.com/docs/auth/web/account-linking)。
 6. Cloud Messaging → Web Push certificates 產生公開 VAPID Key。
 7. 先在目標專案建立／確認 `asia-east1` 的預設 Firestore 資料庫，部署下方四組索引並等待 READY，再更新服務。新資料庫也需要索引。
+8. 若採用下方同網域 Hosting 入口，Firebase Web config 的 `authDomain` 須為 `PROJECT_ID.firebaseapp.com`。先核對既有 Hosting 網站用途及 live release，再發布轉送設定；Firebase CLI 需已登入有部署權限的帳號。入口驗收後，後續完整部署都帶入同一個 `-PublicAppUrl`。
 
 Google 登入會明確要求 `email` scope；後端驗證 Google ID token 的簽章、指定 audience、issuer、時效及 `email_verified`，並要求其 `sub` 與目前登入 UID 的 Firebase Google provider 身分一致。只有該 UID 尚無信箱時才補入，不以 Email 尋找或合併另一 UID，也不取代或驗證既有密碼登入信箱。登入介面等資料補齊完成才進入主畫面，失敗會退出該次登入；登出後重新登入會重新設定 token provider。
 
@@ -81,6 +86,7 @@ gcloud firestore indexes composite list --database='(default)' --project YOUR_TE
 | `-ProjectId` | 必填；要部署的 Google Cloud／Firebase 專案 |
 | `-FirebaseConfigPath` | 必填；Firebase Web 公開設定 JSON，內含的 `projectId` 必須相符 |
 | `-GoogleOAuthClientId` | 同一 Firebase 專案 Google provider 的公開 Web client ID；未傳入時使用目前程序 `GOOGLE_OAUTH_CLIENT_ID`，兩者均缺少則停止 |
+| `-PublicAppUrl` | 選填；提醒連結等使用的 HTTPS 公開 origin。採同網域 Hosting 時填 `https://PROJECT_ID.firebaseapp.com`，省略則沿用 Web Cloud Run URL；此參數不會發布 Hosting |
 | `-VapidKey` | 必填；FCM Web Push 的公開 VAPID Key |
 | `-Environment` | `test`（預設）或 `prod` |
 | `-Region` | 預設 `asia-east1` |
@@ -157,7 +163,34 @@ OpenAI 測試專案範例：
 
 兩個環境需使用不同 `ProjectId`；只改 `Environment` 名稱並不能隔離 Firebase Authentication 和預設 Firestore。
 
-完成後，把輸出的 Web Cloud Run 網域加入 Firebase Auth 授權網域。使用 HTTPS；worker URL 不提供給瀏覽器。
+完成後，把實際使用的公開網域加入 Firebase Auth 授權網域。直接使用 Cloud Run 時加入其 Web 網域；採 Hosting 時依下方設定相同的 `authDomain` 與入口。使用 HTTPS；worker URL 不提供給瀏覽器。
+
+## 同網域 Firebase Hosting 入口
+
+此選項讓應用與 Firebase 登入輔助頁共用 `https://PROJECT_ID.firebaseapp.com`。入口須與 Firebase Web config 的 `authDomain` 一致，因此這個設定使用 `firebaseapp.com`，不改用另一個 `web.app` 網域。TEST已依下列流程完成發布及18項入口檢查；Google彈窗仍未成功登入，同頁重新導向修正須另驗收。
+
+先把包含 service worker 修正的應用部署到既有 Web Cloud Run 並確認可用，再檢查目標 Firebase Hosting 網站的 live release：應為空網站或已屬於本應用。新的 Hosting release 會取代該網站原有設定；`-ValidateOnly` 不讀取雲端狀態，也不會替你檢查既有用途。
+
+在儲存庫根目錄先檢查設定，再於確認目標網站後發布：
+
+```powershell
+./infra/deploy-hosting.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -Environment test -Region asia-east1 -ValidateOnly
+./infra/deploy-hosting.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -Environment test -Region asia-east1
+```
+
+helper 固定使用 `firebase-tools@15.34.0`，真實發布需要 Node.js／npm 及已登入的 Firebase CLI。它在獨立暫存目錄產生設定與空的 `public` 目錄，僅發布 `hosting`：`**` rewrite 指向同地區的 `yzt-test-web`（正式環境為 `yzt-prod-web`）。不複製程式碼、`dist`、照片或本機資料，也不連帶發布 Firestore／Storage；網站和靜態資產仍由同一個 Cloud Run 映像提供。helper 不改動 `APP_URL`。
+
+先驗證 Hosting 上的首頁、登入／登出、私人 API 拒絕與保存流程，再把它設為公開網址。之後每次完整部署都需帶入 `-PublicAppUrl`，避免重新部署把提醒連結改回直接 Cloud Run 網址；可先在相同指令末尾加 `-ValidateOnly`：
+
+```powershell
+./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -GoogleOAuthClientId '123456789012-your-web-client.apps.googleusercontent.com' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -PublicAppUrl 'https://your-test-project.firebaseapp.com' -Environment test -Region asia-east1 -AiProvider openai -TextModel gpt-6-luna -VisionModel gpt-6-luna
+```
+
+`-PublicAppUrl` 只接受 HTTPS origin，不接受帳密、路徑、query 或 fragment；允許末尾 `/` 並正規化移除。格式錯誤會在任何雲端呼叫前停止，`-ValidateOnly` 也相同，輸出的 `publicAppUrl` 可核對解析結果。通過後，Web／worker 的 `APP_URL` 都使用它；worker 的內部 URL、Cloud Tasks／Scheduler 目標及 OIDC audience 維持原設定。省略此參數仍保留原有直接 Cloud Run 行為。
+
+Firebase 保留 `/__` 與 `/__/...`（包括 OAuth handler／iframe）；service worker 對這些路徑不攔截、不快取，也不在失敗時回傳離線首頁。一般首頁與公開殼層仍保留既有離線行為，API／內部路徑維持排除。登入請求以 `Authorization: Bearer` 傳入 Firebase ID token，私人 API 回覆與前端 fetch 均採 `no-store`；Hosting 設定不得把私人 API 改為公開快取。動態內容的快取與 cookie 行為見[官方說明](https://firebase.google.com/docs/hosting/manage-cache)。
+
+Hosting 對單一 HTTP 請求有 **60秒**逾時，設定 Cloud Run Web 120秒不能延長這個前端限制。本系統的 AI 流程先建立佇列任務，再以短請求輪詢結果，模型處理由私有 worker 執行，設計上不要求瀏覽器持有整個 AI 任務的 HTTP 連線；仍須在實際入口驗證冷啟動與輪詢接續。此入口不把 worker 對外公開。[官方 Cloud Run rewrite 與逾時說明](https://firebase.google.com/docs/hosting/cloud-run)。
 
 ## 規則、管理員與資料
 
@@ -187,6 +220,8 @@ npm run admin -- FIREBASE_UID
 ## 預算、觀測與備份
 
 本次已建立 TEST 的 **NT$500 費用提醒**，並設定 Cloud Run 最少0、每服務最多2個執行個體。`infra/budget.example.json` 保留可重用的50%／80%／100%門檻範例；其他專案須另確認計費幣別、範圍與通知對象。預算提醒不會自動停機，服務執行個體上限也不是整個專案的費用硬上限；尚未以真實超額費用觸發通知驗收。
+
+若啟用 Firebase Hosting，其儲存與下載是另一項用量，不受 Cloud Run 的限制涵蓋。以2026-10-20官方說明，專案層級享有 **10GB Hosting儲存、每月10GB CDN至使用者下載**免額外費用額度；快取命中與未命中均計入下載量，超額依方案計費。純 rewrite 不另存一份網站資產，仍會有經 Hosting 送往使用者的流量；Cloud Run、Firestore及OpenAI費用也須各自計入。應在 Firebase Hosting Usage 另觀察用量，整專案NT$500預算提醒不是總帳單硬上限。[官方 Hosting 用量與定價](https://firebase.google.com/docs/hosting/usage-quotas-pricing)。
 
 部署時仍保留 Google Cloud Free Trial；當時控制台顯示試用額度 **NT$9,534／90天**，此為當時顯示的試用條件，不是可承諾的即時餘額。Firebase 顯示 Blaze 是因專案連結既有 Free Trial 計費帳戶，沒有在本次將該計費帳戶升級為付費帳戶。官方說明指出，連結試用帳戶的 Firebase 專案會使用 Blaze；若未明確升級計費帳戶，不會因試用額度耗盡自動開始收取額外使用費，但服務可用性會受試用到期影響。[Firebase 試用與計費 FAQ](https://firebase.google.com/support/faq#pricing)。
 

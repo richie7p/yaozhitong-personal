@@ -14,6 +14,9 @@ jobs:
       - name: Validate cloud deployment configuration offline
         shell: pwsh
         run: ./tools/check-deployment.ps1
+      - name: Validate Firebase Hosting configuration offline
+        shell: pwsh
+        run: ./tools/check-hosting.ps1
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

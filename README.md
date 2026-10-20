@@ -6,7 +6,7 @@
 
 2026-10-20 雲端以同一張無個資合成藥袋完成首次兩輪 API 驗收，各 **8／8 通過**；Google登入修正版部署後再重送一輪，也是 **8／8**。範圍為辨識兩款藥、確認保存咳服錠、依一份官方仿單產生說明與4題測驗、答錯再答對、重新登入保存、重送不重複及跨帳號拒絕。三輪沿用同一組任務，合計 **2個 AI 任務、3次實際 OpenAI HTTP 呼叫**；第二、三輪沒有新增任務或模型呼叫，新版重送不算再次執行模型推論。Chrome 另實際登入合成帳號，核對完整副作用／注意事項／警語及答題保存。這些結果不等於多款藥或實拍手機的雲端驗收；主檔已匯入 **66,511筆**，雲端目前只發布咳服錠 **1份**仿單。詳見[首次雲端驗收摘要](docs/acceptance/cloud-first-deploy-20261020.json)。
 
-登入修正版部署後的唯讀基礎設施檢查 **88／88** 通過，涵蓋 Cloud Run、佇列／排程、直接 IAM、私有儲存、Secret 引用、Google OAuth audience、四組索引與每日備份設定；初次映像的86／86另保留。Google登入安全檢查 **5／5** 通過，包含未登入、無效Google憑證、由客戶端指定UID的拒絕及帳號未被更動。另在初次部署後使用已登入合成使用者的 token 直接讀取自己的 Firestore 帳號文件，得到預期403拒絕。尚未執行還原或推播送達演練。
+最新Hosting映像部署後的唯讀基礎設施檢查 **90／90** 通過，涵蓋 Cloud Run、佇列／排程、直接 IAM、私有儲存、Secret 引用、Google OAuth audience、兩個服務的公開入口設定、四組索引與每日備份設定；先前映像的86／86及88／88另保留。Google登入修正版的安全檢查 **5／5** 通過，包含未登入、無效Google憑證、由客戶端指定UID的拒絕及帳號未被更動。另在初次部署後使用已登入合成使用者的 token 直接讀取自己的 Firestore 帳號文件，得到預期403拒絕。尚未執行還原或推播送達演練。
 
 **目前使用同一套「用藥手帳」介面**，以每日用藥清單為首頁、藥品檔案與閱讀目錄為主體。紙白、墨綠、陶土色、章節編號與細分隔線構成視覺；仿單採手冊式排版，保留完整警語、引用及真實測驗保存。本機日常與「研討會展示」都在同一個8085服務內，雲端也使用相同介面。展示模式將已保存結果分為辨識、說明、測驗三步，也能接續現場拍照。詳見 [介面與操作說明](docs/UI-UX-REDESIGN.md)。
 
@@ -30,6 +30,8 @@ Google Cloud TEST 已部署於 `asia-east1`，Web／worker 使用相同 OpenAI �
 
 Google 登入已補上明確 Email scope，以及後端核對 Google 憑證後補齊同一 Firebase 使用者缺少的信箱；不依相同信箱自動合併帳號，也不覆寫既有信箱。本次修正的本機 **564／564程式測試、54／54桌面／手機流程、生命週期檢查**通過，包含29項登入專項測試；兩種 PowerShell 的部署離線檢查均為 **46／46**。修正版 `20261020-google-auth` 已部署；Chrome再次驗證密碼登入、測驗4／4保存、登出後同頁重新登入及1筆藥品保留。**Google popup 尚未驗證成功返回應用，原因仍待確認；實際擁有者帳號登入與管理員初始化也尚未完成。** 不把設定或拒絕案例通過當作Google成功登入的證據。
 
+同網域 [Firebase Hosting TEST 入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)已發布，與 Firebase `authDomain` 相同，網站與 API 轉送至現有 Web Cloud Run，發布0個靜態檔案。最新映像 `20261020-hosting-auth` 已排除 service worker 對 Firebase `/__` 登入路徑的攔截；實際入口 **18／18** 檢查通過，涵蓋登入輔助頁、Bearer驗證與POST轉送、私人回覆不快取、原1筆藥品及4題測驗可讀，0新AI。**真實 Google 彈窗到達callback後仍未完成登入；同頁重新導向的修正與驗收進行中，Hosting本身沒有解決此問題。** 此版本本機 **578／578程式測試**通過，包含14項 service worker 測試；完整部署 **74／74**、Hosting helper **17／17**離線檢查在兩種 PowerShell 均通過。部署步驟見[同網域 Hosting 入口](docs/DEPLOYMENT.md#同網域-firebase-hosting-入口)；後續完整部署須提供 `-PublicAppUrl 'https://PROJECT_ID.firebaseapp.com'`，保留提醒連結使用的公開網址。
+
 雲端模型解析順序為明確的 `-TextModel`／`-VisionModel` → 目前程序的 `AI_TEXT_MODEL`／`AI_VISION_MODEL` → 所選供應商專用環境變數 → 腳本預設值。OpenAI 預設文字與影像皆為 `gpt-6-luna`；NVIDIA 皆為 `nvidia/nemotron-3.5-super-vl-120b-a12b`。部署腳本不自動讀取 `.env`；實際部署只要求目前程序中所選供應商的 `OPENAI_API_KEY` 或 `NVIDIA_API_KEY`，透過標準輸入上傳至 `yzt-<test|prod>-<openai|nvidia>-key`，不放進指令參數或設定輸出。
 
 先準備與測試專案相符的 Firebase Web 公開設定 JSON，以及 Firebase Authentication → Google provider → Web SDK configuration 中的 **Web client ID**。後者是以 `.apps.googleusercontent.com` 結尾的公開 OAuth 識別碼，不是 Client secret，也不是 Firebase `apiKey`；把下方範例值換成同一專案的實際 ID，再只檢查設定：
@@ -39,6 +41,8 @@ Google 登入已補上明確 Email scope，以及後端核對 Google 憑證後�
 ```
 
 `-GoogleOAuthClientId` 未傳入時使用目前程序的 `GOOGLE_OAUTH_CLIENT_ID`。這項設定在 `-ValidateOnly` 也必須提供，缺漏或格式錯誤會在任何雲端呼叫前停止。`-ValidateOnly` 會在任何 `gcloud` 指令前輸出去敏 JSON 並返回，可無 Cloud CLI、可缺 AI 金鑰；不建立資源或呼叫模型，也不驗證 OAuth ID 實際歸屬、模型存取權、額度與雲端權限。[實際部署範例與完整參數](docs/DEPLOYMENT.md)另列。首次建置缺少 builder 的 bucket metadata 讀權限，補該 bucket 的 Bucket Viewer 後為43／43；加上 Google Web client ID 檢查後為46／46，均與下方較早本機階段的39項結果分開記錄。
+
+Hosting 設定可先執行 `./infra/deploy-hosting.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -Environment test -Region asia-east1 -ValidateOnly`；這只驗本機設定，不檢查既有網站，也不發布。Hosting 有獨立用量：目前官方提供10GB儲存與每月10GB下載免額外費用額度，超額依方案計費；Cloud Run 的限制不涵蓋 Hosting，整專案NT$500提醒也不是硬上限。[官方 Hosting 用量與定價](https://firebase.google.com/docs/hosting/usage-quotas-pricing)。
 
 部署明確沿用目前的逾時、回覆長度與 OpenAI `none` 思考設定，端點固定為所選供應商的官方網址，不載入整份 `.env` 或終端自訂端點。`./tools/check-deployment.ps1` 提供全用假金鑰與模擬 CLI 的離線回歸，不連雲端或呼叫模型。
 

@@ -30,6 +30,9 @@ self.addEventListener("fetch", (event) => {
   if (
     event.request.method !== "GET" ||
     u.origin !== self.location.origin ||
+    // Firebase owns these URLs, including OAuth callbacks and their iframe.
+    u.pathname === "/__" ||
+    u.pathname.startsWith("/__/") ||
     u.pathname.startsWith("/api/") ||
     u.pathname.startsWith("/internal/")
   )

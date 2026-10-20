@@ -20,6 +20,16 @@
   },
   "deployment": {
     "currentImage": {
+      "imageTag": "20261020-hosting-auth",
+      "imageDigest": "sha256:ca859e5752a518b343e5a2926b087b67b9e9b210175a4617acbb8a0b89aa7b53",
+      "buildStatus": "SUCCESS",
+      "buildFinishedAt": "2026-10-20T11:27:12.640923Z",
+      "workerRevision": "yzt-test-worker-00004-5fr",
+      "webRevision": "yzt-test-web-00004-fkk",
+      "trafficPercentPerService": 100,
+      "scope": "Same-origin Hosting entry checks using existing synthetic records, with zero new AI jobs; successful interactive Google callback remains pending"
+    },
+    "previousGoogleAuthImage": {
       "imageTag": "20261020-google-auth",
       "imageDigest": "sha256:0570c46ca0c6f4e1a5dbaa8969c4823564806213e7794adecc780d5026f0e953",
       "buildStatus": "SUCCESS",
@@ -49,6 +59,80 @@
     "authenticationSubtypeSource": "Official Firebase provider provisioning result",
     "vapidConfigured": true,
     "firestoreRequiredCompositeIndexesReady": 4
+  },
+  "hostingFollowup": {
+    "status": "deployed_entry_checks_passed_google_popup_failed_redirect_fix_pending",
+    "publicUrl": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+    "authDomainMatchesPublicOrigin": true,
+    "appUrlConfiguredInBothServices": true,
+    "staticFilesDeployed": 0,
+    "configuration": "Pure rewrite to the existing public web Cloud Run service; no duplicate static application or local data uploaded.",
+    "serviceWorkerReservedNamespaceExcluded": ["/__", "/__/"],
+    "workerRemainsPrivate": true,
+    "hostingHttpRequestTimeoutSeconds": 60,
+    "aiCompatibility": "Browser requests create queued jobs and poll results; model execution remains in the private worker.",
+    "futureFullDeployRequiresPublicAppUrl": true,
+    "localValidation": {
+      "status": "passed",
+      "programTestsPassed": 578,
+      "serviceWorkerTestsPassed": 14,
+      "serviceWorkerTestsIncludedInProgramTotal": true,
+      "offlineDeploymentChecksPassedPerShell": 74,
+      "offlineHostingChecksPassedPerShell": 17,
+      "shells": ["PowerShell 7", "Windows PowerShell 5.1"],
+      "shellsRunSequentially": true,
+      "mockCliCleanupVerified": true,
+      "cloudCalls": 0,
+      "aiRequests": 0,
+      "previousBrowserRegressionReusedAsNewVersionRun": false
+    },
+    "entryValidation": {
+      "status": "passed",
+      "imageTag": "20261020-hosting-auth",
+      "checkedAt": "2026-10-20T11:31:25.005Z",
+      "passed": 18,
+      "failed": 0,
+      "checks": [
+        "hosting_health",
+        "app_shell_forwarded",
+        "app_shell_no_store",
+        "popup_compatible_coop",
+        "same_origin_auth_domain",
+        "config_no_store",
+        "reserved_namespace_excluded_from_sw",
+        "firebase_helper_not_app_shell",
+        "anonymous_api_denied",
+        "synthetic_password_login",
+        "authorization_bearer_forwarded",
+        "same_identity_as_cloud_run",
+        "private_api_no_store",
+        "authenticated_response_not_cached_for_anonymous",
+        "authenticated_post_forwarded",
+        "saved_medication_readable",
+        "saved_leaflet_and_quiz_readable",
+        "no_additional_ai_jobs"
+      ],
+      "savedMedicationCount": 1,
+      "savedQuizQuestionCount": 4,
+      "accountAiJobs": 2,
+      "newAiJobs": 0,
+      "aiRequests": 0,
+      "interactiveGoogleLogin": "pending"
+    },
+    "fullCurrentImageInfrastructureAuditPassed": true,
+    "interactiveGoogleObservation": {
+      "status": "callback_loaded_popup_closed_login_failed_redirect_fix_pending",
+      "earlierPopupUrlObserved": "about:blank",
+      "callbackPageLoaded": true,
+      "popupClosedAutomatically": true,
+      "mainAppLoginRemainedAvailable": true,
+      "applicationErrorDisplayed": true,
+      "applicationError": "auth/popup-closed-by-user",
+      "successfulGoogleLogin": false,
+      "hostingAloneResolvedPopupFailure": false,
+      "sameTabRedirectFixStatus": "in_progress",
+      "cause": "unknown"
+    }
   },
   "fixture": {
     "kind": "synthetic two-medication bag without personal data",
@@ -247,6 +331,7 @@
       "credentialOutput": false
     },
     "realGooglePopupObservation": {
+      "entryAtObservation": "direct Cloud Run URL before same-origin Hosting deployment",
       "accountChooserReached": true,
       "requestedScopes": ["openid", "profile", "email"],
       "successfulAccountSelectionAndAppReturnVerified": false,
@@ -274,9 +359,9 @@
   },
   "infrastructureValidation": {
     "status": "passed",
-    "imageTag": "20261020-google-auth",
-    "checkedAt": "2026-10-20T11:07:35.2750883Z",
-    "passed": 88,
+    "imageTag": "20261020-hosting-auth",
+    "checkedAt": "2026-10-20T11:33:18Z",
+    "passed": 90,
     "failed": 0,
     "cloudMutations": 0,
     "aiRequests": 0,
@@ -284,6 +369,12 @@
       "imageTag": "20261020-first-test",
       "checkedAt": "2026-10-20T10:46:05.8737099Z",
       "passed": 86,
+      "failed": 0
+    },
+    "previousGoogleAuthImageAudit": {
+      "imageTag": "20261020-google-auth",
+      "checkedAt": "2026-10-20T11:07:35.2750883Z",
+      "passed": 88,
       "failed": 0
     },
     "scope": [
@@ -294,6 +385,7 @@
       "Direct project and resource IAM, including scoped builder access",
       "Secret reference and direct access policy",
       "Google OAuth audience configured in both web and worker",
+      "Same-origin Hosting APP_URL configured in both web and worker",
       "Private data/build buckets, lifecycle, soft-delete and version-retention settings",
       "Artifact Registry access policy",
       "Firestore region, four READY composite indexes and daily seven-day backup schedule",
@@ -343,6 +435,15 @@
     "firebasePlan": "Blaze linked to the existing Free Trial billing account",
     "openaiBilledSeparately": true,
     "identityPlatformTier1NoCostMauAtDocumentationDate": 50000,
+    "hosting": {
+      "enabled": true,
+      "noCostStorageGbAtDocumentationDate": 10,
+      "noCostMonthlyDownloadGbAtDocumentationDate": 10,
+      "quotaScope": "project",
+      "cacheHitsAndMissesCountTowardDownload": true,
+      "cloudRunControlsCapHostingCharges": false,
+      "actualHostingBillMeasured": false
+    },
     "actualCloudBillMeasured": false
   },
   "remainingAcceptance": [
@@ -379,6 +480,21 @@
     {
       "title": "Identity Platform pricing",
       "url": "https://cloud.google.com/identity-platform/pricing",
+      "checkedOn": "2026-10-20"
+    },
+    {
+      "title": "Firebase Hosting usage quotas and pricing",
+      "url": "https://firebase.google.com/docs/hosting/usage-quotas-pricing",
+      "checkedOn": "2026-10-20"
+    },
+    {
+      "title": "Firebase Hosting Cloud Run rewrite and HTTP timeout",
+      "url": "https://firebase.google.com/docs/hosting/cloud-run",
+      "checkedOn": "2026-10-20"
+    },
+    {
+      "title": "Firebase Hosting cache behavior",
+      "url": "https://firebase.google.com/docs/hosting/manage-cache",
       "checkedOn": "2026-10-20"
     }
   ],

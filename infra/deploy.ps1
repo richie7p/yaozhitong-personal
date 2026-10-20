@@ -3,6 +3,7 @@ param(
   [Parameter(Mandatory=$true)][string]$FirebaseConfigPath,
   [Parameter(Mandatory=$true)][string]$VapidKey,
   [string]$GoogleOAuthClientId=$env:GOOGLE_OAUTH_CLIENT_ID,
+  [string]$PublicAppUrl='',
   [ValidateSet('test','prod')][string]$Environment='test',
   [string]$Region='asia-east1',
   [ValidateSet('openai','nvidia')][string]$AiProvider='openai',
@@ -13,6 +14,19 @@ param(
 $ErrorActionPreference='Stop'
 if ($GoogleOAuthClientId -notmatch '^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$') {
   throw 'Set GoogleOAuthClientId (or GOOGLE_OAUTH_CLIENT_ID) to the Google sign-in Web client ID from this Firebase project.'
+}
+if ($PublicAppUrl) {
+  $publicOrigin = $null
+  # Check the literal shape before Uri normalization can erase dot-segments,
+  # backslashes or an empty query/fragment. Never echo rejected input.
+  if ($PublicAppUrl -notmatch '\Ahttps://[^/?#@\\\s]+/?\z' -or
+      -not [Uri]::TryCreate($PublicAppUrl, [UriKind]::Absolute, [ref]$publicOrigin) -or
+      $publicOrigin.Scheme -ne 'https' -or -not $publicOrigin.Host -or
+      $publicOrigin.UserInfo -or $publicOrigin.Query -or $publicOrigin.Fragment -or
+      $publicOrigin.AbsolutePath -ne '/') {
+    throw 'PublicAppUrl must be an HTTPS origin without credentials, path, query or fragment.'
+  }
+  $PublicAppUrl = $publicOrigin.GetLeftPart([UriPartial]::Authority)
 }
 $Environment = $Environment.ToLowerInvariant()
 . (Join-Path $PSScriptRoot 'deploy-config.ps1')
@@ -30,6 +44,7 @@ if ($ValidateOnly) {
     keyEnvironmentVariable = $ai.keyEnvironmentVariable
     keyConfigured = $ai.keyConfigured
     googleOAuthClientConfigured = $true
+    publicAppUrl = $PublicAppUrl
   } | ConvertTo-Json
   return
 }
@@ -148,6 +163,7 @@ $envFile=Join-Path ([System.IO.Path]::GetTempPath()) ("yzt-env-"+[guid]::NewGuid
 try {
   $base=[ordered]@{APP_MODE='firebase';GOOGLE_CLOUD_PROJECT=$ProjectId;STORAGE_BUCKET=$bucket;TASKS_LOCATION=$Region;TASKS_QUEUE="$name-ai";WORKER_SERVICE_ACCOUNT=$caller;FIREBASE_WEB_CONFIG=($webConfig|ConvertTo-Json -Compress);FIREBASE_VAPID_KEY=$VapidKey;DAILY_USER_LIMIT='20';DAILY_GLOBAL_LIMIT='200';SERVICE_ROLE='worker'}
   $base.GOOGLE_OAUTH_CLIENT_ID=$GoogleOAuthClientId
+  if ($PublicAppUrl) { $base.APP_URL=$PublicAppUrl }
   foreach ($entry in $ai.environmentVariables.GetEnumerator()) { $base[$entry.Key] = $entry.Value }
   function SaveEnv { $lines = foreach ($entry in $base.GetEnumerator()) { '{0}: {1}' -f $entry.Key, (ConvertTo-Json -InputObject ([string]$entry.Value) -Compress) }; Set-Content -LiteralPath $envFile -Value $lines -Encoding utf8 }
   SaveEnv
@@ -159,7 +175,7 @@ try {
   SaveEnv
   Invoke-Gcloud run deploy "$name-web" --project=$ProjectId --region=$Region --image=$image --service-account=$runtime --allow-unauthenticated --min=0 --max=2 --concurrency=40 --memory=1Gi --cpu=1 --timeout=120 --env-vars-file=$envFile --set-secrets="$secretBinding" --quiet
   $webUrl=Invoke-Gcloud run services describe "$name-web" --project=$ProjectId --region=$Region --format='value(status.url)'
-  $base.APP_URL=$webUrl
+  $base.APP_URL=if($PublicAppUrl){$PublicAppUrl}else{$webUrl}
   SaveEnv
   Invoke-Gcloud run services update "$name-web" --project=$ProjectId --region=$Region --env-vars-file=$envFile --set-secrets=$secretBinding --quiet
   $base.SERVICE_ROLE='worker'; SaveEnv
@@ -173,6 +189,6 @@ try {
   Invoke-Gcloud scheduler jobs $catalogMode http "$name-catalog" --project=$ProjectId --location=$Region --schedule='0 3 * * 0' --time-zone=Asia/Taipei --uri="$workerUrl/internal/catalog" --http-method=POST --oidc-service-account-email=$caller --oidc-token-audience=$workerUrl --attempt-deadline=300s --quiet
   $schedules=@(Invoke-Gcloud firestore backups schedules list --project=$ProjectId --database='(default)' --format='value(name)')
   if ($schedules.Count -eq 0) { Invoke-Gcloud firestore backups schedules create --project=$ProjectId --database='(default)' --retention=7d --recurrence=daily }
-  Write-Host "Deployed: $webUrl"
+  Write-Host "Deployed: $($base.APP_URL)"
   Write-Host 'Next: enable Google/Email sign-in, add this domain in Firebase Auth, deploy rules, import catalog/leaflets, bootstrap admin and configure billing alerts. See docs/DEPLOYMENT.md.'
 } finally { if (Test-Path -LiteralPath $envFile) { Remove-Item -LiteralPath $envFile } }

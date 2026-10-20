@@ -142,10 +142,17 @@ function Invoke-DeploymentScenario {
   $originalPath = [Environment]::GetEnvironmentVariable('PATH', 'Process')
   $mockFunction = (Get-Item Function:\gcloud).ScriptBlock
   if ($NoGcloudCommand) {
-    Remove-Item Function:\global:gcloud
+    Remove-Item Function:\gcloud
     [Environment]::SetEnvironmentVariable('PATH', '', 'Process')
   }
-  try { $output = @(& $deploymentScript @arguments *>&1) }
+  try {
+    if ($NoGcloudCommand) {
+      Assert-Deployment ($null -eq (Get-Command gcloud -ErrorAction SilentlyContinue)) "${Name}: gcloud must actually be unavailable."
+    } else {
+      Assert-Deployment ((Get-Command gcloud -ErrorAction Stop).CommandType -eq 'Function') "${Name}: only the local gcloud mock may run."
+    }
+    $output = @(& $deploymentScript @arguments *>&1)
+  }
   catch { $failure = $_ }
   finally {
     if ($NoGcloudCommand) {
@@ -186,7 +193,7 @@ function Invoke-DeploymentScenario {
 }
 
 function Assert-Validation {
-  param($Result, [string]$Provider, [string]$TextModel, [string]$VisionModel, [string]$Environment = 'test', [bool]$ExpectedKeyConfigured = $false)
+  param($Result, [string]$Provider, [string]$TextModel, [string]$VisionModel, [string]$Environment = 'test', [bool]$ExpectedKeyConfigured = $false, [string]$ExpectedPublicAppUrl = '')
   Assert-Deployment ($Result.Calls.Count -eq 0) "$($Result.Name): ValidateOnly called gcloud."
   $configuration = ($Result.Output | Out-String) | ConvertFrom-Json
   Assert-Deployment ($configuration.validationPassed -eq $true) "$($Result.Name): validation status is missing."
@@ -198,12 +205,13 @@ function Assert-Validation {
   $expectedKey = if ($Provider -eq 'openai') { 'OPENAI_API_KEY' } else { 'NVIDIA_API_KEY' }
   Assert-Deployment ($configuration.keyEnvironmentVariable -eq $expectedKey) "$($Result.Name): wrong selected key variable."
   Assert-Deployment ($configuration.keyConfigured -eq $ExpectedKeyConfigured) "$($Result.Name): key presence status is incorrect."
+  Assert-Deployment ($configuration.publicAppUrl -ceq $ExpectedPublicAppUrl) "$($Result.Name): public application origin is missing or normalized incorrectly."
   $script:passedChecks++
   Write-Host "PASS $($Result.Name)"
 }
 
 function Assert-CloudRunCalls {
-  param($Result, [string]$Provider, [string]$TextModel, [string]$VisionModel, [string]$Environment = 'test', [switch]$Partial)
+  param($Result, [string]$Provider, [string]$TextModel, [string]$VisionModel, [string]$Environment = 'test', [switch]$Partial, [string]$ExpectedPublicAppUrl = '')
   $keyName = if ($Provider -eq 'openai') { 'OPENAI_API_KEY' } else { 'NVIDIA_API_KEY' }
   $otherKey = if ($Provider -eq 'openai') { 'NVIDIA_API_KEY' } else { 'OPENAI_API_KEY' }
   $secretValue = if ($Provider -eq 'openai') { $openaiSentinel } else { $nvidiaSentinel }
@@ -245,8 +253,13 @@ function Assert-CloudRunCalls {
     Assert-Deployment (($runCalls[2].Arguments[0..3] -join ' ') -ceq "run services update yzt-$Environment-web") "$($Result.Name): web update missing or resource case changed."
     Assert-Deployment (($runCalls[3].Arguments[0..3] -join ' ') -ceq "run services update yzt-$Environment-worker") "$($Result.Name): worker update missing or resource case changed."
     Assert-Deployment (($runCalls.EnvironmentValues.SERVICE_ROLE -join ',') -eq 'worker,web,web,worker') "$($Result.Name): service roles changed."
+    $expectedAppUrl = if ($ExpectedPublicAppUrl) { $ExpectedPublicAppUrl } else { 'https://synthetic-web.example.invalid' }
+    Assert-Deployment ($runCalls[2].EnvironmentValues.APP_URL -ceq $expectedAppUrl -and $runCalls[3].EnvironmentValues.APP_URL -ceq $expectedAppUrl) "$($Result.Name): final web/worker reminder links use the wrong origin."
   }
   foreach ($call in $runCalls) {
+    if ($ExpectedPublicAppUrl) {
+      Assert-Deployment ($call.EnvironmentValues.APP_URL -ceq $ExpectedPublicAppUrl) "$($Result.Name): the public origin must be retained in every service deploy/update."
+    }
     Assert-Deployment ($call.EnvironmentValues.GOOGLE_OAUTH_CLIENT_ID -ceq $googleClientId) "$($Result.Name): Google token audience is missing or changed."
     Assert-Deployment ($call.EnvironmentValues.APP_MODE -eq 'firebase') "$($Result.Name): production mode changed."
     Assert-Deployment ($call.EnvironmentValues.AI_PROVIDER -ceq $Provider) "$($Result.Name): Cloud Run provider mismatch."
@@ -311,11 +324,46 @@ try {
 
   $result = Invoke-DeploymentScenario 'ValidateOnly default OpenAI without keys or installed gcloud' -Parameters @{ ValidateOnly = $true } -NoGcloudCommand
   Assert-Validation $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
+  $result = Invoke-DeploymentScenario 'Actual deployment without gcloud stops before cloud access' -Environment @{ OPENAI_API_KEY = $openaiSentinel } -NoGcloudCommand -ExpectFailure
+  Assert-Deployment ($result.Calls.Count -eq 0) "$($result.Name): unavailable gcloud was invoked."
+  Assert-Deployment ([string]$result.Failure -match 'Install Google Cloud CLI') "$($result.Name): expected the missing-CLI preflight failure."
+  $script:passedChecks++
+  Write-Host "PASS $($result.Name)"
   foreach ($invalidClient in @('', 'not-a-google-client', '123-bad.apps.googleusercontent.com.attacker.invalid')) {
     $result = Invoke-DeploymentScenario 'Missing or malformed Google OAuth audience fails before cloud access' -Parameters @{ GoogleOAuthClientId = $invalidClient; ValidateOnly = $true } -ExpectFailure
     Assert-Deployment ($result.Calls.Count -eq 0) "$($result.Name): an invalid audience reached gcloud."
     $script:passedChecks++
     Write-Host "PASS $($result.Name)"
+  }
+  foreach ($publicOriginCase in @(
+    @{ Input = 'https://synthetic-app.web.app'; Expected = 'https://synthetic-app.web.app' },
+    @{ Input = 'https://SYNTHETIC-APP.web.app:443/'; Expected = 'https://synthetic-app.web.app' }
+  )) {
+    $result = Invoke-DeploymentScenario 'ValidateOnly accepts and normalizes a public HTTPS origin without gcloud' -Parameters @{ ValidateOnly = $true; PublicAppUrl = $publicOriginCase.Input } -NoGcloudCommand
+    Assert-Validation $result 'openai' 'gpt-6-luna' 'gpt-6-luna' -ExpectedPublicAppUrl $publicOriginCase.Expected
+  }
+  foreach ($invalidOrigin in @(
+    'http://synthetic-app.web.app',
+    'https://synthetic-user:synthetic-password@synthetic-app.web.app',
+    'https://synthetic-app.web.app/path',
+    'https://synthetic-app.web.app/path/..',
+    'https://synthetic-app.web.app?query=synthetic',
+    'https://synthetic-app.web.app#fragment',
+    'https://synthetic-app.web.app?',
+    'https://synthetic-app.web.app#',
+    'https://synthetic-app.web.app\',
+    'https://synthetic-app.web.app:invalid',
+    'not-a-url',
+    "https://synthetic-app.web.app`n"
+  )) {
+    foreach ($validateOnly in @($true, $false)) {
+      $result = Invoke-DeploymentScenario 'Malformed public origin is rejected before cloud access without echoing input' -Environment @{ OPENAI_API_KEY = $openaiSentinel } -Parameters @{ ValidateOnly = $validateOnly; PublicAppUrl = $invalidOrigin } -ExpectFailure
+      Assert-Deployment ($result.Calls.Count -eq 0) "$($result.Name): an invalid public origin reached gcloud."
+      Assert-Deployment ([string]$result.Failure -match 'PublicAppUrl must be an HTTPS origin') "$($result.Name): failure did not identify the public-origin preflight."
+      Assert-Deployment (-not (($result.Output | Out-String) + [string]$result.Failure).Contains($invalidOrigin)) "$($result.Name): invalid public-origin input was echoed."
+      $script:passedChecks++
+      Write-Host "PASS $($result.Name)"
+    }
   }
   $result = Invoke-DeploymentScenario 'ValidateOnly NVIDIA without keys' -Parameters @{ ValidateOnly = $true; AiProvider = 'nvidia'; Environment = 'prod' }
   Assert-Validation $result 'nvidia' 'nvidia/nemotron-3.5-super-vl-120b-a12b' 'nvidia/nemotron-3.5-super-vl-120b-a12b' 'prod'
@@ -405,6 +453,10 @@ try {
 
   $result = Invoke-DeploymentScenario 'OpenAI default full mocked deployment' -Environment $bothKeys
   Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
+  $result = Invoke-DeploymentScenario 'Hosting origin survives every service deploy and update without changing worker routing' -Environment $bothKeys -Parameters @{ PublicAppUrl = 'https://synthetic-app.web.app/' }
+  Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna' -ExpectedPublicAppUrl 'https://synthetic-app.web.app'
+  $originRunCalls = @($result.Calls | Where-Object EnvironmentPath)
+  Assert-Deployment ($originRunCalls[2].EnvironmentValues.WORKER_URL -ceq 'https://synthetic-worker.example.invalid' -and $originRunCalls[3].EnvironmentValues.WORKER_URL -ceq 'https://synthetic-worker.example.invalid') "$($result.Name): Hosting origin must not replace the worker OIDC target."
   $result = Invoke-DeploymentScenario 'Existing buckets and service accounts are reused with deletion policy applied' -Environment $bothKeys -ExistingResources
   Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
   Assert-Deployment (@($result.Calls | Where-Object { ($_.Arguments[0..2] -join ' ') -in @('storage buckets create', 'iam service-accounts create') }).Count -eq 0) "$($result.Name): existing resources were recreated."
@@ -450,7 +502,7 @@ try {
     [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process')
   }
   if ($previousGcloudFunction) { Set-Item Function:\global:gcloud -Value $previousGcloudFunction.ScriptBlock }
-  else { Remove-Item Function:\global:gcloud -ErrorAction SilentlyContinue }
+  else { Remove-Item Function:\gcloud -ErrorAction SilentlyContinue }
   if ($previousMockState) { Set-Variable YztOfflineDeploymentState -Value $previousMockState.Value -Scope Global }
   else { Remove-Variable YztOfflineDeploymentState -Scope Global -ErrorAction SilentlyContinue }
   # This directory is created above and contains only the synthetic public config.
