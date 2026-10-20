@@ -18,6 +18,10 @@ foreach ($name in $environmentNames) {
 }
 $previousGcloudFunction = Get-Item Function:\gcloud -ErrorAction SilentlyContinue
 $previousMockState = Get-Variable YztOfflineDeploymentState -Scope Global -ErrorAction SilentlyContinue
+$previousExitCodeVariable = Get-Variable LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+$hadPreviousExitCode = $null -ne $previousExitCodeVariable
+# Copy the numeric value: retaining the PSVariable would retain the mock's later mutation.
+$previousExitCode = if ($hadPreviousExitCode) { [int]$previousExitCodeVariable.Value } else { $null }
 $script:passedChecks = 0
 
 function Assert-Deployment([bool]$Condition, [string]$Message) {
@@ -307,4 +311,6 @@ try {
   # This directory is created above and contains only the synthetic public config.
   if (Test-Path -LiteralPath $firebaseConfigPath) { Remove-Item -LiteralPath $firebaseConfigPath }
   if (Test-Path -LiteralPath $temporaryDirectory) { Remove-Item -LiteralPath $temporaryDirectory }
+  if ($hadPreviousExitCode) { $global:LASTEXITCODE = $previousExitCode }
+  else { Remove-Variable LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue }
 }
