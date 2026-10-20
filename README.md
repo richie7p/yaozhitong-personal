@@ -4,7 +4,7 @@
 
 **目前可在本機操作，並已完成 Google Cloud TEST 環境的首次部署與固定流程驗收；尚未開放大眾正式使用。** 驗收是軟體流程與來源逐字核對，不含臨床驗證，也不把藥師簽核列為展示前置。未發布或無法確認來源的藥品呈現資料不足。
 
-雲端入口為 [Firebase Hosting TEST](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)，**現行映像為 `20261020-google-identity`**。最新GIS登入修正已完成 **620／620程式測試、54／54桌面／手機回歸、型別與建置**；71項登入專項包含在620項內，瀏覽器回歸使用模擬AI。部署後版本檢查 **8／8**、Hosting入口 **20／20** 通過，沒有新增AI任務。實際頁面已正常顯示官方Google按鈕並開啟帳號選擇頁，**仍等待本人完成此視窗，尚未驗證成功返回應用**；實際擁有者／管理員初始化也未執行。已驗證的密碼登入與保存流程可用，尚不能視為已完成公開上線。
+雲端入口為 [Firebase Hosting TEST](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)，**現行映像為 `20261020-google-identity`**。最新GIS登入修正已完成 **620／620程式測試、54／54桌面／手機回歸、型別與建置**；71項登入專項包含在620項內，瀏覽器回歸使用模擬AI。部署後版本檢查 **8／8**、Hosting入口 **20／20** 通過，沒有新增AI任務。**真實Google GIS登入已完成一次，成功返回應用主頁**；12:19:49Z唯讀核對確認Google身份、已驗證信箱與應用帳號存在。後續已完成管理員及AI測試資格初始化，主頁可見管理員入口，帳號頁也已確認「已取得測試資格」。已驗證的密碼登入與保存流程可用，尚不能視為已完成公開上線。
 
 新接法為 **Google官方GIS按鈕 → Firebase記憶體登入 → 後端憑證核對**，有公開client ID時不初始化Firebase登入helper；應用不自行持久保存Google／Firebase token。按鈕載入15秒、取得憑證後交換與核對30秒逾時會顯示錯誤／重新載入入口，晚到結果不登入。GIS沿用既有OAuth設定及上述Hosting網域，未新增Google服務、scope或憑證；明確帳號連結仍使用獨立彈窗，另待驗收。
 
@@ -30,7 +30,7 @@
 
 GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的彙總。文件中的 `.local/` 證據連結只在原驗收電腦可用；金鑰、本機帳號與藥品資料、照片、下載 PDF、原始測試報告及歷史 UI 截圖均不隨 Git 同步。新裝置需另設金鑰並準備資料；一般本機模式從空白資料開始。
 
-Google Cloud TEST 已部署於 `asia-east1`，Web／worker 使用相同 OpenAI 模型與 Secret，失敗時不自動跨供應商備援。Firebase 已設定 Email／密碼與 Google provider、授權網域及 VAPID；首次驗收使用合成帳號的實際 Firebase 密碼登入，測試工具預先設定的 `emailVerified:true` 不當成驗證信送達測試。真實 Google OAuth／驗證信、手機相機與推播、雲端故障注入、備份還原、負載及長期觀測仍待完成。NT$500 費用提醒與 Cloud Run 最少0／每服務最多2個執行個體已設定，均不是總費用硬上限；OpenAI 費用另計。詳見[部署設定與未完成驗收](docs/DEPLOYMENT.md)。
+Google Cloud TEST 已部署於 `asia-east1`，Web／worker 使用相同 OpenAI 模型與 Secret，失敗時不自動跨供應商備援。Firebase 已設定 Email／密碼與 Google provider、授權網域及 VAPID；首次驗收使用合成帳號的實際 Firebase 密碼登入，測試工具預先設定的 `emailVerified:true` 不當成驗證信送達測試。真實Google登入已成功一次；驗證信、取消／逾時恢復、兩裝置及帳號連結、手機相機與推播、雲端故障注入、備份還原、負載及長期觀測仍待完成。NT$500 費用提醒與 Cloud Run 最少0／每服務最多2個執行個體已設定，均不是總費用硬上限；OpenAI 費用另計。詳見[部署設定與未完成驗收](docs/DEPLOYMENT.md)。
 
 Hosting與Firebase `authDomain` 相同，網站與API轉送至現有Web Cloud Run，發布0個靜態檔案；service worker排除Firebase保留的 `/__` 路徑。完整部署 **74／74**、Hosting helper **17／17**離線檢查在PowerShell 7與Windows PowerShell 5.1均通過。部署步驟見[同網域 Hosting 入口](docs/DEPLOYMENT.md#同網域-firebase-hosting-入口)；後續完整部署須提供 `-PublicAppUrl 'https://PROJECT_ID.firebaseapp.com'`，保留提醒連結使用的公開網址。
 

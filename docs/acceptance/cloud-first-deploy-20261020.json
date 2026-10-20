@@ -3,7 +3,7 @@
   "scope": "First controlled Google Cloud TEST deployment and fixed synthetic recognition-to-learning acceptance",
   "environment": "test",
   "region": "asia-east1",
-  "status": "controlled_test_deployed_fixed_flow_passed_real_google_sign_in_pending",
+  "status": "controlled_test_deployed_fixed_flow_one_real_google_sign_in_and_owner_admin_bootstrap_passed",
   "cloudDeployed": true,
   "publicProductionReady": false,
   "clinicalValidationPerformed": false,
@@ -16,7 +16,9 @@
     "catalogRows": 66511,
     "catalogVersion": "67e5fa2b80421c53",
     "cloudPublishedLeafletCount": 1,
-    "localEightSourceAcceptanceCopiedToCloud": false
+    "localEightSourceAcceptanceCopiedToCloud": false,
+    "syntheticOnlyScope": "Medication and learning acceptance fixtures; one real user account was subsequently created through interactive Google sign-in.",
+    "realGoogleAccountCreated": true
   },
   "deployment": {
     "currentImage": {
@@ -27,7 +29,7 @@
       "workerRevision": "yzt-test-worker-00006-ndf",
       "webRevision": "yzt-test-web-00006-4zr",
       "trafficPercentPerService": 100,
-      "scope": "Eight revision checks and twenty Hosting entry checks passed without new AI inference. Official GIS button and Google account chooser observed; awaiting manual completion and successful authenticated application return. Full infrastructure audit was not rerun on this image."
+      "scope": "Eight revision checks and twenty Hosting entry checks passed without new AI inference. One real GIS sign-in completed and returned to the authenticated application; verified email and an application account were confirmed. Subsequent owner admin/AI eligibility bootstrap passed. Full infrastructure audit was not rerun on this image."
     },
     "previousRedirectImage": {
       "imageTag": "20261020-google-redirect",
@@ -267,7 +269,7 @@
     }
   },
   "googleIdentityFollowup": {
-    "status": "deployed_revision_and_hosting_checks_passed_awaiting_manual_google_completion",
+    "status": "deployed_checks_one_real_google_sign_in_and_owner_admin_bootstrap_passed",
     "configuredEntry": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
     "existingOAuthJavaScriptOriginVerifiedReadOnly": true,
     "directCloudRunUrlUsedAsGisEntry": false,
@@ -313,8 +315,8 @@
       "previousBrowserCountReusedAsThisVersionResult": false,
       "aiRequests": 0
     },
-    "realCloudGoogleOAuthPassed": false,
-    "actualOwnerAccountBootstrapCompleted": false,
+    "realCloudGoogleOAuthPassed": true,
+    "actualOwnerAccountBootstrapCompleted": true,
     "explicitGoogleAccountLinking": {
       "method": "linkWithPopup",
       "realCloudAcceptancePassed": false
@@ -384,12 +386,59 @@
       "officialGoogleButtonRendered": true,
       "applicationStartupRemainedLoading": false,
       "googleAccountSelectionPageReached": true,
-      "awaitingManualCompletion": true,
+      "awaitingManualCompletion": false,
       "automationLimitation": "Browser tool timed out while interacting with the Google popup; the existing window was handed to the user for completion.",
       "applicationLoginFailureEstablishedByThisObservation": false,
-      "successfulAuthenticatedAppReturnVerified": false,
-      "realCloudGoogleOAuthPassed": false,
-      "actualOwnerAccountBootstrapCompleted": false
+      "successfulAuthenticatedAppReturnVerified": true,
+      "realCloudGoogleOAuthPassed": true,
+      "actualOwnerAccountBootstrapCompleted": true,
+      "completedInteractiveSignIns": 1,
+      "userConfirmedSuccessfulAccess": true,
+      "applicationNavigationObserved": [
+        "home",
+        "medications",
+        "learning",
+        "sign_out"
+      ],
+      "readonlyAccountCheck": {
+        "checkedAt": "2026-10-20T12:19:49.551Z",
+        "googleProviderAccountCount": 1,
+        "actualOwnerPresent": true,
+        "rootEmailPresent": true,
+        "ownerEmailVerified": true,
+        "applicationAccountExists": true,
+        "admin": false,
+        "eligible": false,
+        "cloudMutations": 0,
+        "aiRequests": 0
+      },
+      "untestedScenarios": [
+        "cancel_or_failure_recovery",
+        "timeout_and_reload_recovery",
+        "repeat_google_sign_in",
+        "two_devices",
+        "explicit_account_linking"
+      ]
+    },
+    "ownerBootstrap": {
+      "status": "passed",
+      "sequence": "Performed and verified after the 2026-10-20T12:19:49.551Z pre-bootstrap account observation; no separate timestamp recorded in this summary.",
+      "verifiedExistingGoogleOwner": true,
+      "applicationAccountExists": true,
+      "adminClaim": true,
+      "adminAccount": true,
+      "testerEligible": true,
+      "adminNavigationVisible": true,
+      "aiRequests": 0,
+      "realAccountIdentifiersIncluded": false,
+      "testerEligibilityVisibleInAccountPage": true
+    },
+    "repositoryCodeValidation": {
+      "commit": "51629e7",
+      "githubActionsRunId": "39421265204",
+      "status": "completed",
+      "conclusion": "success",
+      "scope": "Code commit before this documentation-only acceptance update"
     }
   },
   "fixture": {
@@ -727,7 +776,6 @@
     "actualCloudBillMeasured": false
   },
   "remainingAcceptance": [
-    "Verified successful real GIS Google sign-in, profile bootstrap and actual owner/admin account bootstrap",
     "Real canceled/failed GIS sign-in, timeout/reload recovery and Email login after recovery",
     "Real explicit Google account linking, which remains a separate popup flow",
     "Real email verification/password-reset delivery",
