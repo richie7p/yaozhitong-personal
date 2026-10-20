@@ -7,6 +7,7 @@ import { createServer } from "node:http";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { expect } from "@playwright/test";
+import { DateTime } from "luxon";
 import { MemoryStore } from "../server/store.js";
 import { hash } from "../server/domain.js";
 import { GROUNDING_VERSION } from "../server/ai.js";
@@ -430,7 +431,12 @@ try {
   await call("/schedules", "POST", {
     medicationId: meds[0].id,
     times: ["23:59"],
-    startDate: "2026-10-19",
+    // Keep this persistence fixture outside the due-reminder window. A fixed
+    // past date legitimately advances scheduler checkpoints during restart.
+    startDate: DateTime.now()
+      .setZone("Asia/Taipei")
+      .plus({ days: 1 })
+      .toISODate(),
   });
   const baseline = await job(
     (await bundle(meds[0].id, "合成基準說明與測驗")).jobId,

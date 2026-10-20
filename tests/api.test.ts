@@ -68,4 +68,47 @@ describe("API failures that can interrupt a demonstration", () => {
     );
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("does not register a device if logout starts during token refresh", async () => {
+    let active = true;
+    let finishToken!: (token: string) => void;
+    setTokenProvider(() => new Promise((resolve) => (finishToken = resolve)));
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    const pending = api(
+      "/devices",
+      "POST",
+      { token: "synthetic-push-token" },
+      undefined,
+      () => {
+        if (!active) throw new Error("synthetic-session-changed");
+      },
+    );
+    active = false;
+    finishToken("synthetic-identity-token");
+    await expect(pending).rejects.toThrow("synthetic-session-changed");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("does not return a late device result for a different login session", async () => {
+    let active = true;
+    let finishResponse!: (response: Response) => void;
+    const fetch = vi.fn(
+      () => new Promise<Response>((resolve) => (finishResponse = resolve)),
+    );
+    vi.stubGlobal("fetch", fetch);
+    const pending = api(
+      "/devices",
+      "POST",
+      { token: "synthetic-push-token" },
+      undefined,
+      () => {
+        if (!active) throw new Error("synthetic-session-changed");
+      },
+    );
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    active = false;
+    finishResponse(Response.json({ id: "synthetic-device-id" }));
+    await expect(pending).rejects.toThrow("synthetic-session-changed");
+  });
 });

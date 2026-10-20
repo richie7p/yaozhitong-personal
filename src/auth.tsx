@@ -24,6 +24,7 @@ import {
   isSupported,
 } from "firebase/messaging";
 import { api, setJobIdentity, setTokenProvider } from "./api";
+import { requestWebPushToken, revokeWebPushToken } from "./web-push";
 import {
   configureFirebaseTokenProvider,
   createMemoryFirebaseAuth,
@@ -52,6 +53,8 @@ let firebaseAuth: Auth;
 let deviceId = sessionStorage.getItem("yzt-device-id") || "";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const googleTransition = useRef(false);
+  const notificationRequest = useRef<Promise<void> | null>(null);
+  const notificationEpoch = useRef(0);
   const [config, setConfig] = useState<any>(null),
     [me, setMe] = useState<any>(null),
     [loading, setLoading] = useState(true),
@@ -204,14 +207,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await reload();
   }
   async function logout() {
+    notificationEpoch.current++;
+    const revokePush = !!deviceId || !!notificationRequest.current;
     setJobIdentity(null);
     if (deviceId) {
       await api("/devices/" + deviceId, "DELETE").catch(() => {});
-      if (firebaseApp)
-        await deleteToken(getMessaging(firebaseApp)).catch(() => {});
       deviceId = "";
       sessionStorage.removeItem("yzt-device-id");
     }
+    if (firebaseApp && revokePush)
+      await revokeWebPushToken(() => deleteToken(getMessaging(firebaseApp)));
     if (config.mode === "local") sessionStorage.removeItem("yzt-local-token");
     else await signOut(firebaseAuth);
     setTokenProvider(async () => "");
@@ -253,17 +258,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function notify() {
     if (config.mode === "local")
       throw new Error("本機模式提供站內提醒；網頁推播需要 Firebase 雲端設定。");
-    if (!(await isSupported()))
-      throw new Error("此瀏覽器不支援網頁推播，站內提醒仍可使用。");
-    if ((await Notification.requestPermission()) !== "granted")
-      throw new Error("未授權推播，站內提醒仍可使用。");
-    const registration = await navigator.serviceWorker.register("/sw.js");
-    const token = await getToken(getMessaging(firebaseApp), {
-      vapidKey: config.vapidKey,
-      serviceWorkerRegistration: registration,
-    });
-    deviceId = (await api("/devices", "POST", { token })).id;
-    sessionStorage.setItem("yzt-device-id", deviceId);
+    if (notificationRequest.current) return notificationRequest.current;
+    const user = firebaseAuth?.currentUser;
+    if (!user) throw new Error("請先登入，再啟用這台裝置的推播。");
+    const epoch = notificationEpoch.current;
+    const assertIdentity = () => {
+      if (
+        notificationEpoch.current !== epoch ||
+        firebaseAuth.currentUser !== user
+      )
+        throw new Error("登入狀態已變更，請重新啟用推播。");
+    };
+    const operation = (async () => {
+      const token = await requestWebPushToken({
+        secureContext: window.isSecureContext,
+        browserSupported:
+          "Notification" in window &&
+          "serviceWorker" in navigator &&
+          "PushManager" in window,
+        vapidKey: config.vapidKey,
+        permission:
+          "Notification" in window ? Notification.permission : "default",
+        requestPermission: () => Notification.requestPermission(),
+        isSupported,
+        register: () => navigator.serviceWorker.register("/sw.js"),
+        getToken: (registration) =>
+          getToken(getMessaging(firebaseApp), {
+            vapidKey: config.vapidKey,
+            serviceWorkerRegistration: registration,
+          }),
+        assertIdentity,
+      });
+      const device = await api("/devices", "POST", { token }, undefined, assertIdentity);
+      assertIdentity();
+      deviceId = device.id;
+      sessionStorage.setItem("yzt-device-id", deviceId);
+    })();
+    notificationRequest.current = operation;
+    try {
+      await operation;
+    } finally {
+      notificationRequest.current = null;
+    }
   }
   return (
     <Context.Provider

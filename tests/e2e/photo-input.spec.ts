@@ -5,6 +5,43 @@ const syntheticPng = Buffer.from(
   "base64",
 );
 
+test("camera requests rear capture and upload clears it without losing a cancelled selection", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "本機使用者", exact: true }).click();
+  await page.goto("/#add");
+  const input = page.getByLabel("藥袋照片", { exact: true });
+  const cameraChooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "開啟相機拍攝", exact: true }).click();
+  const camera = await cameraChooser;
+  await expect(input).toHaveAttribute("capture", "environment");
+  await camera.setFiles({
+    name: "synthetic-camera.png",
+    mimeType: "image/png",
+    buffer: syntheticPng,
+  });
+  await expect(page.locator(".capture-preview figcaption")).toHaveText(
+    "synthetic-camera.png",
+  );
+  const pickerChooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "更換照片", exact: true }).click();
+  await pickerChooser;
+  await expect(input).not.toHaveAttribute("capture");
+  // A cancelled native picker emits no replacement selection. Keep the last
+  // valid preview and allow recognition, even though the input value was reset.
+  await expect(page.locator(".capture-preview figcaption")).toHaveText(
+    "synthetic-camera.png",
+  );
+  await expect(page.getByRole("button", { name: "開始辨識" })).toBeEnabled();
+  await input.setInputFiles({
+    name: "synthetic-camera.png",
+    mimeType: "image/png",
+    buffer: syntheticPng,
+  });
+  await expect(page.getByRole("button", { name: "開始辨識" })).toBeEnabled();
+});
+
 test("invalid camera files never enqueue AI and selecting a valid image restores recognition", async ({
   page,
 }) => {

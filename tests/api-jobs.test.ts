@@ -190,6 +190,44 @@ describe("recovering an AI operation without creating another job", () => {
     );
   });
 
+  it("reuses the operation after a silent POST timeout and ignores its late response", async () => {
+    const first = deferred<Response>();
+    fetchMock.mockImplementationOnce(() => first.promise);
+    const body = { medicationIds: ["synthetic-timeout-med"] };
+    await expect(
+      settle(client.submitJob("/bundles", body)),
+    ).rejects.toMatchObject({ code: "request_timeout" });
+    expect(stored.get(PENDING_JOB_STORAGE_KEY)).toBeTruthy();
+    await settle(client.submitJob("/bundles", body));
+    expect(postKeys()).toHaveLength(2);
+    expect(new Set(postKeys()).size).toBe(1);
+    expect(stored.has(PENDING_JOB_STORAGE_KEY)).toBe(false);
+    first.resolve(response({ jobId: "ignored-late-response" }, 202));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(stored.has(PENDING_JOB_STORAGE_KEY)).toBe(false);
+  });
+
+  it("resumes a known job after a silent poll timeout without charging a new operation", async () => {
+    const poll = deferred<Response>();
+    fetchMock.mockResolvedValueOnce(
+      response({ jobId: "stalled-poll-job" }, 202),
+    );
+    fetchMock.mockImplementationOnce(() => poll.promise);
+    const body = { medicationIds: ["synthetic-poll-med"] };
+    await expect(
+      settle(client.submitJob("/bundles", body)),
+    ).rejects.toMatchObject({
+      code: "request_timeout",
+      jobId: "stalled-poll-job",
+    });
+    await settle(client.submitJob("/bundles", body));
+    expect(postKeys()).toHaveLength(1);
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe(
+      "/api/v1/jobs/stalled-poll-job",
+    );
+    expect(stored.has(PENDING_JOB_STORAGE_KEY)).toBe(false);
+  });
+
   it("retains the 200-poll budget and resumes after timeout without another POST", async () => {
     let completed = false;
     let polls = 0;

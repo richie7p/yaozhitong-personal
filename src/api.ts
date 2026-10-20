@@ -19,8 +19,9 @@ export async function api<T = any>(
   method = "GET",
   body?: unknown,
   key?: string,
+  assertIdentity?: () => void,
 ): Promise<T> {
-  return request<T>(path, method, body, key);
+  return request<T>(path, method, body, key, assertIdentity);
 }
 async function request<T = any>(
   path: string,
@@ -32,48 +33,81 @@ async function request<T = any>(
   assertIdentity?.();
   if (!navigator.onLine)
     throw new ApiError("offline", "目前離線，請連線後再操作。");
-  const token = await tokenProvider();
-  assertIdentity?.();
-  let response: Response;
-  try {
-    response = await fetch("/api/v1" + path, {
-      method,
-      headers: {
-        ...(token ? { Authorization: "Bearer " + token } : {}),
-        ...(body ? { "Content-Type": "application/json" } : {}),
-        ...(key ? { "Idempotency-Key": key } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      cache: "no-store",
-    });
-  } catch {
+  // Queued AI processing has its own polling budget. Bound the transport too:
+  // a stalled token refresh, upload or response body must not leave a view busy.
+  const timeoutMs =
+    path === "/recognitions" && method === "POST" ? 90000 : 45000;
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeoutError = new ApiError(
+    "request_timeout",
+    "連線等待過久，請確認網路後重試；已送出的操作可先到相關紀錄確認。",
+  );
+  const assertActive = () => {
     assertIdentity?.();
-    throw new ApiError(
-      "network_error",
-      "無法連線到服務，請確認連線與藥智通服務已啟動後再試。",
-    );
-  }
-  assertIdentity?.();
-  let data: any;
+    if (timedOut) throw timeoutError;
+  };
+  let timer: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      timedOut = true;
+      reject(timeoutError);
+      controller.abort();
+    }, timeoutMs);
+  });
+  const operation = (async () => {
+    const token = await tokenProvider();
+    // A token refresh may finish after the caller has timed out. Never send
+    // that late request, especially when it contains a photo or other input.
+    assertActive();
+    let response: Response;
+    try {
+      response = await fetch("/api/v1" + path, {
+        method,
+        headers: {
+          ...(token ? { Authorization: "Bearer " + token } : {}),
+          ...(body ? { "Content-Type": "application/json" } : {}),
+          ...(key ? { "Idempotency-Key": key } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } catch {
+      assertActive();
+      throw new ApiError(
+        "network_error",
+        "無法連線到服務，請確認連線與藥智通服務已啟動後再試。",
+      );
+    }
+    assertActive();
+    let data: any;
+    try {
+      data = await response.json();
+    } catch {
+      assertActive();
+      throw new ApiError(
+        "invalid_response",
+        "服務暫時無法回應，請稍後重試。",
+        response.headers.get("X-Request-Id") || "",
+        response.status,
+      );
+    }
+    assertActive();
+    if (!response.ok)
+      throw new ApiError(
+        data?.code || "service_error",
+        data?.message || "服務暫時無法回應，請稍後重試。",
+        data?.requestId || "",
+        response.status,
+      );
+    return data as T;
+  })();
   try {
-    data = await response.json();
-  } catch {
-    throw new ApiError(
-      "invalid_response",
-      "服務暫時無法回應，請稍後重試。",
-      response.headers.get("X-Request-Id") || "",
-      response.status,
-    );
+    return await Promise.race([operation, deadline]);
+  } finally {
+    clearTimeout(timer!);
   }
-  assertIdentity?.();
-  if (!response.ok)
-    throw new ApiError(
-      data?.code || "service_error",
-      data?.message || "服務暫時無法回應，請稍後重試。",
-      data?.requestId || "",
-      response.status,
-    );
-  return data;
 }
 
 const pendingJobs = new PendingJobs();

@@ -1,0 +1,856 @@
+{
+  "date": "2026-10-20",
+  "scope": "Follow-up controlled cloud acceptance for camera entry, push setup, failure recovery and recognition-to-learning flow",
+  "environment": "test",
+  "region": "asia-east1",
+  "status": "controlled_test_acceptance_completed_with_physical_device_and_public_release_gaps",
+  "publicProductionReady": false,
+  "publicUrl": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+  "previousAcceptance": "cloud-first-deploy-20261020.json",
+  "privacy": {
+    "syntheticDataOnly": true,
+    "credentialsIncluded": false,
+    "accountEmailsOrUidsIncluded": false,
+    "personalPhotosIncluded": false,
+    "privateReportsAndScreenshotsCommitted": false
+  },
+  "changes": [
+    "Separate camera and image upload actions; apply the rear-camera capture hint in the initiating user gesture and retain JPEG/PNG upload fallback",
+    "Bound authenticated HTTP transport including token acquisition and response body reads; preserve resumable job identity on timeout",
+    "Prevent an expired recognition attempt from deleting a photo still needed by its replacement worker",
+    "Bound push permission, service-worker and FCM initialization; reject late completions after timeout or account change",
+    "Bound push token revocation so logout can finish if the push provider stalls",
+    "Make malformed push payloads show a generic reminder and focus an existing application tab without navigating away from unsaved work",
+    "Preselect as-needed only for exact PRN or explicit as-needed frequency in a new recognition draft; keep user confirmation required and preserve existing edited values"
+  ],
+  "localValidation": {
+    "programTests": {
+      "status": "passed",
+      "passed": 656,
+      "files": 41
+    },
+    "browserRegression": {
+      "status": "passed_across_full_run_and_focused_retest",
+      "mockedAi": true,
+      "physicalPhoneUsed": false,
+      "initialFullRun": {
+        "passed": 54,
+        "failed": 2,
+        "failureScope": "Desktop and mobile versions of the cabinet midnight foreground-refresh test",
+        "cause": "The test advanced its clock before the initial medication data had rendered"
+      },
+      "fixtureCorrection": "Wait for the rendered cabinet data before advancing the controlled browser clock",
+      "focusedRetest": {
+        "passed": 2,
+        "failed": 0
+      },
+      "distinctCasesPassedAcrossRuns": 56,
+      "all56CasesRerunInOneFinalInvocation": false,
+      "initialFailuresRetainedInHistory": true
+    },
+    "typecheck": "passed",
+    "build": "passed",
+    "processRecovery": {
+      "status": "passed",
+      "passed": 10,
+      "failed": 0,
+      "synthetic": true,
+      "providerContract": "openai",
+      "model": "gpt-6-luna",
+      "modelExecution": "synthetic-loopback-fixture",
+      "mockedAi": true,
+      "realAiCalls": 0,
+      "modelAvailabilityVerified": false,
+      "mainDatabaseUnchanged": true,
+      "osRebootTested": false,
+      "coverage": [
+        "Recognition, explanation and quiz baseline",
+        "Forced local application process stop with queued and running job recovery",
+        "Medication, schedule, explanation and answer persistence",
+        "Repeated cold starts without new model calls",
+        "Recognition timeout followed by explicit reupload",
+        "Bundle timeout and busy response followed by retry of the same job without extra quota",
+        "One upstream 503 followed by bounded automatic retry",
+        "Final restart preserving original and recovered learning records"
+      ],
+      "localProcessRestartIsNotCloudProcessTermination": true
+    },
+    "prnDraftFollowup": {
+      "status": "focused_validation_passed",
+      "focusedUnitPassed": 23,
+      "typecheck": "passed",
+      "focusedBrowserExpectedCases": 4,
+      "focusedBrowserStatus": "passed",
+      "fullProgramSuiteAfterCorrection": "not_rerun_locally",
+      "focusedBrowserPassed": 4,
+      "focusedBrowserFailed": 0,
+      "build": "passed",
+      "scopeNote": "The earlier complete 656-test baseline and subsequent 23 focused unit tests plus four focused browser tests are reported separately; no local single-run 679-test pass is claimed."
+    }
+  },
+  "deployment": {
+    "imageTag": "20261020-cloud-acceptance",
+    "buildId": "e5d0b535-b1fe-4292-9594-cbf4f05aa660",
+    "status": "deployed",
+    "imageDigest": "sha256:5beeb7164bd0ad57fbd7c0903c9a62d001c6e6f10cb147ee2c633e88c505c2da",
+    "webRevision": "yzt-test-web-00007-hfb",
+    "workerRevision": "yzt-test-worker-00007-jmr",
+    "revisionValidation": {
+      "status": "passed",
+      "passed": 8,
+      "failed": 0,
+      "checkedAt": "2026-10-20T12:49:02.7807430Z"
+    },
+    "previousLiveImageTag": "20261020-google-identity",
+    "previousImageResultsRelabeledAsNewImageResults": false,
+    "buildFinishedAt": "2026-10-20T12:46:56.665651Z",
+    "updateScope": "Worker then web image-only update; existing limits, secrets and public URL retained.",
+    "trafficPercentPerService": 100,
+    "hostingEntryValidation": {
+      "status": "passed",
+      "passed": 20,
+      "failed": 0,
+      "checkedAt": "2026-10-20T12:49:03Z",
+      "newAiJobs": 0
+    },
+    "infrastructureValidation": {
+      "status": "passed",
+      "passed": 90,
+      "failed": 0,
+      "checkedAt": "2026-10-20T12:50:00Z",
+      "imageTag": "20261020-cloud-acceptance"
+    },
+    "historical": true
+  },
+  "syntheticAccounts": {
+    "newFixturesCreated": 2,
+    "existingFixturesReused": 2,
+    "roles": [
+      "temporary administrator",
+      "unverified tester",
+      "verified eligible member",
+      "verified noneligible member"
+    ],
+    "temporaryAdministratorEligibleForAi": false,
+    "authentication": "Firebase Email/password",
+    "syntheticVerifiedFlagsAreEmailDeliveryEvidence": false,
+    "googleSignInRetestedThisRound": false,
+    "realOwnerModifiedThisRound": false,
+    "temporaryAdministratorCleanup": {
+      "status": "passed",
+      "checkedAt": "2026-10-20T12:58:42Z",
+      "signedOutBeforeRevocation": true,
+      "adminClaim": false,
+      "applicationAdminRole": false,
+      "disabled": true,
+      "eligible": false,
+      "realOwnerModified": false
+    },
+    "administratorBrowserObservation": {
+      "status": "passed_on_previous_deployed_image",
+      "imageTag": "20261020-google-identity",
+      "scope": [
+        "Synthetic administrator Email/password sign-in",
+        "Administrator navigation entry",
+        "Toggle the separate unverified fixture eligibility off then on",
+        "Disable then restore the separate unverified fixture",
+        "Read application usage page"
+      ],
+      "newImageRecheck": {
+        "status": "passed",
+        "imageTag": "20261020-cloud-acceptance",
+        "scope": [
+          "Fresh Email/password sign-in through the in-app browser",
+          "Administrator account search",
+          "Usage and jobs page",
+          "Read 66511 catalog entries, one published leaflet and four existing AI jobs"
+        ],
+        "eligibilityAndDisabledTogglesRepeatedOnNewImage": false
+      },
+      "realOwnerTouched": false
+    },
+    "roleMatrix": {
+      "status": "passed",
+      "checkedAt": "2026-10-20T12:53:16.016Z",
+      "finishedAt": "2026-10-20T12:53:30.121Z",
+      "passed": 24,
+      "failed": 0,
+      "fixtures": 4,
+      "checks": [
+        {
+          "name": "all_four_fixture_roles_verified_before_requests",
+          "passed": true
+        },
+        {
+          "name": "administrator_signed_in_with_expected_role",
+          "passed": true
+        },
+        {
+          "name": "eligibleMember_signed_in_with_expected_role",
+          "passed": true
+        },
+        {
+          "name": "ineligibleMember_signed_in_with_expected_role",
+          "passed": true
+        },
+        {
+          "name": "unverifiedTester_signed_in_with_expected_role",
+          "passed": true
+        },
+        {
+          "name": "anonymous_private_endpoint_denied",
+          "passed": true
+        },
+        {
+          "name": "administrator_can_read_admin_endpoint",
+          "passed": true
+        },
+        {
+          "name": "eligibleMember_admin_endpoint_denied",
+          "passed": true
+        },
+        {
+          "name": "ineligibleMember_admin_endpoint_denied",
+          "passed": true
+        },
+        {
+          "name": "unverifiedTester_admin_endpoint_denied",
+          "passed": true
+        },
+        {
+          "name": "administrator_recognition_denied_not_eligible",
+          "passed": true
+        },
+        {
+          "name": "ineligibleMember_recognition_denied_not_eligible",
+          "passed": true
+        },
+        {
+          "name": "unverifiedTester_recognition_denied_email_unverified",
+          "passed": true
+        },
+        {
+          "name": "another_member_cannot_read_foreign_job",
+          "passed": true
+        },
+        {
+          "name": "administrator_cannot_read_foreign_private_job",
+          "passed": true
+        },
+        {
+          "name": "administrator_auth_and_application_state_unchanged",
+          "passed": true
+        },
+        {
+          "name": "administrator_jobs_quota_and_uploads_unchanged",
+          "passed": true
+        },
+        {
+          "name": "eligibleMember_auth_and_application_state_unchanged",
+          "passed": true
+        },
+        {
+          "name": "eligibleMember_jobs_quota_and_uploads_unchanged",
+          "passed": true
+        },
+        {
+          "name": "ineligibleMember_auth_and_application_state_unchanged",
+          "passed": true
+        },
+        {
+          "name": "ineligibleMember_jobs_quota_and_uploads_unchanged",
+          "passed": true
+        },
+        {
+          "name": "unverifiedTester_auth_and_application_state_unchanged",
+          "passed": true
+        },
+        {
+          "name": "unverifiedTester_jobs_quota_and_uploads_unchanged",
+          "passed": true
+        },
+        {
+          "name": "global_job_quota_unchanged",
+          "passed": true
+        }
+      ],
+      "newJobs": 0,
+      "actualModelCalls": 0,
+      "retainedSyntheticUploads": 0,
+      "roleOrEligibilityChanges": 0,
+      "emailSent": false,
+      "emailVerificationDeliveryProven": false,
+      "imageTag": "20261020-cloud-acceptance"
+    }
+  },
+  "cloudRecognitionToLearning": {
+    "status": "passed",
+    "plannedMaximumNewApplicationAiJobs": 2,
+    "actualModelHttpRequests": 3,
+    "sourceScope": "Existing independently hash-pinned synthetic two-medication image and one official published leaflet",
+    "controlledResponseDiscardIsActualNetworkOutage": false,
+    "passed": 9,
+    "failed": 0,
+    "startedAt": "2026-10-20T12:49:14.133Z",
+    "finishedAt": "2026-10-20T12:50:03.877Z",
+    "newApplicationAiJobs": 2,
+    "actualModelTokens": 7351,
+    "aiJobs": [
+      {
+        "kind": "recognition",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 10273,
+        "reportedTokens": 2824,
+        "hostedRequests": [
+          {
+            "provider": "openai",
+            "model": "gpt-6-luna",
+            "stage": "vision",
+            "attempt": 1,
+            "latencyMs": 5753,
+            "status": 200,
+            "tokens": 2824
+          }
+        ]
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 6853,
+        "reportedTokens": 4527,
+        "hostedRequests": [
+          {
+            "provider": "openai",
+            "model": "gpt-6-luna",
+            "stage": "generation",
+            "attempt": 1,
+            "latencyMs": 4723,
+            "status": 200,
+            "tokens": 2952
+          },
+          {
+            "provider": "openai",
+            "model": "gpt-6-luna",
+            "stage": "verification",
+            "attempt": 1,
+            "latencyMs": 1937,
+            "status": 200,
+            "tokens": 1575
+          }
+        ]
+      }
+    ],
+    "content": {
+      "claims": 4,
+      "quiz": 4,
+      "requiredSafetySections": [
+        "副作用",
+        "注意事項",
+        "警語"
+      ],
+      "independentlyVerifiedSafetyFields": 3
+    },
+    "fixtureSha256": "951b1cb5eb8e73bcbfce8fb8d5b01108d1b09e236a706668a5a448f8086c0f65",
+    "source": {
+      "licenseNo": "衛署藥製字第026087號",
+      "sha256": "355931af34ccb1998ce774cda49b16e125c261d7fd697ff4d846b24477264528",
+      "version": "355931af34ccb199",
+      "chunks": 1
+    },
+    "reviewedSourcePassagesSha256": "65627e04b392c88303c5f04fbad87f621a0d3f65d3c72639c7dbb4751c7a696e",
+    "recoveryProbes": [
+      {
+        "kind": "recognition",
+        "responseLoss": "first_202_body_discarded_then_same_key_retry",
+        "pollingInterruption": "five_seconds_without_polling_then_disk_state_and_new_authentication",
+        "observedBeforePause": "running",
+        "regeneratedKey": false
+      },
+      {
+        "kind": "bundle",
+        "responseLoss": "first_202_body_discarded_then_same_key_retry",
+        "pollingInterruption": "five_seconds_without_polling_then_disk_state_and_new_authentication",
+        "observedBeforePause": "running",
+        "regeneratedKey": false
+      }
+    ],
+    "baselineJobs": 2,
+    "accountJobsAfterRun": 4,
+    "coverage": [
+      "New recognition and bundle jobs using separately persisted idempotency keys",
+      "Deliberately discard the first accepted response body, then retry the same request key",
+      "Pause polling, discard the session token, reload persisted job identity and authenticate again",
+      "Confirm and save recognition without duplicate rows or conflicting overwrite",
+      "Verify purpose, complete safety fields, citations and comprehension questions against the pinned official source",
+      "Reject changed input under the same idempotency key",
+      "Reject cross-account access",
+      "Wrong answer, corrected answers, repeated submission and persistence after fresh authentication"
+    ],
+    "imageTag": "20261020-cloud-acceptance"
+  },
+  "cloudRecovery": {
+    "status": "passed",
+    "plannedMaximumNewApplicationJobs": 2,
+    "expectedModelHttpRequests": 0,
+    "actualModelHttpRequests": 0,
+    "cloudTasksOutageActuallyInduced": false,
+    "cloudWorkerProcessActuallyKilled": false,
+    "strictTransactionGuardAvoidsOverwritingRealWorker": true,
+    "quotaIncrementsForNewApplicationJobsEvenWhenNoModelIsCalled": true,
+    "passed": 6,
+    "failed": 0,
+    "startedAt": "2026-10-20T12:53:42.250Z",
+    "finishedAt": "2026-10-20T12:55:08.390Z",
+    "actualModelTokens": 0,
+    "newApplicationJobs": 2,
+    "userDailyJobsDelta": 2,
+    "globalDailyJobsDelta": 2,
+    "retryGlobalUsageChange": 0,
+    "probes": [
+      {
+        "kind": "dispatch_adapter_failure",
+        "status": "passed",
+        "attempts": 1,
+        "result": "insufficient_data",
+        "modelRequests": 0,
+        "tokens": 0,
+        "recoveredBy": "deployed_scheduler_tasks_worker"
+      },
+      {
+        "kind": "emulated_expired_checkpoint",
+        "status": "passed",
+        "realWorkerAttempt": 2,
+        "expectedFailure": "unconfirmed_usage",
+        "modelRequests": 0,
+        "tokens": 0
+      },
+      {
+        "kind": "public_api_same_job_retry",
+        "status": "passed",
+        "attempts": 3,
+        "modelRequests": 0,
+        "tokens": 0,
+        "additionalUserDailyJobs": 0
+      }
+    ],
+    "steps": [
+      {
+        "name": "existing_synthetic_account_and_cloud_preflight",
+        "passed": true,
+        "elapsedMs": 3072
+      },
+      {
+        "name": "two_distinct_unlicensed_synthetic_medications",
+        "passed": true,
+        "elapsedMs": 1883
+      },
+      {
+        "name": "dispatch_failure_commit_recovered_by_real_scheduler",
+        "passed": true,
+        "elapsedMs": 14504
+      },
+      {
+        "name": "expired_checkpoint_recovery_fails_unconfirmed_without_model",
+        "passed": true,
+        "elapsedMs": 60768
+      },
+      {
+        "name": "repair_own_fixture_and_retry_same_job_without_extra_quota",
+        "passed": true,
+        "elapsedMs": 3092
+      },
+      {
+        "name": "relogin_persistence_and_exact_two_job_budget",
+        "passed": true,
+        "elapsedMs": 1563
+      }
+    ],
+    "syntheticMedicationsRetained": 2,
+    "coverage": [
+      "Injected queue-adapter failure after the real Firestore enqueue transaction, recovered by deployed Scheduler, Tasks and worker",
+      "Emulated expired worker checkpoint recovered to an unconfirmed-medication failure, then repaired and retried through the public API using the same job"
+    ],
+    "imageTag": "20261020-cloud-acceptance"
+  },
+  "camera": {
+    "localMobileViewportRegression": "passed",
+    "cameraAndUploadEntrySeparated": true,
+    "rearCameraCaptureHint": true,
+    "cloudBrowserObservation": {
+      "status": "passed",
+      "browser": "Codex in-app browser",
+      "scope": [
+        "Separate camera and upload controls visible",
+        "Synthetic JPEG/PNG image upload and real cloud recognition",
+        "Photo review and explicit save"
+      ],
+      "physicalCameraCapturePerformed": false
+    },
+    "physicalAndroidCamera": "not_tested",
+    "physicalIphoneCamera": "not_tested",
+    "newPhysicalPhonePhotoFullFlow": "not_tested",
+    "heicSupported": false
+  },
+  "push": {
+    "localPermissionTimeoutAccountChangeAndServiceWorkerRegression": "passed",
+    "cloudBrowserPermissionAndTokenRegistration": "permission_prompt_did_not_complete_token_registration_not_reached",
+    "realFcmDelivery": "not_tested_permission_not_completed",
+    "physicalPhoneForegroundDelivery": "not_tested",
+    "physicalPhoneBackgroundDelivery": "not_tested",
+    "notificationClickOnPhysicalPhone": "not_tested",
+    "cloudBrowserFailureRecovery": {
+      "status": "passed",
+      "browser": "Codex in-app browser",
+      "observation": "Busy state followed by an actionable permission-timeout message at 30 seconds; enable button became usable again and in-app reminders remained available.",
+      "timeoutSeconds": 30,
+      "realFcmDeliveryProven": false,
+      "physicalPhoneUsed": false,
+      "imageTag": "20261020-cloud-acceptance"
+    }
+  },
+  "remainingPublicReleaseAcceptance": [
+    "Actual phone camera and photo flow under different lighting and angles",
+    "Actual foreground and background push receipt and notification interaction",
+    "Real email verification delivery, password reset, two-device behavior and explicit provider linking",
+    "Backup restoration, cloud process interruption, load and longer-term stability and cost observation",
+    "Broader cloud medication and official leaflet coverage",
+    "Public access, abuse controls and data-use/deletion information"
+  ],
+  "cloudBrowserFullFlow": {
+    "status": "passed",
+    "browser": "Codex in-app browser",
+    "syntheticFixture": true,
+    "physicalPhoneUsed": false,
+    "recognitionImageTag": "20261020-cloud-acceptance",
+    "recognitionCompleted": true,
+    "recognizedMedications": 2,
+    "medicationSavedYet": true,
+    "remediationStatus": "resolved_and_verified_in_cloud_browser",
+    "fullFlowOnOneFinalFrozenImage": false,
+    "recognitionReportedLatencyMs": 5980,
+    "recognitionReportedTokens": 2731,
+    "reviewAndSaveImageTag": "20261020-cloud-prn",
+    "prnDraftInitiallyChecked": true,
+    "prnDraftInitiallyConfirmed": false,
+    "tidDraftInitiallyChecked": false,
+    "tidDraftInitiallyConfirmed": false,
+    "explicitConfirmationBeforeSave": true,
+    "savedMedicationRemovedFromUnresolvedReview": true,
+    "bundleImageTag": "20261020-cloud-prn",
+    "bundleReportedLatencyMs": 13927,
+    "bundleReportedTokens": 4498,
+    "bundleResult": "supported",
+    "claims": 4,
+    "quiz": 4,
+    "completeSafetySections": [
+      "副作用",
+      "注意事項",
+      "警語"
+    ],
+    "sourceLicenseNo": "衛署藥製字第026087號",
+    "sourceVersionPrefix": "355931af",
+    "sourcePage": 1,
+    "expandedSourceCitationVerified": true,
+    "reviewedSavedUsage": {
+      "doseAmount": 1,
+      "doseUnit": "錠",
+      "route": "口服",
+      "frequencyRaw": "PRN",
+      "prn": true,
+      "syntheticNonPrescriptionNote": true
+    },
+    "wrongFirstAnswerObserved": true,
+    "wrongAnswerProgress": {
+      "answered": 1,
+      "correct": 0,
+      "total": 4
+    },
+    "sourceExplanationDisplayedForWrongAnswer": true,
+    "firstAnswerCorrectedBeforeProceeding": true,
+    "finalQuizAnswered": 4,
+    "finalQuizCorrect": 4,
+    "finalQuizPassed": true,
+    "signOutAndFreshPasswordSignIn": true,
+    "reloginLearningProgressPreserved": true,
+    "testBrowserSignedOutAndClosed": true,
+    "originalUserBrowserUntouched": true,
+    "resumeMethod": "Existing recognition was restored from job history after the PRN correction, without another image-model call; review, explicit save, new bundle, quiz and relogin were completed on the final image.",
+    "initialIssue": "Recognized exact PRN frequency did not preselect the as-needed draft checkbox; vision schema has no prn field and the UI initialized it to false.",
+    "providerHttpCalls": 3,
+    "reportedTokens": 7229,
+    "aiJobs": [
+      {
+        "kind": "recognition",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 5980,
+        "tokens": 2731,
+        "requests": [
+          {
+            "provider": "openai",
+            "model": "gpt-6-luna",
+            "stage": "vision",
+            "attempt": 1,
+            "latencyMs": 4873,
+            "status": 200,
+            "tokens": 2731
+          }
+        ]
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 13927,
+        "tokens": 4498,
+        "requests": [
+          {
+            "provider": "openai",
+            "model": "gpt-6-luna",
+            "stage": "generation",
+            "attempt": 1,
+            "latencyMs": 8506,
+            "status": 200,
+            "tokens": 2935
+          },
+          {
+            "provider": "openai",
+            "model": "gpt-6-luna",
+            "stage": "verification",
+            "attempt": 1,
+            "latencyMs": 3128,
+            "status": 200,
+            "tokens": 1563
+          }
+        ]
+      }
+    ],
+    "serverReadbackValidation": {
+      "status": "passed",
+      "passed": 10,
+      "failed": 0,
+      "checkedAt": "2026-10-20T13:57:58.009Z",
+      "finishedAt": "2026-10-20T13:57:59.047Z",
+      "checks": [
+        {
+          "name": "pinned_synthetic_identity",
+          "passed": true
+        },
+        {
+          "name": "real_cloud_only",
+          "passed": true
+        },
+        {
+          "name": "owned_successful_browser_jobs",
+          "passed": true
+        },
+        {
+          "name": "recognition_saved_pointer",
+          "passed": true
+        },
+        {
+          "name": "saved_prn_usage",
+          "passed": true
+        },
+        {
+          "name": "source_and_four_claims_questions",
+          "passed": true
+        },
+        {
+          "name": "three_safety_sections",
+          "passed": true
+        },
+        {
+          "name": "learning_content_preserved",
+          "passed": true
+        },
+        {
+          "name": "all_four_answers_saved_correct",
+          "passed": true
+        },
+        {
+          "name": "eight_completed_synthetic_jobs",
+          "passed": true
+        }
+      ],
+      "cloudMutations": 0,
+      "newAiCalls": 0,
+      "allSyntheticJobs": 8
+    }
+  },
+  "issuesFoundThisRound": [
+    {
+      "area": "browser_recognition_review",
+      "status": "resolved_and_verified_in_cloud_browser",
+      "trigger": "A newly recognized medication has exact PRN/as-needed frequency",
+      "observed": "The editable draft checkbox remained false although the visible frequency was PRN.",
+      "savedIncorrectMedication": false,
+      "discoveredBy": "Actual cloud browser upload and recognition, paused before saving",
+      "fix": "For a new recognition draft only, exact PRN or explicit as-needed frequency preselects prn while confirmed remains false; mixed/unknown frequency stays false and existing edited values are preserved."
+    }
+  ],
+  "deploymentFollowup": {
+    "imageTag": "20261020-cloud-prn",
+    "buildId": "0273a5b3-40e7-4af4-b9c6-16adeb6b9258",
+    "status": "deployed",
+    "sourceFiles": 77,
+    "sourceSizeKiB": 871.3,
+    "privateSourceFiles": 0,
+    "imageDigest": "sha256:6c141fcdf42fecf8b09eec73d48bd708440a56fcdebac6ca8cd19881a9cc6ba8",
+    "webRevision": "yzt-test-web-00008-rsr",
+    "workerRevision": "yzt-test-worker-00008-mhj",
+    "buildFinishedAt": "2026-10-20T13:02:26.093856Z",
+    "historical": false,
+    "trafficPercentPerService": 100,
+    "revisionValidation": {
+      "status": "passed",
+      "passed": 8,
+      "failed": 0,
+      "checkedAt": "2026-10-20T13:04:56.3007299Z"
+    },
+    "hostingEntryValidation": {
+      "status": "passed",
+      "passed": 27,
+      "failed": 0,
+      "checkedAt": "2026-10-20T13:04:52.526Z",
+      "finishedAt": "2026-10-20T13:05:06.025Z",
+      "checks": [
+        {
+          "name": "hosting_health",
+          "passed": true
+        },
+        {
+          "name": "app_shell_forwarded",
+          "passed": true
+        },
+        {
+          "name": "app_shell_no_store",
+          "passed": true
+        },
+        {
+          "name": "popup_compatible_coop",
+          "passed": true
+        },
+        {
+          "name": "google_identity_referrer_policy",
+          "passed": true
+        },
+        {
+          "name": "same_origin_auth_domain",
+          "passed": true
+        },
+        {
+          "name": "google_identity_public_client_configured",
+          "passed": true
+        },
+        {
+          "name": "config_no_store",
+          "passed": true
+        },
+        {
+          "name": "reserved_namespace_excluded_from_sw",
+          "passed": true
+        },
+        {
+          "name": "firebase_helper_not_app_shell",
+          "passed": true
+        },
+        {
+          "name": "anonymous_api_denied",
+          "passed": true
+        },
+        {
+          "name": "synthetic_password_login",
+          "passed": true
+        },
+        {
+          "name": "synthetic_jobs_quiescent_before_readonly_probe",
+          "passed": true
+        },
+        {
+          "name": "authorization_bearer_forwarded",
+          "passed": true
+        },
+        {
+          "name": "same_identity_as_cloud_run",
+          "passed": true
+        },
+        {
+          "name": "private_api_no_store",
+          "passed": true
+        },
+        {
+          "name": "authenticated_response_not_cached_for_anonymous",
+          "passed": true
+        },
+        {
+          "name": "authenticated_post_forwarded_invalid_google_credential_denied",
+          "passed": true
+        },
+        {
+          "name": "original_saved_medication_readable",
+          "passed": true
+        },
+        {
+          "name": "original_recognition_job_persisted",
+          "passed": true
+        },
+        {
+          "name": "original_bundle_job_persisted",
+          "passed": true
+        },
+        {
+          "name": "original_leaflet_quiz_and_all_answers_persisted",
+          "passed": true
+        },
+        {
+          "name": "no_additional_or_changed_ai_jobs",
+          "passed": true
+        },
+        {
+          "name": "usage_day_unchanged",
+          "passed": true
+        },
+        {
+          "name": "no_user_or_global_job_quota_change",
+          "passed": true
+        },
+        {
+          "name": "negative_google_probe_left_auth_identity_unchanged",
+          "passed": true
+        },
+        {
+          "name": "negative_google_probe_left_application_identity_unchanged",
+          "passed": true
+        }
+      ],
+      "observedExistingSyntheticJobs": 7,
+      "originalQuizQuestionsPreserved": 4,
+      "allJobsAndUserGlobalDailyQuotaUnchanged": true,
+      "newAiJobs": 0,
+      "aiRequests": 0
+    },
+    "changeFromPreviousImage": "Only the frontend PRN draft helper and its tests; no API, worker or infrastructure behavior change.",
+    "full90CheckInfrastructureAuditRepeated": false
+  },
+  "currentImageTag": "20261020-cloud-prn",
+  "costAccounting": {
+    "status": "verified",
+    "previousApplicationJobs": 2,
+    "observedFinalApplicationJobs": 8,
+    "newApplicationJobs": 6,
+    "newJobsWithHostedModelCalls": 4,
+    "newRecoveryJobsWithoutModelCalls": 2,
+    "apiFlowModelTokens": 7351,
+    "browserFlowModelTokens": 7229,
+    "newReportedModelTokens": 14580,
+    "apiFlowProviderHttpRequests": 3,
+    "browserFlowProviderHttpRequests": 3,
+    "totalNewProviderHttpRequests": 6,
+    "newJobQuotaIsNotModelHttpRequestCount": true,
+    "allNewProviderHttpResponses": 200,
+    "allModelJobsSingleAttempt": true
+  }
+}

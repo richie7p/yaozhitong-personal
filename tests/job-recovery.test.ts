@@ -173,3 +173,90 @@ it("clears the uploaded photo when repeated crashes exhaust recognition recovery
   expect(remove).toHaveBeenCalledOnce();
   expect(remove).toHaveBeenCalledWith("uploads/synthetic-recovery");
 });
+
+it.each(["success", "failure"])(
+  "does not let an expired recognition attempt delete a newer worker's photo after its late %s",
+  async (oldOutcome) => {
+    const { store, d, job } = await setup();
+    let releaseOld!: () => void, oldEntered!: () => void;
+    let releaseNew!: () => void, newEntered!: () => void;
+    const oldBlocked = new Promise<void>((r) => {
+      releaseOld = r;
+    });
+    const firstEntered = new Promise<void>((r) => {
+      oldEntered = r;
+    });
+    const newBlocked = new Promise<void>((r) => {
+      releaseNew = r;
+    });
+    const recoveryEntered = new Promise<void>((r) => {
+      newEntered = r;
+    });
+    let calls = 0;
+    d.llmFactory = () => ({
+      json: async () => {
+        if (++calls === 1) {
+          oldEntered();
+          await oldBlocked;
+          if (oldOutcome === "failure") throw Error("Synthetic late failure");
+        }
+        return { status: "succeeded", medications: [] };
+      },
+    });
+    let deleted = false;
+    const photo = Buffer.from("Synthetic photo; no real patient data");
+    vi.spyOn(d.blobs, "get").mockImplementation(async () => {
+      if (deleted) throw Error("Synthetic photo was prematurely deleted");
+      return photo;
+    });
+    const remove = vi.spyOn(d.blobs, "delete").mockImplementation(async () => {
+      deleted = true;
+    });
+    const active = d.active.bind(d);
+    let activeCalls = 0;
+    vi.spyOn(d, "active").mockImplementation(async (uid) => {
+      // Pause the new worker after it owns the lease, before downloading.
+      if (++activeCalls === 2) {
+        newEntered();
+        await newBlocked;
+      }
+      return active(uid);
+    });
+    await store.set("jobs", job.id, {
+      ...job,
+      kind: "recognition",
+      input: {
+        imagePath: "uploads/synthetic-recovery-race",
+        mediaType: "image/png",
+      },
+    });
+    const old = d.processJob(job.id);
+    await firstEntered;
+    const claimed = (await store.get("jobs", job.id))!;
+    await store.set("jobs", job.id, { ...claimed, leaseUntil: 0 });
+    const recovered = d.processJob(job.id);
+    try {
+      await recoveryEntered;
+      releaseOld();
+      await old;
+      expect(await store.get("jobs", job.id)).toMatchObject({
+        status: "running",
+        attempts: 2,
+      });
+      expect(remove).not.toHaveBeenCalled();
+      releaseNew();
+      await recovered;
+      expect(await store.get("jobs", job.id)).toMatchObject({
+        status: "succeeded",
+        attempts: 2,
+        input: {},
+      });
+      expect(remove).toHaveBeenCalledOnce();
+      expect(remove).toHaveBeenCalledWith("uploads/synthetic-recovery-race");
+    } finally {
+      releaseOld();
+      releaseNew();
+      await Promise.all([old, recovered]);
+    }
+  },
+);

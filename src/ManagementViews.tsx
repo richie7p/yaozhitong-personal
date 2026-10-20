@@ -456,6 +456,7 @@ export function Profile() {
       ...auth.me.profile,
     }),
     [message, setMessage] = useState(""),
+    [notificationBusy, setNotificationBusy] = useState(false),
     [password, setPassword] = useState(""),
     [linkEmail, setLinkEmail] = useState(auth.me.account.email || "");
   const set = (key: string, v: any) => setP({ ...p, [key]: v });
@@ -578,11 +579,25 @@ export function Profile() {
             <div className="stack">
               <Button
                 className="secondary"
-                onClick={() => action(auth.notify, "已啟用這台裝置的推播。")}
+                disabled={notificationBusy}
+                onClick={async () => {
+                  setMessage("");
+                  setNotificationBusy(true);
+                  try {
+                    await action(auth.notify, "已啟用這台裝置的推播。");
+                  } finally {
+                    setNotificationBusy(false);
+                  }
+                }}
               >
                 <Bell size={17} />
-                啟用網頁推播
+                {notificationBusy ? "正在啟用推播…" : "啟用網頁推播"}
               </Button>
+              {notificationBusy && (
+                <p role="status" className="fine">
+                  請查看瀏覽器的通知權限提示並選擇允許，正在連線推播服務。
+                </p>
+              )}
               <Button
                 onClick={() =>
                   action(
@@ -634,6 +649,7 @@ export function Profile() {
             </div>
             <p className="fine">
               網頁推播受瀏覽器、網路及系統設定影響，不保證像原生鬧鐘般準時。時區：台北。
+              iPhone／iPad 請先將網站加入主畫面，再從主畫面啟用通知。
             </p>
           </section>
           <section className="card">

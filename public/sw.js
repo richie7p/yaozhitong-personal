@@ -53,18 +53,44 @@ self.addEventListener("fetch", (event) => {
     );
 });
 self.addEventListener("push", (event) => {
-  const payload = event.data?.json() || {};
+  let payload = {};
+  try {
+    payload = event.data?.json() || {};
+  } catch {
+    // A malformed payload still gets a generic reminder, never raw message text.
+  }
   const n = payload.notification || {};
   event.waitUntil(
     self.registration.showNotification(n.title || "藥智通提醒", {
       body: n.body || "請開啟藥智通查看提醒。",
-      icon: "/icon.svg",
-      tag: payload.webpush?.notification?.tag || payload.fcmMessageId,
+      icon: "/icon-192.png",
+      tag: n.tag || payload.webpush?.notification?.tag || payload.fcmMessageId,
       data: { url: "/#home" },
     }),
   );
 });
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(self.clients.openWindow("/#home"));
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of windows) {
+        const url = new URL(client.url);
+        // Hash routes all live at /. Never focus Firebase's OAuth/helper windows.
+        if (url.origin !== self.location.origin || url.pathname !== "/") continue;
+        try {
+          const focused = await client.focus();
+          if (focused) return;
+        } catch {
+          // The tab may have closed between matchAll and focus.
+        }
+      }
+      // Keep an existing tab's unsaved work and in-memory login intact. A fresh
+      // window is needed only when no application tab can be focused.
+      await self.clients.openWindow("/#home");
+    })(),
+  );
 });

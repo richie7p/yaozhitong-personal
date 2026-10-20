@@ -22,12 +22,22 @@ function worker() {
     open: vi.fn(async (_name: string) => cache),
     match: vi.fn(async (_path: string) => new Response("offline shell")),
   };
+  const clients = {
+    matchAll: vi.fn(async () => [] as {
+      url: string;
+      focus: ReturnType<typeof vi.fn>;
+    }[]),
+    openWindow: vi.fn(async (_url: string) => ({})),
+  };
+  const registration = { showNotification: vi.fn(async () => {}) };
   runInNewContext(source, {
     URL,
     fetch,
     caches,
     self: {
       location: { origin },
+      clients,
+      registration,
       addEventListener: (name: string, listener: (event: unknown) => void) =>
         listeners.set(name, listener),
     },
@@ -38,7 +48,7 @@ function worker() {
     listeners.get("fetch")!({ request, respondWith });
     return { request, respondWith };
   }
-  return { fetch, caches, cache, dispatch };
+  return { fetch, caches, cache, clients, registration, listeners, dispatch };
 }
 
 describe("service worker authentication boundaries", () => {
@@ -102,5 +112,114 @@ describe("service worker authentication boundaries", () => {
     expect(sw.fetch).not.toHaveBeenCalled();
     expect(sw.caches.open).not.toHaveBeenCalled();
     expect(sw.caches.match).not.toHaveBeenCalled();
+  });
+});
+
+describe("service worker reminders", () => {
+  it("displays an FCM reminder and preserves the occurrence tag for deduplication", async () => {
+    const sw = worker();
+    const waitUntil = vi.fn();
+    sw.listeners.get("push")!({
+      data: {
+        json: () => ({
+          notification: {
+            title: "藥智通提醒",
+            body: "用藥時間到了，請開啟藥智通查看並記錄。",
+            tag: "synthetic-occurrence",
+          },
+          fcmMessageId: "transport-message-1",
+        }),
+      },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(sw.registration.showNotification).toHaveBeenCalledWith(
+      "藥智通提醒",
+      {
+        body: "用藥時間到了，請開啟藥智通查看並記錄。",
+        icon: "/icon-192.png",
+        tag: "synthetic-occurrence",
+        data: { url: "/#home" },
+      },
+    );
+  });
+
+  it.each(["invalid-json", "empty", "null"])(
+    "uses a generic reminder for %s without exposing raw payload text",
+    async (kind) => {
+      const sw = worker();
+      const waitUntil = vi.fn();
+      sw.listeners.get("push")!({
+        data:
+          kind === "empty"
+            ? null
+            : {
+                json: () => {
+                  if (kind === "invalid-json") throw new Error("synthetic");
+                  return null;
+                },
+              },
+        waitUntil,
+      });
+      await waitUntil.mock.calls[0][0];
+      expect(sw.registration.showNotification).toHaveBeenCalledWith(
+        "藥智通提醒",
+        expect.objectContaining({ body: "請開啟藥智通查看提醒。" }),
+      );
+    },
+  );
+
+  it("focuses the existing application without opening a new unauthenticated tab", async () => {
+    const sw = worker();
+    const focus = vi.fn(async () => ({}));
+    sw.clients.matchAll.mockResolvedValue([
+      { url: origin + "/#learning?medication=synthetic", focus },
+    ]);
+    const close = vi.fn();
+    const waitUntil = vi.fn();
+    sw.listeners.get("notificationclick")!({
+      notification: { close, data: { url: "https://untrusted.example" } },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(close).toHaveBeenCalledOnce();
+    expect(focus).toHaveBeenCalledOnce();
+    expect(sw.clients.openWindow).not.toHaveBeenCalled();
+    expect(sw.clients.matchAll).toHaveBeenCalledWith({
+      type: "window",
+      includeUncontrolled: true,
+    });
+  });
+
+  it("ignores OAuth helpers and other origins before opening the fixed application entry", async () => {
+    const sw = worker();
+    const focus = vi.fn(async () => ({}));
+    sw.clients.matchAll.mockResolvedValue([
+      { url: origin + "/__/auth/handler", focus },
+      { url: origin + "/another-page", focus },
+      { url: "https://untrusted.example/", focus },
+    ]);
+    const waitUntil = vi.fn();
+    sw.listeners.get("notificationclick")!({
+      notification: { close: vi.fn(), data: { url: "https://untrusted.example" } },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(focus).not.toHaveBeenCalled();
+    expect(sw.clients.openWindow).toHaveBeenCalledExactlyOnceWith("/#home");
+  });
+
+  it("opens a new app tab if an existing window closes while being focused", async () => {
+    const sw = worker();
+    sw.clients.matchAll.mockResolvedValue([
+      { url: origin + "/", focus: vi.fn().mockRejectedValue(new Error("closed")) },
+    ]);
+    const waitUntil = vi.fn();
+    sw.listeners.get("notificationclick")!({
+      notification: { close: vi.fn() },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(sw.clients.openWindow).toHaveBeenCalledExactlyOnceWith("/#home");
   });
 });

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { api, fileBase64, submitJob } from "./api";
 import { recognitionPhotoType } from "./photo-input";
+import { recognitionDraftFlags } from "./recognition-draft";
 import {
   Button,
   Busy,
@@ -249,6 +250,7 @@ export function AddMedication({
     [error, setError] = useState(""),
     [file, setFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const photoInput = useRef<HTMLInputElement>(null);
   const photoSelectionVersion = useRef(0);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const [recognitionJob, setRecognitionJob] = useState<string | null>(null);
@@ -369,6 +371,16 @@ export function AddMedication({
       if (version === photoSelectionVersion.current) setBusy("");
     }
   }
+  function openPhotoPicker(camera: boolean) {
+    const input = photoInput.current;
+    if (!input || saving || busy) return;
+    // Apply the hint in the same user gesture, before opening the native picker.
+    // Browsers without capture support retain their normal file picker.
+    if (camera) input.setAttribute("capture", "environment");
+    else input.removeAttribute("capture");
+    input.value = "";
+    input.click();
+  }
   const select = (d: any) =>
     setDraft({
       ...blank,
@@ -437,16 +449,32 @@ export function AddMedication({
             <p className="capture-instructions">
               遮住姓名與身分證號，讓藥名、用法清楚入鏡。請平放藥袋，避開反光。
             </p>
-            <label className="btn secondary">
-              {file ? "更換或重新拍攝照片" : "選擇或拍攝照片"}
-              <input
-                className="visually-hidden"
-                type="file"
-                accept="image/jpeg,image/png"
+            <div className="row">
+              <Button
+                className="secondary"
                 disabled={saving || !!busy}
-                onChange={(e) => void choosePhoto(e.currentTarget)}
-              />
-            </label>
+                onClick={() => openPhotoPicker(true)}
+              >
+                {file ? "重新拍攝" : "開啟相機拍攝"}
+              </Button>
+              <Button
+                className="secondary"
+                disabled={saving || !!busy}
+                onClick={() => openPhotoPicker(false)}
+              >
+                {file ? "更換照片" : "上傳照片"}
+              </Button>
+            </div>
+            <input
+              ref={photoInput}
+              className="visually-hidden"
+              type="file"
+              aria-label="藥袋照片"
+              accept="image/jpeg,image/png"
+              tabIndex={-1}
+              disabled={saving || !!busy}
+              onChange={(e) => void choosePhoto(e.currentTarget)}
+            />
             {photoPreview && (
               <figure className="capture-preview">
                 <img
@@ -465,6 +493,7 @@ export function AddMedication({
             </Button>
             <small className="capture-format">
               限 JPEG／PNG，8 MB 以內；圖片完成辨識後刪除。
+              相機未開啟時，可先用手機拍照，再選擇「上傳照片」。
             </small>
           </div>
           {recognized.length > 0 && (
@@ -483,7 +512,12 @@ export function AddMedication({
                 disabled={saving}
                 onClick={() => {
                   setSelectedRecognition(key);
-                  setDraft({ ...blank, ...m, licenseNo: null });
+                  setDraft({
+                    ...blank,
+                    ...m,
+                    licenseNo: null,
+                    ...recognitionDraftFlags(m.frequencyRaw),
+                  });
                 }}
               >
                 編輯這筆資料
@@ -502,6 +536,7 @@ export function AddMedication({
                       licenseNo: c.licenseNo,
                       strength: c.strength,
                       form: c.form,
+                      ...recognitionDraftFlags(m.frequencyRaw),
                     });
                   }}
                 >

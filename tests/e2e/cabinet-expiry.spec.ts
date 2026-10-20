@@ -51,13 +51,16 @@ test("cabinet expiry uses Taipei dates before 08:00 and updates while open acros
     await expect(
       page.getByRole("heading", { name: "家庭藥箱", exact: true }),
     ).toBeVisible();
-    // Freeze at 01:00 so a slower test runner cannot move the midnight assertions.
-    await page.clock.pauseAt(new Date("2026-10-19T17:00:00Z"));
     const tag = (key: string) =>
       page
         .locator(".list-row")
         .filter({ has: page.getByText(prefix + "-" + key, { exact: true }) })
         .locator(".tag");
+    // Wait for the actual rows before advancing time. The heading is visible
+    // while the request is still loading; jumping an hour would expire it.
+    await expect(tag("yesterday")).toHaveText("已過期");
+    // Freeze at 01:00 so a slower test runner cannot move the midnight assertions.
+    await page.clock.pauseAt(new Date("2026-10-19T17:00:00Z"));
     await expect(tag("yesterday")).toHaveText("已過期");
     await expect(tag("yesterday")).toHaveClass(/\bamber\b/);
     await expect(tag("today")).toHaveText("保存中");

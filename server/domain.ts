@@ -699,6 +699,7 @@ export class Domain {
     const llm = this.llmFactory();
     const writes: Array<[string, string, Doc]> = [];
     let inputRevisions: Array<{ id: string; revision: number }> = [];
+    let completedCurrentAttempt = false;
     try {
       if (j.kind === "delete-account") {
         await this.cleanupUser(j.ownerId);
@@ -869,7 +870,7 @@ export class Domain {
             },
           ]);
       }
-      await this.store.transaction(async (tx) => {
+      completedCurrentAttempt = await this.store.transaction(async (tx) => {
         const currentUser = await tx.get<Account>("users", j.ownerId);
         const currentJob = await tx.get<Job>("jobs", id);
         if (
@@ -879,7 +880,7 @@ export class Domain {
           !currentJob ||
           currentJob.attempts !== j.attempts
         )
-          return;
+          return false;
         if (currentUser.profileVersion !== u.profileVersion)
           return fail(
             "stale_content",
@@ -919,6 +920,7 @@ export class Domain {
             : {}),
           latencyMs: Date.now() - startedAt,
         });
+        return true;
       });
     } catch (e) {
       const error =
@@ -930,7 +932,7 @@ export class Domain {
           "輸入已保留，請稍後重試。",
           "請重新上傳藥袋再試。",
         );
-      await this.store.transaction(async (tx) => {
+      completedCurrentAttempt = await this.store.transaction(async (tx) => {
         const currentUser = await tx.get<Account>("users", j.ownerId);
         const currentJob = await tx.get<Job>("jobs", id);
         if (
@@ -940,7 +942,7 @@ export class Domain {
             !currentJob ||
             currentJob.attempts !== j.attempts)
         )
-          return;
+          return false;
         tx.set("jobs", id, {
           ...j,
           input: j.kind === "recognition" ? {} : j.input,
@@ -954,9 +956,17 @@ export class Domain {
             : {}),
           latencyMs: Date.now() - startedAt,
         });
+        return true;
       });
     } finally {
-      if (j.kind === "recognition" && j.input.imagePath)
+      // Only the attempt that committed a terminal state may remove its input.
+      // A recovered worker can still need the same photo when an expired
+      // attempt eventually returns or fails.
+      if (
+        completedCurrentAttempt &&
+        j.kind === "recognition" &&
+        j.input.imagePath
+      )
         await this.blobs.delete(String(j.input.imagePath));
     }
   }
