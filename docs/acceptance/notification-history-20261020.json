@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-20",
+  "status": "passed_with_scope_limits",
+  "feature": "Owner-scoped notification history from the top bell and More navigation",
+  "behavior": {
+    "readOnEntryOrManualRefreshOnly": true,
+    "backgroundPolling": false,
+    "newDatabaseWrites": false,
+    "readReceipts": false,
+    "statuses": ["待傳送", "推送已處理", "已取消"],
+    "sentMeaning": "Server processing completed; not proof of device display, delivery or reading",
+    "order": "createdAt descending",
+    "timezone": "Asia/Taipei"
+  },
+  "localValidation": {
+    "unitTests": { "passed": 679, "files": 42 },
+    "fullBrowserTests": { "passed": 66, "projects": ["desktop", "mobile"] },
+    "notificationSpecificBrowserTests": 6,
+    "buildAndTypecheck": "passed",
+    "serviceRestartAndAccountDeletionLifecycle": "passed",
+    "cases": [
+      "Bell and mobile More navigation",
+      "Newest-first order and Taipei date rollover",
+      "Explicit refresh without polling or writes",
+      "Initial loading, retry, empty results and stale-data feedback",
+      "Previous-account content cleared before next-account results",
+      "Desktop/mobile layout and no horizontal overflow"
+    ],
+    "fixtureCorrection": "First focused run passed 4/6; two test fixtures wrongly compared tokens from separate logins including different expiry times. The corrected fixture resolves the actual token through the isolated local /me API. Focused rerun passed 6/6 and full suite passed 66/66."
+  },
+  "deployment": {
+    "environment": "Google Cloud TEST",
+    "buildId": "bf7a1dfc-7132-48f3-abd2-c849e241c2e9",
+    "buildFinishedAt": "2026-10-20T15:00:50.005794Z",
+    "imageTag": "20261020-notification-history",
+    "digest": "sha256:a1a53cd7d682a5a78338cccec4c734b0416dc0cf7ad15cccb24c6d8523dc4d00",
+    "webRevision": "yzt-test-web-00009-6kw",
+    "workerRevision": "yzt-test-worker-00009-l9p",
+    "trafficPercentEach": 100,
+    "revisionChecks": 8,
+    "hostingAndSavedDataChecks": 27,
+    "infrastructureChecks": 90,
+    "browser": "Synthetic account sign-in, top bell, empty history and manual refresh confirmed on deployed Hosting URL",
+    "savedBaseline": "Original medication, recognition, explanation, four quiz answers, eight synthetic jobs and job quotas preserved"
+  },
+  "costAndScope": {
+    "newAiRequests": 0,
+    "newRealPushTests": 0,
+    "syntheticNotificationsWrittenToCloud": 0,
+    "operatingSystemRestart": false,
+    "notes": [
+      "Populated, failed and account-switch UI states use isolated route fixtures, not live cloud notifications.",
+      "Existing notification API pre-deploy checks passed 12 assertions using two synthetic accounts with zero records; empty results alone do not establish nonempty cross-user isolation.",
+      "Earlier Android test notifications were deliberately cleaned and are not recreated as history.",
+      "This adds a history view and does not extend Android device, real-paper recognition, clinical or long-term reliability acceptance.",
+      "Cloud build, deployment and database reads still incur their normal service usage; no total spending cap is claimed."
+    ]
+  }
+}

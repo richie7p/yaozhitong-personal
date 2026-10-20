@@ -25,6 +25,7 @@ import { Button, Busy, Field, Notice, SectionTitle } from "./components";
 import { Medications, AddMedication, Learning, Chat } from "./MedicationViews";
 import { Care, Cabinet, Profile, Admin, History } from "./ManagementViews";
 import { JobHistory } from "./JobHistory";
+import { Notifications } from "./NotificationViews";
 import { Demo } from "./Demo";
 import { Home, BagDrawing } from "./Home";
 const navigation = [
@@ -144,6 +145,7 @@ export function App() {
     cabinet: <Cabinet />,
     profile: <Profile />,
     history: <History />,
+    notifications: <Notifications />,
     admin: account.admin ? (
       <Admin />
     ) : (
@@ -215,6 +217,13 @@ export function App() {
             研討會展示
           </a>
           <a
+            href="#notifications"
+            aria-current={pageName === "notifications" ? "page" : undefined}
+          >
+            <Bell size={18} />
+            通知紀錄
+          </a>
+          <a
             href="#jobs"
             aria-current={pageName === "jobs" ? "page" : undefined}
           >
@@ -255,6 +264,7 @@ export function App() {
                       add: "新增用藥",
                       demo: "研討會展示",
                       jobs: "處理紀錄",
+                      notifications: "通知紀錄",
                       profile: "帳號與設定",
                       admin: "管理員後台",
                     } as Record<string, string>
@@ -271,7 +281,12 @@ export function App() {
             >
               Aa
             </button>
-            <a className="icon-button" href="#profile" aria-label="通知設定">
+            <a
+              className="icon-button"
+              href="#notifications"
+              aria-label="通知紀錄"
+              aria-current={pageName === "notifications" ? "page" : undefined}
+            >
               <Bell size={19} />
             </a>
             <div className="avatar">{account.displayName?.[0] || "我"}</div>
