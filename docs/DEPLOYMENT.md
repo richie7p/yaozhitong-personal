@@ -1,6 +1,18 @@
 # Google Cloud 與 Firebase 部署
 
-此文件與腳本已完成本機語法／建置檢查，尚未在使用者的雲端帳號部署。需要有效的 Google Cloud 專案、計費帳號、Firebase Web 設定與 FCM Web Push 憑證。NVIDIA API 金鑰已可在目前環境實測，未写入儲存庫。
+此文件與腳本已完成本機語法／建置檢查，尚未在使用者的雲端帳號部署。需要有效的 Google Cloud 專案、計費帳號、Firebase Web 設定與 FCM Web Push 憑證。
+
+## 目前狀態（2026-10-20）
+
+目前正式本機版採用 OpenAI `gpt-6-luna`，日常與研討會展示使用同一套介面。後端已支援 OpenAI，但 `infra/deploy.ps1` 仍是先前的 NVIDIA 部署設定：強制要求 `NVIDIA_API_KEY`、建立及掛載 NVIDIA Secret，並設定舊 NVIDIA 模型。**現有部署指令尚不能直接重現目前的 OpenAI 本機設定。**
+
+上雲前尚需完成：
+
+- 部署腳本加入明確的供應商、文字／影像模型與對應 Secret Manager 設定，讓 Web／worker 一致使用目前選定的 OpenAI 設定。
+- 設定 Firebase 正式登入、授權網域與管理員；將官方主檔及已核對仿單受控匯入雲端，不把本機測試資料庫整份搬入。
+- 在雲端測試專案驗收辨識、仿單、理解測驗、帳號隔離、Cloud Tasks／Scheduler、失敗恢復、推播與備份還原，並建立實際費用通知。
+
+下方部署指令與資源清單描述現有 NVIDIA 腳本，保留供後續調整參考。這次同步僅更新程式與狀態文件，沒有建立雲端資源，也沒有執行雲端部署。
 
 ## 環境準備
 
