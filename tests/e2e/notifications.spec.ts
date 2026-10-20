@@ -36,6 +36,77 @@ test.describe("notification history route fixtures", () => {
   // These synthetic notifications exist only in the route fixtures.
   test.use({ serviceWorkers: "block" });
 
+  test("the delayed sign-in title focus preserves a keyboard user's notification link", async ({
+    page,
+  }) => {
+    await page.route("**/api/v1/notifications", (route) =>
+      route.fulfill({ json: { items: [] } }),
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: "本機使用者", exact: true }).focus();
+    // Hold app frames until the keyboard user reaches the bell, so the race is
+    // exercised on every run instead of depending on browser rendering speed.
+    await page.evaluate(() => {
+      const requestFrame = window.requestAnimationFrame.bind(window);
+      const cancelFrame = window.cancelAnimationFrame.bind(window);
+      const pending = new Map<number, FrameRequestCallback>();
+      let nextFrame = 0;
+      window.requestAnimationFrame = (callback) => {
+        const id = --nextFrame;
+        pending.set(id, callback);
+        return id;
+      };
+      window.cancelAnimationFrame = (id) => {
+        if (pending.has(id)) pending.delete(id);
+        else cancelFrame(id);
+      };
+      const controlledWindow = window as typeof window & {
+        resumeNavigationFrames?: () => void;
+        pendingNavigationFrames?: () => number;
+      };
+      controlledWindow.pendingNavigationFrames = () => pending.size;
+      controlledWindow.resumeNavigationFrames = () => {
+        window.requestAnimationFrame = requestFrame;
+        window.cancelAnimationFrame = cancelFrame;
+        const callbacks = [...pending.values()];
+        pending.clear();
+        for (const callback of callbacks) callback(performance.now());
+        delete controlledWindow.resumeNavigationFrames;
+        delete controlledWindow.pendingNavigationFrames;
+      };
+    });
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("heading", { name: /今天的用藥日常/ }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          (
+            window as typeof window & { pendingNavigationFrames: () => number }
+          ).pendingNavigationFrames(),
+        ),
+      )
+      .toBeGreaterThan(0);
+    const bell = page.locator(".topbar").getByRole("link", {
+      name: "通知紀錄",
+      exact: true,
+    });
+    await bell.focus();
+    await page.evaluate(() => {
+      (
+        window as typeof window & { resumeNavigationFrames: () => void }
+      ).resumeNavigationFrames();
+    });
+    await expect(bell).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/#notifications$/);
+    await expect(page.locator("#main h1")).toBeFocused();
+    await expect(
+      page.getByRole("heading", { name: "目前沒有通知紀錄", exact: true }),
+    ).toBeVisible();
+  });
+
   test("bell and More show sorted Taipei records, with explicit refresh and no polling or writes", async ({
     page,
   }, info) => {

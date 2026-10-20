@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   LoaderCircle,
   AlertCircle,
@@ -11,34 +11,37 @@ export function useData<T = any>(path: string) {
   const [data, setData] = useState<T | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true);
-  const refresh = async () => {
+  const mounted = useRef(false),
+    requestVersion = useRef(0),
+    currentPath = useRef(path);
+  currentPath.current = path;
+  const refresh = useCallback(async () => {
+    if (!mounted.current || currentPath.current !== path) return;
+    const version = ++requestVersion.current;
+    const isCurrent = () =>
+      mounted.current &&
+      currentPath.current === path &&
+      requestVersion.current === version;
     setError("");
     try {
-      setData(await api<T>(path));
+      const next = await api<T>(path);
+      if (isCurrent()) setData(next);
     } catch (e: any) {
-      setError(e.message);
+      if (isCurrent()) setError(e.message);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  };
+  }, [path]);
   useEffect(() => {
-    let active = true;
+    mounted.current = true;
     setLoading(true);
     setData(null);
-    api<T>(path)
-      .then((d) => {
-        if (active) setData(d);
-      })
-      .catch((e) => {
-        if (active) setError(e.message);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    void refresh();
     return () => {
-      active = false;
+      mounted.current = false;
+      requestVersion.current++;
     };
-  }, [path]);
+  }, [refresh]);
   return { data, error, loading, refresh };
 }
 export function Notice({

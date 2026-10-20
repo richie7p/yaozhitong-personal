@@ -13,6 +13,17 @@ if ($Port -lt 1024 -or $Port -gt 65535) { throw 'Invalid demonstration port.' }
 $nodeCommand = (Get-Command node -ErrorAction Stop).Source
 $stateDirectory = Join-Path $repoDirectory '.local/launcher'
 New-Item -ItemType Directory -Path $stateDirectory -Force | Out-Null
+$runtimeDirectory = $repoDirectory
+$runtimePointer = Join-Path $stateDirectory 'demo-runtime.json'
+if (Test-Path -LiteralPath $runtimePointer) {
+  $runtime = Get-Content -LiteralPath $runtimePointer -Raw | ConvertFrom-Json
+  if (-not $runtime.relativePath -or $runtime.serverSha256 -notmatch '^[a-f0-9]{64}$') { throw 'Invalid validated demonstration runtime.' }
+  $runtimeDirectory = [IO.Path]::GetFullPath((Join-Path $repoDirectory $runtime.relativePath))
+  if (-not $runtimeDirectory.StartsWith($repoDirectory + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'The demonstration runtime must stay inside this project.' }
+  $runtimeServer = Join-Path $runtimeDirectory 'dist/server/index.mjs'
+  if (-not (Test-Path -LiteralPath $runtimeServer) -or (Get-FileHash -LiteralPath $runtimeServer -Algorithm SHA256).Hash.ToLowerInvariant() -ne $runtime.serverSha256) { throw 'The validated demonstration runtime changed. Revalidate before starting.' }
+}
+$environmentFile = Join-Path $repoDirectory '.env'
 $stateFile = Join-Path $stateDirectory ("server-$Port.json")
 $baseUrl = "http://127.0.0.1:$Port"
 $running = $null
@@ -31,15 +42,15 @@ if ($running) {
   $environmentBackup = @{}
   foreach ($key in @('APP_MODE', 'PORT', 'LOCAL_DATA_PATH', 'NODE_ENV')) { $environmentBackup[$key] = [Environment]::GetEnvironmentVariable($key, 'Process') }
   try {
-    Set-Location -LiteralPath $repoDirectory
+    Set-Location -LiteralPath $runtimeDirectory
     $env:APP_MODE = 'local'
     $env:PORT = [string]$Port
     $env:LOCAL_DATA_PATH = $dataPath
     $env:NODE_ENV = ''
-    & $nodeCommand --env-file-if-exists=.env --import tsx tools/check-seminar.ts --require-ready
+    & $nodeCommand "--env-file-if-exists=$environmentFile" --import tsx tools/check-seminar.ts --require-ready
     if ($LASTEXITCODE -ne 0) { throw 'Demonstration preflight failed; no server was started.' }
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
-    $process = Start-Process -FilePath $nodeCommand -ArgumentList @('--env-file-if-exists=.env', 'dist/server/index.mjs') -WorkingDirectory $repoDirectory -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $stateDirectory "$Port-$stamp.log") -RedirectStandardError (Join-Path $stateDirectory "$Port-$stamp.error.log")
+    $process = Start-Process -FilePath $nodeCommand -ArgumentList @(('"--env-file-if-exists={0}"' -f $environmentFile), 'dist/server/index.mjs') -WorkingDirectory $runtimeDirectory -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $stateDirectory "$Port-$stamp.log") -RedirectStandardError (Join-Path $stateDirectory "$Port-$stamp.error.log")
     $ready = $false
     for ($attempt = 0; $attempt -lt 40; $attempt++) {
       Start-Sleep -Milliseconds 250
@@ -51,6 +62,7 @@ if ($running) {
     @{
       pid = $process.Id; processStart = $process.StartTime.ToUniversalTime().ToString('o')
       repoPath = $repoDirectory; dataPath = $dataPath; baseUrl = $baseUrl
+      runtimePath = $runtimeDirectory
       startedAt = [DateTime]::UtcNow.ToString('o')
       windowsBoot = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString('o')
     } | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8

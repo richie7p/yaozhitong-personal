@@ -46,7 +46,16 @@ export function App() {
   const [pageName, pageQuery = ""] = page.split("?");
   useEffect(() => {
     if (!auth.me) return;
+    // A user can reach a control before the first frame after sign-in or navigation.
+    // Once they interact, keep their focus instead of moving it to the page title.
+    const cancelFocus = () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("focusin", cancelFocus);
+      document.removeEventListener("pointerdown", cancelFocus);
+      document.removeEventListener("keydown", cancelFocus);
+    };
     const frame = requestAnimationFrame(() => {
+      cancelFocus();
       const heading = document.querySelector<HTMLElement>("#main h1");
       if (heading) {
         heading.tabIndex = -1;
@@ -54,7 +63,10 @@ export function App() {
       }
       window.scrollTo(0, 0);
     });
-    return () => cancelAnimationFrame(frame);
+    document.addEventListener("focusin", cancelFocus);
+    document.addEventListener("pointerdown", cancelFocus);
+    document.addEventListener("keydown", cancelFocus);
+    return cancelFocus;
   }, [pageName, auth.me?.account.id]);
   const menuTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {

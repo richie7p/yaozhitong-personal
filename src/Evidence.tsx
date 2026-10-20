@@ -133,7 +133,7 @@ function UnderstandingQuiz({
   result: GroundedResult;
   learningId: string;
   initialAnswers?: Record<string, number>;
-  onProgress?: (progress: LearningProgress) => void;
+  onProgress?: (progress: LearningProgress, answers: Record<string, number>) => void;
 }) {
   const radioName = useId();
   const [answers, setAnswers] = useState(() =>
@@ -295,7 +295,7 @@ function UnderstandingQuiz({
                     response.progress.passed && !progress.passed && !reviewing;
                   setAnswers(response.answers);
                   setSelection(undefined);
-                  onProgress?.(response.progress);
+                  onProgress?.(response.progress, response.answers);
                   const answer = response.progress.results.find(
                     (r) => r.id === q.id,
                   );
@@ -375,7 +375,7 @@ export function Evidence({
   learningId?: string;
   medications?: Medication[];
   initialAnswers?: Record<string, number>;
-  onProgress?: (progress: LearningProgress) => void;
+  onProgress?: (progress: LearningProgress, answers: Record<string, number>) => void;
   showQuiz?: boolean;
   view?: "all" | "reading" | "quiz";
 }) {
@@ -634,9 +634,9 @@ export function Evidence({
           result={result}
           learningId={learningId}
           initialAnswers={initialAnswers}
-          onProgress={(next) => {
+          onProgress={(next, answers) => {
             setProgress(next);
-            onProgress?.(next);
+            onProgress?.(next, answers);
           }}
         />
       )}

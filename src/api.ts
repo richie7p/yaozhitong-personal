@@ -1,4 +1,5 @@
 import { jobFingerprint, PendingJobs, type PendingJob } from "./pending-jobs";
+import { setChatDraftIdentity } from "./chat-draft";
 
 let tokenProvider: () => Promise<string> = async () => "";
 export function setTokenProvider(fn: () => Promise<string>) {
@@ -121,6 +122,7 @@ interface InFlightJob {
 const inFlightJobs = new Map<string, InFlightJob>();
 
 export function setJobIdentity(identity: string | null) {
+  setChatDraftIdentity(identity);
   if (identity === jobIdentity) return;
   // Initial sign-in may recover a pending operation from a page reload. An actual
   // account switch or logout discards the previous account's client-side state.

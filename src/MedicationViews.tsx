@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   Plus,
   Search,
@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { api, fileBase64, submitJob } from "./api";
+import { chatDraftSession } from "./chat-draft";
 import { recognitionPhotoType } from "./photo-input";
 import { recognitionDraftFlags } from "./recognition-draft";
 import {
@@ -1050,7 +1051,9 @@ export function Learning() {
       items: LearningRecord[];
     }>("/learning"),
     meds = useData<{ items: Medication[] }>("/medications");
-  const [updates, setUpdates] = useState<Record<string, LearningProgress>>({});
+  const [updates, setUpdates] = useState<
+    Record<string, { progress: LearningProgress; answers: Record<string, number> }>
+  >({});
   const [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(""),
     [message, setMessage] = useState("");
@@ -1079,7 +1082,7 @@ export function Learning() {
   const recordMedications = (r: LearningRecord) =>
     (meds.data?.items || []).filter((m) => r.medicationIds.includes(m.id));
   const recordProgress = (r: LearningRecord) =>
-    updates[r.id] || r.progress || learningProgress(r.result.quiz, r.answers);
+    updates[r.id]?.progress || r.progress || learningProgress(r.result.quiz, r.answers);
   const recordName = (r: LearningRecord) =>
     recordMedications(r)
       .map((m) => m.name)
@@ -1173,14 +1176,14 @@ export function Learning() {
           <Evidence
             result={activeRecord.result}
             learningId={activeRecord.id}
-            initialAnswers={activeRecord.answers}
+            initialAnswers={updates[activeRecord.id]?.answers || activeRecord.answers}
             medications={
               activeRecord.medicationIds.length === 1
                 ? recordMedications(activeRecord)
                 : undefined
             }
-            onProgress={(p) =>
-              setUpdates((old) => ({ ...old, [activeRecord.id]: p }))
+            onProgress={(progress, answers) =>
+              setUpdates((old) => ({ ...old, [activeRecord.id]: { progress, answers } }))
             }
           />
           <div className="learning-detail-actions">
@@ -1300,12 +1303,43 @@ export function Learning() {
   );
 }
 export function Chat() {
-  const meds = useData("/medications"),
+  const meds = useData<{ items: Medication[] }>("/medications"),
     history = useData("/chat");
-  const [question, setQuestion] = useState(""),
-    [selected, setSelected] = useState<string[]>([]),
-    [busy, setBusy] = useState(""),
-    [error, setError] = useState("");
+  const [draft] = useState(chatDraftSession);
+  const { question, selected, busy, error, sent, completed } =
+    useSyncExternalStore(draft.subscribe, draft.read);
+  const [reloadingMeds, setReloadingMeds] = useState(false);
+  const selector = useRef<HTMLElement>(null),
+    lastCompleted = useRef(completed);
+  useEffect(() => {
+    if (lastCompleted.current === completed) return;
+    lastCompleted.current = completed;
+    // A remounted view reads history on mount. Only the current view refreshes
+    // when its background question completes, without making it a failed send.
+    if (sent) void history.refresh();
+  }, [completed, sent]);
+  const loadingMeds = meds.loading || reloadingMeds;
+  const confirmedMeds = (meds.data?.items || []).filter((m) => m.confirmed);
+  const selectedIds = selected.filter((id) =>
+    confirmedMeds.some((m) => m.id === id),
+  );
+  const canSubmit =
+    !busy &&
+    !loadingMeds &&
+    !meds.error &&
+    selectedIds.length > 0 &&
+    question.trim().length > 0;
+  const prerequisite = loadingMeds
+    ? "正在讀取藥品，完成後即可選擇提問對象。"
+    : meds.error
+      ? "藥品讀取失敗，請重試後再送出；你輸入的問題會保留。"
+      : !confirmedMeds.length
+        ? meds.data?.items.length
+          ? "目前的藥品尚未確認，請先到「我的藥品」對照藥袋確認藥品與用法，才能送出問題。"
+          : "目前還沒有可提問的藥品。請先新增並確認藥品，再回來勾選提問對象。"
+        : !selectedIds.length
+          ? "請先在「這次想問的藥品」勾選至少一款藥品，才能送出問題。"
+          : `已選擇 ${selectedIds.length} 款藥品。輸入問題後，按「送出」查閱仿單。`;
   return (
     <>
       <SectionTitle eyebrow="仿單問答" title="用藥問答">
@@ -1313,7 +1347,12 @@ export function Chat() {
       </SectionTitle>
       {meds.error && <Notice error>無法讀取藥品：{meds.error}</Notice>}
       {history.error && (
-        <Notice error>無法讀取問答紀錄：{history.error}</Notice>
+        <Notice error>
+          無法讀取問答紀錄：{history.error}
+          <Button className="secondary" onClick={() => history.refresh()}>
+            重新讀取問答紀錄
+          </Button>
+        </Notice>
       )}
       <div className="chat-layout">
         <section className="card chat-main">
@@ -1334,26 +1373,68 @@ export function Chat() {
             ))}
           {busy && <JobNotice text={busy} />}{" "}
           {error && <Notice error>{error}</Notice>}
+          {sent && (
+            <Notice>
+              問題已處理完成，回答已儲存於問答紀錄。若紀錄未顯示，請重新讀取問答紀錄。
+            </Notice>
+          )}
           <a className="btn ghost" href="#jobs">
             查看 AI 處理紀錄與重試
           </a>
+          <div id="chat-prerequisite">
+            <Notice>{prerequisite}</Notice>
+            {meds.error && (
+              <Button
+                className="secondary"
+                disabled={loadingMeds}
+                onClick={async () => {
+                  setReloadingMeds(true);
+                  try {
+                    await meds.refresh();
+                  } finally {
+                    setReloadingMeds(false);
+                  }
+                }}
+              >
+                重新讀取藥品
+              </Button>
+            )}
+            {!loadingMeds && !meds.error && !confirmedMeds.length && (
+              <a
+                className="btn secondary"
+                href={meds.data?.items.length ? "#medications" : "#add"}
+              >
+                {meds.data?.items.length ? "前往確認藥品" : "新增並確認藥品"}
+                <ArrowRight size={16} />
+              </a>
+            )}
+            {!loadingMeds &&
+              !meds.error &&
+              confirmedMeds.length > 0 &&
+              !selectedIds.length && (
+                <Button
+                  className="secondary"
+                  onClick={() => selector.current?.focus()}
+                >
+                  選擇提問藥品
+                  <ArrowRight size={16} />
+                </Button>
+              )}
+          </div>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              setError("");
-              setBusy("正在查閱仿單…");
+              if (!canSubmit || !draft.startSubmission()) return;
+              const submittedQuestion = question.trim();
               try {
                 await submitJob(
                   "/chat",
-                  { question, medicationIds: selected },
-                  setBusy,
+                  { question: submittedQuestion, medicationIds: selectedIds },
+                  draft.progress,
                 );
-                setQuestion("");
-                history.refresh();
+                draft.completeQuestion(question);
               } catch (e: any) {
-                setError(e.message);
-              } finally {
-                setBusy("");
+                draft.fail(e.message);
               }
             }}
           >
@@ -1361,50 +1442,51 @@ export function Chat() {
               <textarea
                 required
                 maxLength={500}
+                aria-label="用藥問題"
+                aria-describedby="chat-prerequisite chat-input-help"
+                disabled={!!busy}
                 value={question}
-                onChange={(e) => setQuestion(e.target.value)}
+                onChange={(e) => draft.update({ question: e.target.value })}
                 placeholder="例如：這款藥的仿單有哪些飲食注意事項？"
               />
-              <Button
-                className="primary"
-                type="submit"
-                disabled={!!busy || !selected.length}
-              >
+              <Button className="primary" type="submit" disabled={!canSubmit}>
                 <Send size={18} />
                 送出
               </Button>
             </div>
-            <small className="muted">
-              請勿輸入姓名、身分證字號等個人識別資料。
+            <small className="muted" id="chat-input-help">
+              Enter
+              為換行，完成後請按「送出」。請勿輸入姓名、身分證字號等個人識別資料。
             </small>
           </form>
         </section>
-        <aside className="card chat-selector">
-          <h3>這次想問的藥品</h3>
-          {meds.loading && <Busy text="正在讀取藥品…" />}
-          {meds.data?.items
-            .filter((m: any) => m.confirmed)
-            .map((m: any) => (
-              <label className="choice" key={m.id}>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(m.id)}
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked
-                        ? [...selected, m.id].slice(-8)
-                        : selected.filter((id) => id !== m.id),
-                    )
-                  }
-                />
-                {m.name}
-              </label>
-            ))}
-          {!meds.loading &&
-            !meds.error &&
-            !meds.data?.items.some((m: any) => m.confirmed) && (
-              <p className="muted">先新增並確認藥品，才能開始問答。</p>
-            )}
+        <aside
+          className="card chat-selector"
+          ref={selector}
+          tabIndex={-1}
+          aria-labelledby="chat-medications-title"
+        >
+          <h3 id="chat-medications-title">這次想問的藥品</h3>
+          {loadingMeds && <Busy text="正在讀取藥品…" />}
+          {confirmedMeds.map((m) => (
+            <label className="choice" key={m.id}>
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(m.id)}
+                disabled={!!busy || !!meds.error || loadingMeds}
+                onChange={(e) => {
+                  const next = e.target.checked
+                    ? [...selected, m.id].slice(-8)
+                    : selected.filter((id) => id !== m.id);
+                  draft.update({ selected: next });
+                }}
+              />
+              {m.name}
+            </label>
+          ))}
+          {!loadingMeds && !meds.error && !confirmedMeds.length && (
+            <p className="muted">先新增並確認藥品，才能開始問答。</p>
+          )}
           <Notice>
             涉及改劑量、停藥、診斷與個人是否適用的問題，請向醫師或藥師確認。
           </Notice>

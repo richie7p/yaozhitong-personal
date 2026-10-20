@@ -108,6 +108,16 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   quiz = record.locator(".quiz");
   await expect(record).toHaveCount(1);
   await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
+  // In-page hash navigation remounts Evidence without refetching the directory.
+  // It must reuse the saved answer as well as the updated progress badge.
+  await page.locator(".learning-toolbar").getByRole("link", {
+    name: "返回全部藥品", exact: true,
+  }).click();
+  const directoryRow = page.locator(`.learning-index-card[data-learning-id="${learning.id}"]`);
+  await expect(directoryRow).toContainText("已作答 1／2 題");
+  await directoryRow.getByRole("link", { name: "繼續學習", exact: true }).click();
+  await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
+  await expect(quiz.locator(".quiz-progress")).toContainText("已作答 1／2 題");
   await page.reload();
   await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
   await page.getByRole("button", { name: "登出", exact: true }).click();
@@ -132,6 +142,13 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   ).items[0];
   expect(saved.answers).toEqual({ q0: 0, q1: 1 });
   expect(saved.progress.status).toBe("in_progress");
+  await page.locator(".learning-toolbar").getByRole("link", {
+    name: "返回全部藥品", exact: true,
+  }).click();
+  await expect(directoryRow).toContainText("已作答 2／2 題 · 已答對 1 題");
+  await directoryRow.getByRole("link", { name: "繼續學習", exact: true }).click();
+  await expect(quiz.getByLabel("可以直接判定安全", { exact: true })).toBeChecked();
+  await expect(quiz.locator(".quiz-progress")).toContainText("已作答 2／2 題 · 已答對 1 題");
   await quiz.getByLabel("不可以，需確認資料", { exact: true }).check();
   await quiz.getByRole("button", { name: "檢查答案", exact: true }).click();
   await expect(
@@ -140,6 +157,12 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await expect(
     quiz.getByRole("group", { name: "理解測驗完成", exact: true }),
   ).toBeFocused();
+  await page.locator(".learning-toolbar").getByRole("link", {
+    name: "返回全部藥品", exact: true,
+  }).click();
+  await expect(directoryRow).toContainText("已作答 2／2 題 · 已答對 2 題");
+  await directoryRow.getByRole("link", { name: "重新複習", exact: true }).click();
+  await expect(quiz.getByRole("group", { name: "理解測驗完成", exact: true })).toBeVisible();
   await page.reload();
   await expect(
     quiz.getByText("答對了。已完成測驗，進度已保存。", { exact: true }),
