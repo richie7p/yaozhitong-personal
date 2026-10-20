@@ -25,7 +25,7 @@ GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的�
 在另一台電腦安裝 Git、Node.js 22.16 以上，下載專案：
 
 ```powershell
-git clone --branch feature/personal-learning https://github.com/richie7p/yaozhitong-personal.git
+git clone --branch master https://github.com/richie7p/yaozhitong-personal.git
 cd yaozhitong-personal
 npm ci
 cp .env.example .env
