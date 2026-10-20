@@ -4,7 +4,7 @@
 
 ## 目前狀態（2026-10-20）
 
-雲端與本機使用同一套介面，文字／影像均採 OpenAI `gpt-6-luna`、思考設定 `none`。Web 與 worker 使用同一組供應商、模型及對應 Secret，不自動跨供應商備援。現行映像為 `20261020-hosting-auth`，worker／web 各有100%流量指向本次修正 revision，兩者的 `APP_URL` 都使用[同網域 Hosting TEST 入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)。首次兩個AI任務的 `20261020-first-test` 及上一個登入修正版 `20261020-google-auth` 均保留為歷史基準；各映像的固定 digest 與各自驗收結果見[可攜驗收摘要](acceptance/cloud-first-deploy-20261020.json)。
+雲端與本機使用同一套介面，文字／影像均採 OpenAI `gpt-6-luna`、思考設定 `none`。Web與worker使用同一組供應商、模型及對應Secret，不自動跨供應商備援。**現行映像為 `20261020-google-identity`**，Web revision `yzt-test-web-00006-4zr`、worker `yzt-test-worker-00006-ndf`各有100%流量，兩者的 `APP_URL` 都使用[同網域 Hosting TEST 入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)。新版 **620／620程式測試、54／54桌面／手機回歸、8／8雲端版本檢查及20／20Hosting入口檢查**通過；實際Google按鈕與帳號選擇頁可用，仍等待本人完成既有視窗，尚未驗證成功返回應用，擁有者／管理員初始化未執行。先前各映像與失敗紀錄均保留為歷史，各自digest及驗收範圍見[可攜驗收摘要](acceptance/cloud-first-deploy-20261020.json)。
 
 已完成的固定雲端範圍：
 
@@ -23,9 +23,19 @@ Google provider 的 Email scope／資料補齊與登出再登入修正，已完�
 
 Hosting 已實際發布純rewrite設定、0個靜態檔案；`20261020-hosting-auth` 的入口檢查於11:31:25Z完成 **18／18**：首頁／健康／設定可達、同網域Firebase helper與service worker邊界正確、合成帳號密碼登入及Bearer／POST轉送、私人回覆 `no-store` 且匿名不會取得已登入快取、原1筆藥品與4題測驗可讀。任務仍為原2筆，沒有新增模型呼叫。這是Hosting入口驗收，尚不包含真實Google popup成功callback、實機推播或長時間冷啟動測試。
 
-先前直接Cloud Run入口的真實 Google popup 已到達帳號選擇頁，要求的scope包含 `openid`、`profile`、`email`，但應用顯示 `auth/popup-closed-by-user`，當時後端未出現Google provider帳號。唯讀檢查確認Google provider已啟用、client ID相符且有client secret，HTTP為 `Cross-Origin-Opener-Policy: same-origin-allow-popups`、沒有COEP，檢查時console無錯誤輸出。改用Hosting後，先觀察到 `about:blank` 彈窗；後續確認callback已載入且彈窗自動關閉，主頁仍回報 `auth/popup-closed-by-user`，沒有完成登入。**同網域Hosting本身未解決此問題**；同頁重新導向登入的修正與驗收進行中，不能把18項入口或90項基礎設施通過當作Google登入成功。實際擁有者帳號及管理員初始化也未完成。
+歷史Firebase popup測試：直接Cloud Run入口已到達帳號選擇頁，要求的scope包含 `openid`、`profile`、`email`，但應用顯示 `auth/popup-closed-by-user`，當時後端未出現Google provider帳號。唯讀檢查確認Google provider已啟用、client ID相符且有client secret，HTTP為 `Cross-Origin-Opener-Policy: same-origin-allow-popups`、沒有COEP，檢查時console無錯誤輸出。改用Hosting後，先觀察到 `about:blank` 彈窗；後續確認callback已載入且彈窗自動關閉，主頁仍回報 `auth/popup-closed-by-user`，沒有完成登入。**同網域Hosting本身未解決當時的Firebase popup問題**；這是舊版本結果，不能把18項入口或90項基礎設施通過當作Google登入成功，也不將該失敗套用到目前GIS按鈕。
 
-最新 `20261020-hosting-auth` 映像部署後唯讀基礎設施檢查於11:33:18Z完成 **90／90**，涵蓋初次映像86項、上一個登入修正版的兩項Google OAuth audience及本次Web／worker的兩項公開入口設定。完整範圍包含 Cloud Run 公開／私有邊界、服務最少0／最多2、runtime／caller／builder直接 IAM、Secret 引用、儲存生命週期、Cloud Tasks／Scheduler 設定、四組 READY 索引、每日備份保留7天及已發布的拒絕直接存取規則。初次部署後另以已登入合成使用者 token 直接讀取自己的既有 Firestore 帳號文件，得到預期 **403 `PERMISSION_DENIED`**；此個別探測沒有算成90項的一部分。各映像的86／88／90項結果分開保存，唯讀檢查沒有新增 AI 或改動雲端資源；組織／資料夾繼承 IAM 不在這次檢查範圍。
+同頁重新導向修正已完成本機 **587／587程式測試**（包含38項登入專項）、**54／54桌面／手機回歸**、型別與建置；回歸使用隔離合成資料與模擬AI。`20261020-google-redirect` 於11:46:55Z完成建置，之後已部署為Web revision `yzt-test-web-00005-2vp`、worker `yzt-test-worker-00005-ksh`。11:49:06Z的 **8／8** 唯讀檢查確認兩者就緒、映像digest相符、各100%流量及Hosting `APP_URL`；11:49:11Z重跑Hosting入口 **18／18** 通過，保留原藥品／測驗與2個AI任務，沒有新增模型呼叫。完整90項基礎設施檢查未在此映像重跑；部署腳本未變，74／17項仍屬先前腳本檢查。
+
+歷史redirect測試：當時Google登入改用 `signInWithRedirect`，返回頁先完成單次共用的 `getRedirectResult`、後端憑證核對與信箱補齊，再訂閱登入狀態。實際已在同頁完成Google選帳與Continue，但返回Hosting後持續顯示載入；11:55:08Z唯讀核對仍為0個Google provider帳號、沒有實際擁有者帳號，0資料異動、0AI。**該版本Google登入未通過，擁有者／管理員初始化未執行**。當時SDK錯誤與核對失敗能顯示錯誤，但尚未涵蓋這次持續無回應；後續GIS版加入下述期限與恢復。「帳號與設定」的明確Google帳號連結仍用 `linkWithPopup`，尚未完成真實雲端驗收。
+
+已部署的 `20261020-google-identity` 改用Google官方GIS按鈕直接取得Google ID token，再經 `signInWithCredential` 換取Firebase登入；後端仍核對原Google憑證的audience、subject與已驗證信箱，不採用客戶端自稱的身份。**620／620程式測試**通過，包含 `google-auth` 33、`google-profile` 21、GIS按鈕17，共71項專項；本輪 **54／54桌面／手機回歸**也已通過，含正式建置並使用模擬AI。Cloud Build於12:10:29Z成功；12:12:56Z版本核對 **8／8**，12:13:01ZHosting入口 **20／20** 通過，新增檢查GIS需要的Referrer-Policy與公開client ID，原2個AI任務保持不變、0新增模型呼叫。實際登入頁已顯示官方Google按鈕、沒有原先啟動卡住，並開啟Google帳號選擇頁；操作工具在Google視窗遇到連線逾時，已交由本人完成，**目前尚無正向Google登入證據**。這項等待不等於應用登入失敗。既有587／54及8／18仍屬上方redirect映像，90項完整基礎設施仍屬更早Hosting映像。
+
+GIS版從公開config取得既有Google Web client ID，Firebase以記憶體模式初始化且不載入登入iframe resolver。官方按鈕載入期限15秒；取得GIS憑證後的Firebase交換、後端核對、重新整理token與 `/me` 共用30秒期限。錯誤會顯示重試／Email入口；逾時後封鎖晚到結果，需重新載入登入頁才能建立新登入，背景登出不會卡住錯誤畫面。沒有公開client ID時保留舊redirect路徑，其返回初始化與首次帳號讀取也受30秒期限限制；這不代表缺少必要OAuth設定仍可完成Google登入。明確帳號連結仍使用獨立的Firebase popup，另待真實驗收。
+
+本次僅唯讀核對既有OAuth Web client的Authorized JavaScript origins已包含Hosting入口，未新增授權scope、Google服務或憑證。GIS使用 `https://PROJECT_ID.firebaseapp.com` 入口，不把直接Cloud Run網址當作這次GIS的操作入口。回覆採 `Referrer-Policy: strict-origin-when-cross-origin`，跨站只傳origin；私人API仍是Bearer驗證及 `no-store`。
+
+較早 `20261020-hosting-auth` 映像部署後唯讀基礎設施檢查於11:33:18Z完成 **90／90**，涵蓋初次映像86項、登入修正版的兩項Google OAuth audience及該次Web／worker的兩項公開入口設定。完整範圍包含 Cloud Run 公開／私有邊界、服務最少0／最多2、runtime／caller／builder直接 IAM、Secret 引用、儲存生命週期、Cloud Tasks／Scheduler 設定、四組 READY 索引、每日備份保留7天及已發布的拒絕直接存取規則。初次部署後另以已登入合成使用者 token 直接讀取自己的既有 Firestore 帳號文件，得到預期 **403 `PERMISSION_DENIED`**；此個別探測沒有算成90項的一部分。各映像的86／88／90項結果分開保存，未轉標為目前GIS映像的完整檢查。唯讀檢查沒有新增 AI 或改動雲端資源；組織／資料夾繼承 IAM 不在這次檢查範圍。
 
 Scheduler 每分鐘檢查已有成功執行紀錄；每週主檔更新排程已啟用且目標／OIDC 正確，但尚未到首次執行時間，因此不列為排程執行成功。備份是設定核對，尚未執行還原。下方保留可重現的環境準備、離線檢查與部署指令；真實 OAuth、裝置通知與故障復原等剩餘範圍如下。
 
@@ -33,7 +43,7 @@ Scheduler 每分鐘檢查已有成功執行紀錄；每週主檔更新排程已�
 
 後續目標是讓一般使用者以拍照或上傳圖片完成辨識、核對、仿單說明與理解測驗。上雲先採小範圍受邀測試，完成下列項目後再評估全面開放：
 
-- 先完成實際擁有者帳號登入與管理員初始化，解決Google popup成功callback尚未確認的問題；再以真實使用者驗收註冊、驗證信、密碼重設、重新登入與兩裝置，另驗收撤銷照護、資料匯出及刪除。合成帳號已通過兩帳號應用隔離及密碼登出再登入，這不替代上述完整帳號生命週期。
+- 先完成GIS Google登入、帳號補齊及實際擁有者／管理員初始化的真實驗收，並驗證取消／逾時後的重新載入與Email登入；再以真實使用者驗收註冊、驗證信、密碼重設、重新登入與兩裝置，另驗收明確帳號連結、撤銷照護、資料匯出及刪除。合成帳號已通過兩帳號應用隔離及密碼登出再登入，這不替代上述完整帳號生命週期。
 - 在雲端實際注入建立回應遺失、排入佇列失敗、輪詢斷線、程序中止及重新啟動；確認同一次操作只建立一個任務並計次一次。本次重送相同請求已通過，尚未注入這些故障。
 - 以實際手機驗收相機／圖片選取、不同光線、說明及測驗保存，並另驗收前背景推播；沒有官方來源時明示資料不足。
 - 擴大雲端已核對官方仿單與藥品的覆蓋；本次僅一款藥完成說明／測驗驗收，66,511筆主檔不等於每筆都有可發布仿單。
@@ -52,7 +62,9 @@ Scheduler 每分鐘檢查已有成功執行紀錄；每週主檔更新排程已�
 7. 先在目標專案建立／確認 `asia-east1` 的預設 Firestore 資料庫，部署下方四組索引並等待 READY，再更新服務。新資料庫也需要索引。
 8. 若採用下方同網域 Hosting 入口，Firebase Web config 的 `authDomain` 須為 `PROJECT_ID.firebaseapp.com`。先核對既有 Hosting 網站用途及 live release，再發布轉送設定；Firebase CLI 需已登入有部署權限的帳號。入口驗收後，後續完整部署都帶入同一個 `-PublicAppUrl`。
 
-Google 登入會明確要求 `email` scope；後端驗證 Google ID token 的簽章、指定 audience、issuer、時效及 `email_verified`，並要求其 `sub` 與目前登入 UID 的 Firebase Google provider 身分一致。只有該 UID 尚無信箱時才補入，不以 Email 尋找或合併另一 UID，也不取代或驗證既有密碼登入信箱。登入介面等資料補齊完成才進入主畫面，失敗會退出該次登入；登出後重新登入會重新設定 token provider。
+Google登入沿用既有身份／信箱授權，舊Firebase provider路徑明確要求 `email` scope；新版GIS只啟用官方登入按鈕，不啟用One Tap或要求其他Google服務權限。後端驗證Google ID token的簽章、指定audience、issuer、時效及 `email_verified`，並要求其 `sub` 與目前登入UID的Firebase Google provider身分一致。只有該UID尚無信箱時才補入，不以Email尋找或合併另一UID，也不取代或驗證既有密碼登入信箱。登入介面等資料補齊及帳號讀取完成才進入主畫面；登出後重新登入會重新設定token provider。
+
+程式在 `initializeAuth` 時就設定 `inMemoryPersistence`：有公開client ID時使用GIS憑證交換，不初始化Firebase登入helper；沒有client ID時才保留具期限的舊redirect流程。Firebase登入狀態以記憶體保存，應用不自行把Google／Firebase憑證寫入 `localStorage`／`sessionStorage`；重新整理後需重新登入。Google／Firebase SDK仍管理各自短期流程狀態，不能解讀成瀏覽器完全不使用儲存。詳見[資料隔離說明](API.md#資料集合與隔離)。
 
 維運限制：Firebase Admin 的 `getUser` 後接 `updateUser` 沒有原子式「信箱仍為空才寫入」條件；另一管理程序若在兩者之間替同一 UID 設定信箱，仍可能產生競態。補齊過程前已重新核對停用狀態及 provider 身分，維運時仍應避免同步進行該 UID 的信箱變更；本次不宣稱已驗證所有帳號管理併發情境。
 
@@ -167,7 +179,7 @@ OpenAI 測試專案範例：
 
 ## 同網域 Firebase Hosting 入口
 
-此選項讓應用與 Firebase 登入輔助頁共用 `https://PROJECT_ID.firebaseapp.com`。入口須與 Firebase Web config 的 `authDomain` 一致，因此這個設定使用 `firebaseapp.com`，不改用另一個 `web.app` 網域。TEST已依下列流程完成發布及18項入口檢查；Google彈窗仍未成功登入，同頁重新導向修正須另驗收。
+此選項讓應用與Firebase登入輔助頁共用 `https://PROJECT_ID.firebaseapp.com`。入口須與Firebase Web config的 `authDomain` 一致，因此這個設定使用 `firebaseapp.com`，不改用另一個 `web.app` 網域。TEST已依下列流程完成發布，Hosting與redirect歷史映像各通過18項入口檢查，現行GIS映像通過20項。Google登入現採官方GIS按鈕，已開啟帳號選擇頁，成功返回仍待本人完成後驗收。
 
 先把包含 service worker 修正的應用部署到既有 Web Cloud Run 並確認可用，再檢查目標 Firebase Hosting 網站的 live release：應為空網站或已屬於本應用。新的 Hosting release 會取代該網站原有設定；`-ValidateOnly` 不讀取雲端狀態，也不會替你檢查既有用途。
 

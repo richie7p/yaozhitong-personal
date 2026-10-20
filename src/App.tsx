@@ -20,6 +20,7 @@ import {
   History as HistoryIcon,
 } from "lucide-react";
 import { useAuth } from "./auth";
+import { GoogleSignInButton } from "./GoogleSignInButton";
 import { Button, Busy, Field, Notice, SectionTitle } from "./components";
 import { Medications, AddMedication, Learning, Chat } from "./MedicationViews";
 import { Care, Cabinet, Profile, Admin, History } from "./ManagementViews";
@@ -351,7 +352,7 @@ export function App() {
   );
 }
 function Login() {
-  const { config, login } = useAuth();
+  const { config, login, googleCredential, authError } = useAuth();
   const [mode, setMode] = useState("login"),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -426,6 +427,17 @@ function Login() {
           <span className="eyebrow">藥智通 / 個人用藥</span>
           <h2>{mode === "register" ? "開始你的健康日常" : "歡迎回來"}</h2>
           <p className="muted">開啟你的藥品、說明與服藥紀錄。</p>
+          {authError && (
+            <>
+              <Notice error>{authError}</Notice>
+              <Button
+                className="secondary full"
+                onClick={() => location.reload()}
+              >
+                重新載入登入頁
+              </Button>
+            </>
+          )}
           {config?.error && <Notice error>{config.error}</Notice>}
           {config?.error ? (
             <Button className="primary full" onClick={() => location.reload()}>
@@ -450,13 +462,29 @@ function Login() {
             </>
           ) : (
             <>
-              <Button
-                className="google"
-                disabled={busy}
-                onClick={() => go("google")}
-              >
-                <strong>G</strong>使用 Google 登入
-              </Button>
+              {config?.googleOAuthClientId ? (
+                <GoogleSignInButton
+                  clientId={config.googleOAuthClientId}
+                  disabled={busy}
+                  onCredential={async (idToken) => {
+                    setBusy(true);
+                    setMessage("");
+                    try {
+                      await googleCredential(idToken);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                />
+              ) : (
+                <Button
+                  className="google"
+                  disabled={busy}
+                  onClick={() => go("google")}
+                >
+                  <strong>G</strong>使用 Google 登入
+                </Button>
+              )}
               <div className="divider">或使用電子信箱</div>
               <form
                 onSubmit={(e) => {

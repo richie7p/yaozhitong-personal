@@ -3,7 +3,7 @@
   "scope": "First controlled Google Cloud TEST deployment and fixed synthetic recognition-to-learning acceptance",
   "environment": "test",
   "region": "asia-east1",
-  "status": "fixed_cloud_flow_and_infrastructure_checks_passed",
+  "status": "controlled_test_deployed_fixed_flow_passed_real_google_sign_in_pending",
   "cloudDeployed": true,
   "publicProductionReady": false,
   "clinicalValidationPerformed": false,
@@ -20,6 +20,26 @@
   },
   "deployment": {
     "currentImage": {
+      "imageTag": "20261020-google-identity",
+      "imageDigest": "sha256:de57b67b16b5202a02e4f90613953ccd225991146c9405a38ec8efde9b69ddae",
+      "buildStatus": "SUCCESS",
+      "buildFinishedAt": "2026-10-20T12:10:29.994666Z",
+      "workerRevision": "yzt-test-worker-00006-ndf",
+      "webRevision": "yzt-test-web-00006-4zr",
+      "trafficPercentPerService": 100,
+      "scope": "Eight revision checks and twenty Hosting entry checks passed without new AI inference. Official GIS button and Google account chooser observed; awaiting manual completion and successful authenticated application return. Full infrastructure audit was not rerun on this image."
+    },
+    "previousRedirectImage": {
+      "imageTag": "20261020-google-redirect",
+      "imageDigest": "sha256:83ccd8797b4e2906dd532e978c22c769db254b53c4db3a286d223195261d8829",
+      "buildStatus": "SUCCESS",
+      "buildFinishedAt": "2026-10-20T11:46:55.736595Z",
+      "workerRevision": "yzt-test-worker-00005-ksh",
+      "webRevision": "yzt-test-web-00005-2vp",
+      "trafficPercentPerService": 100,
+      "scope": "Eight revision checks and eighteen repeated Hosting entry checks; no new AI inference or full infrastructure rerun. Real Google selection and Continue returned to Hosting, but application initialization remained loading and Google sign-in did not pass."
+    },
+    "previousHostingImage": {
       "imageTag": "20261020-hosting-auth",
       "imageDigest": "sha256:ca859e5752a518b343e5a2926b087b67b9e9b210175a4617acbb8a0b89aa7b53",
       "buildStatus": "SUCCESS",
@@ -50,10 +70,16 @@
       "cause": "Dedicated builder lacked storage.buckets.get on its build source/log bucket.",
       "fix": "Added roles/storage.bucketViewer only on the build bucket; retained bucket-scoped objectAdmin and repository-scoped artifact writer.",
       "offlineDeploymentChecksPassedAfterFix": 43,
-      "offlineDeploymentShells": ["PowerShell 7", "Windows PowerShell 5.1"],
+      "offlineDeploymentShells": [
+        "PowerShell 7",
+        "Windows PowerShell 5.1"
+      ],
       "applicationRuntimeCodeChangedForThisFix": false
     },
-    "authenticationProvidersConfigured": ["password", "google.com"],
+    "authenticationProvidersConfigured": [
+      "password",
+      "google.com"
+    ],
     "allowDuplicateEmails": true,
     "authenticationSubtype": "IDENTITY_PLATFORM",
     "authenticationSubtypeSource": "Official Firebase provider provisioning result",
@@ -61,13 +87,18 @@
     "firestoreRequiredCompositeIndexesReady": 4
   },
   "hostingFollowup": {
+    "imageTag": "20261020-hosting-auth",
+    "historical": true,
     "status": "deployed_entry_checks_passed_google_popup_failed_redirect_fix_pending",
     "publicUrl": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
     "authDomainMatchesPublicOrigin": true,
     "appUrlConfiguredInBothServices": true,
     "staticFilesDeployed": 0,
     "configuration": "Pure rewrite to the existing public web Cloud Run service; no duplicate static application or local data uploaded.",
-    "serviceWorkerReservedNamespaceExcluded": ["/__", "/__/"],
+    "serviceWorkerReservedNamespaceExcluded": [
+      "/__",
+      "/__/"
+    ],
     "workerRemainsPrivate": true,
     "hostingHttpRequestTimeoutSeconds": 60,
     "aiCompatibility": "Browser requests create queued jobs and poll results; model execution remains in the private worker.",
@@ -79,7 +110,10 @@
       "serviceWorkerTestsIncludedInProgramTotal": true,
       "offlineDeploymentChecksPassedPerShell": 74,
       "offlineHostingChecksPassedPerShell": 17,
-      "shells": ["PowerShell 7", "Windows PowerShell 5.1"],
+      "shells": [
+        "PowerShell 7",
+        "Windows PowerShell 5.1"
+      ],
       "shellsRunSequentially": true,
       "mockCliCleanupVerified": true,
       "cloudCalls": 0,
@@ -119,7 +153,7 @@
       "aiRequests": 0,
       "interactiveGoogleLogin": "pending"
     },
-    "fullCurrentImageInfrastructureAuditPassed": true,
+    "fullHostingImageInfrastructureAuditPassed": true,
     "interactiveGoogleObservation": {
       "status": "callback_loaded_popup_closed_login_failed_redirect_fix_pending",
       "earlierPopupUrlObserved": "about:blank",
@@ -132,6 +166,230 @@
       "hostingAloneResolvedPopupFailure": false,
       "sameTabRedirectFixStatus": "in_progress",
       "cause": "unknown"
+    }
+  },
+  "googleRedirectFollowup": {
+    "status": "deployed_revision_and_hosting_checks_passed_real_google_return_stuck_loading",
+    "imageTag": "20261020-google-redirect",
+    "changes": [
+      "Initialize Firebase Auth with inMemoryPersistence before redirect user restoration",
+      "Use signInWithRedirect for Google sign-in with explicit email scope",
+      "Share one getRedirectResult/profile-bootstrap completion before observing the application session",
+      "Show SDK/profile-verification failures on the login page and retain retry or Email login",
+      "Treat a null redirect result as an ordinary page load; missing results are not always distinguishable from interrupted flows",
+      "Do not add application-managed persistent Firebase or OAuth token storage"
+    ],
+    "explicitGoogleAccountLinking": {
+      "method": "linkWithPopup",
+      "separateFromRedirectSignIn": true,
+      "realCloudAcceptancePassed": false
+    },
+    "localValidation": {
+      "status": "passed",
+      "programTestsPassed": 587,
+      "focusedGoogleAuthTestsPassed": 38,
+      "focusedTestsIncludedInProgramTotal": true,
+      "desktopAndMobileBrowserTestsPassed": 54,
+      "browserTestsUseSyntheticDataAndMockAi": true,
+      "typecheck": "passed",
+      "productionBuild": "passed",
+      "deploymentScriptsChangedSinceHostingValidation": false,
+      "previousDeploymentAndHostingCountsAreHistorical": true,
+      "aiRequests": 0
+    },
+    "revisionValidation": {
+      "status": "passed",
+      "checkedAt": "2026-10-20T11:49:06.2013795Z",
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        "yzt-test-web.ready",
+        "yzt-test-web.exact_image",
+        "yzt-test-web.hosting_app_url",
+        "yzt-test-web.full_ready_traffic",
+        "yzt-test-worker.ready",
+        "yzt-test-worker.exact_image",
+        "yzt-test-worker.hosting_app_url",
+        "yzt-test-worker.full_ready_traffic"
+      ],
+      "cloudMutations": 0,
+      "aiRequests": 0
+    },
+    "hostingEntryValidation": {
+      "status": "passed",
+      "checkedAt": "2026-10-20T11:49:11.906Z",
+      "passed": 18,
+      "failed": 0,
+      "checks": [
+        "hosting_health",
+        "app_shell_forwarded",
+        "app_shell_no_store",
+        "popup_compatible_coop",
+        "same_origin_auth_domain",
+        "config_no_store",
+        "reserved_namespace_excluded_from_sw",
+        "firebase_helper_not_app_shell",
+        "anonymous_api_denied",
+        "synthetic_password_login",
+        "authorization_bearer_forwarded",
+        "same_identity_as_cloud_run",
+        "private_api_no_store",
+        "authenticated_response_not_cached_for_anonymous",
+        "authenticated_post_forwarded",
+        "saved_medication_readable",
+        "saved_leaflet_and_quiz_readable",
+        "no_additional_ai_jobs"
+      ],
+      "accountAiJobs": 2,
+      "newAiJobs": 0,
+      "aiRequests": 0
+    },
+    "fullInfrastructureAuditRerunOnThisImage": false,
+    "previousNinetyChecksReattributedToThisImage": false,
+    "realGoogleRedirectObservation": {
+      "sameTabNavigationToGoogleVerified": true,
+      "googleAccountSelectionPageReached": true,
+      "googleAccountSelectionAndContinueCompleted": true,
+      "awaitingUserCompletion": false,
+      "returnedToHosting": true,
+      "applicationRemainedLoading": true,
+      "successfulAuthenticatedAppReturnVerified": false,
+      "realCloudGoogleOAuthPassed": false,
+      "actualOwnerAccountBootstrapCompleted": false,
+      "readonlyAccountCheck": {
+        "checkedAt": "2026-10-20T11:55:08Z",
+        "googleProviderAccountCount": 0,
+        "actualOwnerPresent": false,
+        "cloudMutations": 0,
+        "aiRequests": 0
+      },
+      "timeoutAndRecoveryFixStatus": "implemented_and_deployed_in_subsequent_google_identity_image_with_local_tests"
+    }
+  },
+  "googleIdentityFollowup": {
+    "status": "deployed_revision_and_hosting_checks_passed_awaiting_manual_google_completion",
+    "configuredEntry": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+    "existingOAuthJavaScriptOriginVerifiedReadOnly": true,
+    "directCloudRunUrlUsedAsGisEntry": false,
+    "newGoogleScopesServicesOrCredentialsAdded": false,
+    "changes": [
+      "Publish the existing public Google Web client ID in Firebase-mode config",
+      "Use the official Google Identity Services button and exchange its Google ID token through Firebase signInWithCredential",
+      "Initialize Firebase with memory persistence and no popup/redirect iframe resolver when the public client ID is configured",
+      "Retain backend verification of audience, issuer, expiry, verified email and Google subject bound to the authenticated Firebase UID",
+      "Expose the application session only after profile verification, token refresh and account read complete",
+      "Suppress duplicate or stale button callbacks, disposed mounts and callbacks during another active login",
+      "Keep a bounded legacy redirect path for configurations without a public client ID",
+      "Use an origin-only cross-site Referrer-Policy while retaining Bearer authentication and no-store"
+    ],
+    "timeoutsAndRecovery": {
+      "gisScriptLoadTimeoutMs": 15000,
+      "credentialExchangeProfileAndAccountReadTimeoutMs": 30000,
+      "legacyRedirectInitializationAndFirstAccountReadTimeoutMs": 30000,
+      "lateResultsCannotRestoreTimedOutSession": true,
+      "signOutCannotBlockErrorDisplay": true,
+      "reloadRequiredAfterSessionTimeout": true,
+      "applicationPersistsGoogleOrFirebaseTokens": false
+    },
+    "localValidation": {
+      "status": "passed",
+      "programTestsPassed": 620,
+      "focusedTests": {
+        "googleAuth": 33,
+        "googleProfile": 21,
+        "googleIdentityButton": 17,
+        "total": 71,
+        "includedInProgramTotal": true
+      },
+      "typecheck": "passed",
+      "productionBuild": "passed",
+      "desktopAndMobileBrowserRegression": {
+        "status": "passed",
+        "passed": 54,
+        "total": 54,
+        "includesProductionBuild": true,
+        "aiMode": "mock"
+      },
+      "previousBrowserCountReusedAsThisVersionResult": false,
+      "aiRequests": 0
+    },
+    "realCloudGoogleOAuthPassed": false,
+    "actualOwnerAccountBootstrapCompleted": false,
+    "explicitGoogleAccountLinking": {
+      "method": "linkWithPopup",
+      "realCloudAcceptancePassed": false
+    },
+    "deployedImage": {
+      "imageTag": "20261020-google-identity",
+      "imageDigest": "sha256:de57b67b16b5202a02e4f90613953ccd225991146c9405a38ec8efde9b69ddae",
+      "buildStatus": "SUCCESS",
+      "buildFinishedAt": "2026-10-20T12:10:29.994666Z",
+      "deployed": true,
+      "workerRevision": "yzt-test-worker-00006-ndf",
+      "webRevision": "yzt-test-web-00006-4zr",
+      "trafficPercentPerService": 100
+    },
+    "revisionValidation": {
+      "status": "passed",
+      "checkedAt": "2026-10-20T12:12:56.7759014Z",
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        "yzt-test-web.ready",
+        "yzt-test-web.exact_image",
+        "yzt-test-web.hosting_app_url",
+        "yzt-test-web.full_ready_traffic",
+        "yzt-test-worker.ready",
+        "yzt-test-worker.exact_image",
+        "yzt-test-worker.hosting_app_url",
+        "yzt-test-worker.full_ready_traffic"
+      ],
+      "aiRequests": 0,
+      "cloudMutations": 0
+    },
+    "hostingEntryValidation": {
+      "status": "passed",
+      "checkedAt": "2026-10-20T12:13:01.131Z",
+      "passed": 20,
+      "failed": 0,
+      "checks": [
+        "hosting_health",
+        "app_shell_forwarded",
+        "app_shell_no_store",
+        "popup_compatible_coop",
+        "google_identity_referrer_policy",
+        "same_origin_auth_domain",
+        "google_identity_public_client_configured",
+        "config_no_store",
+        "reserved_namespace_excluded_from_sw",
+        "firebase_helper_not_app_shell",
+        "anonymous_api_denied",
+        "synthetic_password_login",
+        "authorization_bearer_forwarded",
+        "same_identity_as_cloud_run",
+        "private_api_no_store",
+        "authenticated_response_not_cached_for_anonymous",
+        "authenticated_post_forwarded",
+        "saved_medication_readable",
+        "saved_leaflet_and_quiz_readable",
+        "no_additional_ai_jobs"
+      ],
+      "aiRequests": 0,
+      "accountAiJobs": 2,
+      "newAiJobs": 0
+    },
+    "fullInfrastructureAuditRerunOnThisImage": false,
+    "previousNinetyChecksReattributedToThisImage": false,
+    "realGoogleIdentityObservation": {
+      "officialGoogleButtonRendered": true,
+      "applicationStartupRemainedLoading": false,
+      "googleAccountSelectionPageReached": true,
+      "awaitingManualCompletion": true,
+      "automationLimitation": "Browser tool timed out while interacting with the Google popup; the existing window was handed to the user for completion.",
+      "applicationLoginFailureEstablishedByThisObservation": false,
+      "successfulAuthenticatedAppReturnVerified": false,
+      "realCloudGoogleOAuthPassed": false,
+      "actualOwnerAccountBootstrapCompleted": false
     }
   },
   "fixture": {
@@ -160,7 +418,11 @@
     "status": "published",
     "checkedBy": "codex-source-verification",
     "verificationScope": "Literal official-source verification, not medical or pharmacist review",
-    "completeSafetySections": ["副作用", "注意事項", "警語"],
+    "completeSafetySections": [
+      "副作用",
+      "注意事項",
+      "警語"
+    ],
     "claimCount": 4,
     "quizCount": 4,
     "safetyValidation": [
@@ -176,6 +438,7 @@
     "rounds": [
       {
         "kind": "first_real_ai_execution",
+        "imageTag": "20261020-first-test",
         "startedAt": "2026-10-20T10:40:32.488Z",
         "finishedAt": "2026-10-20T10:41:20.424Z",
         "passedSteps": 8,
@@ -186,6 +449,7 @@
       },
       {
         "kind": "same_state_and_idempotency_keys_replay",
+        "imageTag": "20261020-first-test",
         "startedAt": "2026-10-20T10:42:11.865Z",
         "finishedAt": "2026-10-20T10:42:32.904Z",
         "passedSteps": 8,
@@ -228,6 +492,7 @@
     "realFaultInjectionPerformed": false
   },
   "modelUsage": {
+    "inferenceImageTag": "20261020-first-test",
     "provider": "openai",
     "model": "gpt-6-luna",
     "reasoningEffort": "none",
@@ -241,14 +506,19 @@
         "attempts": 1,
         "latencyMs": 10157,
         "reportedTokens": 2822,
-        "providerStages": ["vision"]
+        "providerStages": [
+          "vision"
+        ]
       },
       {
         "kind": "bundle",
         "attempts": 1,
         "latencyMs": 8074,
         "reportedTokens": 4528,
-        "providerStages": ["generation", "verification"]
+        "providerStages": [
+          "generation",
+          "verification"
+        ]
       }
     ],
     "costScope": "Two application jobs are not a two-HTTP-request cap. Replay reused the original jobs. No currency cost is inferred from combined tokens."
@@ -287,6 +557,8 @@
     }
   },
   "googleAuthFollowup": {
+    "imageTag": "20261020-google-auth",
+    "historical": true,
     "status": "local_validation_cloud_replay_and_rejection_checks_passed_real_oauth_pending",
     "changes": [
       "Explicit Google email scope",
@@ -309,7 +581,10 @@
         "checkedAt": "2026-10-20T11:01:56.175Z"
       },
       "offlineDeploymentChecksPassedPerShell": 46,
-      "offlineDeploymentShells": ["PowerShell 7", "Windows PowerShell 5.1"],
+      "offlineDeploymentShells": [
+        "PowerShell 7",
+        "Windows PowerShell 5.1"
+      ],
       "offlineDeploymentShellsRunSequentially": true,
       "initialParallelHarnessFailure": "Shared temporary-file scanning observed the other shell's in-progress file; sequential reruns passed, with no actual credential leak found.",
       "independentSecurityReview": "no_blocker_reported"
@@ -333,7 +608,11 @@
     "realGooglePopupObservation": {
       "entryAtObservation": "direct Cloud Run URL before same-origin Hosting deployment",
       "accountChooserReached": true,
-      "requestedScopes": ["openid", "profile", "email"],
+      "requestedScopes": [
+        "openid",
+        "profile",
+        "email"
+      ],
       "successfulAccountSelectionAndAppReturnVerified": false,
       "completionStatus": "unresolved_callback_pending_verified_successful_app_return",
       "userReportedCompletion": true,
@@ -360,6 +639,7 @@
   "infrastructureValidation": {
     "status": "passed",
     "imageTag": "20261020-hosting-auth",
+    "scopeIsHistoricalAfterRedirectDeployment": true,
     "checkedAt": "2026-10-20T11:33:18Z",
     "passed": 90,
     "failed": 0,
@@ -447,7 +727,9 @@
     "actualCloudBillMeasured": false
   },
   "remainingAcceptance": [
-    "Verified successful real Google popup callback/app return and actual owner/admin account bootstrap",
+    "Verified successful real GIS Google sign-in, profile bootstrap and actual owner/admin account bootstrap",
+    "Real canceled/failed GIS sign-in, timeout/reload recovery and Email login after recovery",
+    "Real explicit Google account linking, which remains a separate popup flow",
     "Real email verification/password-reset delivery",
     "Real-user two-device account lifecycle, care revocation, export and deletion",
     "Physical-device camera/image selection under varied lighting and real foreground/background FCM delivery",
@@ -495,6 +777,11 @@
     {
       "title": "Firebase Hosting cache behavior",
       "url": "https://firebase.google.com/docs/hosting/manage-cache",
+      "checkedOn": "2026-10-20"
+    },
+    {
+      "title": "Google Identity Services JavaScript API",
+      "url": "https://developers.google.com/identity/gsi/web/reference/js-reference",
       "checkedOn": "2026-10-20"
     }
   ],

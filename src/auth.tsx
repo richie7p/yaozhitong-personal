@@ -8,10 +8,6 @@ import {
 } from "react";
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
-  getAuth,
-  setPersistence,
-  inMemoryPersistence,
-  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -30,14 +26,20 @@ import {
 import { api, setJobIdentity, setTokenProvider } from "./api";
 import {
   configureFirebaseTokenProvider,
+  createMemoryFirebaseAuth,
+  firebaseSessionNeedsReload,
   linkGoogle,
+  observeFirebaseSession,
   signInGoogle,
+  signInGoogleCredential,
 } from "./google-auth";
 interface AuthState {
   config: any;
   me: any;
   loading: boolean;
+  authError: string;
   login: (method: string, email?: string, password?: string) => Promise<void>;
+  googleCredential: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   reload: () => Promise<void>;
   verify: () => Promise<void>;
@@ -52,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const googleTransition = useRef(false);
   const [config, setConfig] = useState<any>(null),
     [me, setMe] = useState<any>(null),
-    [loading, setLoading] = useState(true);
+    [loading, setLoading] = useState(true),
+    [authError, setAuthError] = useState("");
   async function reload() {
     const next = await api("/me");
     setJobIdentity(next.account.id);
@@ -60,50 +63,107 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   useEffect(() => {
     let stop = () => {};
+    let disposed = false;
     api("/config")
       .then(async (c) => {
+        if (disposed) return;
         setConfig(c);
         if (c.mode === "local") {
           const t = sessionStorage.getItem("yzt-local-token");
           if (t) {
             setTokenProvider(async () => t);
             try {
-              await reload();
+              const next = await api("/me");
+              if (disposed) return;
+              setJobIdentity(next.account.id);
+              setMe(next);
             } catch {
+              if (disposed) return;
               sessionStorage.removeItem("yzt-local-token");
               setJobIdentity(null);
               setTokenProvider(async () => "");
             }
           }
-          setLoading(false);
+          if (!disposed) setLoading(false);
         } else {
           if (!c.firebase?.apiKey) throw new Error("Firebase 網頁設定尚未完成");
           firebaseApp = initializeApp(c.firebase);
-          firebaseAuth = getAuth(firebaseApp);
+          firebaseAuth = createMemoryFirebaseAuth(
+            firebaseApp,
+            Boolean(c.googleOAuthClientId),
+          );
           firebaseAuth.languageCode = "zh-TW";
-          await setPersistence(firebaseAuth, inMemoryPersistence);
-          configureFirebaseTokenProvider(firebaseAuth);
-          stop = onAuthStateChanged(firebaseAuth, async (u) => {
-            // A popup signs Firebase in before profile bootstrap completes.
-            // Keep the login form mounted until its success/error is known.
-            if (googleTransition.current) return;
-            setJobIdentity(u?.uid || null);
-            try {
-              setMe(u ? await api("/me") : null);
-            } catch {
+          stop = await observeFirebaseSession(
+            firebaseAuth,
+            async (u, isCurrent) => {
+              if (disposed || googleTransition.current || !isCurrent()) return;
+              setJobIdentity(u?.uid || null);
+              try {
+                const next = u ? await api("/me") : null;
+                if (!disposed && !googleTransition.current && isCurrent())
+                  setMe(next);
+              } catch {
+                if (!disposed && !googleTransition.current && isCurrent())
+                  setMe(null);
+              }
+              if (!disposed && isCurrent()) setLoading(false);
+            },
+            (error) => {
+              if (disposed) return;
               setMe(null);
-            }
-            setLoading(false);
-          });
+              setLoading(false);
+              setAuthError(
+                error instanceof Error &&
+                  !String((error as { code?: string }).code || "").startsWith(
+                    "auth/",
+                  )
+                  ? error.message
+                  : "Google 登入未完成，請再試一次或使用電子信箱登入。",
+              );
+            },
+            () => !disposed,
+            Boolean(c.googleOAuthClientId),
+          );
+          if (disposed) stop();
         }
       })
       .catch((e) => {
+        if (disposed) return;
         setConfig({ error: e.message });
         setLoading(false);
       });
-    return () => stop();
+    return () => {
+      disposed = true;
+      stop();
+    };
   }, []);
+  async function googleCredential(idToken: string) {
+    setAuthError("");
+    if (firebaseSessionNeedsReload(firebaseAuth)) {
+      location.reload();
+      return;
+    }
+    googleTransition.current = true;
+    try {
+      const next = await signInGoogleCredential(firebaseAuth, idToken);
+      setJobIdentity(next.account.id);
+      setMe(next);
+    } catch (error) {
+      setJobIdentity(null);
+      setMe(null);
+      setAuthError(
+        error instanceof Error &&
+          !String((error as { code?: string }).code || "").startsWith("auth/")
+          ? error.message
+          : "Google 登入未完成，請再試一次或使用電子信箱登入。",
+      );
+      throw error;
+    } finally {
+      googleTransition.current = false;
+    }
+  }
   async function login(method: string, email = "", password = "") {
+    setAuthError("");
     if (config.mode === "local") {
       const { token } = await api("/auth/local", "POST", { uid: method });
       sessionStorage.setItem("yzt-local-token", token);
@@ -111,15 +171,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await reload();
       return;
     }
+    if (firebaseSessionNeedsReload(firebaseAuth)) {
+      location.reload();
+      return;
+    }
     configureFirebaseTokenProvider(firebaseAuth);
     if (method === "google") {
       googleTransition.current = true;
       try {
         await signInGoogle(firebaseAuth);
-        await reload();
       } catch (error) {
-        await signOut(firebaseAuth).catch(() => {});
+        void signOut(firebaseAuth).catch(() => {});
         setJobIdentity(null);
+        setTokenProvider(async () => "");
         setMe(null);
         throw error;
       } finally {
@@ -207,7 +271,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         config,
         me,
         loading,
+        authError,
         login,
+        googleCredential,
         logout,
         reload,
         verify,

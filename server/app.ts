@@ -19,7 +19,10 @@ export function createApp(d: Domain, auth = authenticate) {
   const app = new Hono<Env>();
   app.use(
     "*",
-    secureHeaders({ crossOriginOpenerPolicy: "same-origin-allow-popups" }),
+    secureHeaders({
+      crossOriginOpenerPolicy: "same-origin-allow-popups",
+      referrerPolicy: "strict-origin-when-cross-origin",
+    }),
   );
   app.use("*", async (c, next) => {
     c.set("requestId", randomUUID());
@@ -47,6 +50,8 @@ export function createApp(d: Domain, auth = authenticate) {
     c.json({
       mode: config.mode,
       firebase: JSON.parse(process.env.FIREBASE_WEB_CONFIG || "{}"),
+      googleOAuthClientId:
+        config.mode === "firebase" ? config.googleOAuthClientId : "",
       vapidKey: process.env.FIREBASE_VAPID_KEY || "",
       ai: !!aiConnection().key,
       aiProvider: config.aiProvider,

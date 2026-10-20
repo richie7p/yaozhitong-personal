@@ -64,6 +64,17 @@ afterEach(() => {
 });
 
 describe("Google profile completion bound to the authenticated Firebase user", () => {
+  it("publishes the Google client ID with an origin-only cross-site referrer policy", async () => {
+    const app = createApp(new Domain(new MemoryStore()));
+    const response = await app.request("/api/v1/config");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Referrer-Policy")).toBe(
+      "strict-origin-when-cross-origin",
+    );
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect((await response.json()).googleOAuthClientId).toBe(clientId);
+  });
+
   it("verifies the configured audience and matching Google sub before filling a missing email", async () => {
     await expect(
       completeGoogleProfile("firebase-a", { googleIdToken }, active),

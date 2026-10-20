@@ -4,9 +4,13 @@
 
 **目前可在本機操作，並已完成 Google Cloud TEST 環境的首次部署與固定流程驗收；尚未開放大眾正式使用。** 驗收是軟體流程與來源逐字核對，不含臨床驗證，也不把藥師簽核列為展示前置。未發布或無法確認來源的藥品呈現資料不足。
 
-2026-10-20 雲端以同一張無個資合成藥袋完成首次兩輪 API 驗收，各 **8／8 通過**；Google登入修正版部署後再重送一輪，也是 **8／8**。範圍為辨識兩款藥、確認保存咳服錠、依一份官方仿單產生說明與4題測驗、答錯再答對、重新登入保存、重送不重複及跨帳號拒絕。三輪沿用同一組任務，合計 **2個 AI 任務、3次實際 OpenAI HTTP 呼叫**；第二、三輪沒有新增任務或模型呼叫，新版重送不算再次執行模型推論。Chrome 另實際登入合成帳號，核對完整副作用／注意事項／警語及答題保存。這些結果不等於多款藥或實拍手機的雲端驗收；主檔已匯入 **66,511筆**，雲端目前只發布咳服錠 **1份**仿單。詳見[首次雲端驗收摘要](docs/acceptance/cloud-first-deploy-20261020.json)。
+雲端入口為 [Firebase Hosting TEST](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)，**現行映像為 `20261020-google-identity`**。最新GIS登入修正已完成 **620／620程式測試、54／54桌面／手機回歸、型別與建置**；71項登入專項包含在620項內，瀏覽器回歸使用模擬AI。部署後版本檢查 **8／8**、Hosting入口 **20／20** 通過，沒有新增AI任務。實際頁面已正常顯示官方Google按鈕並開啟帳號選擇頁，**仍等待本人完成此視窗，尚未驗證成功返回應用**；實際擁有者／管理員初始化也未執行。已驗證的密碼登入與保存流程可用，尚不能視為已完成公開上線。
 
-最新Hosting映像部署後的唯讀基礎設施檢查 **90／90** 通過，涵蓋 Cloud Run、佇列／排程、直接 IAM、私有儲存、Secret 引用、Google OAuth audience、兩個服務的公開入口設定、四組索引與每日備份設定；先前映像的86／86及88／88另保留。Google登入修正版的安全檢查 **5／5** 通過，包含未登入、無效Google憑證、由客戶端指定UID的拒絕及帳號未被更動。另在初次部署後使用已登入合成使用者的 token 直接讀取自己的 Firestore 帳號文件，得到預期403拒絕。尚未執行還原或推播送達演練。
+新接法為 **Google官方GIS按鈕 → Firebase記憶體登入 → 後端憑證核對**，有公開client ID時不初始化Firebase登入helper；應用不自行持久保存Google／Firebase token。按鈕載入15秒、取得憑證後交換與核對30秒逾時會顯示錯誤／重新載入入口，晚到結果不登入。GIS沿用既有OAuth設定及上述Hosting網域，未新增Google服務、scope或憑證；明確帳號連結仍使用獨立彈窗，另待驗收。
+
+2026-10-20 雲端以同一張無個資合成藥袋完成三輪 API 驗收，各 **8／8 通過**。範圍為辨識兩款藥、確認保存咳服錠、依一份官方仿單產生說明與4題測驗、答錯再答對、重新登入保存、重送不重複及跨帳號拒絕。三輪合計 **2個 AI 任務、3次實際 OpenAI HTTP 呼叫**；後兩輪沿用原任務，沒有新增模型推論。Chrome另驗證完整三欄安全文字、答題保存及密碼登出再登入。主檔已匯入 **66,511筆**，雲端只發布咳服錠 **1份**仿單；這些結果不等於多款藥或手機實拍的雲端驗收。
+
+歷史驗收另包含Hosting映像的基礎設施 **90／90**、Google憑證拒絕 **5／5**、已登入使用者直接讀Firestore遭403拒絕，以及redirect映像的版本檢查 **8／8**、Hosting入口 **18／18**。先前Firebase popup登入失敗，同頁redirect返回後也曾持續載入；這些失敗及各版測試數完整保留於[可攜驗收摘要](docs/acceptance/cloud-first-deploy-20261020.json)與[部署紀錄](docs/DEPLOYMENT.md)，不把歷史檢查轉標為本次GIS驗收。
 
 **目前使用同一套「用藥手帳」介面**，以每日用藥清單為首頁、藥品檔案與閱讀目錄為主體。紙白、墨綠、陶土色、章節編號與細分隔線構成視覺；仿單採手冊式排版，保留完整警語、引用及真實測驗保存。本機日常與「研討會展示」都在同一個8085服務內，雲端也使用相同介面。展示模式將已保存結果分為辨識、說明、測驗三步，也能接續現場拍照。詳見 [介面與操作說明](docs/UI-UX-REDESIGN.md)。
 
@@ -28,9 +32,7 @@ GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的�
 
 Google Cloud TEST 已部署於 `asia-east1`，Web／worker 使用相同 OpenAI 模型與 Secret，失敗時不自動跨供應商備援。Firebase 已設定 Email／密碼與 Google provider、授權網域及 VAPID；首次驗收使用合成帳號的實際 Firebase 密碼登入，測試工具預先設定的 `emailVerified:true` 不當成驗證信送達測試。真實 Google OAuth／驗證信、手機相機與推播、雲端故障注入、備份還原、負載及長期觀測仍待完成。NT$500 費用提醒與 Cloud Run 最少0／每服務最多2個執行個體已設定，均不是總費用硬上限；OpenAI 費用另計。詳見[部署設定與未完成驗收](docs/DEPLOYMENT.md)。
 
-Google 登入已補上明確 Email scope，以及後端核對 Google 憑證後補齊同一 Firebase 使用者缺少的信箱；不依相同信箱自動合併帳號，也不覆寫既有信箱。本次修正的本機 **564／564程式測試、54／54桌面／手機流程、生命週期檢查**通過，包含29項登入專項測試；兩種 PowerShell 的部署離線檢查均為 **46／46**。修正版 `20261020-google-auth` 已部署；Chrome再次驗證密碼登入、測驗4／4保存、登出後同頁重新登入及1筆藥品保留。**Google popup 尚未驗證成功返回應用，原因仍待確認；實際擁有者帳號登入與管理員初始化也尚未完成。** 不把設定或拒絕案例通過當作Google成功登入的證據。
-
-同網域 [Firebase Hosting TEST 入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)已發布，與 Firebase `authDomain` 相同，網站與 API 轉送至現有 Web Cloud Run，發布0個靜態檔案。最新映像 `20261020-hosting-auth` 已排除 service worker 對 Firebase `/__` 登入路徑的攔截；實際入口 **18／18** 檢查通過，涵蓋登入輔助頁、Bearer驗證與POST轉送、私人回覆不快取、原1筆藥品及4題測驗可讀，0新AI。**真實 Google 彈窗到達callback後仍未完成登入；同頁重新導向的修正與驗收進行中，Hosting本身沒有解決此問題。** 此版本本機 **578／578程式測試**通過，包含14項 service worker 測試；完整部署 **74／74**、Hosting helper **17／17**離線檢查在兩種 PowerShell 均通過。部署步驟見[同網域 Hosting 入口](docs/DEPLOYMENT.md#同網域-firebase-hosting-入口)；後續完整部署須提供 `-PublicAppUrl 'https://PROJECT_ID.firebaseapp.com'`，保留提醒連結使用的公開網址。
+Hosting與Firebase `authDomain` 相同，網站與API轉送至現有Web Cloud Run，發布0個靜態檔案；service worker排除Firebase保留的 `/__` 路徑。完整部署 **74／74**、Hosting helper **17／17**離線檢查在PowerShell 7與Windows PowerShell 5.1均通過。部署步驟見[同網域 Hosting 入口](docs/DEPLOYMENT.md#同網域-firebase-hosting-入口)；後續完整部署須提供 `-PublicAppUrl 'https://PROJECT_ID.firebaseapp.com'`，保留提醒連結使用的公開網址。
 
 雲端模型解析順序為明確的 `-TextModel`／`-VisionModel` → 目前程序的 `AI_TEXT_MODEL`／`AI_VISION_MODEL` → 所選供應商專用環境變數 → 腳本預設值。OpenAI 預設文字與影像皆為 `gpt-6-luna`；NVIDIA 皆為 `nvidia/nemotron-3.5-super-vl-120b-a12b`。部署腳本不自動讀取 `.env`；實際部署只要求目前程序中所選供應商的 `OPENAI_API_KEY` 或 `NVIDIA_API_KEY`，透過標準輸入上傳至 `yzt-<test|prod>-<openai|nvidia>-key`，不放進指令參數或設定輸出。
 
