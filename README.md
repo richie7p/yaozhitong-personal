@@ -21,7 +21,7 @@ GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的�
 在另一台電腦安裝 Git、Node.js 22.16 以上，下載專案：
 
 ```powershell
-git clone https://github.com/richie7p/yaozhitong-personal.git
+git clone --branch feature/personal-learning https://github.com/richie7p/yaozhitong-personal.git
 cd yaozhitong-personal
 npm ci
 cp .env.example .env
@@ -76,7 +76,7 @@ OPENAI_VISION_MODEL=gpt-6-luna
 
 OpenAI API 金鑰只存入 `.env` 的 `OPENAI_API_KEY`。文字、影像與審核目標均為 `gpt-6-luna`；通用 `AI_TEXT_MODEL`、`AI_VISION_MODEL` 仍優先於 `OPENAI_TEXT_MODEL`、`OPENAI_VISION_MODEL`，本次啟用已通過舊模型覆寫預檢。只使用明確選擇的供應商，失敗時**不自動跨 NVIDIA／OpenAI 切換**。金鑰不放前端、Git、日誌或指令參數。
 
-Luna 沿用 Chat Completions 接法，明確指定 `reasoning_effort=none`、`store=false`、`max_completion_tokens` 與 JSON 模式；藥袋欄位、來源、必要條件、唯一答案與測驗原文解釋檢查保持。呼叫 45 秒／任務 120 秒期限不放寬。官方能力與參數見 [GPT-6 Luna 模型頁](https://developers.openai.com/api/docs/models/gpt-6-luna)及[GPT-6 使用指南](https://developers.openai.com/api/docs/guides/latest-model)。本次先通過[最小連線](.local/reports/openai-connection.json)，再另行完成固定五輪真實完整流程及來源驗收；各階段證據分開。
+Luna 沿用 Chat Completions 接法，明確指定 `reasoning_effort=none`、`store=false`、`max_completion_tokens` 與 JSON 模式；藥袋欄位、來源、必要條件、唯一答案與測驗原文解釋檢查保持。呼叫 45 秒／任務 120 秒期限不放寬。官方能力與參數見 [GPT-6 Luna 模型頁](https://developers.openai.com/api/docs/models/gpt-6-luna)及[GPT-6 使用指南](https://developers.openai.com/api/docs/guides/latest-model)。先前兩藥 v9 階段先通過[最小連線](.local/reports/openai-connection.json)，再完成固定五輪真實流程及來源驗收；現行 v11 擴充結果見本文開頭，各階段證據分開。
 
 本機準備檢查：
 
@@ -94,7 +94,7 @@ npm run check:openai:ready
 | `prepared_pending_real_acceptance` | 已啟用，仍須真實模型與完整流程驗收 |
 | `blocked_preparation` | 模型覆寫、端點或建置等本機設定需要修正 |
 
-`npm run check:openai:ready -- --require-key` 在缺金鑰時回非零狀態；`--no-report` 只輸出結果，不寫報告。這些準備狀態皆不等於真實驗收通過；本次固定五輪、內容 QA 及恢復結果另記於[驗收摘要](docs/SEMINAR-ACCEPTANCE.md)，不改寫準備工具的狀態定義。
+`npm run check:openai:ready -- --require-key` 在缺金鑰時回非零狀態；`--no-report` 只輸出結果，不寫報告。這些準備狀態皆不等於真實驗收通過；先前兩藥固定五輪、內容 QA 及恢復結果記於[歷史驗收摘要](docs/SEMINAR-ACCEPTANCE.md)，現行 v11 見[擴充驗收](docs/SEMINAR-EXPANDED-20261020.md)，不改寫準備工具的狀態定義。
 
 OpenAI 帳戶額度／計費限制以 `ai_quota_exceeded` 結束，不重複重試；模型拒絕或內容過濾以 `ai_refused` 結束，不發布內容。暫時限流與 5xx 才在既有期限內重試，仍不切回 NVIDIA。JSON 模式的請求明確附上 JSON 輸出指令，原審核規則保持；OpenAI 快取政策為 `openai-chat-json-none-v2`，避免沿用修正前結果。
 

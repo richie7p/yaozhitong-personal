@@ -1,12 +1,27 @@
 import { createServer, type Server } from "node:http";
-import { mkdtemp, readFile, readdir } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, expect, it, vi } from "vitest";
 
-afterEach(() => {
+const temporaryDirectories: string[] = [];
+const createTraceDirectory = async (kind: string) => {
+  const directory = await mkdtemp(
+    resolve(tmpdir(), `yaozhitong-test-trace-${kind}-`),
+  );
+  temporaryDirectories.push(directory);
+  return directory;
+};
+
+afterEach(async () => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+  await Promise.all(
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
+  );
 });
 
 const listen = (server: Server) =>
@@ -25,7 +40,7 @@ const close = async (server: Server) => {
 };
 
 it("returns real loopback response headers before the diagnostic clone's withheld body finishes", async () => {
-  const directory = await mkdtemp(resolve(".local/test-trace-proxy-"));
+  const directory = await createTraceDirectory("proxy");
   vi.stubEnv("SEMINAR_AI_TRACE_DIR", directory);
   const nativeFetch = globalThis.fetch;
   const value = {
@@ -125,7 +140,7 @@ it("returns real loopback response headers before the diagnostic clone's withhel
 });
 
 it("finishes an unreadable trace when the actual body is aborted, without inventing token usage", async () => {
-  const directory = await mkdtemp(resolve(".local/test-trace-abort-"));
+  const directory = await createTraceDirectory("abort");
   vi.stubEnv("SEMINAR_AI_TRACE_DIR", directory);
   const nativeFetch = globalThis.fetch;
   const server = createServer((request, response) => {
@@ -171,7 +186,7 @@ it("finishes an unreadable trace when the actual body is aborted, without invent
 });
 
 it("redacts echoed keys in persisted request, response and fetch errors without changing the client response", async () => {
-  const directory = await mkdtemp(resolve(".local/test-trace-echo-"));
+  const directory = await createTraceDirectory("echo");
   vi.stubEnv("SEMINAR_AI_TRACE_DIR", directory);
   const knownOpenai = "synthetic-known-openai-key";
   const knownNvidia = "synthetic-known-nvidia-key";

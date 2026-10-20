@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
 import {
   compareRecognition,
   expandedManifestSchema,
@@ -253,10 +254,11 @@ describe("literal OCR scoring and isolated files", () => {
     expect(expandedManifestSchema.safeParse(input).success).toBe(false);
   });
   it("rejects file traversal outside the source blob tree", () => {
-    expect(() => fixtureBlob("C:/fixture/blobs", "../db.json")).toThrow();
-    expect(() => fixtureBlob("C:/fixture/blobs", "C:/outside.pdf")).toThrow();
-    expect(fixtureBlob("C:/fixture/blobs", "leaflets/source.pdf")).toContain(
-      "source.pdf",
+    const root = resolve("fixture/blobs");
+    expect(() => fixtureBlob(root, "../db.json")).toThrow();
+    expect(() => fixtureBlob(root, resolve("outside.pdf"))).toThrow();
+    expect(fixtureBlob(root, "leaflets/source.pdf")).toBe(
+      resolve(root, "leaflets/source.pdf"),
     );
   });
   it("accepts supported signatures and rejects HEIC/oversize without converting photos", () => {
