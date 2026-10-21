@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+// Recognition routes below must own their synthetic responses, including while
+// the application service worker installs and claims the page.
+test.use({ serviceWorkers: "block" });
+
 const syntheticPng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWP4//8/AAX+Av5Y8msOAAAAAElFTkSuQmCC",
   "base64",

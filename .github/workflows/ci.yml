@@ -9,6 +9,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: tools/requirements-tfda.txt
+      - run: python -m pip install -r tools/requirements-tfda.txt
+      - name: Validate TFDA acquisition and frozen inventory offline
+        run: python -m unittest discover -s tests -p 'test_tfda_*.py'
       - run: npm ci
       - run: npm run typecheck
       - name: Validate cloud deployment configuration offline

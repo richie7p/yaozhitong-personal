@@ -11,6 +11,7 @@ firebase-debug*.log
 snapshot/
 reference/
 *.tsbuildinfo
+__pycache__/
 infra/*.tfstate*
 infra/.terraform/
 infra/terraform.tfvars
