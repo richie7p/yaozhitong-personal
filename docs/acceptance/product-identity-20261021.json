@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "sourceCommit": "1d86b10ab71f4d6ddc4d43d15c96ef6c279c12af",
+  "ci": {
+    "conclusion": "success",
+    "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39624112357"
+  },
+  "localReleaseChecks": {
+    "unit": {
+      "passed": 934,
+      "files": 52
+    },
+    "browser": {
+      "passed": 160,
+      "viewports": "desktop and mobile"
+    },
+    "typecheck": "passed",
+    "build": "passed",
+    "isolatedServiceRestartAndAccountDeletion": "passed",
+    "operatingSystemReboot": "not_requested_or_performed"
+  },
+  "cloud": {
+    "baseUrl": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+    "buildId": "4c11b39c-f217-4a1b-832d-f44887ac4ed0",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:bc46de07f1e156e2bb0a8d7d915a4a0a34c3dedb96fd0092e83a1c70ebd95ae4",
+    "services": [
+      {
+        "name": "yzt-test-worker",
+        "revision": "yzt-test-worker-00017-mcp",
+        "phase": "live",
+        "configurationUnchanged": true,
+        "iamUnchanged": true
+      },
+      {
+        "name": "yzt-test-web",
+        "revision": "yzt-test-web-00017-fhl",
+        "phase": "live",
+        "configurationUnchanged": true,
+        "iamUnchanged": true
+      }
+    ],
+    "negative": {
+      "completedAt": "2026-10-21T15:22:54.775Z",
+      "scope": "Existing public real-photo Secorine record has insufficient package evidence; it must remain pending, without a leaflet link.",
+      "checks": [
+        {
+          "name": "ordinary_email_password_browser_login",
+          "status": "passed",
+          "at": "2026-10-21T15:22:20.961Z"
+        },
+        {
+          "name": "legacy_dto_pending_candidate_and_existing_usage",
+          "status": "passed",
+          "at": "2026-10-21T15:22:23.967Z"
+        },
+        {
+          "name": "editor_guidance_and_insufficient_real_photo_evidence",
+          "status": "passed",
+          "at": "2026-10-21T15:22:28.076Z"
+        },
+        {
+          "name": "pending_bundle_chat_interactions_rejected_without_jobs",
+          "status": "passed",
+          "at": "2026-10-21T15:22:31.516Z"
+        },
+        {
+          "name": "unsafe_learning_and_chat_history_withheld",
+          "status": "passed",
+          "at": "2026-10-21T15:22:37.959Z"
+        },
+        {
+          "name": "job_summary_and_explicit_old_results_do_not_expose_grounding",
+          "status": "passed",
+          "at": "2026-10-21T15:22:41.689Z"
+        },
+        {
+          "name": "375px_pending_guidance_and_history_screenshots",
+          "status": "passed",
+          "at": "2026-10-21T15:22:52.571Z"
+        },
+        {
+          "name": "no_ai_no_new_records_final_readback",
+          "status": "passed",
+          "at": "2026-10-21T15:22:54.716Z"
+        }
+      ],
+      "newLogicalAIJobs": 0,
+      "validSchemaGenerationRequestsRejected409": 3,
+      "jobsUnchanged": true,
+      "prescriptionFieldsPreserved": true,
+      "oldLearningChatAndJobAnswersWithheld": true,
+      "usageBefore": {
+        "day": "2026-10-21",
+        "userUsage": 16,
+        "globalUsage": 38,
+        "userLimit": 20,
+        "globalLimit": 200
+      },
+      "usageAfter": {
+        "day": "2026-10-21",
+        "userUsage": 16,
+        "globalUsage": 38,
+        "userLimit": 20,
+        "globalLimit": 200
+      },
+      "pageErrors": 0,
+      "consoleErrors": 0
+    },
+    "positive": {
+      "completedAt": "2026-10-21T15:34:23.849Z",
+      "scope": "Existing synthetic cough medicine, using separately constructed synthetic full-license package evidence; not a new photo recognition or real-photo identity adjudication.",
+      "syntheticPackageEvidence": true,
+      "productIdentityThenSave": "passed",
+      "bundleOwnSourceQuotes": "passed",
+      "quiz": {
+        "actualQuestionCount": 4,
+        "persistedAfterReload": true,
+        "allOwnQuotesReviewed": true
+      },
+      "chatOwnSourceQuotes": "passed",
+      "logicalAIJobsSinceOriginalBaseline": 2,
+      "realPhotoSecorineStillPending": true,
+      "noNewMedicationRecords": true,
+      "usageBefore": {
+        "day": "2026-10-21",
+        "userUsage": 16,
+        "globalUsage": 38,
+        "userLimit": 20,
+        "globalLimit": 200
+      },
+      "usageAfter": {
+        "day": "2026-10-21",
+        "userUsage": 18,
+        "globalUsage": 40,
+        "userLimit": 20,
+        "globalLimit": 200
+      },
+      "operations": {
+        "bundle": {
+          "status": "succeeded",
+          "attempts": 1,
+          "tokens": 4497,
+          "latencyMs": 38809,
+          "providerRequests": [
+            {
+              "provider": "openai",
+              "model": "gpt-6-luna",
+              "stage": "generation",
+              "attempt": 1,
+              "latencyMs": 5844,
+              "status": 200,
+              "tokens": 2943,
+              "finishReason": "stop"
+            },
+            {
+              "provider": "openai",
+              "model": "gpt-6-luna",
+              "stage": "verification",
+              "attempt": 1,
+              "latencyMs": 30372,
+              "status": 200,
+              "tokens": 1554,
+              "finishReason": "stop"
+            }
+          ]
+        },
+        "chat": {
+          "status": "succeeded",
+          "attempts": 1,
+          "tokens": 4367,
+          "latencyMs": 8313,
+          "providerRequests": [
+            {
+              "provider": "openai",
+              "model": "gpt-6-luna",
+              "stage": "generation",
+              "attempt": 1,
+              "latencyMs": 2890,
+              "status": 200,
+              "tokens": 3110,
+              "finishReason": "stop"
+            },
+            {
+              "provider": "openai",
+              "model": "gpt-6-luna",
+              "stage": "verification",
+              "attempt": 1,
+              "latencyMs": 4903,
+              "status": 200,
+              "tokens": 1257,
+              "finishReason": "stop"
+            }
+          ]
+        }
+      },
+      "pageErrors": 0,
+      "consoleErrors": 0
+    },
+    "recoveryObservation": {
+      "firstPositiveAttempt": "Medication-list navigation timed out before any AI submission; error receipt retained privately.",
+      "aiPostsBeforeFailure": 0,
+      "usageUnchangedBeforeRecovery": true,
+      "observedCloudMedicationRequestStatus": 200,
+      "observedCloudMedicationRequestLatencyMs": 335,
+      "rootCause": "Not established; cloud request logs did not show a corresponding slow backend operation or 5xx.",
+      "recovery": "Reopened ordinary browser session and continued the same persisted test checkpoint and fixed operation IDs; no replacement AI jobs."
+    },
+    "preservedSettings": {
+      "dailyUserLimit": 20,
+      "dailyGlobalLimit": 200,
+      "testerSeatCap": 50,
+      "modelAndProviderUnchanged": true,
+      "scalingAndIamUnchanged": true
+    }
+  },
+  "remainingInput": "The public Secorine photo still needs legible complete package identity evidence. No evidence was invented for that real-photo record.",
+  "privacy": {
+    "credentialsOrTokensIncluded": false,
+    "accountIdentifiersIncluded": false,
+    "originalPhotosIncluded": false
+  }
+}

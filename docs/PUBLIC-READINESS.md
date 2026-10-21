@@ -1,6 +1,6 @@
 # 公開試用準備
 
-更新日期：2026-10-21。目前雲端版本為 Web `yzt-test-web-00016-nrw`／worker `yzt-test-worker-00016-lkf`，來源為 `9620da3`。已用三張公開實拍藥袋完成辨識、核對保存、仿單說明、12 題測驗與用藥問答；修正照片規格被目錄覆蓋及明示療程漏填，另以開恩達命原照片重新跑完整流程。最終手機尺寸複驗通過，配額仍為每人每日 20、全站 200 次。照片來源、原始漏辨識、修正後重測及身分限制見[公開實拍雲端驗收](acceptance/cloud-public-photos-20261021.json)。乾淨發布來源通過 910 項單元、146 項桌面／手機尺寸瀏覽器、型別及建置檢查；[GitHub 驗證工作](https://github.com/richie7p/yaozhitong-personal/actions/runs/39616106533/job/119277451616)亦已通過。先前合成兩藥及真人帳號驗收保留於[第二批雲端流程](acceptance/cloud-ux-batch2-20261021.json)與[公開準備驗收](acceptance/cloud-readiness-20261021.json)。
+更新日期：2026-10-21。目前雲端版本為 Web `yzt-test-web-00017-fhl`／worker `yzt-test-worker-00017-mcp`，來源為 `1d86b10`，兩個服務均已承接 100% 流量。產品身分現須獨立於用法核對；本輪雲端不呼叫 AI 的 8 項檢查通過，包含實拍息咳寧保持待核對、保存與補拍保留用法、生成入口拒絕未核對產品、舊內容安全隱藏及桌面／手機畫面。另以獨立合成咳服包裝證據完成正向 8 項檢查，涵蓋核對保存、仿單、四題測驗保存與問答；該正向案例沒有重新辨識照片，實拍息咳寧仍需補資料。本機 934 項單元、160 項瀏覽器、型別與建置檢查通過，[GitHub 驗證工作](https://github.com/richie7p/yaozhitong-personal/actions/runs/39624112357)成功；範圍與一次清單讀取逾時的恢復紀錄見[產品身分核對驗收](PRODUCT-IDENTITY-ACCEPTANCE-2026-10-21.md)。先前[公開實拍](acceptance/cloud-public-photos-20261021.json)、[合成兩藥](acceptance/cloud-ux-batch2-20261021.json)及[公開準備](acceptance/cloud-readiness-20261021.json)結果保留各自版本。
 
 藥智通已具備受控試用所需的帳號隔離、官方來源閱讀、用藥紀錄、背景工作與個人資料管理。雲端 8 份來源、25 題已通過實際 API 流程及原文 QA；新版註冊、驗證信、密碼重設與 Google 登入亦已完成實際確認。現行開放方式是「可註冊、驗證信箱後由管理員核准 AI 資格」，後續擴大開放的重點為公開支援、復原及營運能力。
 
@@ -8,6 +8,7 @@
 
 | 項目 | 已核對的行為與設定 |
 | --- | --- |
+| 產品身分與用法 | 用法確認不代表產品已核對。須另抄包裝完整許可證（含前綴），或與完整官方目錄唯一一致的完整品名、已知含量及劑型；官方規格不足時須用完整許可證。可保存待核對資料；未核對的生成請求在建工作及扣額前回 `409 identity_unconfirmed`。 |
 | 註冊與 AI 資格 | Firebase Email／密碼及 Google 已啟用；信箱列舉保護已啟用。雲端新帳號預設 `eligible:false`，驗證信箱不會自行取得 AI 資格。管理員核准最多 50 個有效測試名額；未取得資格仍可手動保存本人資料。 |
 | 登入與隔離 | 後端逐次驗證 Firebase token 與撤銷狀態；私人資料依 token UID 授權。Google 另核對原憑證的 audience、subject 與已驗證信箱。分頁登入保存、中斷隔離、登出、換帳及 storage 不可用回歸已通過；使用者已確認新版 Google 登入及重新整理正常。 |
 | 雲端入口 | Web 允許公開呼叫；私人 API 仍需登入。Worker 無 `allUsers` Invoker，僅服務帳號可呼叫。資料 bucket 啟用 uniform access 及 public access prevention。儲存庫的 Firestore／Storage client rules 全面拒絕直接存取；歷史雲端規則驗收已通過。 |

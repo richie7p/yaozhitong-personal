@@ -80,7 +80,7 @@ HTTP 202 後輪詢 `/jobs/:id`；狀態為 queued、running、succeeded 或 fail
 
 ## 衛教與學習進度（2026-10-11）
 
-`Claim` 可附 `category: purpose | use | warning | other` 與 `profileRefs: [{field,value}]`。參照欄位限 age、sex、conditions、allergies、pregnancy，只有明確值匹配且警語相關性通過核對時回傳。舊內容缺少這些欄位仍可顯示。新 bundle 最多兩題，chat／interaction 回傳空 quiz。
+`Claim` 可附 `category: purpose | use | warning | other` 與 `profileRefs: [{field,value}]`。參照欄位限 age、sex、conditions、allergies、pregnancy，只有明確值匹配且警語相關性通過核對時回傳。舊內容仍須通過目前的產品身分與版本檢查。bundle 題數依可核對的用途與安全主欄產生，以回傳 `quiz` 為準；chat／interaction 回傳空 quiz。
 
 `GET /learning` 保留原欄位，另附 `progress`，依建立時間由新到舊排列。沒有測驗時狀態為 unavailable，未開始為 not_started，曾作答但尚未全對為 in_progress，全部答對為 completed。進度由有效已提交答案計算。
 
