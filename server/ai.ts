@@ -19,6 +19,10 @@ import {
   SAFETY_SECTIONS,
 } from "./safety-learning.js";
 import { recognitionUsageConflict } from "./recognition-usage.js";
+import {
+  missingLiteralDuration,
+  withoutMissingDurationGuidance,
+} from "./recognition-duration.js";
 const CitationSchema = z.object({
   chunkId: z.string(),
   quote: z.string().min(7),
@@ -1323,6 +1327,7 @@ export async function recognize(llm: Llm, data: Buffer, mediaType: string) {
   let missingUsage = false;
   let clearedUsage = false;
   let unsupportedStrength = false;
+  let recoveredDuration = false;
   for (const med of p.data.medications) {
     for (const key of [
       "strength",
@@ -1346,6 +1351,13 @@ export async function recognize(llm: Llm, data: Buffer, mediaType: string) {
     if (recoverFrequency && literal.frequencyRaw)
       med.frequencyRaw = literal.frequencyRaw;
     if (recoverRoute && literal.route) med.route = literal.route;
+    if (med.durationDays === null) {
+      const duration = missingLiteralDuration(med.rawText);
+      if (duration !== null) {
+        med.durationDays = duration;
+        recoveredDuration = true;
+      }
+    }
     if (med.strength && !literalStrength(med.rawText, med.strength)) {
       med.strength = null;
       med.confidence = "low";
@@ -1431,6 +1443,11 @@ export async function recognize(llm: Llm, data: Buffer, mediaType: string) {
     p.data.guidance =
       (clearedUsage ? "部分用法欄位無法在辨識原文中核對，已清空。" : "") +
       "每次用量、頻次或途徑尚有缺漏，請對照原藥袋核對後再確認；未由藥名或不明代碼推測用法。";
+  if (
+    recoveredDuration &&
+    p.data.medications.every((med) => med.durationDays !== null)
+  )
+    p.data.guidance = withoutMissingDurationGuidance(p.data.guidance);
   if (unsupportedStrength)
     p.data.guidance = [
       "無法核對為影像中含單位的含量，已將該含量欄留白；純數字代碼不作含量，也未從藥品目錄補入。",
