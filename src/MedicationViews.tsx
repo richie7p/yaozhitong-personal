@@ -700,7 +700,13 @@ export function Medications() {
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(""),
     [result, setResult] = useState<LearningRecord | null>(null);
+  const editHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (!edit) return;
+    editHeading.current?.focus({ preventScroll: true });
+    editHeading.current?.scrollIntoView({ block: "start" });
+  }, [edit]);
   useEffect(() => {
     if (!result) return;
     resultHeading.current?.focus({ preventScroll: true });
@@ -845,7 +851,7 @@ export function Medications() {
                   <BookOpen size={16} />
                   仿單說明
                 </Button>
-                <Button className="ghost" onClick={() => setEdit(m)}>
+                <Button className="ghost" onClick={() => setEdit({ ...m })}>
                   編輯用法
                 </Button>
                 {m.confirmed && !m.prn && (
@@ -898,7 +904,9 @@ export function Medications() {
       {edit && (
         <section className="card">
           <div className="row spread">
-            <h2>編輯用法</h2>
+            <h2 ref={editHeading} tabIndex={-1}>
+              編輯用法
+            </h2>
             <button
               className="icon-button"
               onClick={() => setEdit(null)}
