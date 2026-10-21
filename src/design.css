@@ -1561,6 +1561,38 @@ h2[tabindex]:focus-visible {
   font-size: 12px !important;
   margin-top: 25px;
 }
+.password-field > label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.password-input {
+  position: relative;
+}
+.password-input input {
+  width: 100%;
+  min-width: 0;
+  padding-right: 96px;
+}
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-height: 44px;
+  padding: 6px;
+  font-size: 13px;
+}
+.password-field small {
+  font-size: 12px;
+}
+.registration-trial-notice {
+  margin: 0 0 16px;
+  padding-left: 12px;
+  border-left: 2px solid #a8bb94;
+  color: #546657;
+  font-size: 12px;
+  line-height: 1.75;
+}
 
 @media (max-width: 1160px) {
   .topbar {
@@ -2180,18 +2212,20 @@ h2[tabindex]:focus-visible {
     font-size: 13px;
   }
   .login-story {
-    padding: 30px 27px 28px;
-    gap: 38px;
+    padding: 24px 27px 20px;
+    gap: 18px;
   }
   .login-story h1 {
-    font-size: 45px;
-    line-height: 1.4;
-    letter-spacing: 3px;
-    margin-bottom: 18px;
+    font-size: 32px;
+    line-height: 1.25;
+    letter-spacing: 2px;
+    margin: 10px 0 0;
+  }
+  .login-story h1 br {
+    display: none;
   }
   .login-story > div > p {
-    font-size: 12px;
-    margin-bottom: 0;
+    display: none;
   }
   .login-illustration {
     width: 160px;
@@ -2204,7 +2238,7 @@ h2[tabindex]:focus-visible {
     display: none;
   }
   .login-panel {
-    padding: 34px 27px 45px;
+    padding: 24px 27px 40px;
   }
   .login-card h2 {
     font-size: 30px;

@@ -246,6 +246,111 @@ async function fillEmail(
   if (await passwordField.count()) await passwordField.fill(password);
 }
 
+async function expectPrimaryInFirstScreen(page: Page, name: string) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const primary = page.getByRole("button", { name, exact: true });
+  await expect(primary).toBeVisible();
+  await expect(primary).toBeInViewport({ ratio: 1 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+}
+
+test("narrow auth forms explain registration and reset without hiding the primary action", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 500, height: 757 });
+  await syntheticAuth(page);
+  await page.goto("/");
+  await expect(
+    page.getByText("開啟你的藥品、說明與服藥紀錄。", { exact: true }),
+  ).toBeVisible();
+  await expectPrimaryInFirstScreen(page, "登入");
+
+  await page.getByRole("button", { name: "建立新帳號", exact: true }).click();
+  await expect(
+    page.getByText("先建立帳號並驗證信箱，再確認 AI 試用資格。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  const password = page.getByLabel("密碼", { exact: true });
+  const passwordHelp = page.locator("#register-password-help");
+  await expect(passwordHelp).toHaveText("至少 8 個字元。");
+  await expect(password).toHaveAttribute(
+    "aria-describedby",
+    /(?:^|\s)register-password-help(?:\s|$)/,
+  );
+  await expect(password).toHaveAccessibleDescription("至少 8 個字元。");
+  await password.fill("synthetic-password");
+  await expect(passwordHelp).toBeVisible();
+  await expect(page.locator("#registration-trial-notice")).toHaveText(
+    "目前為受控試用。完成註冊與信箱驗證後，仍需另行取得 AI 試用資格，才能使用 AI 功能。",
+  );
+  await expect(page.locator("#registration-trial-notice")).toBeInViewport({
+    ratio: 1,
+  });
+  await expectPrimaryInFirstScreen(page, "建立帳號");
+
+  await page.getByRole("button", { name: "忘記密碼？", exact: true }).click();
+  await expect(
+    page.getByText("輸入註冊時使用的信箱，我們會寄送重設密碼連結。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "忘記密碼？", exact: true }),
+  ).toHaveCount(0);
+  await expectPrimaryInFirstScreen(page, "寄送重設信");
+});
+
+test("desktop password visibility preserves input and never submits either auth form", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1180, height: 757 });
+  const fixture = await syntheticAuth(page);
+  await page.goto("/");
+
+  for (const mode of ["login", "register"] as const) {
+    if (mode === "register") {
+      await page
+        .getByRole("button", { name: "建立新帳號", exact: true })
+        .click();
+    }
+    const value = `synthetic-${mode}-password`;
+    await fillEmail(page, "person@example.invalid", value);
+    const password = page.getByLabel("密碼", { exact: true });
+    const show = page.getByRole("button", { name: "顯示密碼", exact: true });
+    await expect(show).toHaveAttribute("type", "button");
+    await expect(show).toHaveAttribute("aria-pressed", "false");
+    await expect(password).toHaveAttribute("type", "password");
+    await show.click();
+
+    const hide = page.getByRole("button", { name: "隱藏密碼", exact: true });
+    await expect(hide).toHaveAttribute("type", "button");
+    await expect(hide).toHaveAttribute("aria-pressed", "true");
+    await expect(password).toHaveAttribute("type", "text");
+    await expect(password).toHaveValue(value);
+    await hide.click();
+    await expect(password).toHaveAttribute("type", "password");
+    await expect(password).toHaveValue(value);
+    await expect(show).toHaveAttribute("aria-pressed", "false");
+    await expectPrimaryInFirstScreen(
+      page,
+      mode === "register" ? "建立帳號" : "登入",
+    );
+  }
+  expect(
+    fixture.requests.filter((request) =>
+      /identitytoolkit\.googleapis\.com\/.*accounts:/.test(request),
+    ),
+  ).toEqual([]);
+
+  await page.getByRole("button", { name: "忘記密碼？", exact: true }).click();
+  await expectPrimaryInFirstScreen(page, "寄送重設信");
+});
+
 test("email login survives refresh, keeps questions in memory, clears logout and isolates the next account", async ({
   page,
 }) => {

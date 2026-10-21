@@ -401,6 +401,7 @@ function Login() {
   const [mode, setMode] = useState("login"),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
+    [showPassword, setShowPassword] = useState(false),
     [busy, setBusy] = useState(false),
     [messageError, setMessageError] = useState(false),
     [message, setMessage] = useState("");
@@ -472,7 +473,13 @@ function Login() {
                 ? "重設密碼"
                 : "歡迎回來"}
           </h2>
-          <p className="muted">開啟你的藥品、說明與服藥紀錄。</p>
+          <p className="muted">
+            {mode === "register"
+              ? "先建立帳號並驗證信箱，再確認 AI 試用資格。"
+              : mode === "reset"
+                ? "輸入註冊時使用的信箱，我們會寄送重設密碼連結。"
+                : "開啟你的藥品、說明與服藥紀錄。"}
+          </p>
           {authError && (
             <>
               <Notice error>{authError}</Notice>
@@ -566,24 +573,57 @@ function Login() {
                   />
                 </Field>
                 {mode !== "reset" && (
-                  <Field label="密碼">
-                    <input
-                      type="password"
-                      autoComplete={
-                        mode === "register"
-                          ? "new-password"
-                          : "current-password"
-                      }
-                      minLength={mode === "register" ? 8 : undefined}
-                      required
-                      disabled={busy}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={
-                        mode === "register" ? "至少 8 個字元" : "輸入密碼"
-                      }
-                    />
-                  </Field>
+                  <div className="field password-field">
+                    <label htmlFor="login-password">密碼</label>
+                    <div className="password-input">
+                      <input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete={
+                          mode === "register"
+                            ? "new-password"
+                            : "current-password"
+                        }
+                        minLength={mode === "register" ? 8 : undefined}
+                        aria-describedby={
+                          mode === "register"
+                            ? "register-password-help"
+                            : undefined
+                        }
+                        required
+                        disabled={busy}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={
+                          mode === "register" ? "至少 8 個字元" : "輸入密碼"
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="text-button password-toggle"
+                        aria-controls="login-password"
+                        aria-pressed={showPassword}
+                        disabled={busy}
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? "隱藏密碼" : "顯示密碼"}
+                      </button>
+                    </div>
+                    {mode === "register" && (
+                      <small id="register-password-help" className="muted">
+                        至少 8 個字元。
+                      </small>
+                    )}
+                  </div>
+                )}
+                {mode === "register" && (
+                  <p
+                    id="registration-trial-notice"
+                    className="registration-trial-notice"
+                  >
+                    目前為受控試用。完成註冊與信箱驗證後，仍需另行取得 AI
+                    試用資格，才能使用 AI 功能。
+                  </p>
                 )}
                 <Button className="primary full" type="submit" disabled={busy}>
                   {busy
@@ -603,22 +643,26 @@ function Login() {
                   onClick={() => {
                     setMode(mode === "login" ? "register" : "login");
                     setPassword("");
+                    setShowPassword(false);
                     setMessage("");
                   }}
                 >
                   {mode === "login" ? "建立新帳號" : "返回登入"}
                 </button>
-                <button
-                  className="text-button"
-                  disabled={busy}
-                  onClick={() => {
-                    setMode("reset");
-                    setPassword("");
-                    setMessage("");
-                  }}
-                >
-                  忘記密碼？
-                </button>
+                {mode !== "reset" && (
+                  <button
+                    className="text-button"
+                    disabled={busy}
+                    onClick={() => {
+                      setMode("reset");
+                      setPassword("");
+                      setShowPassword(false);
+                      setMessage("");
+                    }}
+                  >
+                    忘記密碼？
+                  </button>
+                )}
               </div>
             </>
           )}

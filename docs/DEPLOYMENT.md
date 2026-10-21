@@ -88,7 +88,7 @@ Scheduler 每分鐘檢查已有成功執行紀錄；每週主檔更新排程已�
 
 Google登入沿用既有身份／信箱授權，舊Firebase provider路徑明確要求 `email` scope；新版GIS只啟用官方登入按鈕，不啟用One Tap或要求其他Google服務權限。後端驗證Google ID token的簽章、指定audience、issuer、時效及 `email_verified`，並要求其 `sub` 與目前登入UID的Firebase Google provider身分一致。只有該UID尚無信箱時才補入，不以Email尋找或合併另一UID，也不取代或驗證既有密碼登入信箱。登入介面等資料補齊及帳號讀取完成才進入主畫面；登出後重新登入會重新設定token provider。
 
-程式在 `initializeAuth` 時就設定 `inMemoryPersistence`：有公開client ID時使用GIS憑證交換，不初始化Firebase登入helper；沒有client ID時才保留具期限的舊redirect流程。Firebase登入狀態以記憶體保存，應用不自行把Google／Firebase憑證寫入 `localStorage`／`sessionStorage`；重新整理後需重新登入。Google／Firebase SDK仍管理各自短期流程狀態，不能解讀成瀏覽器完全不使用儲存。詳見[資料隔離說明](API.md#資料集合與隔離)。
+程式由 `createSessionFirebaseAuth` 在 `initializeAuth` 時設定 `[browserSessionPersistence, inMemoryPersistence]`，優先使用分頁儲存，不可用時改用記憶體保存：有公開client ID時使用GIS憑證交換，不初始化Firebase登入helper；沒有client ID時才保留具期限的舊redirect流程。Firebase SDK自行管理登入紀錄，應用不另存Google／Firebase憑證，未送出的問題與健康資料草稿仍留在記憶體。同一分頁重新整理可接續已完成核對的登入；若改用記憶體保存，重新整理後可能需重登。此機制不提供跨瀏覽器登入狀態轉移，其他瀏覽器須自行完成正式登入。Google／Firebase SDK仍管理各自短期流程狀態，不能解讀成瀏覽器完全不使用儲存。詳見[資料隔離說明](API.md#資料集合與隔離)。
 
 維運限制：Firebase Admin 的 `getUser` 後接 `updateUser` 沒有原子式「信箱仍為空才寫入」條件；另一管理程序若在兩者之間替同一 UID 設定信箱，仍可能產生競態。補齊過程前已重新核對停用狀態及 provider 身分，維運時仍應避免同步進行該 UID 的信箱變更；本次不宣稱已驗證所有帳號管理併發情境。
 

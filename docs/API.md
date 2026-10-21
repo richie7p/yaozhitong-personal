@@ -144,13 +144,13 @@ HTTP 202 後輪詢 `/jobs/:id`；狀態為 queued、running、succeeded 或 fail
 
 relationships 保存 ownerId／caregiverId／active；published 保存許可證對應当前仿單；leaflets 保存版本、hash、來源、頁碼及段落；settings 保存索引指標、名額及成分別名；usage 保存 UID／全站每日任務數；audit 保存管理操作人、動作、目標與時間。
 
-Firestore／Storage client rules 一律拒絕，後端用服務帳戶訪問。Firestore 不存圖片 base64：圖片在短期 Storage，工作完成後刪除。私人內容不寫入前端 localStorage 或 Service Worker cache。應用自行管理的 sessionStorage 包括本機模式登入token、裝置識別及不含健康文字的任務接續識別；Firebase使用者與token採記憶體保存，不另寫入應用自訂的瀏覽器儲存。
+Firestore／Storage client rules 一律拒絕，後端用服務帳戶訪問。Firestore 不存圖片 base64：圖片在短期 Storage，工作完成後刪除。私人內容不寫入前端 localStorage 或 Service Worker cache。應用自行管理的 sessionStorage 包括本機模式登入token、裝置識別、不含健康文字的任務接續識別及Google登入核對狀態；Firebase SDK自行管理登入紀錄，應用不另存Google／Firebase憑證。未送出的問題與健康資料草稿仍留在記憶體。
 
-Firebase在 `initializeAuth` 時即選定 `inMemoryPersistence`。有 `/config.googleOAuthClientId` 時，前端載入Google官方GIS按鈕，取得Google ID token後呼叫Firebase `signInWithCredential`；此模式不初始化Firebase登入iframe resolver。使用Firebase Bearer token呼叫 `POST /auth/google-profile`，body僅接受 `{googleIdToken}`；後端驗證Google token的audience、issuer、時效、已驗證信箱及subject與Firebase目前UID的provider對應，不接受客戶端指定UID、不按信箱合併帳號。核對、刷新token及 `/me` 完成後才顯示已登入。
+Firebase由 `createSessionFirebaseAuth` 在 `initializeAuth` 時設定 `[browserSessionPersistence, inMemoryPersistence]`，優先使用分頁儲存，不可用時改用記憶體保存。有 `/config.googleOAuthClientId` 時，前端載入Google官方GIS按鈕，取得Google ID token後呼叫Firebase `signInWithCredential`；此模式不初始化Firebase登入iframe resolver。使用Firebase Bearer token呼叫 `POST /auth/google-profile`，body僅接受 `{googleIdToken}`；後端驗證Google token的audience、issuer、時效、已驗證信箱及subject與Firebase目前UID的provider對應，不接受客戶端指定UID、不按信箱合併帳號。核對、刷新token及 `/me` 完成後才顯示已登入。
 
-GIS按鈕載入期限15秒，憑證交換至帳號讀取共用30秒期限。每個有效按鈕掛載僅接收一次對應回呼；重複、卸載後或其他登入進行中的回呼會忽略。逾時會清除應用身份與token提供者、阻止晚到結果恢復登入，背景登出不阻塞錯誤畫面；使用者可重新載入登入頁後再試或使用Email。程式不自行持久保存Google／Firebase token。
+GIS按鈕載入期限15秒，憑證交換至帳號讀取共用30秒期限。每個有效按鈕掛載僅接收一次對應回呼；重複、卸載後或其他登入進行中的回呼會忽略。逾時會清除應用身份與token提供者、阻止晚到結果恢復登入，背景登出不阻塞錯誤畫面；使用者可重新載入登入頁後再試或使用Email。Google／Firebase token不另寫入應用自訂儲存，登入紀錄由Firebase SDK管理。
 
-缺少公開client ID的舊路徑仍使用redirect：共用一次 `getRedirectResult`，先核對再觀察身份，返回初始化及首次帳號讀取共用30秒期限。沒有redirect結果的普通開頁是正常情況，也不一定能區分一般開頁與流程中斷；這不代表缺少OAuth後端設定仍可成功登入。記憶體登入在重新整理後需重登，伺服器中的健康資料不受影響。Google／Firebase SDK可能使用短期流程狀態，不能把「應用不自存token」解讀為瀏覽器完全不使用storage。「帳號與設定」的明確Google帳號連結仍使用獨立popup；程式測試與真實驗收狀態分開記錄於[部署文件](DEPLOYMENT.md)。
+缺少公開client ID的舊路徑仍使用redirect：共用一次 `getRedirectResult`，先核對再觀察身份，返回初始化及首次帳號讀取共用30秒期限。沒有redirect結果的普通開頁是正常情況，也不一定能區分一般開頁與流程中斷；這不代表缺少OAuth後端設定仍可成功登入。同一分頁重新整理可由SDK接續已完成核對的登入；若分頁儲存不可用而改用記憶體保存，重新整理後可能需重登，伺服器中的健康資料不受影響。此機制不提供跨瀏覽器登入狀態轉移，其他瀏覽器須自行完成正式登入。Google／Firebase SDK仍管理各自短期流程狀態，不能把「應用不自存token」解讀為瀏覽器完全不使用storage。「帳號與設定」的明確Google帳號連結仍使用獨立popup；程式測試與真實驗收狀態分開記錄於[部署文件](DEPLOYMENT.md)。
 
 ## 內部端點
 
