@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "completedAt": "2026-10-21T13:32:36.354Z",
+  "status": "passed",
+  "origin": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+  "release": {
+    "sourceCommit": "b780fdd4a101d30109d17d6d620dcea5b2a5d207",
+    "buildId": "0a7a523f-af35-4f1a-924d-2aabd0ec9c70",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:2b6fdc18987a65007e8477dc1682c18f06a5f665b5c44f4a9a88d02600b60bb3",
+    "services": [
+      {
+        "name": "yzt-test-worker",
+        "revision": "yzt-test-worker-00014-c9k",
+        "trafficPercent": 100,
+        "previousRevision": "yzt-test-worker-00013-4bq",
+        "configurationUnchanged": true,
+        "iamUnchanged": true
+      },
+      {
+        "name": "yzt-test-web",
+        "revision": "yzt-test-web-00014-ls7",
+        "trafficPercent": 100,
+        "previousRevision": "yzt-test-web-00013-rjv",
+        "configurationUnchanged": true,
+        "iamUnchanged": true
+      }
+    ],
+    "publicAsset": "/assets/index-BoDxAzmN.js"
+  },
+  "configuration": {
+    "dailyPerUser": 20,
+    "dailyGlobal": 200,
+    "testerSeatCap": 50,
+    "serviceMaxInstances": 2,
+    "revisionMaxInstances": 3,
+    "web": {
+      "concurrency": 40,
+      "timeoutSeconds": 120
+    },
+    "worker": {
+      "concurrency": 2,
+      "timeoutSeconds": 600
+    },
+    "provider": "openai",
+    "textAndVisionModel": "gpt-6-luna",
+    "reasoningEffort": "none",
+    "environmentSecretReferencesServiceAccountsResourcesAndUrlsUnchanged": true,
+    "hostingQueueSchedulerAndBillingNotModified": true
+  },
+  "validationBeforeRelease": {
+    "sourceCommit": "b780fdd4a101d30109d17d6d620dcea5b2a5d207",
+    "unitTests": 849,
+    "isolatedBrowserTests": 138,
+    "ci": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39601637073",
+    "typecheckBuildLifecycleAndOfflineDeploymentChecksPassed": true
+  },
+  "actualCloudWorkflow": {
+    "data": "One explicitly authorized ordinary verified synthetic account; one synthetic two-medication PNG; no patient data.",
+    "recognition": {
+      "medications": 2,
+      "requests": 1,
+      "saves": 2,
+      "firstSaveReloadRecoversOnlyRemainingRow": true,
+      "lastSavedRecordRevealedAndFocused": true,
+      "expected": [
+        {
+          "name": "酵素膠囊",
+          "licenseNo": "內衛成製字第000544號",
+          "dose": "1 粒",
+          "frequencyRaw": "TID",
+          "plainFrequency": "每日三次",
+          "route": "口服",
+          "prn": false
+        },
+        {
+          "name": "生達咳服錠200毫克",
+          "licenseNo": "衛署藥製字第026087號",
+          "dose": "1 錠",
+          "strength": "200毫克",
+          "frequencyRaw": "PRN",
+          "plainFrequency": "需要時使用",
+          "route": "口服",
+          "prn": true
+        }
+      ]
+    },
+    "sources": {
+      "enzyme": {
+        "sourceVersion": "08ade0a0c8bb0a18",
+        "canonicalTextSha256": "88960446793a09612b0c9cb71e92e0a7662ef0fdff3cf92c10fa45ce551c6f23",
+        "chunkId": "e9c0bbe6d525934b-1-0-whole-page-v1-88960446793a0961",
+        "claims": 1,
+        "questions": 1,
+        "citations": 2
+      },
+      "cough": {
+        "sourceVersion": "355931af34ccb199",
+        "canonicalTextSha256": "49cd879b5c4a63c99862cd669096b57077be4579ce390d7d2d7e86b74be03c71",
+        "chunkId": "553a71ac6af8b497-1-0-whole-page-v1-49cd879b5c4a63c9",
+        "claims": 4,
+        "questions": 4,
+        "citations": 8
+      }
+    },
+    "quiz": {
+      "questions": 5,
+      "allQuestionsWrongAndCorrectAnswersPersistedViaApi": true,
+      "bothViewportsTestFirstQuestionWrongReloadCorrectAndReviewAllQuestions": true,
+      "completedAnswersPersistAfterFreshPasswordLogin": true
+    },
+    "chat": {
+      "submittedThroughRealWebsite": true,
+      "chatPosts": 1,
+      "exactSelectedMedicationIdPersisted": true,
+      "claims": 1,
+      "citations": 1,
+      "automaticNewAnswerFocusVerified": true,
+      "olderRecordsAvailableToCheckCollapse": 0,
+      "fullClaimEqualityAndKeyboardCitationsVerified": true,
+      "unrelatedEducationScaffoldingAbsent": true,
+      "reloadAndFreshLoginPersistence": true,
+      "storageClaimAndOwnQuoteReviewed": "25 ℃以下乾燥處",
+      "storageSource": {
+        "sourceVersion": "355931af34ccb199",
+        "canonicalTextSha256": "49cd879b5c4a63c99862cd669096b57077be4579ce390d7d2d7e86b74be03c71",
+        "chunkId": "553a71ac6af8b497-1-0-whole-page-v1-49cd879b5c4a63c9",
+        "claims": 1,
+        "questions": 0,
+        "citations": 1
+      }
+    },
+    "browserUx": {
+      "passed": 18,
+      "failed": 0,
+      "profiles": [
+        "desktop Chromium",
+        "Pixel 5 Chromium emulation"
+      ],
+      "checks": [
+        {
+          "name": "desktop:normal_password_login",
+          "status": "passed"
+        },
+        {
+          "name": "desktop:saved_badge_exact_record_search_and_recovery",
+          "status": "passed",
+          "detail": {
+            "medicationsChecked": 2
+          }
+        },
+        {
+          "name": "desktop:negative_reminder_inputs_only",
+          "status": "passed",
+          "detail": {
+            "invalidTimeCases": 6,
+            "invalidDateCases": 2,
+            "schedulePosts": 0
+          }
+        },
+        {
+          "name": "desktop:record_identity_and_distinct_medication_selectors",
+          "status": "passed",
+          "detail": {
+            "medicationSelectors": 4,
+            "learningRecords": 2
+          }
+        },
+        {
+          "name": "desktop:learning_wrong_reload_correct_all_questions",
+          "status": "passed",
+          "detail": {
+            "questionCount": 4,
+            "wrongPersistedAfterReload": true,
+            "allCorrectPersistedAfterReload": true
+          }
+        },
+        {
+          "name": "desktop:learning_wrong_reload_correct_all_questions",
+          "status": "passed",
+          "detail": {
+            "questionCount": 1,
+            "wrongPersistedAfterReload": true,
+            "allCorrectPersistedAfterReload": true
+          }
+        },
+        {
+          "name": "desktop:chat_complete_claim_equality_citations_keyboard_and_no_scaffolding",
+          "status": "passed",
+          "detail": {
+            "claims": 1,
+            "citations": 1,
+            "newCompletionAutoFocus": "not_exercised"
+          }
+        },
+        {
+          "name": "desktop:reload_and_fresh_ui_login_persist_records",
+          "status": "passed",
+          "detail": {
+            "persistedMedications": 2,
+            "persistedLearning": 2,
+            "persistedChat": 1
+          }
+        },
+        {
+          "name": "desktop:network_and_page_error_boundaries",
+          "status": "passed",
+          "detail": {
+            "recognitionPosts": 0,
+            "recognitionSaves": 0,
+            "answerPosts": 4,
+            "schedulePosts": 0,
+            "blockedApplicationWrites": 0,
+            "blockedExternalWrites": 0,
+            "pageErrors": 0
+          }
+        },
+        {
+          "name": "pixel5:normal_password_login",
+          "status": "passed"
+        },
+        {
+          "name": "pixel5:saved_badge_exact_record_search_and_recovery",
+          "status": "passed",
+          "detail": {
+            "medicationsChecked": 2
+          }
+        },
+        {
+          "name": "pixel5:negative_reminder_inputs_only",
+          "status": "passed",
+          "detail": {
+            "invalidTimeCases": 6,
+            "invalidDateCases": 2,
+            "schedulePosts": 0
+          }
+        },
+        {
+          "name": "pixel5:record_identity_and_distinct_medication_selectors",
+          "status": "passed",
+          "detail": {
+            "medicationSelectors": 4,
+            "learningRecords": 2
+          }
+        },
+        {
+          "name": "pixel5:learning_wrong_reload_correct_all_questions",
+          "status": "passed",
+          "detail": {
+            "questionCount": 4,
+            "wrongPersistedAfterReload": true,
+            "allCorrectPersistedAfterReload": true
+          }
+        },
+        {
+          "name": "pixel5:learning_wrong_reload_correct_all_questions",
+          "status": "passed",
+          "detail": {
+            "questionCount": 1,
+            "wrongPersistedAfterReload": true,
+            "allCorrectPersistedAfterReload": true
+          }
+        },
+        {
+          "name": "pixel5:chat_complete_claim_equality_citations_keyboard_and_no_scaffolding",
+          "status": "passed",
+          "detail": {
+            "claims": 1,
+            "citations": 1,
+            "newCompletionAutoFocus": "not_exercised"
+          }
+        },
+        {
+          "name": "pixel5:reload_and_fresh_ui_login_persist_records",
+          "status": "passed",
+          "detail": {
+            "persistedMedications": 2,
+            "persistedLearning": 2,
+            "persistedChat": 1
+          }
+        },
+        {
+          "name": "pixel5:network_and_page_error_boundaries",
+          "status": "passed",
+          "detail": {
+            "recognitionPosts": 0,
+            "recognitionSaves": 0,
+            "answerPosts": 4,
+            "schedulePosts": 0,
+            "blockedApplicationWrites": 0,
+            "blockedExternalWrites": 0,
+            "pageErrors": 0
+          }
+        }
+      ]
+    },
+    "reading": {
+      "passed": 4,
+      "failed": 0,
+      "purposeAllClaimsFullWarningsOwnQuotesAndKeyboardNavigationVerified": true,
+      "checks": [
+        {
+          "profile": "desktop",
+          "licenseNo": "衛署藥製字第026087號",
+          "claims": 4,
+          "purposeVisible": true,
+          "fullWarningsVisible": true,
+          "allOwnCitationsExpanded": true,
+          "keyboardNavigation": true,
+          "overflow": false,
+          "passed": true
+        },
+        {
+          "profile": "desktop",
+          "licenseNo": "內衛成製字第000544號",
+          "claims": 1,
+          "purposeVisible": true,
+          "fullWarningsVisible": true,
+          "allOwnCitationsExpanded": true,
+          "keyboardNavigation": true,
+          "overflow": false,
+          "passed": true
+        },
+        {
+          "profile": "pixel5",
+          "licenseNo": "衛署藥製字第026087號",
+          "claims": 4,
+          "purposeVisible": true,
+          "fullWarningsVisible": true,
+          "allOwnCitationsExpanded": true,
+          "keyboardNavigation": true,
+          "overflow": false,
+          "passed": true
+        },
+        {
+          "profile": "pixel5",
+          "licenseNo": "內衛成製字第000544號",
+          "claims": 1,
+          "purposeVisible": true,
+          "fullWarningsVisible": true,
+          "allOwnCitationsExpanded": true,
+          "keyboardNavigation": true,
+          "overflow": false,
+          "passed": true
+        }
+      ]
+    },
+    "manualReminders": {
+      "invalidInputsRejected": true,
+      "schedulePosts": 0,
+      "activeSchedulesCreated": 0
+    },
+    "recovery": {
+      "firstSaveThenReload": true,
+      "readOnlyApiTransportFailuresObserved": 1,
+      "recoveredByReadbackAndSameOperationCheckpoint": true,
+      "repeatedRecognitionJobs": 0,
+      "explicitJobRetries": 0,
+      "lateResponseAndConcurrentSubmissionFaultTests": "Covered by source CI isolated regressions; no cloud worker outage injected."
+    }
+  },
+  "ai": {
+    "logicalJobs": 4,
+    "successfulJobs": 4,
+    "quotaUnitsConsumed": 4,
+    "originalSyntheticAccountUsageUnchanged": true,
+    "globalUsageBefore": 22,
+    "globalUsageAfter": 26,
+    "upstreamHttpRequests": 7,
+    "reportedTokens": 14490,
+    "unknownUsageRequests": 0,
+    "applicationMetricsAreNotProviderInvoice": true
+  },
+  "limitations": [
+    "This release run uses one synthetic photograph with two known-source medicines; broader public/real-world photograph accuracy is not measured here.",
+    "Pixel 5 is browser emulation. Camera hardware, physical-device push, Google OAuth and mail delivery were not repeated in this release run.",
+    "This checks source fidelity and software operation; clinical suitability and educational effectiveness are outside this acceptance. Public launch operating requirements remain in PUBLIC-READINESS.md."
+  ],
+  "privacy": {
+    "passwordsTokensKeysUidsEmailsAndPatientImagesIncluded": false,
+    "unrelatedResearchWorkExcludedFromRelease": true
+  }
+}

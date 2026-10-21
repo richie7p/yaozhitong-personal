@@ -2,9 +2,17 @@
 
 2026-10-20 已完成 `asia-east1` 的 Google Cloud TEST 首次部署，並以真實 Firebase 登入、雲端資料庫／佇列及 OpenAI API 跑通固定合成藥袋流程。目前是受控測試環境，尚未完成大眾公開使用所需的全部驗收。
 
-## 目前狀態（2026-10-20）
+## 目前狀態（2026-10-21）
 
-**現行映像為 `20261020-notification-history`**，Cloud Build `bf7a1dfc-7132-48f3-abd2-c849e241c2e9` 於15:00:50Z成功，digest為 `sha256:a1a53cd7d682a5a78338cccec4c734b0416dc0cf7ad15cccb24c6d8523dc4d00`。Web revision `yzt-test-web-00009-6kw`、worker `yzt-test-worker-00009-l9p`各100%流量，只更新映像。新增前端通知紀錄，沿用既有本人通知API；沒有變更排程、推播及模型設定。15:03:52Z版本 **8／8**、15:03:45Z起公開入口與原資料保存 **27／27**、15:04:40Z基礎設施 **90／90** 通過，既有4題答案、8個合成工作及額度不變。合成帳號的實際瀏覽器登入、鈴鐺進頁及空紀錄重新整理通過；有資料、故障恢復、換帳號和手機畫面由隔離合成測試驗證。沒有新增AI或真實推播，費用限制沿用原設定；[本次摘要](acceptance/notification-history-20261020.json)另列。
+目前發布來源為 `b780fdd4a101d30109d17d6d620dcea5b2a5d207`，映像標籤 `20261021-ux-batch2`，Cloud Build `0a7a523f-af35-4f1a-924d-2aabd0ec9c70`。digest 為 `sha256:2b6fdc18987a65007e8477dc1682c18f06a5f665b5c44f4a9a88d02600b60bb3`；Web `yzt-test-web-00014-ls7`、worker `yzt-test-worker-00014-c9k` 各承接 100% 流量。
+
+本輪只更新映像及流量。發布前後比對服務設定、完整修訂規格與 IAM，環境、Secret 引用、服務帳號、資源、並行數、逾時及網址均保留；每日每人 20、全站 200 次、服務層級最多 2 個 instance 不變。原修訂 Web `00013-rjv`／worker `00013-4bq` 保留，可依序將 Web、worker 流量切回原修訂。流量回復不會還原資料庫寫入。
+
+已完成合成雙藥照片的雲端完整流程，18 項桌面／手機尺寸操作與 4 項仿單閱讀檢查通過；本輪新增 4 個 AI 任務，沒有重複辨識或正式提醒。詳見[本輪雲端驗收](acceptance/cloud-ux-batch2-20261021.json)。
+
+## 2026-10-20 歷史發布紀錄
+
+**當時映像為 `20261020-notification-history`**，Cloud Build `bf7a1dfc-7132-48f3-abd2-c849e241c2e9` 於15:00:50Z成功，digest為 `sha256:a1a53cd7d682a5a78338cccec4c734b0416dc0cf7ad15cccb24c6d8523dc4d00`。Web revision `yzt-test-web-00009-6kw`、worker `yzt-test-worker-00009-l9p`各100%流量，只更新映像。新增前端通知紀錄，沿用既有本人通知API；沒有變更排程、推播及模型設定。15:03:52Z版本 **8／8**、15:03:45Z起公開入口與原資料保存 **27／27**、15:04:40Z基礎設施 **90／90** 通過，既有4題答案、8個合成工作及額度不變。合成帳號的實際瀏覽器登入、鈴鐺進頁及空紀錄重新整理通過；有資料、故障恢復、換帳號和手機畫面由隔離合成測試驗證。沒有新增AI或真實推播，費用限制沿用原設定；[本次摘要](acceptance/notification-history-20261020.json)另列。
 
 上一版 `20261020-cloud-prn` 的 Cloud Build `0273a5b3-40e7-4af4-b9c6-16adeb6b9258` 於13:02:26Z成功，digest為 `sha256:6c141fcdf42fecf8b09eec73d48bd708440a56fcdebac6ca8cd19881a9cc6ba8`。Web revision `yzt-test-web-00008-rsr`、worker `yzt-test-worker-00008-mhj`當時各100%流量；13:04:56Z版本檢查 **8／8**，13:05:06Z入口與原資料保存 **27／27** 通過。原4題答案、藥品及辨識／說明工作保持，檢查前後7個合成帳號工作內容與使用者／全站額度均不變、0新增AI。該版只新增前端PRN草稿修正，沒有改動API、worker或基礎設施。瀏覽器已從原辨識結果接續，完成核對保存、新說明／測驗及重新登入後4／4進度保存。
 
