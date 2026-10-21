@@ -105,7 +105,9 @@ export function Home() {
   const pending =
     meds.loading || meds.error
       ? "—"
-      : meds.data?.items?.filter((m: any) => !m.confirmed).length || 0;
+      : meds.data?.items?.filter(
+          (m: any) => !m.confirmed || m.identityReview?.status !== "confirmed",
+        ).length || 0;
   return (
     <div className="journal-home">
       <header className="journal-heading">
@@ -140,7 +142,7 @@ export function Home() {
               </dd>
             </div>
             <div>
-              <dt>待確認用法</dt>
+              <dt>待核對藥品</dt>
               <dd>
                 <a href="#medications">
                   {pending}

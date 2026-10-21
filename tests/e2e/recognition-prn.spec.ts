@@ -47,9 +47,12 @@ test.describe("new recognition drafts", () => {
     const asNeeded = page.getByLabel("需要時才使用（不排定時提醒）", {
       exact: true,
     });
-    const confirmed = page.getByLabel("我已對照藥袋確認藥品與用法", {
-      exact: true,
-    });
+    const confirmed = page.getByLabel(
+      "我已對照藥袋確認用法（每次用量、頻次與途徑）",
+      {
+        exact: true,
+      },
+    );
     for (const frequency of ["PRN", "TID"]) {
       for (const entry of ["edit", "candidate"]) {
         const result = page.locator(".capture-result-sheet").filter({
@@ -73,7 +76,7 @@ test.describe("new recognition drafts", () => {
         else await expect(asNeeded).not.toBeChecked();
         await expect(confirmed).not.toBeChecked();
         await expect(
-          page.getByRole("button", { name: "儲存草稿", exact: true }),
+          page.getByRole("button", { name: "保存待核對資料", exact: true }),
         ).toBeVisible();
         // The prefill is a draft choice, not an enforced or confirmed instruction.
         await asNeeded.setChecked(frequency !== "PRN");
@@ -119,6 +122,8 @@ test("editing an existing medication retains the user's PRN setting despite its 
     page.getByLabel("需要時才使用（不排定時提醒）", { exact: true }),
   ).not.toBeChecked();
   await expect(
-    page.getByLabel("我已對照藥袋確認藥品與用法", { exact: true }),
+    page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）", {
+      exact: true,
+    }),
   ).toBeChecked();
 });

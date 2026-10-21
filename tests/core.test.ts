@@ -81,6 +81,11 @@ const medInput = {
   frequencyRaw: "QD",
   confirmed: true,
 };
+const identifiedInput = {
+  ...medInput,
+  licenseNo: drug.licenseNo,
+  identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
+};
 async function setup(
   llm: Llm = {
     json: async () => ({
@@ -126,7 +131,11 @@ describe("account and access boundaries", () => {
   });
   it("isolates medications, jobs and profile data", async () => {
     const { d, req } = await setup();
-    const m = await d.saveMedication("a", medInput);
+    const m = await d.saveMedication("a", {
+      ...medInput,
+      licenseNo: drug.licenseNo,
+      identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
+    });
     expect(
       (await req("/medications/" + m.id, "PUT", medInput, "b")).status,
     ).toBe(404);
@@ -158,12 +167,19 @@ describe("account and access boundaries", () => {
   });
   it("requires verified emails and tester eligibility for AI", async () => {
     const { d, req } = await setup();
+    const med = await d.saveMedication("a", identifiedInput);
     expect((await req("/care/invites", "POST", {}, "unverified")).status).toBe(
       403,
     );
     await d.setUser("admin", "a", { eligible: false });
     await expect(
-      d.enqueueJob("a", true, "chat", {}, "request-key-001"),
+      d.enqueueJob(
+        "a",
+        true,
+        "chat",
+        { medicationIds: [med.id] },
+        "request-key-001",
+      ),
     ).rejects.toMatchObject({ code: "not_eligible" });
   });
   it("only exposes approved caregiver data and revokes immediately", async () => {
@@ -394,26 +410,40 @@ describe("grounding and jobs", () => {
   });
   it("deduplicates concurrent requests and detects key reuse with different input", async () => {
     const { d, store } = await setup();
+    const med = await d.saveMedication("a", identifiedInput);
     const j = await Promise.all(
       Array.from({ length: 5 }, () =>
-        d.enqueueJob("a", true, "chat", { question: "q" }, "request-key-001"),
+        d.enqueueJob(
+          "a",
+          true,
+          "chat",
+          { medicationIds: [med.id], question: "q" },
+          "request-key-001",
+        ),
       ),
     );
     expect(new Set(j.map((x) => x.id)).size).toBe(1);
     expect((await store.list("usage")).every((x) => x.count === 1)).toBe(true);
     await expect(
-      d.enqueueJob("a", true, "chat", { question: "other" }, "request-key-001"),
+      d.enqueueJob(
+        "a",
+        true,
+        "chat",
+        { medicationIds: [med.id], question: "other" },
+        "request-key-001",
+      ),
     ).rejects.toMatchObject({ code: "idempotency_conflict" });
   });
   it("enforces quota atomically", async () => {
     const { d, store } = await setup();
+    const med = await d.saveMedication("a", identifiedInput);
     const result = await Promise.allSettled(
       Array.from({ length: 25 }, (_, i) =>
         d.enqueueJob(
           "a",
           true,
           "chat",
-          { question: "q" },
+          { medicationIds: [med.id], question: "q" },
           "request-key-" + i.toString().padStart(3, "0"),
         ),
       ),
@@ -443,6 +473,10 @@ describe("grounding and jobs", () => {
       const m = await d.saveMedication(uid, {
         ...medInput,
         licenseNo: drug.licenseNo,
+        identityEvidence: {
+          method: "license",
+          printedLicenseNo: drug.licenseNo,
+        },
       });
       const j = await d.enqueueJob(
         uid,
@@ -575,11 +609,12 @@ describe("revision and concurrent operation regressions", () => {
   });
   it("deduplicates concurrent retries before the worker claims them", async () => {
     const { d, store } = await setup();
+    const med = await d.saveMedication("a", identifiedInput);
     const j = await d.enqueueJob(
       "a",
       true,
       "chat",
-      { question: "q" },
+      { medicationIds: [med.id], question: "q" },
       "retry-request-001",
     );
     await store.set("jobs", j.id, { ...j, status: "failed", attempts: 1 });
@@ -694,6 +729,7 @@ describe("revision and concurrent operation regressions", () => {
     const m = await d.saveMedication("a", {
       ...medInput,
       licenseNo: drug.licenseNo,
+      identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
     });
     const j = await d.enqueueJob(
       "a",

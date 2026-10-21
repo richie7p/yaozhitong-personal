@@ -10,12 +10,13 @@ Base path：`/api/v1`。除 `/config`、本機專用 `/auth/local` 與 `/health`
 | `/me/export`                               | GET                      | 下載個人資料 JSON                               |
 | `/auth/google-profile`                     | POST                     | 核對Google憑證與目前Firebase UID，僅補齊缺少的信箱 |
 | `/medications`、`/medications/:id`         | GET / POST、PUT / DELETE | 藥品草稿、確認、編輯、封存                      |
+| `/medications/identity-check`              | POST                     | 以另抄的包裝資料核對產品；不建立 AI 工作或扣額 |
 | `/drugs/search?q=`                         | GET                      | 版本化官方主檔搜尋                              |
 | `/recognitions`                            | POST                     | JPEG／PNG base64，8 MB 以內；回傳長任務         |
 | `/recognitions/:id/medications/:index`     | POST                     | 從本人成功辨識結果逐筆核對保存；重送不新增或覆寫 |
 | `/bundles`、`/chat`、`/interactions`       | POST                     | 藥品 ID 集合與問題，回傳長任務；交互作用限兩款  |
 | `/chat`                                    | GET                      | 自己的問答歷史                                  |
-| `/jobs`、`/jobs/:id`                       | GET                      | 自己最近 100 筆任務／單筆進度及結果，隱藏 input |
+| `/jobs`、`/jobs/:id`                       | GET                      | 最近 100 筆摘要／單筆重新核對後的結果；隱藏 input |
 | `/jobs/:id/retry`                          | POST                     | 重試失敗的文字任務，照片需重新上傳              |
 | `/learning`                                | GET                      | 仍符合內容規則／健康／藥品／仿單版本的說明與測驗 |
 | `/learning/:id/answers`                    | POST                     | 答案與解釋，可重答；不阻擋提醒                  |
@@ -60,6 +61,22 @@ HTTP 202 後輪詢 `/jobs/:id`；狀態為 queued、running、succeeded 或 fail
 保存藥品與 `Job.savedMedications[index] = {id,name}` 在同一筆交易內完成，藥品識別由 UID、辨識任務及索引決定。回應遺失後重送、同頁重複點擊或另一分頁重送，均回傳原藥品，不新增第二筆，也不以重送 body 覆寫已保存的內容。已封存的同筆藥品不會被重新建立；有保存對應但找不到藥品時回 `409 already_saved`。成功與重送回應均為 201 與藥品物件。
 
 使用者可從「AI 處理紀錄 → 繼續核對辨識結果」開啟成功任務，前端略過已保存索引，接續其餘結果。重新登入或服務重啟後仍可續接，不重新呼叫辨識模型；失敗辨識仍需重新上傳照片。
+
+## 產品資料不足與仿單連結
+
+`confirmed` 表示使用者已核對用法。連結仿單還需要獨立的包裝資料；搜尋分數、選取候選、已有仿單及辨識信心都不會自動完成產品核對。
+
+`identityEvidence` 可留空或保存部分抄錄內容。核對方式為 `method:"license"`，使用 `printedLicenseNo` 抄完整許可證（包含前綴）；或 `method:"details"`，使用 `printedName`、`printedStrength`、`printedForm` 抄完整品名、含量與劑型。後者必須與完整官方目錄中的單一產品一致，保留廠牌、口味、含量與劑型差異，不換算濃度。官方含量或劑型不完整時，需改用完整許可證。
+
+`POST /medications/identity-check` 接受上述資料及可選的 `candidateLicenseNo`，回傳 `identityReview`（`status:"confirmed" | "needs_information"`、`message`、`missingFields` 與候選完整資料）。這是對抄錄資料與目錄的一致性核對；包裝真偽與抄錄來源由使用者對照。介面不預填核對證據，資料不足時提示補拍完整藥袋、外盒或瓶身，或向原調劑院所補資料。
+
+兩個存藥入口都重新執行伺服器核對。待核對資料的 `licenseNo` 為 `null`，所選候選保存在 `candidateLicenseNo`，用量、頻次及部分抄錄仍可保存接續。只有核對成功才設定正式 `licenseNo`；回傳的 `identityReview` 由伺服器計算，客戶端傳入成功標記不能取代證據。舊資料沒有核對證據時，同樣回傳待核對狀態，讀取過程不自動改寫或遷移資料。
+
+仿單、測驗、問答及交互作用在入列與扣額前檢查產品及用法。產品尚未核對回 `409 identity_unconfirmed`，不新增工作、不扣 AI 額度；worker、快取、重試與完成寫入時也會重新檢查。失效的舊學習及問答不再當成可用內容展示，問答列表會附 `hiddenUnsafeCount` 與補資料提示。
+
+`GET /jobs` 的辨識結果仍可供核對續接；其他工作僅提供摘要，`result:null`，成功工作附 `resultRequiresCheck:true`。使用者展開結果時才呼叫 `GET /jobs/:id` 重新核對，避免每次輪詢對所有歷史逐筆讀取。無法核對的單筆結果回空內容及 `identityReviewRequired:true`，保留原執行狀態。收合再展開會重新檢查，不重用先前核對過的回答。
+
+編輯已保存藥品沿用既有提醒規則：保存後停用原提醒，包含只補齊產品資料的修改；介面會提醒重新確認時間並排定。產品待核對仍可按本人已確認用法保存紀錄及設定提醒。
 
 ## 衛教與學習進度（2026-10-11）
 

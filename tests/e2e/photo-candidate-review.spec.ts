@@ -77,7 +77,7 @@ for (const photo of [
       .soft(page.getByLabel("劑型", { exact: true }))
       .toHaveValue(photo.form || "");
     await expect(page.getByLabel("許可證字號", { exact: true })).toHaveValue(
-      candidate.licenseNo,
+      "產品待核對，尚未連結仿單",
     );
     await expect(page.getByLabel("每次劑量", { exact: true })).toHaveValue(
       "0.5",
@@ -92,15 +92,19 @@ for (const photo of [
       "口服",
     );
     await expect(
-      page.getByLabel("我已對照藥袋確認藥品與用法"),
+      page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）"),
     ).not.toBeChecked();
-    await page.getByRole("button", { name: "儲存草稿", exact: true }).click();
+    await page
+      .getByRole("button", { name: "保存待核對資料", exact: true })
+      .click();
     await expect(page).toHaveURL(
       /#medications\?saved=synthetic-photo-medication$/,
     );
     expect(saved).toMatchObject({
       name: candidate.nameZh,
-      licenseNo: candidate.licenseNo,
+      licenseNo: null,
+      candidateLicenseNo: candidate.licenseNo,
+      identityEvidence: null,
       strength: photo.strength || "",
       form: photo.form || "",
       doseAmount: 0.5,
@@ -132,5 +136,7 @@ test("manual catalog search still prefills the selected official specification",
   );
   await expect(page.getByLabel("劑型", { exact: true })).toHaveValue("錠劑");
   await expect(page.getByLabel("每次劑量", { exact: true })).toHaveValue("");
-  await expect(page.getByLabel("我已對照藥袋確認藥品與用法")).not.toBeChecked();
+  await expect(
+    page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）"),
+  ).not.toBeChecked();
 });

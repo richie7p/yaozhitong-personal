@@ -8,6 +8,14 @@ import type {
 test.use({ serviceWorkers: "block" });
 
 const ownerId = "synthetic-discovery-owner";
+const confirmedIdentity = {
+  licenseNo: "SYNTHETIC-DISCOVERY-IDENTITY",
+  identityReview: {
+    status: "confirmed" as const,
+    message: "合成包裝許可證已核對。",
+    missingFields: [],
+  },
+};
 const fixtureResult: GroundedResult = {
   status: "insufficient_data",
   claims: [],
@@ -176,9 +184,11 @@ test("manual save reveals its exact record above a long list and name search can
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await page.getByLabel("頻次原文", { exact: true }).fill("TID");
   await page.getByLabel("給藥途徑", { exact: true }).fill("口服");
-  await page.getByLabel("我已對照藥袋確認藥品與用法", { exact: true }).check();
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）", { exact: true })
+    .check();
+  await page
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
 
   await expect(page).toHaveURL(
@@ -239,17 +249,22 @@ test("same-name prescriptions keep separate identities in lists, chat and learni
   page,
 }) => {
   const first = medication(1, {
+    ...confirmedIdentity,
     name: "合成同名藥品",
     doseAmount: 0.5,
     frequencyRaw: "QD",
   });
   const second = medication(2, {
+    ...confirmedIdentity,
     name: first.name,
     doseAmount: 2,
     frequencyRaw: "BID",
     createdAt: "2026-10-21T01:00:00.000Z",
   });
-  const comparator = medication(3, { name: "合成比較藥品" });
+  const comparator = medication(3, {
+    ...confirmedIdentity,
+    name: "合成比較藥品",
+  });
   const firstRecord = learningRecord("synthetic-learning-00001111", [first.id]);
   const secondRecord = learningRecord("synthetic-learning-00002222", [
     second.id,

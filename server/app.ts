@@ -4,7 +4,13 @@ import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import { z, ZodError } from "zod";
 import { learningProgress, validAnswers } from "../shared/learning.js";
-import type { Account, Identity, Job, JobKind } from "../shared/schema.js";
+import {
+  IdentityCheckSchema,
+  type Account,
+  type Identity,
+  type Job,
+  type JobKind,
+} from "../shared/schema.js";
 import { aiConnection, config, AppError, fail } from "./config.js";
 import { authenticate, localPeople, localToken, verifyWorker } from "./auth.js";
 import { Domain, hash, now } from "./domain.js";
@@ -134,6 +140,14 @@ export function createApp(d: Domain, auth = authenticate) {
   app.post("/api/v1/medications", async (c) =>
     c.json(await d.saveMedication(uid(c), await c.req.json()), 201),
   );
+  app.post("/api/v1/medications/identity-check", async (c) => {
+    await d.active(uid(c));
+    return c.json({
+      identityReview: await d.catalog.identityReview(
+        IdentityCheckSchema.parse(await c.req.json()),
+      ),
+    });
+  });
   app.post("/api/v1/recognitions/:id/medications/:index", async (c) => {
     const index = z.coerce
       .number()
@@ -345,8 +359,7 @@ export function createApp(d: Domain, auth = authenticate) {
     });
   app.get("/api/v1/jobs/:id", async (c) => {
     const j = await d.owned<Job>("jobs", c.req.param("id"), uid(c));
-    const { input, ...publicJob } = j;
-    return c.json(publicJob);
+    return c.json(await d.publicJob(uid(c), j));
   });
   app.get("/api/v1/jobs", async (c) =>
     c.json({
@@ -354,7 +367,7 @@ export function createApp(d: Domain, auth = authenticate) {
         .filter((j) => j.kind !== "delete-account")
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .slice(0, 100)
-        .map(({ input, ...j }) => j),
+        .map((j) => d.jobSummary(j)),
     }),
   );
   app.post("/api/v1/jobs/:id/retry", async (c) => {
@@ -362,13 +375,12 @@ export function createApp(d: Domain, auth = authenticate) {
       return fail("forbidden", "需要驗證信箱及測試資格。", 403);
     return c.json(await d.retryJob(uid(c), c.req.param("id")), 202);
   });
-  app.get("/api/v1/chat", async (c) =>
-    c.json({ items: await d.store.list("chats", ["ownerId", uid(c)]) }),
-  );
+  app.get("/api/v1/chat", async (c) => c.json(await d.chatHistory(uid(c))));
   app.get("/api/v1/learning", async (c) => {
     const items = await d.store.list("learning", ["ownerId", uid(c)]);
+    const reader = d.historyReader();
     const valid = await Promise.all(
-      items.map((x) => d.learningCurrent(uid(c), x)),
+      items.map((x) => d.learningCurrent(uid(c), x, reader)),
     );
     return c.json({
       items: items

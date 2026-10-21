@@ -105,7 +105,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
     .click();
   await expect(page.getByLabel("每次劑量", { exact: true })).toHaveValue("");
   await expect(page.getByLabel("頻次原文", { exact: true })).toHaveValue("");
-  await page.getByRole("button", { name: "儲存草稿" }).click();
+  await page.getByRole("button", { name: "保存待核對資料" }).click();
   const med = page
     .locator("article.med-card")
     .filter({ hasText: "流程測試片 5mg" });
@@ -115,8 +115,15 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await page.getByLabel("頻次原文", { exact: true }).fill("QD");
-  await page.getByLabel("我已對照藥袋確認藥品與用法").check();
-  await page.getByRole("button", { name: "確認並儲存藥品" }).click();
+  await page
+    .getByLabel("包裝上的完整許可證字號", { exact: true })
+    .fill("SYNTHETIC-E2E-5");
+  await page.getByRole("button", { name: "核對產品資料", exact: true }).click();
+  await expect(
+    page.getByText("包裝資料已與官方藥品資料核對。", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
+  await page.getByRole("button", { name: "儲存已核對藥品與用法" }).click();
   await med.getByRole("button", { name: "仿單說明" }).click();
   const evidence = page.locator(".evidence");
   await expect(evidence.getByText("已附仿單依據", { exact: true })).toBeVisible(
@@ -143,8 +150,15 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await page.getByLabel("頻次原文", { exact: true }).fill("QD");
-  await page.getByLabel("我已對照藥袋確認藥品與用法").check();
-  await page.getByRole("button", { name: "確認並儲存藥品" }).click();
+  await page
+    .getByLabel("包裝上的完整許可證字號", { exact: true })
+    .fill("SYNTHETIC-E2E-10");
+  await page.getByRole("button", { name: "核對產品資料", exact: true }).click();
+  await expect(
+    page.getByText("包裝資料已與官方藥品資料核對。", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
+  await page.getByRole("button", { name: "儲存已核對藥品與用法" }).click();
   await expect(
     page.getByRole("heading", { name: "流程測試片 10mg", exact: true }),
   ).toBeVisible();

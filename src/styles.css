@@ -893,6 +893,31 @@ main {
 .full-grid {
   grid-column: 1/-1;
 }
+.product-identity-review {
+  padding: 18px;
+  border: 1px solid #c5cfbd;
+  border-radius: 12px;
+  min-width: 0;
+}
+.product-identity-review h3 {
+  margin: 0;
+}
+.product-identity-review p,
+.identity-candidate {
+  overflow-wrap: anywhere;
+}
+.identity-methods {
+  border: 0;
+  padding: 8px 0;
+  margin: 12px 0;
+  min-width: 0;
+}
+.identity-methods legend {
+  font-size: 14px;
+}
+.product-identity-review .form-grid {
+  grid-template-columns: 1fr;
+}
 .choice {
   display: flex;
   gap: 10px;

@@ -24,6 +24,10 @@ test("personal education, one-question feedback, saved progress and keyboard ope
       data: {
         name: "流程測試片 5mg",
         licenseNo: "SYNTHETIC-E2E-5",
+        identityEvidence: {
+          method: "license",
+          printedLicenseNo: "SYNTHETIC-E2E-5",
+        },
         doseAmount: 2,
         doseUnit: "錠",
         frequencyRaw: "QD",
@@ -110,12 +114,20 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
   // In-page hash navigation remounts Evidence without refetching the directory.
   // It must reuse the saved answer as well as the updated progress badge.
-  await page.locator(".learning-toolbar").getByRole("link", {
-    name: "返回全部藥品", exact: true,
-  }).click();
-  const directoryRow = page.locator(`.learning-index-card[data-learning-id="${learning.id}"]`);
+  await page
+    .locator(".learning-toolbar")
+    .getByRole("link", {
+      name: "返回全部藥品",
+      exact: true,
+    })
+    .click();
+  const directoryRow = page.locator(
+    `.learning-index-card[data-learning-id="${learning.id}"]`,
+  );
   await expect(directoryRow).toContainText("已作答 1／2 題");
-  await directoryRow.getByRole("link", { name: "繼續學習", exact: true }).click();
+  await directoryRow
+    .getByRole("link", { name: "繼續學習", exact: true })
+    .click();
   await expect(quiz.getByLabel("可以", { exact: true })).toBeChecked();
   await expect(quiz.locator(".quiz-progress")).toContainText("已作答 1／2 題");
   await page.reload();
@@ -142,13 +154,23 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   ).items[0];
   expect(saved.answers).toEqual({ q0: 0, q1: 1 });
   expect(saved.progress.status).toBe("in_progress");
-  await page.locator(".learning-toolbar").getByRole("link", {
-    name: "返回全部藥品", exact: true,
-  }).click();
+  await page
+    .locator(".learning-toolbar")
+    .getByRole("link", {
+      name: "返回全部藥品",
+      exact: true,
+    })
+    .click();
   await expect(directoryRow).toContainText("已作答 2／2 題 · 已答對 1 題");
-  await directoryRow.getByRole("link", { name: "繼續學習", exact: true }).click();
-  await expect(quiz.getByLabel("可以直接判定安全", { exact: true })).toBeChecked();
-  await expect(quiz.locator(".quiz-progress")).toContainText("已作答 2／2 題 · 已答對 1 題");
+  await directoryRow
+    .getByRole("link", { name: "繼續學習", exact: true })
+    .click();
+  await expect(
+    quiz.getByLabel("可以直接判定安全", { exact: true }),
+  ).toBeChecked();
+  await expect(quiz.locator(".quiz-progress")).toContainText(
+    "已作答 2／2 題 · 已答對 1 題",
+  );
   await quiz.getByLabel("不可以，需確認資料", { exact: true }).check();
   await quiz.getByRole("button", { name: "檢查答案", exact: true }).click();
   await expect(
@@ -157,12 +179,20 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await expect(
     quiz.getByRole("group", { name: "理解測驗完成", exact: true }),
   ).toBeFocused();
-  await page.locator(".learning-toolbar").getByRole("link", {
-    name: "返回全部藥品", exact: true,
-  }).click();
+  await page
+    .locator(".learning-toolbar")
+    .getByRole("link", {
+      name: "返回全部藥品",
+      exact: true,
+    })
+    .click();
   await expect(directoryRow).toContainText("已作答 2／2 題 · 已答對 2 題");
-  await directoryRow.getByRole("link", { name: "重新複習", exact: true }).click();
-  await expect(quiz.getByRole("group", { name: "理解測驗完成", exact: true })).toBeVisible();
+  await directoryRow
+    .getByRole("link", { name: "重新複習", exact: true })
+    .click();
+  await expect(
+    quiz.getByRole("group", { name: "理解測驗完成", exact: true }),
+  ).toBeVisible();
   await page.reload();
   await expect(
     quiz.getByText("答對了。已完成測驗，進度已保存。", { exact: true }),
@@ -200,7 +230,7 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await expect(page.locator(".learning-record")).toHaveCount(0);
 });
 
-test("missing source keeps confirmed usage and offers a usable next step", async ({
+test("unconfirmed product keeps confirmed usage and offers a usable next step without creating AI work", async ({
   page,
   request,
 }) => {
@@ -208,6 +238,15 @@ test("missing source keeps confirmed usage and offers a usable next step", async
     await request.post("/api/v1/auth/local", { data: { uid: "local-owner" } })
   ).json();
   const headers = { authorization: "Bearer " + token };
+  const aiRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (
+      request.method() === "POST" &&
+      /^\/api\/v1\/(recognitions|bundles|chat|interactions)$/.test(path)
+    )
+      aiRequests.push(path);
+  });
   const name = "尚無來源-" + Date.now();
   await request.post("/api/v1/medications", {
     headers,
@@ -222,19 +261,16 @@ test("missing source keeps confirmed usage and offers a usable next step", async
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await page.goto("/#medications");
-  await page
-    .locator(".med-card")
-    .filter({ hasText: name })
-    .getByRole("button", { name: "仿單說明" })
-    .click();
-  await expect(
-    page.locator(".evidence").getByText("目前仿單資料不足", { exact: true }),
-  ).toBeVisible({ timeout: 20000 });
-  await expect(page.locator(".confirmed-usage")).toContainText(name);
+  const card = page.locator(".med-card").filter({ hasText: name });
+  await expect(card.getByRole("button", { name: "仿單說明" })).toBeDisabled();
+  await expect(card.locator(".usage-box strong")).toHaveText("1 錠");
+  await expect(card).toContainText("產品待核對");
   await expect(page.locator(".quiz")).toHaveCount(0);
+  await card.getByRole("button", { name: "補齊產品資料", exact: true }).click();
   await expect(
-    page.getByRole("link", { name: "到用藥小教室繼續學習" }),
+    page.getByLabel("包裝上的完整許可證字號", { exact: true }),
   ).toBeVisible();
+  expect(aiRequests).toEqual([]);
 });
 
 test("literal source mentions explain the limited match while the saved quiz remains usable", async ({
@@ -261,6 +297,10 @@ test("literal source mentions explain the limited match while the saved quiz rem
       data: {
         name,
         licenseNo: "SYNTHETIC-E2E-5",
+        identityEvidence: {
+          method: "license",
+          printedLicenseNo: "SYNTHETIC-E2E-5",
+        },
         doseAmount: 1,
         doseUnit: "錠",
         frequencyRaw: "QD",

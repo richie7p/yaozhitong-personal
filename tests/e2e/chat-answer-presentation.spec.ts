@@ -8,6 +8,11 @@ const medication = {
   name: "合成儲存問答測試藥品",
   confirmed: true,
   licenseNo: "SYNTHETIC-CHAT-STORAGE",
+  identityReview: {
+    status: "confirmed",
+    message: "合成包裝許可證已核對。",
+    missingFields: [],
+  },
   doseAmount: 1,
   doseUnit: "錠",
   frequencyRaw: "QD",

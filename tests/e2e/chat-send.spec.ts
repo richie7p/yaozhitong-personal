@@ -5,6 +5,11 @@ const confirmedMedication = {
   name: "問答流程合成藥品",
   confirmed: true,
   licenseNo: "SYNTHETIC-E2E-5",
+  identityReview: {
+    status: "confirmed",
+    message: "合成包裝許可證已核對。",
+    missingFields: [],
+  },
   doseAmount: 1,
   doseUnit: "錠",
   frequencyRaw: "QD",

@@ -298,7 +298,7 @@ test("saving edited usage closes the old reminder draft and reopening uses the u
   ).toBeVisible();
   await page.getByLabel("頻次原文", { exact: true }).fill("TID");
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "編輯用法", exact: true }),

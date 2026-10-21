@@ -19,6 +19,7 @@ import {
 } from "../shared/schema.js";
 import { learningProgress, validAnswers } from "../shared/learning.js";
 import { doseLabel } from "../shared/medication.js";
+import type { ProductIdentityIndex } from "../shared/product-identity.js";
 import {
   aiConnection,
   aiRoutingIdentity,
@@ -51,6 +52,9 @@ const jobPayloadHash = (kind: JobKind, input: Doc) =>
         : input,
     ),
   );
+type HistoryReader = Pick<Store, "get"> & {
+  identityCatalog?: Promise<ProductIdentityIndex>;
+};
 export class Domain {
   catalog: Catalog;
   enqueue: ((id: string) => Promise<void>) | null = null;
@@ -135,17 +139,49 @@ export class Domain {
     return p;
   }
   async medications(uid: string) {
-    return (
-      await this.store.list<Medication>("medications", ["ownerId", uid])
-    ).filter((m) => !m.archived);
+    const catalog = await this.catalog.identitySnapshot();
+    return Promise.all(
+      (await this.store.list<Medication>("medications", ["ownerId", uid]))
+        .filter((m) => !m.archived)
+        .map((m) => this.reviewedMedication(m, catalog)),
+    );
+  }
+  async reviewedMedication(m: Medication, catalog?: ProductIdentityIndex) {
+    const identityReview = catalog
+      ? catalog.review(m)
+      : await this.catalog.identityReview(m);
+    return {
+      ...m,
+      candidateLicenseNo:
+        m.candidateLicenseNo ||
+        m.licenseNo ||
+        identityReview.candidate?.licenseNo ||
+        null,
+      licenseNo:
+        identityReview.status === "confirmed"
+          ? identityReview.candidate!.licenseNo
+          : null,
+      identityReview,
+    };
+  }
+  private async normalizeMedication(data: unknown) {
+    const parsed = MedicationSchema.parse(data);
+    const identityReview = await this.catalog.identityReview(parsed);
+    return {
+      ...parsed,
+      candidateLicenseNo:
+        parsed.candidateLicenseNo ||
+        parsed.licenseNo ||
+        identityReview.candidate?.licenseNo ||
+        null,
+      licenseNo:
+        identityReview.status === "confirmed"
+          ? identityReview.candidate!.licenseNo
+          : null,
+    };
   }
   async saveMedication(uid: string, data: unknown, id?: string) {
-    const m = MedicationSchema.parse(data);
-    if (m.licenseNo && !(await this.catalog.get(m.licenseNo)))
-      return fail(
-        "unknown_license",
-        "請從官方藥品索引選擇許可證，或先以未匹配草稿保存。",
-      );
+    const m = await this.normalizeMedication(data);
     const key = id || randomUUID();
     const med = await this.store.transaction(async (tx) => {
       const user = await tx.get<Account>("users", uid);
@@ -167,7 +203,7 @@ export class Domain {
       return result;
     });
     await this.invalidateMedication(uid, key);
-    return med;
+    return this.reviewedMedication(med);
   }
   async saveRecognizedMedication(
     uid: string,
@@ -175,13 +211,8 @@ export class Domain {
     index: number,
     data: unknown,
   ) {
-    const m = MedicationSchema.parse(data);
-    if (m.licenseNo && !(await this.catalog.get(m.licenseNo)))
-      return fail(
-        "unknown_license",
-        "請從官方藥品索引選擇許可證，或先以未匹配草稿保存。",
-      );
-    return this.store.transaction(async (tx) => {
+    const m = await this.normalizeMedication(data);
+    const saved = await this.store.transaction(async (tx) => {
       const user = await tx.get<Account>("users", uid);
       if (!user || user.disabled || user.deleting)
         return fail("account_disabled", "帳號已停用。", 403);
@@ -207,7 +238,10 @@ export class Domain {
             "這筆辨識曾儲存後已移除，請先到我的藥品確認；需要新增時可重新建檔。",
             409,
           );
-        if (JSON.stringify(MedicationSchema.parse(old)) !== JSON.stringify(m))
+        if (
+          JSON.stringify(await this.normalizeMedication(old)) !==
+          JSON.stringify(m)
+        )
           return fail(
             "recognition_saved_conflict",
             "這筆辨識已儲存，與目前編輯內容不同。請到我的藥品編輯已儲存的資料。",
@@ -236,6 +270,7 @@ export class Domain {
       });
       return med;
     });
+    return this.reviewedMedication(saved);
   }
   async invalidateMedication(uid: string, id: string) {
     for (const s of await this.store.list<Schedule>("schedules", [
@@ -572,6 +607,42 @@ export class Domain {
       })),
     );
   }
+  private async jobMedications(
+    uid: string,
+    kind: JobKind,
+    input: Doc,
+    reader: HistoryReader = this.store,
+  ) {
+    if (kind === "recognition" || kind === "delete-account") return [];
+    const ids = z
+      .array(z.string().min(1).max(80))
+      .min(1)
+      .max(kind === "interaction" ? 2 : 8)
+      .parse(input.medicationIds);
+    if (kind === "interaction" && (ids.length !== 2 || new Set(ids).size !== 2))
+      return fail("invalid_request", "請選擇兩款不同藥品。");
+    const catalog = await this.catalog.identitySnapshot();
+    const medications: Medication[] = [];
+    for (const id of ids) {
+      const medication = await reader.get<Medication>("medications", id);
+      if (!medication || medication.ownerId !== uid || medication.archived)
+        return fail("not_found", "找不到藥品。", 404);
+      const reviewed = await this.reviewedMedication(medication, catalog);
+      if (reviewed.identityReview.status !== "confirmed")
+        return fail(
+          "identity_unconfirmed",
+          "藥品身分尚未核對，請補拍包裝或補上完整許可證、品名、含量與劑型後再產生內容。",
+          409,
+        );
+      if (
+        !medication.confirmed ||
+        !MedicationSchema.safeParse(medication).success
+      )
+        return fail("unconfirmed_usage", "請先核對藥袋的用量與頻次。");
+      medications.push(reviewed);
+    }
+    return medications;
+  }
   private async authorizeJob(uid: string, verified: boolean, key: string) {
     if (!verified) return fail("email_unverified", "請先完成信箱驗證。", 403);
     if (!/^[a-zA-Z0-9-]{8,100}$/.test(key))
@@ -596,6 +667,7 @@ export class Domain {
     input: Doc,
     key: string,
   ) {
+    await this.jobMedications(uid, kind, input);
     await this.authorizeJob(uid, verified, key);
     const old = await this.store.get<Job & { payloadHash: string }>(
       "jobs",
@@ -629,6 +701,7 @@ export class Domain {
     input: Doc,
     key: string,
   ) {
+    await this.jobMedications(uid, kind, input);
     await this.authorizeJob(uid, verified, key);
     const id = hash(uid + "|" + kind + "|" + key);
     const payloadHash = jobPayloadHash(kind, input);
@@ -641,6 +714,7 @@ export class Domain {
         return fail("account_disabled", "帳號已停用。", 403);
       if (!currentUser.eligible)
         return fail("not_eligible", "此帳號尚未取得測試資格。", 403);
+      await this.jobMedications(uid, kind, input, tx);
       const old = await tx.get<Job & { payloadHash: string }>("jobs", id);
       if (old) {
         if (old.payloadHash !== payloadHash)
@@ -737,7 +811,7 @@ export class Domain {
     if (!claimed) return;
     const j = claimed;
     const startedAt = Date.now();
-    const llm = this.llmFactory();
+    let llm: Llm | undefined;
     const writes: Array<[string, string, Doc]> = [];
     let inputRevisions: Array<{ id: string; revision: number }> = [];
     let completedCurrentAttempt = false;
@@ -749,6 +823,8 @@ export class Domain {
       const u = await this.active(j.ownerId);
       if (!u.eligible)
         return fail("not_eligible", "此帳號目前沒有 AI 測試資格。", 403);
+      await this.jobMedications(j.ownerId, j.kind, j.input);
+      llm = this.llmFactory();
       let result: unknown;
       if (j.kind === "recognition") {
         const image = await this.blobs.get(String(j.input.imagePath));
@@ -768,12 +844,8 @@ export class Domain {
         };
       } else {
         const ids = j.input.medicationIds as string[];
-        const meds = await Promise.all(
-          ids.map((id) => this.owned<Medication>("medications", id, j.ownerId)),
-        );
+        const meds = await this.jobMedications(j.ownerId, j.kind, j.input);
         inputRevisions = meds.map((m) => ({ id: m.id, revision: m.revision }));
-        if (meds.some((m) => !m.confirmed || m.archived))
-          return fail("unconfirmed_usage", "請先確認藥品。");
         const leaflets = await Promise.all(
           meds.map((m) => (m.licenseNo ? this.published(m.licenseNo) : null)),
         );
@@ -845,6 +917,24 @@ export class Domain {
           }),
         );
         const cached = await this.store.get("generated", ck);
+        // Recheck just before consuming cached content or calling the model.
+        const beforeGeneration = await this.jobMedications(
+          j.ownerId,
+          j.kind,
+          j.input,
+        );
+        if (
+          beforeGeneration.some(
+            (m, i) =>
+              m.revision !== meds[i].revision ||
+              m.licenseNo !== meds[i].licenseNo,
+          )
+        )
+          return fail(
+            "stale_content",
+            "藥品資料已更新，請重試產生新內容。",
+            409,
+          );
         result = cached?.result;
         if (!result) {
           result = leaflets.some((l) => !l)
@@ -888,6 +978,9 @@ export class Domain {
               ownerId: j.ownerId,
               question: j.input.question,
               medicationIds: [...ids],
+              medicationRevisions: inputRevisions,
+              profileVersion: u.profileVersion,
+              groundingVersion: GROUNDING_VERSION,
               result,
               createdAt: now(),
             },
@@ -938,6 +1031,8 @@ export class Domain {
               409,
             );
         }
+        if (inputRevisions.length)
+          await this.jobMedications(j.ownerId, j.kind, j.input, tx);
         const versions = (result as GroundedResult)?.sourceVersions || {};
         for (const [license, version] of Object.entries(versions)) {
           const pointer = await tx.get("published", hash(license));
@@ -1022,6 +1117,7 @@ export class Domain {
         return fail("cannot_retry", "此任務不能重試，照片辨識請重新上傳。");
       if (j.attempts >= 3)
         return fail("retry_limit", "已達重試次數，請稍後建立新請求。");
+      await this.jobMedications(uid, j.kind, j.input, tx);
       tx.set("jobs", id, { ...j, status: "queued", error: null });
     });
     if (this.enqueue) await this.enqueue(id);
@@ -1064,21 +1160,37 @@ export class Domain {
   async learningCurrent(
     uid: string,
     row: Doc,
-    reader: Pick<Store, "get"> = this.store,
+    reader: HistoryReader = this.store,
   ) {
     const u = await reader.get<Account>("users", uid);
     if (!u || u.disabled || u.deleting)
       return fail("account_disabled", "帳號已停用。", 403);
     if (row.groundingVersion !== GROUNDING_VERSION) return false;
     if (row.profileVersion !== u.profileVersion) return false;
-    if (!Array.isArray(row.medicationRevisions)) return false;
+    if (
+      !Array.isArray(row.medicationRevisions) ||
+      !Array.isArray(row.medicationIds)
+    )
+      return false;
+    if (
+      !row.medicationRevisions.length ||
+      row.medicationIds.length !== row.medicationRevisions.length ||
+      row.medicationIds.some(
+        (id: string) => !row.medicationRevisions.some((r: Doc) => r.id === id),
+      )
+    )
+      return false;
+    const catalog = await (reader.identityCatalog ||
+      this.catalog.identitySnapshot());
     for (const r of row.medicationRevisions) {
       const m = await reader.get<Medication>("medications", r.id);
       if (!m || m.ownerId !== uid || m.archived || m.revision !== r.revision)
         return false;
+      if (!m.confirmed || catalog.review(m).status !== "confirmed")
+        return false;
     }
     for (const [license, version] of Object.entries(
-      row.result.sourceVersions || {},
+      row.result?.sourceVersions || {},
     )) {
       const pointer = await reader.get("published", hash(license));
       const current = pointer
@@ -1088,6 +1200,81 @@ export class Domain {
         return false;
     }
     return true;
+  }
+  /** Promise memoization is scoped to one request; private data and catalog
+   * proof are always loaded again for the next request. */
+  historyReader(): HistoryReader {
+    const reads = new Map<string, Promise<unknown>>();
+    let snapshot: Promise<ProductIdentityIndex> | undefined;
+    const loadCatalog = () => (snapshot ||= this.catalog.identitySnapshot());
+    return {
+      get identityCatalog() {
+        return loadCatalog();
+      },
+      get: <T = Doc>(collection: string, id: string): Promise<T | null> => {
+        const key = collection + "\0" + id;
+        if (!reads.has(key)) reads.set(key, this.store.get(collection, id));
+        return reads.get(key) as Promise<T | null>;
+      },
+    };
+  }
+  async chatHistory(uid: string, reader = this.historyReader()) {
+    const rows = await this.store.list("chats", ["ownerId", uid]);
+    const current = await Promise.all(
+      rows.map((row) => this.learningCurrent(uid, row, reader)),
+    );
+    const items = rows.filter((_, index) => current[index]);
+    return {
+      items,
+      hiddenUnsafeCount: rows.length - items.length,
+      identityReviewRequired: rows.length !== items.length,
+    };
+  }
+  jobSummary(job: Job) {
+    const { input, ...summary } = job;
+    if (job.kind === "recognition") return summary;
+    return {
+      ...summary,
+      result: null,
+      resultRequiresCheck: job.status === "succeeded",
+    };
+  }
+  async publicJob(uid: string, job: Job, reader = this.historyReader()) {
+    const { input, ...result } = job;
+    if (
+      job.status !== "succeeded" ||
+      job.kind === "recognition" ||
+      job.kind === "delete-account"
+    )
+      return result;
+    const record = await reader.get(
+      job.kind === "chat" ? "chats" : "learning",
+      job.id,
+    );
+    if (
+      record?.ownerId === uid &&
+      (await this.learningCurrent(uid, record, reader))
+    )
+      return result;
+    return {
+      ...result,
+      result: {
+        status: "insufficient_data",
+        claims: [],
+        chunks: [],
+        quiz: [],
+        followups: [],
+        rejectedCount: 0,
+        sourceVersions: {},
+        verification: "model_assisted",
+      } satisfies GroundedResult,
+      error: {
+        code: "stale_content",
+        message:
+          "這份舊內容的藥品身分或資料已無法核對。請補齊包裝資料後重新產生。",
+      },
+      identityReviewRequired: true,
+    };
   }
   async answerLearning(uid: string, id: string, data: unknown) {
     const b = z

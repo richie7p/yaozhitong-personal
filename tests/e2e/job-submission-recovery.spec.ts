@@ -120,6 +120,10 @@ test("interrupted polling resumes the known job after reload and never posts a d
     data: {
       name,
       licenseNo: "SYNTHETIC-E2E-5",
+      identityEvidence: {
+        method: "license",
+        printedLicenseNo: "SYNTHETIC-E2E-5",
+      },
       doseAmount: 1,
       doseUnit: "錠",
       frequencyRaw: "QD",

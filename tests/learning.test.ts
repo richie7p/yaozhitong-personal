@@ -1398,9 +1398,11 @@ async function setup() {
     revoked: false,
   };
   d.catalog.get = async () => drug;
+  d.catalog.all = async () => [drug];
   const m = await d.saveMedication("owner", {
     name: drug.nameZh,
     licenseNo: drug.licenseNo,
+    identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
     confirmed: true,
     doseAmount: 1,
     doseUnit: "錠",

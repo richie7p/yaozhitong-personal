@@ -13,10 +13,25 @@ export const ProfileSchema = z.object({
   timezone: z.literal("Asia/Taipei").default("Asia/Taipei"),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
+export const IdentityEvidenceSchema = z.object({
+  method: z.enum(["license", "details"]),
+  printedLicenseNo: z.string().max(80).default(""),
+  printedName: z.string().max(250).default(""),
+  printedStrength: z.string().max(100).default(""),
+  printedForm: z.string().max(80).default(""),
+});
+export type IdentityEvidence = z.infer<typeof IdentityEvidenceSchema>;
+export const IdentityCheckSchema = z.object({
+  licenseNo: z.string().max(80).nullable().optional(),
+  candidateLicenseNo: z.string().max(80).nullable().optional(),
+  identityEvidence: IdentityEvidenceSchema.nullable().optional(),
+});
 export const MedicationSchema = z
   .object({
     name: z.string().trim().min(1).max(150),
     licenseNo: z.string().max(80).nullable().default(null),
+    candidateLicenseNo: z.string().max(80).nullable().default(null),
+    identityEvidence: IdentityEvidenceSchema.nullable().default(null),
     strength: z.string().max(80).default(""),
     form: z.string().max(50).default(""),
     doseAmount: z.number().positive().max(10000).nullable().default(null),
@@ -51,9 +66,16 @@ export const MedicationSchema = z
           "請確認數字劑量與單位，或填入藥袋用量原文，並確認頻次後再完成建檔。",
       });
   });
-export type Medication = Omit<z.infer<typeof MedicationSchema>, "doseText"> & {
+export type Medication = Omit<
+  z.infer<typeof MedicationSchema>,
+  "doseText" | "candidateLicenseNo" | "identityEvidence"
+> & {
   /** Older saved numeric prescriptions may not have this field. */
   doseText?: string;
+  candidateLicenseNo?: string | null;
+  identityEvidence?: IdentityEvidence | null;
+  /** Always derived by the server against the current official catalog. */
+  identityReview?: IdentityReview;
   id: string;
   ownerId: string;
   revision: number;
@@ -100,6 +122,12 @@ export interface Drug {
   form: string;
   ingredients: string[];
   revoked: boolean;
+}
+export interface IdentityReview {
+  status: "confirmed" | "needs_information";
+  message: string;
+  missingFields: string[];
+  candidate?: Drug | null;
 }
 export interface Chunk {
   sourceFormat?: "pdf" | "html";

@@ -24,6 +24,8 @@ async function start() {
       PORT: String(port),
       LOCAL_DATA_PATH: directory,
       NVIDIA_API_KEY: "",
+      OPENAI_API_KEY: "",
+      AI_PROVIDER: "nvidia",
       NODE_ENV: "",
     },
   });
@@ -108,20 +110,27 @@ try {
   token = await login();
   expect((await (await call("/medications")).json()).items.length).toBe(12);
   expect((await (await call("/me")).json()).profile.notes).toBe("僅供軟體測試");
-  for (const status of ["queued", "running"])
+  for (const status of ["queued", "running"]) {
     await expect
       .poll(
         async () =>
           (await (await call("/jobs/recover-" + status)).json()).status,
         { timeout: 10000 },
       )
-      .toBe("succeeded");
+      .toBe("failed");
+    const recovered = await (await call("/jobs/recover-" + status)).json();
+    expect(recovered.error.code).toBe("identity_unconfirmed");
+    expect(recovered.aiRequests || []).toHaveLength(0);
+  }
   report.restart = {
     medicationsPreserved: 12,
     profilePreserved: true,
     oldTokenRejected: true,
     queuedJobRecovered: true,
     expiredRunningJobRecovered: true,
+    recoveredOutcome:
+      "identity_unconfirmed; pending products cannot generate content",
+    providerCalls: 0,
   };
   browser = await chromium.launch();
   const page = await browser.newPage();
@@ -133,9 +142,7 @@ try {
   await page.goto(base + "/#profile");
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "刪除帳號", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: /把用藥，/ }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: /把用藥，/ })).toBeVisible();
   expect((await call("/me")).status).toBe(403);
   await expect
     .poll(

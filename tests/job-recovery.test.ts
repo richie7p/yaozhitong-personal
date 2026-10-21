@@ -3,10 +3,24 @@ import { Domain, hash } from "../server/domain";
 import { MemoryStore } from "../server/store";
 import { tick } from "../server/scheduler";
 import { localWorkerAlive, localWorkerBootTime } from "../server/local-runner";
+import type { Drug } from "../shared/schema";
+
+const drug: Drug = {
+  licenseNo: "SYNTHETIC-RECOVERY",
+  nameZh: "合成恢復測試片",
+  nameEn: "Synthetic recovery tablet",
+  strength: "5mg",
+  form: "錠",
+  ingredients: [],
+  revoked: false,
+};
 
 async function setup(json = async () => ({ status: "not_found", claims: [] })) {
   const store = new MemoryStore();
   const d = new Domain(store, undefined, () => ({ json }));
+  d.catalog.all = async () => [drug];
+  d.catalog.get = async (licenseNo) =>
+    licenseNo === drug.licenseNo ? drug : null;
   await d.account({
     uid: "recovery",
     email: "test@example.invalid",
@@ -15,7 +29,9 @@ async function setup(json = async () => ({ status: "not_found", claims: [] })) {
     admin: false,
   });
   const med = await d.saveMedication("recovery", {
-    name: "合成恢復測試片",
+    name: drug.nameZh,
+    licenseNo: drug.licenseNo,
+    identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
     doseAmount: 1,
     doseUnit: "錠",
     frequencyRaw: "QD",
@@ -129,7 +145,6 @@ it("does not let an earlier attempt overwrite the recovered job result", async (
       },
     ],
   });
-  d.catalog.get = async () => null;
   const old = d.processJob(job.id);
   await reached;
   const claimed = (await store.get("jobs", job.id))!;

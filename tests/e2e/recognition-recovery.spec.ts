@@ -40,7 +40,7 @@ test("completed recognition survives navigation and a lost save response without
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await page.getByLabel("頻次原文", { exact: true }).fill("QD");
-  await page.getByLabel("我已對照藥袋確認藥品與用法").check();
+  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
   const saveUrl = `**/api/v1/recognitions/${jobId}/medications/0`;
   await page.route(saveUrl, async (route) => {
     const saved = await route.fetch();
@@ -48,7 +48,7 @@ test("completed recognition survives navigation and a lost save response without
     await route.abort("connectionreset");
   });
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await expect(
     page.getByRole("alert").filter({ hasText: "無法連線到服務" }),
@@ -56,7 +56,7 @@ test("completed recognition survives navigation and a lost save response without
   await page.unroute(saveUrl);
   await page.getByLabel("每次劑量", { exact: true }).fill("6");
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await expect(
     page.getByRole("alert").filter({ hasText: "與目前編輯內容不同" }),
@@ -67,7 +67,7 @@ test("completed recognition survives navigation and a lost save response without
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
   // A second submit after the missing response returns the same row.
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await expect(page).toHaveURL(/#medications\?saved=[^&]+$/);
   await expect(page.locator(".med-card").filter({ hasText: name })).toHaveCount(

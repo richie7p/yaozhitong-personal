@@ -147,6 +147,10 @@ test("learning index, one record and saved demo deep links retain the selected c
         data: {
           name,
           licenseNo: `SYNTHETIC-E2E-${strength}`,
+          identityEvidence: {
+            method: "license",
+            printedLicenseNo: `SYNTHETIC-E2E-${strength}`,
+          },
           doseAmount: 1,
           doseUnit: "錠",
           frequencyRaw: "QD",
@@ -482,9 +486,16 @@ test("a new mocked demonstration photograph keeps its saved medication and learn
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await page.getByLabel("頻次原文", { exact: true }).fill("QD");
-  await page.getByLabel("我已對照藥袋確認藥品與用法").check();
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByLabel("包裝上的完整許可證字號", { exact: true })
+    .fill("SYNTHETIC-E2E-5");
+  await page.getByRole("button", { name: "核對產品資料", exact: true }).click();
+  await expect(
+    page.getByText("包裝資料已與官方藥品資料核對。", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
+  await page
+    .getByRole("button", { name: "儲存已核對藥品與用法", exact: true })
     .click();
   await expect(page).toHaveURL(
     /#medications\?from=demo&medication=[^&]+&saved=[^&]+$/,

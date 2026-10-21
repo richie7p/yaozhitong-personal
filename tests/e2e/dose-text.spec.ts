@@ -16,9 +16,9 @@ test("a confirmed literal amount survives reload and can switch to numeric dosin
   await text.fill("適量");
   await page.getByLabel("頻次原文", { exact: true }).fill("BID");
   await page.getByLabel("給藥途徑", { exact: true }).fill("外用");
-  await page.getByLabel("我已對照藥袋確認藥品與用法").check();
+  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   const card = page.locator("article.med-card").filter({ hasText: name });
   await expect(card.locator(".usage-box")).toContainText("適量");
@@ -42,7 +42,7 @@ test("a confirmed literal amount survives reload and can switch to numeric dosin
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await expect(text).toHaveValue("");
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await expect(card.locator(".usage-box")).toContainText("0.5 錠");
   await card.getByRole("button", { name: "編輯用法", exact: true }).click();
@@ -50,7 +50,7 @@ test("a confirmed literal amount survives reload and can switch to numeric dosin
   await expect(page.getByLabel("每次劑量", { exact: true })).toHaveValue("");
   await expect(page.getByLabel("劑量單位", { exact: true })).toHaveValue("");
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await page.reload();
   await expect(card.locator(".usage-box")).toContainText("薄薄一層");

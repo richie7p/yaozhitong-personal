@@ -61,6 +61,7 @@ async function setup() {
   const domain = new Domain(store, undefined, () => ({ json }));
   domain.catalog.get = async (licenseNo) =>
     licenseNo === drug.licenseNo ? drug : null;
+  domain.catalog.all = async () => [drug];
   for (const uid of ["synthetic-chat-owner", "synthetic-other-owner"])
     await domain.account({
       uid,
@@ -84,6 +85,7 @@ async function setup() {
     domain.saveMedication(uid, {
       name: drug.nameZh,
       licenseNo: drug.licenseNo,
+      identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
       strength: drug.strength,
       form: drug.form,
       doseAmount,
@@ -146,22 +148,20 @@ it("does not save a chat or call the model when a selected same-name record belo
   const { store, domain, json, medication } = await setup();
   const own = await medication("synthetic-chat-owner", 1);
   const foreign = await medication("synthetic-other-owner", 1);
-  const job = await domain.enqueueJob(
-    "synthetic-chat-owner",
-    true,
-    "chat",
-    {
-      question: "合成跨帳號防護測試",
-      medicationIds: [own.id, foreign.id],
-    },
-    "synthetic-chat-ownership-key",
-  );
-  await domain.processJob(job.id);
-
-  expect(await store.get("jobs", job.id)).toMatchObject({
-    status: "failed",
-    error: { code: "not_found" },
-  });
+  await expect(
+    domain.enqueueJob(
+      "synthetic-chat-owner",
+      true,
+      "chat",
+      {
+        question: "合成跨帳號防護測試",
+        medicationIds: [own.id, foreign.id],
+      },
+      "synthetic-chat-ownership-key",
+    ),
+  ).rejects.toMatchObject({ code: "not_found" });
+  expect(await store.list("jobs")).toEqual([]);
+  expect(await store.list("usage")).toEqual([]);
   expect(await store.list("chats")).toEqual([]);
   expect(await store.list("generated")).toEqual([]);
   expect(json).not.toHaveBeenCalled();

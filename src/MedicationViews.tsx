@@ -44,6 +44,11 @@ import {
 } from "./medication-presentation";
 import { ScheduleForm } from "./ScheduleForm";
 import { ChatAnswer } from "./ChatAnswer";
+import {
+  ProductIdentityReview,
+  identityGuidance,
+  leafletReady,
+} from "./ProductIdentityReview";
 import type {
   GroundedResult,
   LearningProgress,
@@ -53,6 +58,9 @@ import type {
 const blank = {
   name: "",
   licenseNo: null as string | null,
+  candidateLicenseNo: null as string | null,
+  identityEvidence: null,
+  identityReview: null,
   strength: "",
   form: "",
   doseAmount: null as number | null,
@@ -69,13 +77,18 @@ const blank = {
 export function MedicationForm({
   initial = blank,
   onSave,
+  onRetake,
 }: {
   initial?: any;
   onSave: (m: any) => Promise<void>;
+  onRetake?: (m: any) => void;
 }) {
   const frequencyHelp = useId();
   const [m, setM] = useState(() => {
       const value = { ...blank, ...initial };
+      value.candidateLicenseNo ||= initial.licenseNo || null;
+      if (initial.identityReview?.status !== "confirmed")
+        value.licenseNo = null;
       for (const key of [
         "strength",
         "form",
@@ -90,14 +103,23 @@ export function MedicationForm({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [errorCode, setErrorCode] = useState("");
-  const set = (key: string, v: unknown) => setM({ ...m, [key]: v });
+  const set = (key: string, v: unknown) =>
+    setM({
+      ...m,
+      [key]: v,
+      ...(["name", "strength", "form", "candidateLicenseNo"].includes(key)
+        ? { licenseNo: null, identityReview: null, identityEvidence: null }
+        : {}),
+    });
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
         try {
-          await onSave(m);
+          const { identityCandidate, identityReview, candidates, ...payload } =
+            m;
+          await onSave(payload);
         } catch (e: any) {
           setError(e.message);
           setErrorCode(e.code || "");
@@ -116,7 +138,7 @@ export function MedicationForm({
         />
       </Field>
       <Field label="許可證字號">
-        <input readOnly value={m.licenseNo || "尚未匹配，可先存為草稿"} />
+        <input readOnly value={m.licenseNo || "產品待核對，尚未連結仿單"} />
       </Field>
       <Field label="含量／規格">
         <input
@@ -132,6 +154,11 @@ export function MedicationForm({
           placeholder="例如：膜衣錠"
         />
       </Field>
+      <ProductIdentityReview
+        medication={m}
+        onPatch={(patch) => setM((current: any) => ({ ...current, ...patch }))}
+        onRetake={onRetake ? () => onRetake(m) : undefined}
+      />
       <Field label="每次劑量">
         <input
           type="number"
@@ -234,7 +261,7 @@ export function MedicationForm({
           checked={m.confirmed}
           onChange={(e) => set("confirmed", e.target.checked)}
         />
-        我已對照藥袋確認藥品與用法
+        我已對照藥袋確認用法（每次用量、頻次與途徑）
       </label>
       <div className="full-grid">
         {error && <Notice error>{error}</Notice>}
@@ -247,7 +274,13 @@ export function MedicationForm({
         )}
         <Button type="submit" className="primary" disabled={busy}>
           <Save size={17} />
-          {busy ? "儲存中…" : m.confirmed ? "確認並儲存藥品" : "儲存草稿"}
+          {busy
+            ? "儲存中…"
+            : m.identityReview?.status !== "confirmed"
+              ? "保存待核對資料"
+              : m.confirmed
+                ? "儲存已核對藥品與用法"
+                : "儲存草稿"}
         </Button>
       </div>
     </form>
@@ -274,6 +307,7 @@ export function AddMedication({
     [error, setError] = useState(""),
     [file, setFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [pausedReviews, setPausedReviews] = useState<any[]>([]);
   const photoInput = useRef<HTMLInputElement>(null);
   const photoSelectionVersion = useRef(0);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
@@ -409,7 +443,9 @@ export function AddMedication({
     setDraft({
       ...blank,
       name: d.nameZh,
-      licenseNo: d.licenseNo,
+      licenseNo: null,
+      candidateLicenseNo: d.licenseNo,
+      identityCandidate: d,
       strength: d.strength,
       form: d.form,
     });
@@ -451,6 +487,30 @@ export function AddMedication({
         </a>
       )}
       {busy && <Busy text={busy} />}
+      {!draft &&
+        pausedReviews.map((pausedReview) => (
+          <Notice key={pausedReview.key}>
+            尚未保存的「{pausedReview.medication.name}」與用法已保留在本頁。
+            新照片會另作一次辨識，不會自動合併兩張照片的藥品資料。
+            <Button
+              className="secondary"
+              disabled={!!busy || saving}
+              onClick={() => {
+                setTab(pausedReview.tab);
+                setRecognitionJob(pausedReview.recognitionJob);
+                setRecognized(pausedReview.recognized);
+                setSavedNames(pausedReview.savedNames);
+                setSelectedRecognition(pausedReview.selectedRecognition);
+                setDraft(pausedReview.medication);
+                setPausedReviews((reviews) =>
+                  reviews.filter((review) => review.key !== pausedReview.key),
+                );
+              }}
+            >
+              返回尚未保存的核對資料
+            </Button>
+          </Notice>
+        ))}
       {tab === "photo" && savedNames.length > 0 && recognized.length === 0 && (
         <Notice>
           這份辨識的 {savedNames.length} 筆資料已儲存。
@@ -567,7 +627,9 @@ export function AddMedication({
                       ...blank,
                       ...m,
                       name: c.nameZh,
-                      licenseNo: c.licenseNo,
+                      licenseNo: null,
+                      candidateLicenseNo: c.licenseNo,
+                      identityCandidate: c,
                       // Keep the photo transcription, including unknown fields,
                       // separate from the candidate's catalog specification.
                       ...recognitionDraftFlags(m.frequencyRaw),
@@ -585,9 +647,7 @@ export function AddMedication({
                       <span className="tag amber">許可證已註銷</span>
                     )}
                   </div>
-                  <span className="tag">
-                    {c.hasLeaflet ? "有仿單" : "未收錄仿單"}
-                  </span>
+                  <span className="tag">待核對候選</span>
                 </button>
               ))}
             </div>
@@ -635,7 +695,7 @@ export function AddMedication({
                 {d.revoked && <span className="tag amber">許可證已註銷</span>}
               </div>
               <span className={"tag " + (d.hasLeaflet ? "green" : "")}>
-                {d.hasLeaflet ? "可查看仿單" : "未收錄仿單"}
+                待核對候選
               </span>
               <Plus size={18} />
             </button>
@@ -679,6 +739,23 @@ export function AddMedication({
           <MedicationForm
             key={(selectedRecognition || "") + JSON.stringify(draft)}
             initial={draft || blank}
+            onRetake={(medication) => {
+              setPausedReviews((reviews) => [
+                ...reviews,
+                {
+                  key: crypto.randomUUID(),
+                  medication,
+                  tab,
+                  recognitionJob,
+                  recognized,
+                  selectedRecognition,
+                  savedNames,
+                },
+              ]);
+              setTab("photo");
+              setDraft(null);
+              setSelectedRecognition(null);
+            }}
             onSave={async (m) => {
               setSaving(true);
               try {
@@ -734,6 +811,7 @@ export function Medications() {
     (m: Medication) => m.id === demoMedicationId,
   );
   const [edit, setEdit] = useState<any>(null),
+    [retakeEdit, setRetakeEdit] = useState(false),
     [schedule, setSchedule] = useState<any>(null),
     [message, setMessage] = useState(""),
     [filter, setFilter] = useState(""),
@@ -865,7 +943,7 @@ export function Medications() {
           <span>
             研討會展示 ·{" "}
             {demoMedication
-              ? `${demoMedication.name}已儲存。${demoMedication.confirmed ? "可開啟仿單說明。" : "目前為草稿，請先編輯並確認用法。"}`
+              ? `${demoMedication.name}已儲存。${leafletReady(demoMedication) ? "可開啟仿單說明。" : "請先補齊產品資料並確認用法。"}`
               : "選擇藥品，開啟說明後繼續展示。"}
           </span>
           <a className="text-link" href="#demo">
@@ -920,6 +998,18 @@ export function Medications() {
                 <span className={"tag " + (m.confirmed ? "green" : "amber")}>
                   {m.confirmed ? "用法已確認" : "待確認用法"}
                 </span>
+                <span
+                  className={
+                    "tag " +
+                    ((m as any).identityReview?.status === "confirmed"
+                      ? "green"
+                      : "amber")
+                  }
+                >
+                  {(m as any).identityReview?.status === "confirmed"
+                    ? "產品已核對"
+                    : "產品待核對"}
+                </span>
               </div>
               <div className="medication-file-name">
                 <h2 id={`medication-${m.id}`} tabIndex={-1}>
@@ -934,7 +1024,9 @@ export function Medications() {
                 )}
                 <MedicationIdentity medication={m} />
                 <p className="muted med-license">
-                  {m.licenseNo || "尚未匹配許可證"}
+                  {(m as any).identityReview?.status === "confirmed"
+                    ? m.licenseNo
+                    : "產品待核對，尚未連結仿單"}
                 </p>
               </div>
               <dl className="usage-box medication-file-usage">
@@ -959,15 +1051,32 @@ export function Medications() {
               <div className="row wrap medication-file-actions">
                 <Button
                   className="secondary"
-                  disabled={!m.confirmed || !!busy}
+                  disabled={!leafletReady(m) || !!busy}
                   onClick={() => explain(m)}
                 >
                   <BookOpen size={16} />
                   仿單說明
                 </Button>
-                <Button className="ghost" onClick={() => setEdit({ ...m })}>
+                <Button
+                  className="ghost"
+                  onClick={() => {
+                    setRetakeEdit(false);
+                    setEdit({ ...m });
+                  }}
+                >
                   編輯用法
                 </Button>
+                {(m as any).identityReview?.status !== "confirmed" && (
+                  <Button
+                    className="secondary"
+                    onClick={() => {
+                      setRetakeEdit(false);
+                      setEdit({ ...m });
+                    }}
+                  >
+                    補齊產品資料
+                  </Button>
+                )}
                 {m.confirmed && !m.prn && (
                   <Button
                     className="ghost"
@@ -1029,12 +1138,23 @@ export function Medications() {
                   <Trash2 size={16} />
                 </button>
               </div>
+              {!leafletReady(m) && (
+                <p className="muted">
+                  {(m as any).identityReview?.status !== "confirmed"
+                    ? "產品資料不足，先補齊產品資料完成核對，才能開啟仿單說明、學習與問答。"
+                    : "請先確認用法，才能開啟仿單說明。"}
+                </p>
+              )}
             </article>
           ))}
         </div>
       )}
       {edit && (
-        <section className="card">
+        <section
+          className="card"
+          hidden={retakeEdit}
+          style={retakeEdit ? { display: "none" } : undefined}
+        >
           <div className="row spread">
             <h2 ref={editHeading} tabIndex={-1}>
               編輯用法
@@ -1047,10 +1167,13 @@ export function Medications() {
               <X />
             </button>
           </div>
-          <Notice>修改後原提醒會停用，請依確認後的新用法重新排定。</Notice>
+          <Notice>
+            儲存修改（包含只補齊產品資料）後，原提醒會停用；請重新確認提醒時間並排定。
+          </Notice>
           <MedicationForm
             key={edit.id}
             initial={edit}
+            onRetake={() => setRetakeEdit(true)}
             onSave={async (m) => {
               await api("/medications/" + edit.id, "PUT", m);
               setSchedule((current: any) =>
@@ -1061,6 +1184,26 @@ export function Medications() {
               refresh();
             }}
           />
+        </section>
+      )}
+      {edit && retakeEdit && (
+        <section className="card">
+          <Notice>
+            原藥品尚未保存的用法與核對輸入已保留。新照片會另作辨識，請回原資料抄錄補充內容，不會自動合併藥品。
+          </Notice>
+          <Button
+            className="secondary"
+            onClick={() => {
+              setRetakeEdit(false);
+              requestAnimationFrame(() => {
+                editHeading.current?.focus({ preventScroll: true });
+                editHeading.current?.scrollIntoView({ block: "start" });
+              });
+            }}
+          >
+            返回原藥品補資料
+          </Button>
+          <AddMedication />
         </section>
       )}
       {schedule && (
@@ -1151,6 +1294,10 @@ export function Learning() {
     ? params.get("section")!
     : "reading";
   const activeRecord = data?.items.find((r) => r.id === recordId);
+  const eligibleMedications = (meds.data?.items || []).filter(leafletReady);
+  const selectedIds = selected.filter((id) =>
+    eligibleMedications.some((m) => m.id === id),
+  );
   const demoHref = activeRecord
     ? `#demo?record=${encodeURIComponent(activeRecord.id)}&step=reading`
     : "#demo";
@@ -1208,6 +1355,14 @@ export function Learning() {
       {busy && <JobNotice text={busy} />}{" "}
       {(error || message) && <Notice error>{error || message}</Notice>}
       {meds.error && <Notice error>無法讀取藥品名稱：{meds.error}</Notice>}
+      {meds.data?.items.some((m) => !leafletReady(m)) && (
+        <Notice>
+          有藥品仍待確認用法或補齊產品資料。{identityGuidance}
+          <a className="btn secondary" href="#medications">
+            前往補齊產品資料與確認用法
+          </a>
+        </Notice>
+      )}
       {loading || meds.loading ? (
         <Busy />
       ) : recordId && !activeRecord ? (
@@ -1355,41 +1510,39 @@ export function Learning() {
           <h2>兩款藥，一起核對</h2>
           <p>選擇兩款已確認的藥品，比對其仿單交互作用記載。</p>
           <div className="row wrap">
-            {meds.data?.items
-              .filter((m: any) => m.confirmed)
-              .map((m: any) => (
-                <label className="choice" key={m.id}>
-                  <input
-                    type="checkbox"
-                    aria-label={m.name}
-                    aria-describedby={`learning-medication-${m.id}`}
-                    checked={selected.includes(m.id)}
-                    onChange={(e) =>
-                      setSelected(
-                        e.target.checked
-                          ? [...selected, m.id].slice(-2)
-                          : selected.filter((id) => id !== m.id),
-                      )
-                    }
-                  />
-                  <span>
-                    <strong>{m.name}</strong>
-                    <span id={`learning-medication-${m.id}`}>
-                      <MedicationIdentity medication={m} />
-                    </span>
+            {eligibleMedications.map((m: any) => (
+              <label className="choice" key={m.id}>
+                <input
+                  type="checkbox"
+                  aria-label={m.name}
+                  aria-describedby={`learning-medication-${m.id}`}
+                  checked={selectedIds.includes(m.id)}
+                  onChange={(e) =>
+                    setSelected(
+                      e.target.checked
+                        ? [...selected, m.id].slice(-2)
+                        : selected.filter((id) => id !== m.id),
+                    )
+                  }
+                />
+                <span>
+                  <strong>{m.name}</strong>
+                  <span id={`learning-medication-${m.id}`}>
+                    <MedicationIdentity medication={m} />
                   </span>
-                </label>
-              ))}
+                </span>
+              </label>
+            ))}
           </div>
           <Button
             className="secondary"
-            disabled={selected.length !== 2 || !!busy}
+            disabled={selectedIds.length !== 2 || !!busy}
             onClick={async () => {
               setBusy("正在核對仿單…");
               try {
                 const job = await submitJob(
                   "/interactions",
-                  { medicationIds: selected },
+                  { medicationIds: selectedIds },
                   setBusy,
                 );
                 await refresh();
@@ -1454,7 +1607,7 @@ export function Chat() {
     // Clearing a read error must not reveal an older answer before fresh data arrives.
   }, [history.data]);
   const loadingMeds = meds.loading || reloadingMeds;
-  const confirmedMeds = (meds.data?.items || []).filter((m) => m.confirmed);
+  const confirmedMeds = (meds.data?.items || []).filter(leafletReady);
   const selectedIds = selected.filter((id) =>
     confirmedMeds.some((m) => m.id === id),
   );
@@ -1475,7 +1628,7 @@ export function Chat() {
       ? "藥品讀取失敗，請重試後再送出；你輸入的問題會保留。"
       : !confirmedMeds.length
         ? meds.data?.items.length
-          ? "目前的藥品尚未確認，請先到「我的藥品」對照藥袋確認藥品與用法，才能送出問題。"
+          ? "目前的藥品尚未確認用法或產品，請先到「我的藥品」補齊產品資料並確認用法，才能送出問題。"
           : "目前還沒有可提問的藥品。請先新增並確認藥品，再回來勾選提問對象。"
         : !selectedIds.length
           ? "請先在「這次想問的藥品」勾選至少一款藥品，才能送出問題。"
@@ -1486,6 +1639,15 @@ export function Chat() {
         把看不懂的地方說出來，一起回到仿單找依據。
       </SectionTitle>
       {meds.error && <Notice error>無法讀取藥品：{meds.error}</Notice>}
+      {(history.data?.identityReviewRequired ||
+        history.data?.hiddenUnsafeCount > 0) && (
+        <Notice>
+          部分舊問答涉及尚未核對的產品，已隱藏回答。請先補齊產品資料，完成核對後重新提問。
+          <a className="btn secondary" href="#medications">
+            補齊產品資料
+          </a>
+        </Notice>
+      )}
       {history.error && (
         <Notice error>
           無法讀取問答紀錄：{history.error}
@@ -1545,7 +1707,7 @@ export function Chat() {
                   <>
                     <p>
                       仿單來源：
-                      {Object.keys(c.result.sourceVersions || {}).join("、") ||
+                      {Object.keys(c.result?.sourceVersions || {}).join("、") ||
                         "未記錄許可證"}
                     </p>
                     <p className="muted">
@@ -1554,7 +1716,16 @@ export function Chat() {
                   </>
                 )}
               </div>
-              <ChatAnswer result={c.result} />
+              {c.identityReviewRequired ? (
+                <Notice>
+                  這筆問答的產品尚未完成核對，已隱藏回答。
+                  <a className="btn secondary" href="#medications">
+                    補齊產品資料後重新提問
+                  </a>
+                </Notice>
+              ) : (
+                <ChatAnswer result={c.result} />
+              )}
             </details>
           ))}
           {busy && <JobNotice text={busy} />}{" "}
@@ -1679,7 +1850,17 @@ export function Chat() {
             </label>
           ))}
           {!loadingMeds && !meds.error && !confirmedMeds.length && (
-            <p className="muted">先新增並確認藥品，才能開始問答。</p>
+            <p className="muted">
+              先新增藥品、補齊產品資料並確認用法，才能開始問答。
+            </p>
+          )}
+          {!loadingMeds && meds.data?.items.some((m) => !leafletReady(m)) && (
+            <Notice>
+              待核對的產品暫不提供選取。
+              <a className="btn secondary" href="#medications">
+                補齊產品資料與確認用法
+              </a>
+            </Notice>
           )}
           <Notice>
             涉及改劑量、停藥、診斷與個人是否適用的問題，請向醫師或藥師確認。

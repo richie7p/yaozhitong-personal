@@ -51,6 +51,7 @@ async function setup() {
   // Use the real Nvidia/JsonLlm client; fetch is stubbed by each test.
   const d = new Domain(store);
   d.catalog.get = async () => drug;
+  d.catalog.all = async () => [drug];
   await d.account({
     uid: "synthetic-routing-owner",
     name: "合成路由核對帳號",
@@ -61,6 +62,7 @@ async function setup() {
   const med = await d.saveMedication("synthetic-routing-owner", {
     name: drug.nameZh,
     licenseNo: drug.licenseNo,
+    identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
     confirmed: true,
     doseAmount: 1,
     doseUnit: "錠",

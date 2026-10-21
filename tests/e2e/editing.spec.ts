@@ -53,7 +53,7 @@ test("switching medication editors loads the selected medication and saves only 
   await expect(page.getByLabel("頻次原文", { exact: true })).toHaveValue("BID");
   await page.getByLabel("每次劑量", { exact: true }).fill("3");
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "編輯用法", exact: true }),
@@ -109,7 +109,13 @@ test("switching reminder forms clears the previous medication's unsaved dates an
   );
   await expect(page.getByLabel("開始日期", { exact: true })).toHaveValue(today);
   await page.getByLabel("每天提醒時間").fill("17:30");
+  const scheduleSaved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/schedules",
+  );
   await page.getByRole("button", { name: "確認提醒時間", exact: true }).click();
+  expect((await scheduleSaved).status()).toBe(201);
   await expect(
     page.getByRole("button", { name: "確認提醒時間", exact: true }),
   ).toHaveCount(0);
@@ -294,9 +300,11 @@ test("multiple recognized medications can be saved one by one without repeating 
     await expect(page.getByLabel("每次劑量", { exact: true })).toHaveValue(
       String(index + 1),
     );
-    await page.getByLabel("我已對照藥袋確認藥品與用法").check();
     await page
-      .getByRole("button", { name: "確認並儲存藥品", exact: true })
+      .getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）")
+      .check();
+    await page
+      .getByRole("button", { name: "保存待核對資料", exact: true })
       .click();
     if (index === 0) {
       await expect(page).toHaveURL(/\/#add$/);

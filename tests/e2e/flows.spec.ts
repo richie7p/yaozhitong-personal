@@ -68,9 +68,9 @@ test("manual medication, scheduling, log, isolation and care revocation", async 
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await page.getByLabel("頻次原文", { exact: true }).fill("QD");
-  await page.getByLabel("我已對照藥袋確認藥品與用法").check();
+  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
   await page
-    .getByRole("button", { name: "確認並儲存藥品", exact: true })
+    .getByRole("button", { name: "保存待核對資料", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: name, exact: true }),

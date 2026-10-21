@@ -15,8 +15,20 @@ export function Demo() {
   const learning = useData<{ items: LearningRecord[] }>("/learning");
   const jobs = useData<{ items: Job[] }>("/jobs");
   const params = new URLSearchParams(location.hash.split("?")[1] || "");
+  const reviewedMedications = new Set(
+    (medications.data?.items || [])
+      .filter(
+        (m) =>
+          m.confirmed &&
+          !!m.licenseNo &&
+          m.identityReview?.status === "confirmed",
+      )
+      .map((m) => m.id),
+  );
   const records = (learning.data?.items || []).filter(
-    (r) => r.medicationIds.length === 1,
+    (r) =>
+      r.medicationIds.length === 1 &&
+      r.medicationIds.every((id) => reviewedMedications.has(id)),
   );
   const savedJobFor = (r: LearningRecord) =>
     jobs.data?.items.find(
@@ -85,6 +97,15 @@ export function Demo() {
       </div>
       {error && <Notice error>{error}</Notice>}
       {jobs.error && <Notice error>暫時無法讀取辨識紀錄：{jobs.error}</Notice>}
+      {!medications.loading &&
+        (medications.data?.items || []).some(
+          (m) => m.identityReview?.status !== "confirmed",
+        ) && (
+          <Notice>
+            有藥品尚待核對產品資料。請先補拍包裝或補齊資料，核對後再產生仿單與測驗。
+            <a href="#medications">補齊產品資料</a>
+          </Notice>
+        )}
       {loading ? (
         <Busy />
       ) : !record ? (
@@ -102,7 +123,7 @@ export function Demo() {
           >
             {recordId
               ? "請重新選擇已保存的內容。"
-              : "完成辨識、核對用法並產生仿單說明後，即可在這裡走完整個流程。"}
+              : "完成辨識、核對產品資料與用法並產生仿單說明後，即可在這裡走完整個流程。"}
           </Empty>
         </section>
       ) : (
@@ -158,7 +179,7 @@ export function Demo() {
                   <span className="tag">已保存辨識結果</span>
                 </div>
                 <p>
-                  對照辨識文字與已確認的藥品資料。辨識結果需要由使用者核對藥名與用法。
+                  對照辨識文字與已核對的產品資料。產品身分與用法分別確認後，才能連結仿單。
                 </p>
                 {job ? (
                   <Notice>這款藥品有對應的已完成辨識紀錄。</Notice>
@@ -171,8 +192,8 @@ export function Demo() {
                   <div className="demo-medication" key={med.id}>
                     <dl className="demo-med-facts">
                       <div>
-                        <dt>核對狀態</dt>
-                        <dd>{med.confirmed ? "使用者已確認" : "尚未確認"}</dd>
+                        <dt>產品與用法</dt>
+                        <dd>產品資料已核對 · 用法已確認</dd>
                       </div>
                       <div>
                         <dt>規格／劑型</dt>

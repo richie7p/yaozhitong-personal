@@ -1,6 +1,10 @@
 import type { Drug } from "../shared/schema.js";
 import type { Store } from "./store.js";
 import { Blobs } from "./blobs.js";
+import {
+  ProductIdentityIndex,
+  type IdentityInput,
+} from "../shared/product-identity.js";
 export const normalize = (s: string) =>
   s
     .normalize("NFKC")
@@ -288,16 +292,22 @@ export class Catalog {
   private version = "";
   private rows: Drug[] = [];
   private loadedAt = 0;
+  private identityRows: Drug[] | null = null;
+  private identityIndex: ProductIdentityIndex | null = null;
   constructor(
     private store: Store,
     private blobs = new Blobs(),
   ) {}
-  async all() {
-    if (Date.now() - this.loadedAt < 30000) return this.rows;
+  async all(refresh = false) {
+    if (!refresh && Date.now() - this.loadedAt < 30000) return this.rows;
     const m = await this.store.get("settings", "catalog");
     if (m && m.version !== this.version) {
       this.rows = JSON.parse((await this.blobs.get(m.path)).toString());
       this.version = m.version;
+    }
+    if (!m && this.version) {
+      this.rows = [];
+      this.version = "";
     }
     this.loadedAt = Date.now();
     return this.rows;
@@ -314,6 +324,20 @@ export class Catalog {
   }
   async get(lic: string) {
     return (await this.all()).find((d) => d.licenseNo === lic) || null;
+  }
+  async identitySnapshot() {
+    // Product proof must be checked against the current catalog version even
+    // during the search cache's 30-second lifetime. Only a version change loads
+    // the catalog blob and rebuilds the exact-name/complete-license indexes.
+    const rows = await this.all(true);
+    if (this.identityRows !== rows || !this.identityIndex) {
+      this.identityRows = rows;
+      this.identityIndex = new ProductIdentityIndex(rows);
+    }
+    return this.identityIndex;
+  }
+  async identityReview(input: IdentityInput) {
+    return (await this.identitySnapshot()).review(input);
   }
   invalidate() {
     this.loadedAt = 0;
