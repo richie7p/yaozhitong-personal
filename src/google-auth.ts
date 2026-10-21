@@ -1,5 +1,6 @@
 import {
   browserPopupRedirectResolver,
+  browserSessionPersistence,
   getRedirectResult,
   GoogleAuthProvider,
   initializeAuth,
@@ -9,6 +10,7 @@ import {
   signInWithCredential,
   signInWithRedirect,
   signOut,
+  setPersistence,
   type Auth,
   type User,
   type UserCredential,
@@ -16,18 +18,80 @@ import {
 import type { FirebaseApp } from "firebase/app";
 import { api, setJobIdentity, setTokenProvider } from "./api";
 
-export function createMemoryFirebaseAuth(
+export function createSessionFirebaseAuth(
   app: FirebaseApp,
   credentialMode = false,
 ) {
-  // Redirect processing starts during Auth initialization. Select memory here,
-  // before the SDK can restore or persist the returning user.
+  // Firebase owns only its authentication record. Questions and health drafts
+  // stay in memory. The SDK tries sessionStorage first and falls back to memory.
   return initializeAuth(app, {
-    persistence: inMemoryPersistence,
+    persistence: [browserSessionPersistence, inMemoryPersistence],
     ...(credentialMode
       ? {}
       : { popupRedirectResolver: browserPopupRedirectResolver }),
   });
+}
+
+// Kept for callers of the original initialization helper.
+export const createMemoryFirebaseAuth = createSessionFirebaseAuth;
+
+function sessionKey(auth: Auth) {
+  return `yzt-google-session:${auth.app?.name || auth.name}:${auth.app?.options.apiKey || ""}`;
+}
+
+function readSession(auth: Auth): { status: string; uid?: string } | null {
+  try {
+    const raw = sessionStorage.getItem(sessionKey(auth));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(
+  auth: Auth,
+  state: { status: string; uid?: string } | null,
+) {
+  try {
+    if (state) sessionStorage.setItem(sessionKey(auth), JSON.stringify(state));
+    else sessionStorage.removeItem(sessionKey(auth));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function beginGoogleSession(auth: Auth) {
+  // Persist the quarantine before Firebase can persist a credential. A refresh
+  // during profile verification must never expose that unfinished session.
+  if (!writeSession(auth, { status: "pending" }))
+    await setPersistence(auth, inMemoryPersistence);
+  setJobIdentity(null);
+}
+
+export async function commitFirebaseSession(auth: Auth, user: User) {
+  if (!writeSession(auth, { status: "ready", uid: user.uid }))
+    await setPersistence(auth, inMemoryPersistence);
+}
+
+export async function clearFirebaseSession(auth: Auth) {
+  const attempt = activeCredentialAttempts.get(auth);
+  if (attempt) {
+    invalidateReturn(
+      auth,
+      attempt,
+      Object.assign(new Error("登入狀態已變更，請重新登入。"), {
+        code: "identity_changed",
+      }),
+    );
+  }
+  setJobIdentity(null);
+  setTokenProvider(async () => "");
+  // An in-flight SDK credential can still arrive after signOut. Keep its
+  // quarantine until the late operation has been rejected and signed out again.
+  writeSession(auth, { status: "pending" });
+  await signOut(auth);
+  if (!attempt) writeSession(auth, null);
 }
 
 export function configureFirebaseTokenProvider(auth: Auth) {
@@ -59,7 +123,13 @@ async function completeProfile(
     GoogleAuthProvider.credentialFromResult(result)?.idToken;
   if (!googleIdToken)
     throw new Error("Google 未提供完整登入憑證，請重新登入。");
-  await api("/auth/google-profile", "POST", { googleIdToken });
+  await api(
+    "/auth/google-profile",
+    "POST",
+    { googleIdToken },
+    undefined,
+    assertCurrent,
+  );
   assertCurrent();
   await result.user.reload();
   assertCurrent();
@@ -71,7 +141,13 @@ async function completeProfile(
 export async function signInGoogle(auth: Auth) {
   configureFirebaseTokenProvider(auth);
   // A successful call navigates away; completion belongs to the returning page.
-  return signInWithRedirect(auth, googleProvider());
+  await beginGoogleSession(auth);
+  try {
+    return await signInWithRedirect(auth, googleProvider());
+  } catch (error) {
+    await clearFirebaseSession(auth);
+    throw error;
+  }
 }
 
 const RETURN_TIMEOUT_MS = 30_000;
@@ -87,6 +163,7 @@ const redirectAttempts = new WeakMap<Auth, RedirectAttempt>();
 const reloadRequired = new WeakSet<Auth>();
 const credentialTransitions = new WeakSet<Auth>();
 const credentialAttempts = new WeakMap<Auth, Promise<any>>();
+const activeCredentialAttempts = new WeakMap<Auth, SessionAttempt>();
 
 export function firebaseSessionNeedsReload(auth: Auth) {
   return reloadRequired.has(auth);
@@ -103,6 +180,7 @@ function invalidateReturn(auth: Auth, attempt: SessionAttempt, error: unknown) {
   attempt.failed = true;
   attempt.error = error;
   reloadRequired.add(auth);
+  writeSession(auth, { status: "pending" });
   setJobIdentity(null);
   setTokenProvider(async () => "");
   // signOut can queue behind the same unfinished SDK initialization. Never
@@ -110,8 +188,14 @@ function invalidateReturn(auth: Auth, attempt: SessionAttempt, error: unknown) {
   void Promise.resolve()
     .then(() => signOut(auth))
     .then(() => {
-      if ((error as { code?: string } | null)?.code !== "google_return_timeout")
+      if (
+        !["google_return_timeout", "identity_changed"].includes(
+          (error as { code?: string } | null)?.code || "",
+        )
+      ) {
         reloadRequired.delete(auth);
+        writeSession(auth, null);
+      }
     })
     .catch(() => {});
 }
@@ -125,12 +209,20 @@ function withinDeadline<T>(
   auth: Auth,
   attempt: SessionAttempt,
   work: (check: () => void) => Promise<T>,
+  ownsSession: () => boolean = () => true,
 ) {
+  const fail = (error: unknown) => {
+    if (ownsSession()) invalidateReturn(auth, attempt, error);
+    else {
+      attempt.failed = true;
+      attempt.error = error;
+    }
+  };
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
       () => {
         const error = returnTimeout();
-        invalidateReturn(auth, attempt, error);
+        fail(error);
         reject(error);
       },
       Math.max(0, attempt.deadline - Date.now()),
@@ -144,7 +236,11 @@ function withinDeadline<T>(
         },
         (error) => {
           clearTimeout(timer);
-          invalidateReturn(auth, attempt, error);
+          if (attempt.failed && ownsSession()) {
+            // signInWithCredential itself cannot be aborted; clear a user that
+            // the SDK persisted after the original timeout/logout cleanup.
+            void signOut(auth).catch(() => {});
+          } else if (!attempt.failed) fail(error);
           reject(attempt.error);
         },
       );
@@ -164,10 +260,39 @@ export function finishGoogleRedirect(auth: Auth, credentialMode = false) {
   attempt.completion = withinDeadline(auth, attempt, async (check) => {
     // GIS exchanges its credential directly with Firebase. This mode never
     // initializes the iframe resolver or consumes a legacy redirect result.
-    if (credentialMode) return null;
-    const result = await getRedirectResult(auth);
+    const result = credentialMode ? null : await getRedirectResult(auth);
     check();
-    return result ? await completeProfile(result, check) : null;
+    if (result) {
+      await beginGoogleSession(auth);
+      check();
+      const current = () => {
+        check();
+        if (auth.currentUser !== result.user)
+          throw new Error("登入狀態已變更，請重新登入。");
+      };
+      await completeProfile(result, current);
+      await api("/me", "GET", undefined, undefined, current);
+      current();
+      await commitFirebaseSession(auth, result.user);
+      current();
+      return result;
+    }
+    // Wait for session restoration before inspecting the persisted identity.
+    await auth.authStateReady?.();
+    check();
+    const saved = readSession(auth);
+    const user = auth.currentUser;
+    const google = user?.providerData?.some(
+      (p) => p.providerId === "google.com",
+    );
+    if (
+      saved?.status === "pending" ||
+      (google && (saved?.status !== "ready" || saved.uid !== user?.uid))
+    )
+      throw new Error(
+        "上次 Google 登入未完成，請重新登入。電子信箱登入仍可使用。",
+      );
+    return null;
   });
   return attempt.completion;
 }
@@ -181,23 +306,36 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
     failed: false,
   };
   credentialTransitions.add(auth);
+  activeCredentialAttempts.set(auth, attempt);
   configureFirebaseTokenProvider(auth);
   const completion = withinDeadline(auth, attempt, async (check) => {
     check();
     if (!googleIdToken)
       throw new Error("Google 未提供完整登入憑證，請重新登入。");
+    await beginGoogleSession(auth);
+    check();
     const result = await signInWithCredential(
       auth,
       GoogleAuthProvider.credential(googleIdToken),
     );
     check();
-    await completeProfile(result, check, googleIdToken);
-    const next = await api("/me");
-    check();
+    const current = () => {
+      check();
+      if (auth.currentUser !== result.user)
+        throw Object.assign(new Error("登入狀態已變更，請重新登入。"), {
+          code: "identity_changed",
+        });
+    };
+    await completeProfile(result, current, googleIdToken);
+    const next = await api("/me", "GET", undefined, undefined, current);
+    current();
+    await commitFirebaseSession(auth, result.user);
+    current();
     return next;
   }).finally(() => {
     credentialTransitions.delete(auth);
     credentialAttempts.delete(auth);
+    activeCredentialAttempts.delete(auth);
   });
   credentialAttempts.set(auth, completion);
   return completion;
@@ -221,7 +359,7 @@ export async function observeFirebaseSession(
   if (!isActive()) return () => {};
   const attempt = redirectAttempts.get(auth)!;
   let stop = () => {};
-  let initialSession = true;
+  let eventVersion = 0;
   const isCurrent = () =>
     isActive() &&
     !attempt.failed &&
@@ -244,10 +382,12 @@ export async function observeFirebaseSession(
   );
   stop = onAuthStateChanged(auth, (user) => {
     if (!isCurrent()) return;
-    const first = initialSession;
-    initialSession = false;
-    void Promise.resolve(onUser(user, isCurrent)).then(() => {
-      if (first && isCurrent()) clearTimeout(timer);
+    const version = ++eventVersion;
+    const eventIsCurrent = () => isCurrent() && version === eventVersion;
+    void Promise.resolve(onUser(user, eventIsCurrent)).then(() => {
+      if (eventIsCurrent()) {
+        clearTimeout(timer);
+      }
     }, failed);
   });
   return () => {
@@ -256,8 +396,43 @@ export async function observeFirebaseSession(
   };
 }
 
-export async function linkGoogle(user: User) {
-  return completeProfile(
-    await linkWithPopup(user, googleProvider(), browserPopupRedirectResolver),
+export async function linkGoogle(user: User, auth?: Auth) {
+  const previous = auth ? readSession(auth) : null;
+  if (auth) await beginGoogleSession(auth);
+  let result: UserCredential;
+  try {
+    result = await linkWithPopup(
+      user,
+      googleProvider(),
+      browserPopupRedirectResolver,
+    );
+  } catch (error) {
+    if (auth && auth.currentUser === user) writeSession(auth, previous);
+    throw error;
+  }
+  if (!auth) return completeProfile(result);
+  const attempt: SessionAttempt = {
+    deadline: Date.now() + RETURN_TIMEOUT_MS,
+    failed: false,
+  };
+  return withinDeadline(
+    auth,
+    attempt,
+    async (check) => {
+      const current = () => {
+        check();
+        if (auth.currentUser !== user)
+          throw Object.assign(new Error("登入狀態已變更，請重新登入。"), {
+            code: "identity_changed",
+          });
+      };
+      await completeProfile(result, current);
+      await api("/me", "GET", undefined, undefined, current);
+      current();
+      await commitFirebaseSession(auth, user);
+      current();
+      return result;
+    },
+    () => auth.currentUser === user,
   );
 }

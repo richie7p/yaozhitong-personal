@@ -20,6 +20,7 @@ import {
   History as HistoryIcon,
 } from "lucide-react";
 import { useAuth } from "./auth";
+import { authErrorMessage } from "./auth-errors";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { Button, Busy, Field, Notice, SectionTitle } from "./components";
 import { Medications, AddMedication, Learning, Chat } from "./MedicationViews";
@@ -28,6 +29,7 @@ import { JobHistory } from "./JobHistory";
 import { Notifications } from "./NotificationViews";
 import { Demo } from "./Demo";
 import { Home, BagDrawing } from "./Home";
+import { PrivacyPage, PrivacyLink } from "./Privacy";
 const navigation = [
   ["home", "今日總覽", House],
   ["medications", "我的藥品", Pill],
@@ -112,6 +114,7 @@ export function App() {
       window.removeEventListener("offline", net);
     };
   }, []);
+  if (pageName === "privacy") return <PrivacyPage />;
   if (auth.loading) return <Busy />;
   if (!auth.me) return <Login />;
   const account = auth.me.account;
@@ -313,6 +316,13 @@ export function App() {
           </div>
         </header>
         <main id="main" tabIndex={-1} key={account.id + page}>
+          {auth.authError && <Notice error>{auth.authError}</Notice>}
+          {auth.config.mode !== "local" && !auth.emailVerified && (
+            <Notice>
+              請開啟信箱中的驗證信。完成後可到<a href="#profile">帳號與設定</a>
+              更新驗證狀態或重寄驗證信。
+            </Notice>
+          )}
           {!online && <Notice error>目前離線，請連線後讀取或更新資料。</Notice>}
           {auth.config.mode === "local" && (
             <div className="local-banner">
@@ -328,6 +338,7 @@ export function App() {
         <footer className="site-footer">
           <span>藥智通・用藥手帳</span>
           <span>以官方仿單為依據，陪你看懂每一份用藥資訊。</span>
+          <PrivacyLink />
         </footer>
       </div>
       <nav className="bottom-nav" aria-label="手機主要導覽">
@@ -379,29 +390,31 @@ export function App() {
   );
 }
 function Login() {
-  const { config, login, googleCredential, authError } = useAuth();
+  const {
+    config,
+    login,
+    googleCredential,
+    authError,
+    reload,
+    sessionRecovery,
+  } = useAuth();
   const [mode, setMode] = useState("login"),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [busy, setBusy] = useState(false),
+    [messageError, setMessageError] = useState(false),
     [message, setMessage] = useState("");
   async function go(method: string) {
     setBusy(true);
     setMessage("");
+    setMessageError(false);
     try {
       await login(method, email, password);
       if (method === "reset")
         setMessage("若此信箱可重設密碼，你將收到操作信件。");
     } catch (e: any) {
-      const text: Record<string, string> = {
-        "auth/invalid-credential": "信箱或密碼不正確。",
-        "auth/email-already-in-use": "此信箱已有帳號，請登入原帳號後連結。",
-        "auth/popup-closed-by-user": "登入視窗已關閉。",
-        "auth/weak-password": "密碼強度不足，請至少使用 8 個字元。",
-        "auth/account-exists-with-different-credential":
-          "此信箱已有其他登入方式，請用原方式登入後，到設定連結 Google。",
-      };
-      setMessage(text[e.code] || e.message);
+      setMessageError(true);
+      setMessage(authErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -452,16 +465,38 @@ function Login() {
       <section className="login-panel">
         <div className="login-card">
           <span className="eyebrow">藥智通 / 個人用藥</span>
-          <h2>{mode === "register" ? "開始你的健康日常" : "歡迎回來"}</h2>
+          <h2>
+            {mode === "register"
+              ? "開始你的健康日常"
+              : mode === "reset"
+                ? "重設密碼"
+                : "歡迎回來"}
+          </h2>
           <p className="muted">開啟你的藥品、說明與服藥紀錄。</p>
           {authError && (
             <>
               <Notice error>{authError}</Notice>
               <Button
                 className="secondary full"
-                onClick={() => location.reload()}
+                disabled={busy}
+                onClick={async () => {
+                  if (!sessionRecovery) {
+                    location.reload();
+                    return;
+                  }
+                  setBusy(true);
+                  setMessage("");
+                  try {
+                    await reload();
+                  } catch (error) {
+                    setMessageError(true);
+                    setMessage(authErrorMessage(error));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
               >
-                重新載入登入頁
+                {sessionRecovery ? "重試連線並恢復登入" : "重新載入登入頁"}
               </Button>
             </>
           )}
@@ -524,6 +559,7 @@ function Login() {
                     type="email"
                     autoComplete="email"
                     required
+                    disabled={busy}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
@@ -538,11 +574,14 @@ function Login() {
                           ? "new-password"
                           : "current-password"
                       }
-                      minLength={8}
+                      minLength={mode === "register" ? 8 : undefined}
                       required
+                      disabled={busy}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="至少 8 個字元"
+                      placeholder={
+                        mode === "register" ? "至少 8 個字元" : "輸入密碼"
+                      }
                     />
                   </Field>
                 )}
@@ -560,25 +599,39 @@ function Login() {
               <div className="row spread">
                 <button
                   className="text-button"
-                  onClick={() =>
-                    setMode(mode === "register" ? "login" : "register")
-                  }
+                  disabled={busy}
+                  onClick={() => {
+                    setMode(mode === "login" ? "register" : "login");
+                    setPassword("");
+                    setMessage("");
+                  }}
                 >
-                  {mode === "register" ? "已有帳號，登入" : "建立新帳號"}
+                  {mode === "login" ? "建立新帳號" : "返回登入"}
                 </button>
                 <button
                   className="text-button"
-                  onClick={() => setMode("reset")}
+                  disabled={busy}
+                  onClick={() => {
+                    setMode("reset");
+                    setPassword("");
+                    setMessage("");
+                  }}
                 >
                   忘記密碼？
                 </button>
               </div>
             </>
           )}
-          {message && <Notice>{message}</Notice>}
+          {message && <Notice error={messageError}>{message}</Notice>}
+          {config?.mode !== "local" && !config?.error && (
+            <p className="fine">
+              登入狀態會保留在此分頁；共用裝置使用完畢後請登出。
+            </p>
+          )}
           <p className="fine">
             本服務提供仿單資訊整理與用藥紀錄，不能取代醫師或藥師的專業判斷。
           </p>
+          <PrivacyLink />
         </div>
       </section>
     </div>

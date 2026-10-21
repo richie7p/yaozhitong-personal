@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   browserPopupRedirectResolver,
+  browserSessionPersistence,
   getRedirectResult,
   GoogleAuthProvider,
   initializeAuth,
@@ -11,6 +12,7 @@ import {
   signInWithEmailAndPassword,
   signInWithRedirect,
   signOut,
+  setPersistence,
   type Auth,
   type User,
   type UserCredential,
@@ -18,6 +20,7 @@ import {
 import type { FirebaseApp } from "firebase/app";
 import {
   configureFirebaseTokenProvider,
+  clearFirebaseSession,
   createMemoryFirebaseAuth,
   firebaseSessionNeedsReload,
   finishGoogleRedirect,
@@ -38,16 +41,25 @@ vi.mock("firebase/auth", async (importOriginal) => ({
   onAuthStateChanged: vi.fn(),
   signOut: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
+  setPersistence: vi.fn(),
 }));
 
 let user: User;
 let auth: Auth;
 const fetchMock = vi.fn();
 const unsubscribe = vi.fn();
+let storage: Map<string, string>;
 
 beforeEach(() => {
   vi.resetAllMocks();
   vi.useFakeTimers();
+  storage = new Map();
+  vi.stubGlobal("sessionStorage", {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+    removeItem: (key: string) => storage.delete(key),
+  });
+  vi.mocked(setPersistence).mockResolvedValue(undefined);
   user = {
     uid: "synthetic-user",
     reload: vi.fn().mockResolvedValue(undefined),
@@ -95,12 +107,12 @@ function deferred<T>() {
 }
 
 describe("Google redirect sign-in and explicit popup linking", () => {
-  it("chooses memory persistence before Firebase initializes the redirect user", () => {
+  it("chooses tab session persistence with a memory fallback before initialization", () => {
     const app = { name: "synthetic-app" } as FirebaseApp;
     vi.mocked(initializeAuth).mockReturnValueOnce(auth);
     expect(createMemoryFirebaseAuth(app)).toBe(auth);
     expect(initializeAuth).toHaveBeenCalledWith(app, {
-      persistence: inMemoryPersistence,
+      persistence: [browserSessionPersistence, inMemoryPersistence],
       popupRedirectResolver: browserPopupRedirectResolver,
     });
   });
@@ -159,7 +171,7 @@ describe("Google redirect sign-in and explicit popup linking", () => {
       }),
     );
     expect(user.reload).toHaveBeenCalledTimes(1);
-    expect(user.getIdToken).toHaveBeenLastCalledWith(true);
+    expect(user.getIdToken).toHaveBeenCalledWith(true);
   });
 
   it("does not promote the client provider email into a verified Firebase identity", async () => {
@@ -184,7 +196,7 @@ describe("Google redirect sign-in and explicit popup linking", () => {
     await Promise.all([first, second]);
     await finishGoogleRedirect(auth);
     expect(getRedirectResult).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(user.reload).toHaveBeenCalledTimes(1);
   });
 
@@ -367,12 +379,12 @@ describe("Bounded Google return and session initialization", () => {
 });
 
 describe("GIS credential login without the Firebase iframe resolver", () => {
-  it("initializes in memory without the resolver and does not consume redirect state", async () => {
+  it("initializes tab persistence without the resolver and does not consume redirect state", async () => {
     const app = { name: "synthetic-app" } as FirebaseApp;
     vi.mocked(initializeAuth).mockReturnValueOnce(auth);
     createMemoryFirebaseAuth(app, true);
     expect(initializeAuth).toHaveBeenCalledWith(app, {
-      persistence: inMemoryPersistence,
+      persistence: [browserSessionPersistence, inMemoryPersistence],
     });
     const onUser = vi.fn();
     await observeFirebaseSession(auth, onUser, vi.fn(), () => true, true);
@@ -529,7 +541,7 @@ describe("Redirect initialization before the application session observer", () =
     release(Response.json({ updated: true }));
     const stop = await starting;
     expect(user.reload).toHaveBeenCalledTimes(1);
-    expect(user.getIdToken).toHaveBeenLastCalledWith(true);
+    expect(user.getIdToken).toHaveBeenCalledWith(true);
     expect(
       vi.mocked(user.getIdToken).mock.invocationCallOrder.at(-1),
     ).toBeLessThan(vi.mocked(onAuthStateChanged).mock.invocationCallOrder[0]);
@@ -638,7 +650,7 @@ describe("Redirect initialization before the application session observer", () =
     release({ user } as UserCredential);
     await Promise.all([stale, current]);
     expect(getRedirectResult).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(onAuthStateChanged).toHaveBeenCalledTimes(1);
     observer()(user);
     expect(staleUser).not.toHaveBeenCalled();
@@ -683,5 +695,162 @@ describe("Redirect initialization before the application session observer", () =
     expect(
       fetchMock.mock.calls.at(-1)?.[1].headers.Authorization,
     ).toBeUndefined();
+  });
+});
+
+describe("Tab session commit and interrupted Google authentication", () => {
+  const key = "yzt-google-session:synthetic-auth:";
+  function restoredAuth() {
+    return {
+      name: "synthetic-auth",
+      currentUser: user,
+      authStateReady: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Auth;
+  }
+
+  it("writes a quarantine before credential exchange and commits only after the authenticated /me read", async () => {
+    const response = deferred<Response>();
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ updated: true }))
+      .mockReturnValueOnce(response.promise);
+    const login = signInGoogleCredential(auth, "synthetic-google-token");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    expect(storage.get(key)).not.toContain("token");
+    response.resolve(Response.json({ account: { id: user.uid } }));
+    await login;
+    expect(JSON.parse(storage.get(key)!)).toEqual({
+      status: "ready",
+      uid: user.uid,
+    });
+  });
+
+  it("rejects a refreshed page whose Google profile verification was interrupted", async () => {
+    storage.set(key, JSON.stringify({ status: "pending" }));
+    Object.assign(user, { providerData: [{ providerId: "google.com" }] });
+    const onUser = vi.fn();
+    const onError = vi.fn();
+    const restored = restoredAuth();
+    await observeFirebaseSession(restored, onUser, onError, () => true, true);
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("上次 Google 登入未完成"),
+      }),
+    );
+    expect(onAuthStateChanged).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(signOut).toHaveBeenCalledWith(restored);
+  });
+
+  it("restores a committed Google identity but rejects a marker from another account", async () => {
+    Object.assign(user, { providerData: [{ providerId: "google.com" }] });
+    storage.set(key, JSON.stringify({ status: "ready", uid: user.uid }));
+    await expect(
+      finishGoogleRedirect(restoredAuth(), true),
+    ).resolves.toBeNull();
+    storage.set(key, JSON.stringify({ status: "ready", uid: "another-user" }));
+    await expect(finishGoogleRedirect(restoredAuth(), true)).rejects.toThrow(
+      "上次 Google 登入未完成",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("moves to memory before credential exchange if the quarantine cannot be written", async () => {
+    vi.stubGlobal("sessionStorage", {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {
+        throw new Error("blocked");
+      },
+    });
+    await signInGoogleCredential(auth, "synthetic-google-token");
+    expect(setPersistence).toHaveBeenCalledWith(auth, inMemoryPersistence);
+    expect(vi.mocked(setPersistence).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(signInWithCredential).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("keeps timed-out authentication quarantined across refresh even when SDK sign-out fails", async () => {
+    vi.mocked(signInWithCredential).mockReturnValueOnce(new Promise(() => {}));
+    vi.mocked(signOut).mockRejectedValue(new Error("blocked"));
+    const login = signInGoogleCredential(auth, "synthetic-google-token");
+    const rejected = expect(login).rejects.toMatchObject({
+      code: "google_return_timeout",
+    });
+    await vi.advanceTimersByTimeAsync(30_000);
+    await rejected;
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    await expect(finishGoogleRedirect(restoredAuth(), true)).rejects.toThrow(
+      "上次 Google 登入未完成",
+    );
+  });
+
+  it("clears a completed session on logout and blocks a Google result that arrives afterward", async () => {
+    const result = deferred<UserCredential>();
+    vi.mocked(signInWithCredential).mockReturnValueOnce(result.promise);
+    const login = signInGoogleCredential(auth, "synthetic-google-token");
+    const rejected = expect(login).rejects.toMatchObject({
+      code: "identity_changed",
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    await clearFirebaseSession(auth);
+    Object.assign(auth, { currentUser: user });
+    result.resolve({ user } as UserCredential);
+    await rejected;
+    await vi.advanceTimersByTimeAsync(0);
+    expect(auth.currentUser).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+  });
+
+  it("removes the session commit when a normal signed-in user logs out", async () => {
+    storage.set(key, JSON.stringify({ status: "ready", uid: user.uid }));
+    await clearFirebaseSession(auth);
+    expect(storage.has(key)).toBe(false);
+    expect(auth.currentUser).toBeNull();
+    await api("/config");
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  });
+
+  it("does not clear a newer account when an old Google linking request finishes", async () => {
+    vi.mocked(linkWithPopup).mockResolvedValueOnce({ user } as UserCredential);
+    const profile = deferred<Response>();
+    fetchMock.mockReturnValueOnce(profile.promise);
+    const linking = linkGoogle(user, auth);
+    const rejected = expect(linking).rejects.toMatchObject({
+      code: "identity_changed",
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    const newer = { uid: "synthetic-new-user" } as User;
+    Object.assign(auth, { currentUser: newer });
+    storage.set(key, JSON.stringify({ status: "ready", uid: newer.uid }));
+    profile.resolve(Response.json({ updated: true }));
+    await rejected;
+    expect(signOut).not.toHaveBeenCalled();
+    expect(auth.currentUser).toBe(newer);
+    expect(JSON.parse(storage.get(key)!)).toEqual({
+      status: "ready",
+      uid: newer.uid,
+    });
+  });
+
+  it("invalidates an older observer callback when a new identity event arrives", async () => {
+    const callbacks: Array<() => boolean> = [];
+    await observeFirebaseSession(
+      auth,
+      (_user, current) => {
+        callbacks.push(current);
+      },
+      vi.fn(),
+      () => true,
+      true,
+    );
+    observer()(user);
+    observer()(null);
+    expect(callbacks[0]()).toBe(false);
+    expect(callbacks[1]()).toBe(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

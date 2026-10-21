@@ -1,0 +1,370 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "checkedAt": "2026-10-21T05:05:05.549Z",
+  "status": "passed_for_controlled_test_scope",
+  "release": {
+    "tag": "20261021-public-readiness-logout",
+    "buildId": "804f7a5e-fe96-47e9-b7d0-127ecf59006e",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:9d09869c6d6c5e6bece2cae28714e7ce4b0d2902be6ccaacf7296c1415181e9d",
+    "services": [
+      {
+        "maxScaleUnchanged": true,
+        "environmentUnchanged": true,
+        "revision": "yzt-test-worker-00013-4bq",
+        "name": "yzt-test-worker",
+        "trafficPercent": 100
+      },
+      {
+        "maxScaleUnchanged": true,
+        "environmentUnchanged": true,
+        "revision": "yzt-test-web-00013-rjv",
+        "name": "yzt-test-web",
+        "trafficPercent": 100
+      }
+    ],
+    "stableGrounding": "grounded-v13-complete-safety-literal-recognition",
+    "researchChangesIncluded": false
+  },
+  "regression": {
+    "unitTests": 757,
+    "browserTests": 110,
+    "platforms": [
+      "desktop Chromium",
+      "375px mobile Chromium"
+    ],
+    "typecheck": true,
+    "build": true,
+    "offlineDeploymentScenarios": 74,
+    "offlineHostingCheck": true,
+    "isolatedServiceRestartAndAccountLifecycle": true,
+    "localDemonstrationDataPreserved": true,
+    "osReboot": false,
+    "finalLogoutFocusedBrowserTests": 14,
+    "fullBrowserSuiteBeforeFinalLogoutCorrection": true
+  },
+  "sources": {
+    "published": 8,
+    "added": 7,
+    "preexistingUnchanged": 1,
+    "pdf": 6,
+    "html": 2,
+    "sourceVerification": "complete official source literal verification",
+    "clinicalReviewClaimed": false,
+    "manifestSha256": "9fa3fdc85db6d061ef85a8144d8afd3f15c3599367eb80083285349b103dd7d1"
+  },
+  "eightDrugCloudEvaluation": {
+    "logicalJobs": 8,
+    "questions": 25,
+    "allPurposePresent": true,
+    "allClaimsAndQuestionsCited": true,
+    "allFullSourceChunksMatch": true,
+    "allCurrentVersions": true,
+    "allWrongThenCorrectAndPersisted": true,
+    "aiAssistedSourceQa": "cloud-eight-source-qa-20261021.json",
+    "sources": [
+      {
+        "code": "000544",
+        "claims": 1,
+        "questions": 1,
+        "latencyMs": 14774,
+        "safetySourceGroups": 0,
+        "sourceGroupCoverageComplete": true
+      },
+      {
+        "code": "014025",
+        "claims": 6,
+        "questions": 6,
+        "latencyMs": 7836,
+        "safetySourceGroups": 5,
+        "sourceGroupCoverageComplete": true
+      },
+      {
+        "code": "019054",
+        "claims": 2,
+        "questions": 2,
+        "latencyMs": 7755,
+        "safetySourceGroups": 1,
+        "sourceGroupCoverageComplete": true
+      },
+      {
+        "code": "026087",
+        "claims": 4,
+        "questions": 4,
+        "latencyMs": 10023,
+        "safetySourceGroups": 3,
+        "sourceGroupCoverageComplete": true
+      },
+      {
+        "code": "030418",
+        "claims": 3,
+        "questions": 3,
+        "latencyMs": 27798,
+        "safetySourceGroups": 2,
+        "sourceGroupCoverageComplete": true
+      },
+      {
+        "code": "039632",
+        "claims": 2,
+        "questions": 2,
+        "latencyMs": 7438,
+        "safetySourceGroups": 1,
+        "sourceGroupCoverageComplete": true
+      },
+      {
+        "code": "040161",
+        "claims": 4,
+        "questions": 4,
+        "latencyMs": 33281,
+        "safetySourceGroups": 3,
+        "sourceGroupCoverageComplete": true
+      },
+      {
+        "code": "040833",
+        "claims": 3,
+        "questions": 3,
+        "latencyMs": 9755,
+        "safetySourceGroups": 2,
+        "sourceGroupCoverageComplete": true
+      }
+    ]
+  },
+  "uploadBoundary": {
+    "rejectedBeforeWrite": true,
+    "status": 400,
+    "code": "invalid_image",
+    "jpegActualCloudRecognition": true,
+    "linuxNativeDecoderExercised": true,
+    "syntheticImage": true
+  },
+  "emailAndLogin": {
+    "newAliasRegistrationFromBrowser": true,
+    "mailDeliveryAndVerificationLink": "confirmed by recipient",
+    "emailVerifiedConfirmedByAdminRead": true,
+    "passwordResetAndNewPasswordLogin": "confirmed by recipient after follow-up",
+    "oldTestPasswordRejectedWithInvalidLoginCredentials": true,
+    "initialResetReportRequiredFollowUp": true,
+    "originalMainIdentityAndApplicationDataUnchanged": true,
+    "aliasGrantedAdmin": false,
+    "aliasGrantedAiEligibility": false,
+    "tabRefreshMaintainsSession": true,
+    "passwordResetInvalidatesOldBrowserSession": true,
+    "googleLoginAndRefresh": "confirmed by user on final cloud release",
+    "noEmailAddressOrCredentialsIncluded": true
+  },
+  "ui": {
+    "syntheticImage": true,
+    "cameraDeviceTested": false,
+    "pngRecognitionSucceeded": true,
+    "twoRecognizedRowsSaved": true,
+    "savedNewMedicationsStillPresent": true,
+    "enzymeDoseMatchesFixture": true,
+    "coughPrnMatchesFixture": true,
+    "newlySavedMedicationLearningPersisted": true,
+    "wrongThenCorrectFeedbackObservedInBrowser": true,
+    "chatSubmittedFromBrowser": true,
+    "chatUsesNewlySavedCough": true,
+    "chatSupportedByLiteralCurrentSource": true,
+    "chatHasWarning": true,
+    "chatDoesNotGenerateQuiz": true,
+    "savedQuizVisibleAfterLogoutAndRelogin": true
+  },
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoningEffort": "none",
+    "newLogicalJobs": 12,
+    "upstreamRequests": 22,
+    "allHttp200": true,
+    "allLogicalJobsFirstAttempt": true,
+    "totalRecordedTokens": 54419,
+    "timeoutOrFailedJobs": 0,
+    "maxJobLatencyMs": 32519,
+    "jobs": [
+      {
+        "kind": "chat",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 4977,
+        "tokens": 4807,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 4410,
+        "tokens": 3424,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "recognition",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 4194,
+        "tokens": 2739,
+        "upstreamRequests": 1
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 6950,
+        "tokens": 5465,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 32519,
+        "tokens": 8411,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 6631,
+        "tokens": 4254,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 25534,
+        "tokens": 5230,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 9283,
+        "tokens": 4520,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 6086,
+        "tokens": 4980,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 6564,
+        "tokens": 4455,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "bundle",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 9951,
+        "tokens": 3387,
+        "upstreamRequests": 2
+      },
+      {
+        "kind": "recognition",
+        "status": "succeeded",
+        "attempts": 1,
+        "latencyMs": 10220,
+        "tokens": 2747,
+        "upstreamRequests": 1
+      }
+    ]
+  },
+  "preservation": {
+    "existingSyntheticRecordsUnchanged": {
+      "medications": true,
+      "learning": true,
+      "chat": true
+    },
+    "countsBefore": {
+      "medications": 7,
+      "learning": 6,
+      "chat": 2,
+      "jobs": 12
+    },
+    "countsAfter": {
+      "medications": 17,
+      "learning": 15,
+      "chat": 3,
+      "jobs": 24
+    }
+  },
+  "knownBoundaries": {
+    "publicAvailability": "controlled TEST, existing eligibility and cost limits retained",
+    "normalCloudDeletionAcceptance": "40 checks on preceding 00011 release; deletion implementation unchanged in this release",
+    "publicGates": [
+      "public support and eligibility/abuse policy",
+      "available backup and independent restore drill",
+      "failed deletion manual recovery and escalation",
+      "monitoring notification, expected concurrency and cost observation"
+    ],
+    "physicalCameraTested": false,
+    "clinicalOrGeneralRecognitionAccuracyClaimed": false
+  },
+  "evidence": {
+    "sourceImport": "cloud-leaflets-eight-20261021.json",
+    "sourceQa": "cloud-eight-source-qa-20261021.json",
+    "cloudAccountLifecycle": "cloud-account-lifecycle-20261021.json",
+    "privateEvidenceCommitted": false
+  },
+  "observations": [
+    {
+      "scope": "automated browser /today first read",
+      "observed": "transient network error",
+      "recovered": true,
+      "causeEstablished": false,
+      "codeChangePerformed": false
+    }
+  ],
+  "functionalEvaluationRelease": {
+    "tag": "20261021-public-readiness",
+    "buildId": "0f2e9ab0-8436-4210-bf0a-287970358bd3",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:3fe9cff7ca0a4cfd0eb7d8fdd0dfce20a55f606d9a337392026a4fb10fd4266e",
+    "services": [
+      {
+        "revision": "yzt-test-worker-00012-ssb",
+        "trafficPercent": 100,
+        "maxScaleUnchanged": true,
+        "environmentUnchanged": true,
+        "name": "yzt-test-worker"
+      },
+      {
+        "revision": "yzt-test-web-00012-r2w",
+        "trafficPercent": 100,
+        "maxScaleUnchanged": true,
+        "environmentUnchanged": true,
+        "name": "yzt-test-web"
+      }
+    ],
+    "stableGrounding": "grounded-v13-complete-safety-literal-recognition",
+    "researchChangesIncluded": false
+  },
+  "finalLogoutCorrection": {
+    "reproducedBeforeFix": true,
+    "changedFiles": [
+      "src/auth.tsx",
+      "tests/e2e/auth-session.spec.ts"
+    ],
+    "immediatelyNavigatesHome": true,
+    "immediatelyStopsSpeech": true,
+    "lateDeviceCleanupDoesNotAffectNextSession": true,
+    "focusedDesktopAndMobileBrowserTests": 14,
+    "finalCandidateUnitTests": 757,
+    "fullBrowserSuiteBeforeCorrection": 110,
+    "backendSourcesAndDependenciesUnchanged": true,
+    "localBuiltServerBundleSha256": "71084d2e2c4de89dbc6d47d48941ef3e4a225774f70a593c85456dbb46651d54",
+    "paidAiRerun": false,
+    "finalCloudAssetVerified": "/assets/index-DcLHZ6mV.js",
+    "finalCloudSavedQuizVisible": true,
+    "finalCloudLogoutHomeVerified": true
+  }
+}

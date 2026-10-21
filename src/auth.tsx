@@ -8,13 +8,8 @@ import {
 } from "react";
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   linkWithCredential,
   EmailAuthProvider,
-  signOut,
   type Auth,
 } from "firebase/auth";
 import {
@@ -25,9 +20,14 @@ import {
 } from "firebase/messaging";
 import { api, setJobIdentity, setTokenProvider } from "./api";
 import { requestWebPushToken, revokeWebPushToken } from "./web-push";
+import { authErrorMessage } from "./auth-errors";
+import { refreshEmailVerification, signInEmail } from "./email-auth";
+import { readTabValue, writeTabValue } from "./session-storage";
 import {
   configureFirebaseTokenProvider,
-  createMemoryFirebaseAuth,
+  clearFirebaseSession,
+  commitFirebaseSession,
+  createSessionFirebaseAuth,
   firebaseSessionNeedsReload,
   linkGoogle,
   observeFirebaseSession,
@@ -39,6 +39,8 @@ interface AuthState {
   me: any;
   loading: boolean;
   authError: string;
+  sessionRecovery: boolean;
+  emailVerified: boolean;
   login: (method: string, email?: string, password?: string) => Promise<void>;
   googleCredential: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -50,19 +52,43 @@ interface AuthState {
 const Context = createContext<AuthState>(null!);
 let firebaseApp: FirebaseApp;
 let firebaseAuth: Auth;
-let deviceId = sessionStorage.getItem("yzt-device-id") || "";
+let deviceId = readTabValue("yzt-device-id") || "";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const googleTransition = useRef(false);
+  const sessionEpoch = useRef(0);
   const notificationRequest = useRef<Promise<void> | null>(null);
   const notificationEpoch = useRef(0);
   const [config, setConfig] = useState<any>(null),
     [me, setMe] = useState<any>(null),
     [loading, setLoading] = useState(true),
+    [sessionRecovery, setSessionRecovery] = useState(false),
+    [emailVerified, setEmailVerified] = useState(false),
     [authError, setAuthError] = useState("");
   async function reload() {
-    const next = await api("/me");
+    const epoch = sessionEpoch.current;
+    const user = firebaseAuth?.currentUser;
+    const check = () => {
+      if (
+        epoch !== sessionEpoch.current ||
+        (config?.mode !== "local" &&
+          (!user || firebaseAuth.currentUser !== user))
+      )
+        throw new Error("登入狀態已變更，請重新登入。");
+    };
+    check();
+    const next = await api("/me", "GET", undefined, undefined, check);
+    check();
+    // Password sign-in can restore an account that also has Google linked.
+    // Commit its completed app session too, without changing either provider.
+    if (config?.mode !== "local" && user) {
+      await commitFirebaseSession(firebaseAuth, user);
+      check();
+    }
     setJobIdentity(next.account.id);
     setMe(next);
+    setEmailVerified(config?.mode === "local" || !!user?.emailVerified);
+    setSessionRecovery(false);
+    setAuthError("");
   }
   useEffect(() => {
     let stop = () => {};
@@ -72,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (disposed) return;
         setConfig(c);
         if (c.mode === "local") {
-          const t = sessionStorage.getItem("yzt-local-token");
+          const t = readTabValue("yzt-local-token");
           if (t) {
             setTokenProvider(async () => t);
             try {
@@ -80,18 +106,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (disposed) return;
               setJobIdentity(next.account.id);
               setMe(next);
-            } catch {
+            } catch (error) {
               if (disposed) return;
-              sessionStorage.removeItem("yzt-local-token");
               setJobIdentity(null);
-              setTokenProvider(async () => "");
+              if ((error as { status?: number }).status === 401) {
+                writeTabValue("yzt-local-token", null);
+                setTokenProvider(async () => "");
+              } else setSessionRecovery(true);
+              setAuthError(authErrorMessage(error));
             }
           }
           if (!disposed) setLoading(false);
         } else {
           if (!c.firebase?.apiKey) throw new Error("Firebase 網頁設定尚未完成");
           firebaseApp = initializeApp(c.firebase);
-          firebaseAuth = createMemoryFirebaseAuth(
+          firebaseAuth = createSessionFirebaseAuth(
             firebaseApp,
             Boolean(c.googleOAuthClientId),
           );
@@ -100,14 +129,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             firebaseAuth,
             async (u, isCurrent) => {
               if (disposed || googleTransition.current || !isCurrent()) return;
-              setJobIdentity(u?.uid || null);
+              const epoch = ++sessionEpoch.current;
+              setJobIdentity(null);
+              setMe(null);
+              const current = () =>
+                !disposed &&
+                !googleTransition.current &&
+                isCurrent() &&
+                epoch === sessionEpoch.current &&
+                firebaseAuth.currentUser === u;
               try {
-                const next = u ? await api("/me") : null;
-                if (!disposed && !googleTransition.current && isCurrent())
+                const next = u
+                  ? await api("/me", "GET", undefined, undefined, () => {
+                      if (!current())
+                        throw new Error("登入狀態已變更，請重新登入。");
+                    })
+                  : null;
+                if (current()) {
+                  setJobIdentity(next?.account.id || null);
                   setMe(next);
-              } catch {
-                if (!disposed && !googleTransition.current && isCurrent())
-                  setMe(null);
+                  setEmailVerified(!!u?.emailVerified);
+                  setSessionRecovery(false);
+                  if (u) setAuthError("");
+                }
+              } catch (error) {
+                if (current()) {
+                  setAuthError(authErrorMessage(error));
+                  setSessionRecovery(!!u);
+                }
               }
               if (!disposed && isCurrent()) setLoading(false);
             },
@@ -115,14 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (disposed) return;
               setMe(null);
               setLoading(false);
-              setAuthError(
-                error instanceof Error &&
-                  !String((error as { code?: string }).code || "").startsWith(
-                    "auth/",
-                  )
-                  ? error.message
-                  : "Google 登入未完成，請再試一次或使用電子信箱登入。",
-              );
+              setAuthError(authErrorMessage(error));
+              setSessionRecovery(false);
             },
             () => !disposed,
             Boolean(c.googleOAuthClientId),
@@ -146,20 +189,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       location.reload();
       return;
     }
+    const epoch = ++sessionEpoch.current;
+    setJobIdentity(null);
+    setMe(null);
     googleTransition.current = true;
     try {
       const next = await signInGoogleCredential(firebaseAuth, idToken);
+      if (epoch !== sessionEpoch.current) return;
       setJobIdentity(next.account.id);
       setMe(next);
+      setEmailVerified(!!firebaseAuth.currentUser?.emailVerified);
+      setSessionRecovery(false);
     } catch (error) {
+      if (epoch !== sessionEpoch.current) throw error;
       setJobIdentity(null);
       setMe(null);
-      setAuthError(
-        error instanceof Error &&
-          !String((error as { code?: string }).code || "").startsWith("auth/")
-          ? error.message
-          : "Google 登入未完成，請再試一次或使用電子信箱登入。",
-      );
+      setAuthError(authErrorMessage(error));
       throw error;
     } finally {
       googleTransition.current = false;
@@ -167,9 +212,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   async function login(method: string, email = "", password = "") {
     setAuthError("");
+    if (method === "reset" && config.mode !== "local") {
+      await signInEmail(firebaseAuth, method, email, password);
+      return;
+    }
+    const epoch = ++sessionEpoch.current;
+    const check = () => {
+      if (epoch !== sessionEpoch.current)
+        throw new Error("登入狀態已變更，請重新登入。");
+    };
+    setJobIdentity(null);
+    setMe(null);
+    setSessionRecovery(false);
     if (config.mode === "local") {
-      const { token } = await api("/auth/local", "POST", { uid: method });
-      sessionStorage.setItem("yzt-local-token", token);
+      const { token } = await api(
+        "/auth/local",
+        "POST",
+        { uid: method },
+        undefined,
+        check,
+      );
+      check();
+      writeTabValue("yzt-local-token", token);
       setTokenProvider(async () => token);
       await reload();
       return;
@@ -179,80 +243,153 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     configureFirebaseTokenProvider(firebaseAuth);
-    if (method === "google") {
-      googleTransition.current = true;
-      try {
-        await signInGoogle(firebaseAuth);
-      } catch (error) {
-        void signOut(firebaseAuth).catch(() => {});
-        setJobIdentity(null);
-        setTokenProvider(async () => "");
-        setMe(null);
-        throw error;
-      } finally {
-        googleTransition.current = false;
+    googleTransition.current = true;
+    try {
+      if (method === "google") {
+        try {
+          await signInGoogle(firebaseAuth);
+        } catch (error) {
+          setJobIdentity(null);
+          setTokenProvider(async () => "");
+          setMe(null);
+          throw error;
+        }
+        return;
       }
-      return;
-    } else if (method === "register") {
-      const result = await createUserWithEmailAndPassword(
+      if (firebaseAuth.currentUser) {
+        await clearFirebaseSession(firebaseAuth);
+        check();
+        configureFirebaseTokenProvider(firebaseAuth);
+      }
+      const warning = await signInEmail(
         firebaseAuth,
+        method,
         email,
         password,
+        check,
       );
-      await sendEmailVerification(result.user);
-    } else if (method === "reset") {
-      await sendPasswordResetEmail(firebaseAuth, email);
-      return;
-    } else await signInWithEmailAndPassword(firebaseAuth, email, password);
-    await reload();
+      check();
+      await reload();
+      check();
+      if (warning) setAuthError(warning);
+    } catch (error) {
+      if (epoch === sessionEpoch.current && method !== "google") {
+        setSessionRecovery(!!firebaseAuth.currentUser);
+        if (firebaseAuth.currentUser) setAuthError(authErrorMessage(error));
+      }
+      throw error;
+    } finally {
+      if (epoch === sessionEpoch.current) googleTransition.current = false;
+    }
   }
   async function logout() {
+    const epoch = ++sessionEpoch.current;
     notificationEpoch.current++;
+    // Honor logout immediately, before SDK callbacks or remote cleanup can wait.
+    location.hash = "home";
+    window.speechSynthesis?.cancel();
     const revokePush = !!deviceId || !!notificationRequest.current;
     setJobIdentity(null);
-    if (deviceId) {
-      await api("/devices/" + deviceId, "DELETE").catch(() => {});
-      deviceId = "";
-      sessionStorage.removeItem("yzt-device-id");
-    }
+    setMe(null);
+    setAuthError("");
+    setSessionRecovery(false);
+    const previousDevice = deviceId;
+    const outgoingToken =
+      previousDevice && config.mode !== "local"
+        ? firebaseAuth.currentUser?.getIdToken().catch(() => "") ||
+          Promise.resolve("")
+        : Promise.resolve("");
+    deviceId = "";
+    writeTabValue("yzt-device-id", null);
+    // Capture the outgoing account's token for this one cleanup request. The
+    // shared provider is cleared immediately and cannot authenticate a later
+    // screen or account with the outgoing identity.
+    const revokingDevice = previousDevice
+      ? config.mode === "local"
+        ? api("/devices/" + encodeURIComponent(previousDevice), "DELETE").catch(
+            () => {},
+          )
+        : revokeWebPushToken(async () => {
+            const token = await outgoingToken;
+            if (!token) return;
+            await fetch(
+              "/api/v1/devices/" + encodeURIComponent(previousDevice),
+              {
+                method: "DELETE",
+                headers: { Authorization: "Bearer " + token },
+                cache: "no-store",
+                signal: AbortSignal.timeout(10000),
+              },
+            );
+          })
+      : Promise.resolve();
+    // Start clearing authentication before push revocation or transport can
+    // stall. Identity guards immediately discard any old /me completion.
+    const clearing = (
+      config.mode === "local"
+        ? Promise.resolve(writeTabValue("yzt-local-token", null))
+        : clearFirebaseSession(firebaseAuth)
+    ).then(
+      () => true,
+      () => false,
+    );
+    await revokingDevice;
     if (firebaseApp && revokePush)
       await revokeWebPushToken(() => deleteToken(getMessaging(firebaseApp)));
-    if (config.mode === "local") sessionStorage.removeItem("yzt-local-token");
-    else await signOut(firebaseAuth);
+    const cleared = await clearing;
+    if (!cleared && epoch === sessionEpoch.current)
+      setAuthError("登出未能完成，請重新載入登入頁確認狀態。");
+    if (epoch !== sessionEpoch.current) return;
     setTokenProvider(async () => "");
     setMe(null);
-    location.hash = "home";
-    speechSynthesis.cancel();
+    googleTransition.current = false;
   }
   async function verify() {
-    if (firebaseAuth?.currentUser) {
-      await firebaseAuth.currentUser.reload();
-      await firebaseAuth.currentUser.getIdToken(true);
-      if (!firebaseAuth.currentUser.emailVerified)
-        await sendEmailVerification(firebaseAuth.currentUser);
-      await reload();
+    try {
+      if (config.mode !== "local") {
+        const epoch = sessionEpoch.current;
+        await refreshEmailVerification(firebaseAuth, () => {
+          if (epoch !== sessionEpoch.current)
+            throw new Error("登入狀態已變更，請重新操作。");
+        });
+        await reload();
+      }
+    } catch (error) {
+      throw new Error(authErrorMessage(error));
     }
   }
   async function link(method: string, password = "", email = "") {
     const u = firebaseAuth?.currentUser;
     if (!u) throw new Error("此功能需要 Firebase 帳號。");
-    if (method === "google") {
-      configureFirebaseTokenProvider(firebaseAuth);
-      googleTransition.current = true;
-      try {
-        await linkGoogle(u);
+    const epoch = sessionEpoch.current;
+    const check = () => {
+      if (epoch !== sessionEpoch.current || firebaseAuth.currentUser !== u)
+        throw new Error("登入狀態已變更，請重新操作。");
+    };
+    try {
+      if (method === "google") {
+        configureFirebaseTokenProvider(firebaseAuth);
+        googleTransition.current = true;
+        try {
+          await linkGoogle(u, firebaseAuth);
+          check();
+          await reload();
+        } finally {
+          if (epoch === sessionEpoch.current) googleTransition.current = false;
+        }
+      } else {
+        if (password.length < 8) throw new Error("請使用至少 8 個字元的密碼。");
+        const address = email.trim() || u.email;
+        if (!address) throw new Error("請填寫要連結的 Email。");
+        await linkWithCredential(
+          u,
+          EmailAuthProvider.credential(address, password),
+        );
+        check();
         await reload();
-      } finally {
-        googleTransition.current = false;
       }
-    } else {
-      if (password.length < 8) throw new Error("請使用至少 8 個字元的密碼。");
-      const address = email.trim() || u.email;
-      if (!address) throw new Error("請填寫要連結的 Email。");
-      await linkWithCredential(
-        u,
-        EmailAuthProvider.credential(address, password),
-      );
+    } catch (error) {
+      throw new Error(authErrorMessage(error));
     }
   }
   async function notify() {
@@ -289,10 +426,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }),
         assertIdentity,
       });
-      const device = await api("/devices", "POST", { token }, undefined, assertIdentity);
+      const device = await api(
+        "/devices",
+        "POST",
+        { token },
+        undefined,
+        assertIdentity,
+      );
       assertIdentity();
       deviceId = device.id;
-      sessionStorage.setItem("yzt-device-id", deviceId);
+      writeTabValue("yzt-device-id", deviceId);
     })();
     notificationRequest.current = operation;
     try {
@@ -308,6 +451,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         me,
         loading,
         authError,
+        sessionRecovery,
+        emailVerified,
         login,
         googleCredential,
         logout,

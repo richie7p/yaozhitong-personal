@@ -1,235 +1,96 @@
-# 藥智通 · 個人專題版
+# 藥智通 · 個人用藥手帳
 
-藥智通是 React／Hono 的個人用藥管理與學習系統，支援藥袋拍照／上傳、藥品核對、官方仿單說明、理解測驗、提醒及家庭藥箱。**目前為受控 Google Cloud TEST，尚未開放大眾正式使用**；[雲端入口](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)已更新為 `20261021-editor-focus`。
+藥智通協助你從藥袋照片建立用藥紀錄，對照官方仿單閱讀說明、回答理解題，並管理每日服藥與提醒。
 
-最新補修手機長清單「編輯用法」表單位於畫面外的問題，點擊後會直接顯示並聚焦表單。修正版 **684項單元、90項瀏覽器測試通過**。本輪另用合成帳號在雲端完成照片辨識、兩筆核對保存、PRN分流、仿單引用、四題錯答改正與問答，重新登入後紀錄保留；三個真實AI任務均一次成功。完整流程在發布前執行，發布後另核對表單顯示與資料保留，詳見[本輪驗收摘要](docs/acceptance/cloud-save-editor-20261021.json)。
+目前為**受控 Google Cloud TEST**，採註冊後核准 AI 試用資格的方式使用。[開啟藥智通](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com)；公開使用的準備進度見 [PUBLIC-READINESS](docs/PUBLIC-READINESS.md)。
 
-前次展示修正包含問答送出引導、切頁草稿與處理中狀態、慢連線覆蓋、測驗答案續接及登入後鍵盤焦點。該版本通過 **684項單元、88項桌面／手機尺寸瀏覽器測試、18項真實AI流程操作及10項隔離故障恢復**；雲端另實際送出問答、展開原文並核對重新登入後紀錄，既有藥品與學習資料保留。本機8085使用最新修正版與原八藥資料。雲端重新整理後仍須登入原帳號；[五分鐘操作與驗收清單](docs/DEMO-CHECKLIST.md)及[先前驗收摘要](docs/acceptance/demo-ui-20261021.json)說明範圍。
+## 從照片到用藥紀錄
 
-先前通知紀錄版本 `20261020-notification-history` 通過 **679項單元、66項桌面／手機流程、建置及生命週期檢查**；更新後版本 **8／8**、公開入口與原資料保存 **27／27**、基礎設施 **90／90** 通過，另以合成帳號實際登入確認鈴鐺入口與空紀錄重新整理。該次沒有新增AI任務或實機推播；[歷史驗收摘要](docs/acceptance/notification-history-20261020.json)列明範圍。
+1. 在「新增藥品」選擇**上傳照片**，讓藥名與用法清楚可讀。
+2. 查看辨識候選，對照原藥袋核對藥名、劑量、單位、頻次與途徑。
+3. 完成確認後保存；不清楚的欄位保持留白，也可先保存草稿或手動建檔。
+4. 開啟仿單說明，展開引用閱讀原文，再完成理解測驗或提出用藥問題。
 
-前一 `20261020-cloud-prn` 版本已完成API完整流程、4角色權限與受控雲端恢復驗收，版本檢查 **8／8**、入口與原資料保存 **27／27**、瀏覽器結果回讀 **10／10** 通過。瀏覽器實測發現的PRN草稿問題已修正，並完成上傳辨識、核對保存、仿單引用、4題答錯改正及重新登入後4／4進度保存；各版本、模型呼叫與測試範圍見[先前雲端摘要](docs/acceptance/cloud-extended-20261020.json)及[部署紀錄](docs/DEPLOYMENT.md)。當時[GitHub CI](https://github.com/richie7p/yaozhitong-personal/actions/runs/39438092871)通過679項單元、60項瀏覽器與生命週期檢查；先前失敗紀錄保留於摘要。
+支援 JPEG／PNG，單張 8 MB、3,200 萬畫素以內；HEIC 請先另存為 JPEG。伺服器會檢查檔案結構並完整解碼，檢查通過後才保存照片及建立辨識工作。
 
-相機與上傳入口已分開，推播權限／連線等待與API逾時可恢復操作，過期辨識工作也不會誤刪接手工作仍需使用的照片。Android實機已拍攝電腦螢幕上的合成藥袋，使用者確認辨識出酵素膠囊與咳服錠，也確認鎖屏通用通知及正常排程提醒均收到並可點擊返回；下一分鐘未重複排程通知，測試資料已清理。**真實紙本藥袋、完整用法欄位、前景與長期推播仍待驗收**；雲端目前只發布1份仿單，驗證信、備份還原、負載及長期觀測也待完成。本輪內容驗收為官方來源核對，不是臨床驗證；無可確認來源的藥品呈現資料不足。既有Google正向登入已完成一次，本輪不重測，詳見[首次雲端與登入紀錄](docs/acceptance/cloud-first-deploy-20261020.json)。
+上傳前請遮住姓名、身分證號、地址與識別條碼，並移除照片可能附帶的位置等隱藏資訊。辨識結束後系統會嘗試刪除原照片；詳細處理方式可在網站的「資料使用與隱私」查看。
 
-**目前使用同一套「用藥手帳」介面**，以每日用藥清單為首頁、藥品檔案與閱讀目錄為主體。紙白、墨綠、陶土色、章節編號與細分隔線構成視覺；仿單採手冊式排版，保留完整警語、引用及真實測驗保存。本機日常與「研討會展示」都在同一個8085服務內，雲端也使用相同介面。展示模式將已保存結果分為辨識、說明、測驗三步，也能接續現場拍照。詳見 [介面與操作說明](docs/UI-UX-REDESIGN.md)。
+## 官方仿單與學習
 
-新增「通知紀錄」入口：點右上鈴鐺或手機「更多」，可查看目前帳號的提醒內容、台北時間及待傳送／推送已處理／已取消狀態。只在進頁或手動重新整理時讀取，不持續輪詢，也不新增已讀寫入；推送已處理不等於手機已顯示或已閱讀。先前驗收的臨時通知已清理，不會補造歷史紀錄。
+雲端已發布 **8 份核對過的官方來源：6 份 PDF、2 份 HTML**，包含完整來源文字、官方網址及版本資訊。
 
-研討會可直接使用[系統介紹與展示講稿](docs/SEMINAR-PRESENTATION.md)，包含一分鐘介紹、七分鐘操作、五分鐘保存結果備援及七頁投影片大綱；以現行雲端咳服錠案例為主。
+| 藥品 | 許可證末六碼 |
+| --- | --- |
+| 酵素膠囊 | 000544 |
+| 開恩達命膠囊 | 014025 |
+| 優克黴素膠囊 250 公絲 | 019054 |
+| 「生達」咳服錠 200 毫克 | 026087 |
+| 普德錠 80 毫克 | 030418 |
+| 「永勝」克黴隆親水性乳膏 | 039632 |
+| 「晟德」安佳熱滴劑 | 040161 |
+| 「晟德」息咳寧糖漿 | 040833 |
 
-2026-10-20 現行程式使用 **GPT-6 Luna（`gpt-6-luna`，推理設定 `none`）**，策略為 `grounded-v13-complete-safety-literal-recognition`。先前本機 v13 範圍擴充為 **8 款藥、8 份官方仿單來源（6 PDF、2 HTML）**；8 份來源中的 **17 個可識別安全主欄**逐欄保留完整原文，並為每欄至少提供一個重點的理解題。這表示固定來源主欄的覆蓋，不是所有子項、臨床情境或個人適用性的驗證；本機8份來源沒有整批複製到雲端。沒有安全欄的來源不捏造警語。
+說明與問答會附上可展開的原文引用；沒有可確認來源時顯示資料不足。來源核對不等於個人用藥適用性的判斷，仍須對照原處方與藥袋。
 
-息咳寧已改用許可證040833的現行官方共同仿單，完整保留兩種口味的賦形劑分支，照片仍須由使用者核對候選，沒有推定口味。開恩達命採現行014025官方來源，保留新增的鈷過敏警語，不沿用舊版「可長期大量使用」之類敘述。HTML來源標示官方網頁與區塊，不冒充PDF頁碼。
+理解測驗會保存答案與進度，答錯可閱讀解釋後重答。來源更新後，系統會要求重新產生目前版本的學習內容。來源清單與核對結果見 [8 份來源驗收](docs/acceptance/cloud-leaflets-eight-20261021.json)，維護方式見 [SOURCE-IMPORT](docs/SOURCE-IMPORT.md)。
 
-辨識只從唯一明確原文補回模型原先留白的欄位；含量必須有可核對的數值與單位，純數字藥品代碼不當含量，不從目錄補入照片沒印的濃度。必要用法缺漏會保持留白並顯示固定核對提示；原文有明確矛盾才顯示具體衝突原因。這些檢查不取代使用者對照照片確認。
+## 日常管理與帳號
 
-公開實拍樣本由2張增加為 **4張**，本次新增Kentamin醫院新聞照片與MND期刊藥袋照片。MND只作不完整用法的安全攔截案例，紅字完整讀取尚未通過，不列為完整辨識、仿單及測驗成功。歷史人物欄位不當測試病人資料；本人手機的真實紙本藥袋、完整用法欄位及各種光線／角度仍待驗收，HEIC仍不支援。Bubdel影像仿單仍靠經核對的人工轉錄，不能宣稱通用OCR已解決。
+- **今日總覽與提醒**：依自己確認的用法設定時間、記錄服用或略過，也可查看通知紀錄。
+- **用藥問答**：選擇已確認的藥品提問，回看答案及引用；處理中斷可從 AI 處理紀錄接續。
+- **家庭藥箱與照護**：管理存量、效期，透過一次性邀請分享唯讀用藥紀錄，並可撤銷授權。
+- **帳號與資料**：提供 Email／密碼註冊及 Google 登入，可更新信箱驗證狀態、匯出資料與刪除帳號。
 
-**v13已完成固定範圍驗收並採用：445／445單元、36／36桌面／手機回歸、受控恢復10／10、型別、建置及生命週期檢查通過。** 8085目前使用 `.local/seminar-demo-expanded-v13-20261020`，含8藥、8份學習、25題、12個任務、8份生成紀錄及4筆辨識。25條說明／25題另經第二角色來源QA；[服務重啟保存介面58／58](.local/seminar-demo-expanded-v13-20261020/service-restart-ui-report.json)通過，0新AI。這是服務重啟；本輪沒有再整台電腦重開，真正Windows重開14／14僅屬先前六藥v11。
+新雲端帳號可先手動建檔，AI 功能需要完成信箱驗證並取得管理員核准。現行試用最多 50 個有效名額，每日每人 20、全站 200 次新 AI 任務。
 
-本輪依變更範圍分組重驗，採用19個完整流程（手動12、正常實拍6、原兩藥合成袋1），另2個MND安全攔截案例；共29個任務、49次HTTP全部200、0逾時／重試／備援，最慢任務約11.9秒。這些接受案例跨不同凍結建置，不能稱21次均在最終同一建置執行；先前失敗及各自分母完整保留。用途補齊逐字保留Bl／Bl2與後置條件，原18份已通過內容另經0新AI不變性核對。固定小樣本不保證現場網路或供應商長期可用性；詳見[本輪可攜驗收摘要](docs/acceptance/seminar-v13-20261020.json)與[完整範圍／失敗歷史](docs/SEMINAR-EXPANDED-20261020.md)。
+同一分頁重新整理可接續登入；共用裝置使用後請登出。網頁推播受裝置、瀏覽器及網路影響，請保留自己的服藥安排。
 
-雙擊 `啟動藥智通.cmd` 開啟 [日常首頁](http://127.0.0.1:8085/#home)，再從選單進入 [研討會展示](http://127.0.0.1:8085/#demo)。此入口需要本機已準備好的指定資料，不會在新裝置自動還原，也沒有開機自動常駐。詳見[本輪擴充驗收與限制](docs/SEMINAR-EXPANDED-20261020.md)、[五分鐘展示與開場檢查](docs/SEMINAR.md)；[v11 GitHub驗收彙總](docs/acceptance/seminar-v11-20261020.json)及[較早歷史](docs/SEMINAR-ACCEPTANCE.md)保留原結果，日常操作見[本機指南](docs/LOCAL-TESTING.md)。
+## 在本機啟動
 
-GitHub 僅保存程式、測試、文件及去除本機路徑與個別紀錄的彙總。文件中的 `.local/` 證據連結只在原驗收電腦可用；金鑰、本機帳號與藥品資料、照片、下載 PDF、原始測試報告及歷史 UI 截圖均不隨 Git 同步。新裝置需另設金鑰並準備資料；一般本機模式從空白資料開始。
-
-Google Cloud TEST 已部署於 `asia-east1`，Web／worker 使用相同 OpenAI 模型與 Secret，失敗時不自動跨供應商備援。Firebase 已設定 Email／密碼與 Google provider、授權網域及 VAPID；首次驗收使用合成帳號的實際 Firebase 密碼登入，測試工具預先設定的 `emailVerified:true` 不當成驗證信送達測試。真實Google登入已成功一次，本輪另完成合成帳號角色與受控派送／租約恢復。驗證信、Google取消／逾時恢復、兩裝置及帳號連結、實體紙本藥袋與完整欄位、前景及長期推播、真實雲端程序中止、備份還原、負載及長期觀測仍待完成。NT$500 費用提醒與 Cloud Run 最少0／每服務最多2個執行個體已設定，均不是總費用硬上限；OpenAI 費用另計。詳見[部署設定與未完成驗收](docs/DEPLOYMENT.md)。
-
-Hosting與Firebase `authDomain` 相同，網站與API轉送至現有Web Cloud Run，發布0個靜態檔案；service worker排除Firebase保留的 `/__` 路徑。完整部署 **74／74**、Hosting helper **17／17**離線檢查在PowerShell 7與Windows PowerShell 5.1均通過。部署步驟見[同網域 Hosting 入口](docs/DEPLOYMENT.md#同網域-firebase-hosting-入口)；後續完整部署須提供 `-PublicAppUrl 'https://PROJECT_ID.firebaseapp.com'`，保留提醒連結使用的公開網址。
-
-雲端模型解析順序為明確的 `-TextModel`／`-VisionModel` → 目前程序的 `AI_TEXT_MODEL`／`AI_VISION_MODEL` → 所選供應商專用環境變數 → 腳本預設值。OpenAI 預設文字與影像皆為 `gpt-6-luna`；NVIDIA 皆為 `nvidia/nemotron-3.5-super-vl-120b-a12b`。部署腳本不自動讀取 `.env`；實際部署只要求目前程序中所選供應商的 `OPENAI_API_KEY` 或 `NVIDIA_API_KEY`，透過標準輸入上傳至 `yzt-<test|prod>-<openai|nvidia>-key`，不放進指令參數或設定輸出。
-
-先準備與測試專案相符的 Firebase Web 公開設定 JSON，以及 Firebase Authentication → Google provider → Web SDK configuration 中的 **Web client ID**。後者是以 `.apps.googleusercontent.com` 結尾的公開 OAuth 識別碼，不是 Client secret，也不是 Firebase `apiKey`；把下方範例值換成同一專案的實際 ID，再只檢查設定：
-
-```powershell
-./infra/deploy.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -GoogleOAuthClientId '123456789012-your-web-client.apps.googleusercontent.com' -VapidKey 'YOUR_PUBLIC_VAPID_KEY' -Environment test -Region asia-east1 -AiProvider openai -ValidateOnly
-```
-
-`-GoogleOAuthClientId` 未傳入時使用目前程序的 `GOOGLE_OAUTH_CLIENT_ID`。這項設定在 `-ValidateOnly` 也必須提供，缺漏或格式錯誤會在任何雲端呼叫前停止。`-ValidateOnly` 會在任何 `gcloud` 指令前輸出去敏 JSON 並返回，可無 Cloud CLI、可缺 AI 金鑰；不建立資源或呼叫模型，也不驗證 OAuth ID 實際歸屬、模型存取權、額度與雲端權限。[實際部署範例與完整參數](docs/DEPLOYMENT.md)另列。首次建置缺少 builder 的 bucket metadata 讀權限，補該 bucket 的 Bucket Viewer 後為43／43；加上 Google Web client ID 檢查後為46／46，均與下方較早本機階段的39項結果分開記錄。
-
-Hosting 設定可先執行 `./infra/deploy-hosting.ps1 -ProjectId 'your-test-project' -FirebaseConfigPath 'C:/private/firebase-test-web.json' -Environment test -Region asia-east1 -ValidateOnly`；這只驗本機設定，不檢查既有網站，也不發布。Hosting 有獨立用量：目前官方提供10GB儲存與每月10GB下載免額外費用額度，超額依方案計費；Cloud Run 的限制不涵蓋 Hosting，整專案NT$500提醒也不是硬上限。[官方 Hosting 用量與定價](https://firebase.google.com/docs/hosting/usage-quotas-pricing)。
-
-部署明確沿用目前的逾時、回覆長度與 OpenAI `none` 思考設定，端點固定為所選供應商的官方網址，不載入整份 `.env` 或終端自訂端點。`./tools/check-deployment.ps1` 提供全用假金鑰與模擬 CLI 的離線回歸，不連雲端或呼叫模型。
-
-## 2026-10-20 提醒讀取成本優化
-
-提醒改用資料庫到期查詢，只讀取已到期的本人／家人檢查與可重試通知，不再每分鐘逐筆讀取所有使用者、藥品和個人設定。家人通知有獨立檢查時間，最後一劑及跨午夜仍在一小時後檢查；開啟通知、接受照護邀請或恢復帳號時，會以可恢復的待辦重新安排該使用者的檢查。舊排程只升級一次，重啟不重新全面掃描。
-
-合成成本測試以 **50 人、每人 3 個每日提醒、每人 1 個裝置、關閉家人通知**，連續模擬 1,440 分鐘：舊版僅排程讀取的保守估算為每日 864,000 次，新版整個背景檢查量測為 **12,028 次／日，減少約 98.6%**；150 則提醒全部送出且無重複。空查詢、交易讀取及裝置查詢均計入。這是文件讀取模型，排除一次性升級、設定變更、交易重試、索引計費及其他功能流量，**不代表整張雲端帳單降低 98.6%**。可執行 `npx vitest run tests/reminder-cost.test.ts --silent=false` 重現。
-
-本人提醒停機恢復時，只補一小時內仍有效的時段；家人提醒只補台北當日應檢查的時段，包含前一晚用藥的一小時期限落在午夜後的情況。已記錄、排程已改、藥品已封存、通知關閉或授權撤銷的提醒會取消。外部推播送出後、回寫前當機仍可能重送，不能保證 FCM 絕對一次。
-
-每次部署前須先建立 `firestore.indexes.json` 的四組複合索引並等待 READY；首次 TEST 部署已完成，腳本會檢查索引，避免缺索引就更新服務。**以下提醒優化歷史驗收沒有部署或呼叫真實推播／AI**；雲端與Android實機結果另列於本文開頭，長期推播及實際費用量測仍待完成。提醒成本範圍見[實作狀態](docs/IMPLEMENTATION-STATUS.md)及[部署說明](docs/DEPLOYMENT.md)。
-
-該次本機提醒優化 **535／535 程式測試、54／54 桌面／手機流程、39／39 部署離線檢查及服務重啟／帳號刪除檢查通過**。部署離線檢查另在 PowerShell 7 與 Windows PowerShell 5.1 驗證；測試使用隔離合成資料與模擬 AI／推播。可攜結果見[提醒優化驗收摘要](docs/acceptance/reminders-20261020.json)。
-
-## 2026-10-20 可靠性修正
-
-- 更換照片時立即清除前一張的辨識、核對草稿、保存提示與預覽；不支援或過大的新檔案不會留下可操作的舊結果，較早的照片驗證也不能覆蓋後選檔案。
-- 同一帳號重送相同的未完成 AI 操作會沿用識別碼。建立回應遺失時重送原操作，已知任務的查詢中斷則接續查詢；確認成功或失敗後，下一次明確送出可建立新操作。瀏覽器允許工作階段儲存時可跨重新整理接續，照片需重新選取相同原檔；不在工作階段儲存照片、問題或健康文字，只保存雜湊及操作識別資訊。登出／切換帳號會清除前帳號的接續狀態。
-- 家庭藥箱以台北日期判斷效期，頁面跨午夜及回到前景時會更新；有效日期當天維持保存中，已處理狀態優先。
-
-該次本機可靠性修正 **488／488 單元、54／54 桌面／手機流程、28／28 部署離線檢查，以及服務重啟／帳號刪除生命週期檢查通過**。兩種斷線接續情境另在桌面／手機各連測三次，共12／12通過。瀏覽器回歸涵蓋藥袋辨識、仿單說明、測驗保存及故障恢復，使用隔離合成資料與模擬 AI，該階段沒有新增真實模型呼叫或雲端部署。原有八藥來源驗收範圍維持本文開頭所述；後續公開使用前的工作見[雲端公開使用驗收目標](docs/DEPLOYMENT.md#後續公開使用的驗收目標)。
-
-## 在其他裝置接續開發
-
-在另一台電腦安裝 Git、Node.js 22.16 以上，下載專案：
-
-```powershell
-git clone --branch master https://github.com/richie7p/yaozhitong-personal.git
-cd yaozhitong-personal
-npm ci
-cp .env.example .env
-npm run dev
-```
-
-開啟 <http://127.0.0.1:5173>。需要 AI 功能時，在該裝置的 `.env` 選擇供應商並填入對應金鑰，設定見下方。`.env`、本機帳號資料、藥袋照片及下載的 PDF 都不會隨 GitHub 同步；新裝置的本機資料從空白開始，官方資料匯入方式見 [資料說明](docs/DATA.md)。
-
-每次開始修改前，在沒有未提交變更時執行 `git pull --ff-only`。修改完成後，把變更存成 commit 並推送：
-
-```powershell
-git add .
-git commit -m "說明這次修改"
-git push
-```
-
-推送需要登入有寫入權限的 GitHub 帳號（例如 `gh auth login`）。換裝置前先提交並推送；若拉取時提示衝突或分支分歧，先保留本機修改再處理，避免強制覆蓋。
-
-新裝置要跑瀏覽器驗收，先執行 `npx playwright install chromium`，再執行 `npm run check:local`。目前驗收狀態見 [GitHub Actions](https://github.com/richie7p/yaozhitong-personal/actions)。
-
-## 本機啟動
-
-使用 Node.js 22.16 以上與 npm：
+安裝 **Node.js 22.16 以上**與 npm，首次在專案目錄執行；已有 `.env` 時請保留原檔：
 
 ```powershell
 npm ci
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 npm run dev
 ```
 
-開啟 <http://127.0.0.1:5173>，可選「本機使用者」「本機家人」「本機管理員」。首次使用沒有健康示範資料。這三個身份只供開發；正式環境強制 Firebase 驗證，禁止本機登入。
+開啟 [本機開發頁](http://127.0.0.1:5173)，選擇本機使用者、家人或管理員。這些是開發身份；新環境從空白資料開始，雲端帳號與來源不會自動複製到本機。
 
-本機資料在 `.local/`，不加入 Git。這個工作區位於 OneDrive，檔案可能受電腦同步設定影響；本機模式只使用測試資料。可用 `LOCAL_DATA_PATH` 指定其他儲存目錄。
-
-單一服務預覽：
-
-```powershell
-npm run build
-npm start
-```
-
-開啟 <http://127.0.0.1:8080>。開發模式需要程式保持執行才能檢查站內提醒；關閉程式後沒有背景通知服務。
-
-## AI 供應商與本機設定
-
-目前本機設定已切為 `AI_PROVIDER=openai`，文字與影像均使用 `gpt-6-luna`，金鑰僅由後端讀取 Git 忽略的 `.env`。下列模型設定不包含金鑰：
+使用 AI 前，在自己的 `.env` 設定後端金鑰；範本已選用以下模型：
 
 ```dotenv
+APP_MODE=local
 AI_PROVIDER=openai
+OPENAI_API_KEY=填入自己的金鑰
 OPENAI_TEXT_MODEL=gpt-6-luna
 OPENAI_VISION_MODEL=gpt-6-luna
 ```
 
-OpenAI API 金鑰只存入 `.env` 的 `OPENAI_API_KEY`。文字、影像與審核目標均為 `gpt-6-luna`；通用 `AI_TEXT_MODEL`、`AI_VISION_MODEL` 仍優先於 `OPENAI_TEXT_MODEL`、`OPENAI_VISION_MODEL`，本次啟用已通過舊模型覆寫預檢。只使用明確選擇的供應商，失敗時**不自動跨 NVIDIA／OpenAI 切換**。金鑰不放前端、Git、日誌或指令參數。
+目前發布路徑使用 **GPT-6 Luna、推理設定 `none`、v13 來源核對策略**，不自動跨供應商備援。`.env`、照片及本機資料不加入 Git；`LOCAL_DATA_PATH` 可指定本機資料目錄。
 
-Luna 沿用 Chat Completions 接法，明確指定 `reasoning_effort=none`、`store=false`、`max_completion_tokens` 與 JSON 模式；藥袋欄位、來源、必要條件、唯一答案與測驗原文解釋檢查保持。呼叫 45 秒／任務 120 秒期限不放寬。官方能力與參數見 [GPT-6 Luna 模型頁](https://developers.openai.com/api/docs/models/gpt-6-luna)及[GPT-6 使用指南](https://developers.openai.com/api/docs/guides/latest-model)。先前兩藥 v9 階段先通過[最小連線](.local/reports/openai-connection.json)，再完成固定五輪真實流程及來源驗收；現行 v13 擴充狀態見本文開頭，各階段證據分開。
+要以單一服務預覽，執行 `npm run build`、`npm start`，再開啟 [本機預覽頁](http://127.0.0.1:8080)。程式需持續執行，才能處理本機背景工作與提醒。
 
-本機準備檢查：
+## 驗證與部署
 
-```powershell
-npm run build
-npm run check:openai:ready
-```
+2026-10-21 隔離發布候選已通過 **757 項單元測試、110 項桌機／手機尺寸瀏覽器測試**，以及型別、建置與生命週期檢查。程式回歸使用合成資料與模擬 AI。
 
-這項檢查只讀取模型設定、官方端點、`.env` 的 Git 忽略規則與建置版本，**0 次供應商呼叫**；結果寫入 `.local/reports/openai-readiness.json`。金鑰只記是否存在，不輸出內容，也不代表有效性已驗證。
-
-| 準備狀態 | 意義 |
-| --- | --- |
-| `prepared_pending_key` | 接法與模型已備妥，等待金鑰 |
-| `prepared_pending_activation` | 已有金鑰，尚未啟用 OpenAI |
-| `prepared_pending_real_acceptance` | 已啟用，仍須真實模型與完整流程驗收 |
-| `blocked_preparation` | 模型覆寫、端點或建置等本機設定需要修正 |
-
-`npm run check:openai:ready -- --require-key` 在缺金鑰時回非零狀態；`--no-report` 只輸出結果，不寫報告。這些準備狀態皆不等於真實驗收通過；先前兩藥固定五輪、內容 QA 及恢復結果記於[歷史驗收摘要](docs/SEMINAR-ACCEPTANCE.md)，現行 v13 見[擴充驗收](docs/SEMINAR-EXPANDED-20261020.md)，不改寫準備工具的狀態定義。
-
-OpenAI 帳戶額度／計費限制以 `ai_quota_exceeded` 結束，不重複重試；模型拒絕或內容過濾以 `ai_refused` 結束，不發布內容。暫時限流與 5xx 才在既有期限內重試，仍不切回 NVIDIA。JSON 模式的請求明確附上 JSON 輸出指令，原審核規則保持；OpenAI 快取政策為 `openai-chat-json-none-v2`，避免沿用修正前結果。
-
-每次生成、審核或辨識呼叫的所有模型嘗試，共用預設 45 秒期限（`AI_REQUEST_TIMEOUT_MS`），每次最多 3 個 HTTP 請求；單一任務共用 120 秒整體期限（`AI_JOB_TIMEOUT_MS`）。有備援時，文字主模型最多等 12 秒（`AI_TEXT_PRIMARY_TIMEOUT_MS`），影像主模型最多等 22 秒（`AI_PRIMARY_TIMEOUT_MS`），均依剩餘時間縮短，將時間留給備援；讀取回應本文也受期限約束。生成另保留必要的審核時間。重試與換模型都不重設期限；同一任務已失敗的主模型不會在後續審核再等一次。
-
-先前 NVIDIA 模型設定（歷史保存展示來源，未作 OpenAI 自動備援）：
-
-| 用途 | 主模型 | 同 NVIDIA 備援 |
-| --- | --- | --- |
-| 文字、問答、證據審核 | `nvidia/nemotron-3.5-super-vl-120b-a12b` | `z-ai/glm-5.3-flash` |
-| 藥袋影像 | `nvidia/nemotron-3.5-super-vl-120b-a12b` | `z-ai/glm-5.3-flash` |
-
-主模型可用 `NVIDIA_TEXT_MODEL`、`NVIDIA_VISION_MODEL` 設定；備援順序如下，可用逗號分隔最多兩款，明確留白可關閉。程式預設備援清單為空，這份工作區及 `.env.example` 採下列設定；通用 `AI_TEXT_MODEL`、`AI_VISION_MODEL` 仍優先於供應商專屬主模型設定。
-
-```dotenv
-NVIDIA_TEXT_FALLBACK_MODELS=z-ai/glm-5.3-flash
-NVIDIA_VISION_FALLBACK_MODELS=z-ai/glm-5.3-flash
-AI_PRIMARY_TIMEOUT_MS=22000
-AI_TEXT_PRIMARY_TIMEOUT_MS=12000
-```
-
-SuperVL 使用官方 `chat_template_kwargs.enable_thinking=false`；GLM 使用 `reasoning_effort=low`、`chat_template_kwargs.clear_thinking=true`。只在逾時、429／5xx 或網路故障時切換；金鑰權限、JSON／結構驗證失敗或內容截斷不會靠換模型掩蓋，也不會跨到 OpenAI。讀取回應本文時若已超過中止期限，亦明確歸為逾時。每次嘗試的模型、階段、延遲、狀態與用量存於任務 `aiRequests`；沒有 usage 時記為未知，不當零消耗。快取包含模型順序、12／22 秒設定、`nvidia-fallback-v2` 路由政策與 `literal-conditions-v1` 來源提及規則，變更設定不會誤沿用舊路由結果。
-
-完整 v9 文字探測中，SuperVL 兩份來源均保留用途與測驗（18.360／8.223 秒）；GLM 酵素備援探測 5.160 秒通過。DiffusionGemma 兩來源逾時，Lightning 一次逾時、另一次沒有可發布測驗，失敗保留。這是選型探測，尚不等於五輪完整展示驗收；[選型報告](.local/reports/text-model-comparison-20261019-summary.json)與歷史三輪結果均保留。
-
-GLM 影像候選以正式辨識提示、欄位驗證與完整 66,509 筆主檔，固定兩次探測均通過（6.214／6.395 秒，無重試或替換）。因此影像備援由 Omni 改為 GLM，維持主模型加一款備援；[原始探測](.local/seminar-vision-candidate-1792423328834/report.json)不等於完整流程通過。當時 NVIDIA 路由的[固定五輪](.local/seminar-stability-1792423389971-9fa17316/summary.json)仍僅 1／5 完整通過，不能因候選兩次成功便宣稱更換模型已解決服務可用性。先前兩批各自保留於驗收摘要；當時 OpenAI 尚無金鑰，2026-10-20 已啟用並另行驗收，結果不混算。
+真實雲端驗收另完成八款藥的說明與 25 題測驗、網頁照片上傳保存、用藥問答，以及實際收信、信箱驗證與密碼重設。範圍與發布版本見 [本輪雲端驗收](docs/acceptance/cloud-readiness-20261021.json)；圖片操作以照片上傳為範圍。
 
 ```powershell
-npm run smoke:nvidia
-npm run fixtures
-npm run smoke:vision
-npm run smoke:grounding
-```
-
-這些指令會呼叫 NVIDIA 並消耗帳號額度；回歸測試 `npm test`、`npm run test:e2e` 不會呼叫付費 AI。
-
-## 官方資料與發布
-
-```powershell
-npm run import:catalog
-npm run collect:leaflets -- 30
-```
-
-主檔索引保存到本機檔案或 Cloud Storage，後端載入記憶體搜尋。早期本機匯入快照為 **66,509 筆**；本輪指定展示副本的實際主檔筆數以最終準備報告為準。收集工具只產生仿單草稿，不會代替審核者發布。
-
-登入本機管理員，前往管理後台 → 仿單資料；核對官方來源、許可證、PDF頁碼或HTML區塊、抽取文字與表格閱讀順序，必要時修正文字，再勾選確認並發布。源資料清單在 `data/leaflets/`，完整 PDF 在 `.local/blobs/leaflets/`。操作說明見 [仿單資料審核](docs/DATA.md)。
-
-## 核心行為
-
-- 每筆私人資料以後端驗證的 UID 歸屬，瀏覽器不能指定其他擁有者。管理員帳號清單、任務用量不包含健康問卷與問答內容。
-- 藥袋缺漏保持空白；只有原模型為NULL且原文明確唯一的用量／頻次／途徑才可逐字補回，驗證時清空的不相符值不改填其他值。劑量與單位必須能在移除藥名、含量後的辨識原文中核對，否則清空。使用者確認後才能排提醒。需要時服用獨立提供手動記錄。此檢查不能取代人對照片的核對。
-- 每條生成陳述先檢查段落歸屬與原文，再由所選供應商模型做語意支持審核；不通過就移除。模型審核仍可能犯錯，不能把字串吻合或模型同意當成醫療正確率。
-- 已確認的警語與其原文都逐字提到所填健康狀況時，可標示「仿單原文提到…；請對照原文中的適用條件」。這與通過相關性審核的個人標籤分開，不推論症狀原因，也不恢復被審核拒絕的個人化標籤。
-- 個人化快取包含 UID、健康資料版本、藥品版本、仿單版本、模型與提示版本。歷史回答保留當時來源，最新學習內容會排除已更新來源。
-- 邀請碼一次使用、24 小時有效；家人只能查看授權藥品、排程與紀錄。新讀取即時檢查撤銷狀態，照護頁前景每 30 秒更新。
-- Cloud Tasks 處理長任務；錯誤保留可重試輸入。辨識照片處理後刪除，重試辨識需重新上傳。帳號與設定頁提供 AI 處理紀錄。
-- 推播只顯示通用提醒，未打卡顯示「尚未記錄」。PWA 只快取公開外殼，私人 API 不快取、不接受離線寫入。
-
-## 開發與驗證
-
-```powershell
-npm run typecheck
-npm test
 npx playwright install chromium
+npm test
 npm run test:e2e
 npm run build
-npm audit --omit=dev
 ```
 
-`src/` 是繁體中文手機優先介面；`shared/` 是共用型別与驗證；`server/` 是登入、資料與 AI；`tools/` 是資料匯入與評估；`infra/` 是 Google Cloud 部署、預算範例與還原演練指令。
+雲端採 React／Hono、Firebase Authentication、Firestore、Cloud Storage、Cloud Tasks 與 Cloud Run。部署需準備獨立測試專案、Firebase 公開設定及後端供應商金鑰，步驟見 [部署文件](docs/DEPLOYMENT.md)；全面開放前的帳號、備份、告警與容量工作見 [公開試用準備](docs/PUBLIC-READINESS.md)。
 
-- [部署與帳號設定](docs/DEPLOYMENT.md)
-- [實作完成狀態與未完成驗收](docs/IMPLEMENTATION-STATUS.md)
-- [測試、模型實测與評估限制](docs/VALIDATION.md)
-- [API 與資料設計](docs/API.md)
-- [原作與個人新增貢獻](docs/CONTRIBUTIONS.md)
+## 文件與歷史
 
-## 來源與授權
+- [API 與資料授權](docs/API.md)：背景工作、重送、本人與照護者權限。
+- [官方資料與審核](docs/DATA.md)：主檔、仿單、引用及發布方式。
+- [歷史驗收索引](docs/ACCEPTANCE-HISTORY.md)：各版本結果、失敗紀錄與驗收範圍。
+- [基線 README（9c9e623）](https://github.com/richie7p/yaozhitong-personal/blob/9c9e6238f5d0778c4e35623c9da38aff1d42a932/README.md)：先前完整設定、展示與開發紀錄。
 
-原作：[Sean-Fang178/yaozhitong-web-demo](https://github.com/Sean-Fang178/yaozhitong-web-demo)，原連結 `find-med-web-demo` 已轉向新名稱。參考版本 `440850bc77e11419a98c1850beba5ac278d07233` 保留在 `reference/`，不納入新應用建置。
-
-程式使用 Apache-2.0；見 `LICENSE`、`NOTICE`。TFDA 資料及官方仿單的權利與使用條款獨立於程式授權，保留官方來源網址和版本雜湊。
+專案沿革及個人重構範圍見 [貢獻說明](docs/CONTRIBUTIONS.md)。程式採 Apache-2.0，見 [LICENSE](LICENSE) 與 [NOTICE](NOTICE)。TFDA 資料與官方仿單另依原來源條款使用，保留來源網址及版本。

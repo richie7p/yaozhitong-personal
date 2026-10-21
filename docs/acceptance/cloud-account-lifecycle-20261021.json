@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "acceptance": "controlled-test-account-lifecycle",
+  "startedAt": "2026-10-21T04:30:32.452Z",
+  "status": "passed",
+  "scope": {
+    "environment": "existing Google Cloud TEST",
+    "accountCount": 2,
+    "accounts": "new unique synthetic @example.test accounts only",
+    "aiRequests": 0,
+    "emailRequests": 0,
+    "adminGranted": false,
+    "aiEligibilityGranted": false,
+    "faultInjection": false
+  },
+  "checks": [
+    {
+      "name": "owner:GET:/me",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "owner:new-account-isolated-without-ai-or-admin",
+      "passed": true
+    },
+    {
+      "name": "caregiver:GET:/me",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "caregiver:new-account-isolated-without-ai-or-admin",
+      "passed": true
+    },
+    {
+      "name": "owner:PUT:/me",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "owner:POST:/medications",
+      "passed": true,
+      "status": 201,
+      "expectedStatus": 201
+    },
+    {
+      "name": "owner:GET:/me/export",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "owner:export-matches-saved-synthetic-profile-and-medication",
+      "passed": true
+    },
+    {
+      "name": "caregiver:GET:/me/export",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "caregiver:export-does-not-include-owner-data",
+      "passed": true
+    },
+    {
+      "name": "owner:POST:/care/invites",
+      "passed": true,
+      "status": 201,
+      "expectedStatus": 201
+    },
+    {
+      "name": "caregiver:POST:/care/accept",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "caregiver:GET:/care/synthetic-id/snapshot",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "care:authorized-synthetic-snapshot-readable",
+      "passed": true
+    },
+    {
+      "name": "owner:DELETE:/care/synthetic-id",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "care:explicit-revocation-denies-snapshot",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "name": "caregiver:GET:/care",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "care:revoked-relationship-removed-from-active-list",
+      "passed": true
+    },
+    {
+      "name": "owner:POST:/care/invites",
+      "passed": true,
+      "status": 201,
+      "expectedStatus": 201
+    },
+    {
+      "name": "caregiver:POST:/care/accept",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "caregiver:GET:/care/synthetic-id/snapshot",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "sentinel:exists-and-is-bound-to-synthetic-owner-job",
+      "passed": true
+    },
+    {
+      "name": "owner:delete-request-accepted",
+      "passed": true,
+      "status": 202
+    },
+    {
+      "name": "owner:old-token-denied-immediately",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "name": "owner:firebase-auth-user-removed",
+      "passed": true
+    },
+    {
+      "name": "owner:minimal-disabled-tombstone",
+      "passed": true
+    },
+    {
+      "name": "owner:private-collections-empty",
+      "passed": true,
+      "checkedCollections": 16,
+      "elapsedMs": 3800
+    },
+    {
+      "name": "owner:delete-job-removed",
+      "passed": true
+    },
+    {
+      "name": "owner:old-token-denied-after-cleanup",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "name": "sentinel:removed-by-deployed-account-cleanup",
+      "passed": true
+    },
+    {
+      "name": "care:owner-deletion-denies-former-caregiver",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "name": "caregiver:GET:/care",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "name": "care:owner-deletion-removes-relationship-for-caregiver",
+      "passed": true
+    },
+    {
+      "name": "caregiver:delete-request-accepted",
+      "passed": true,
+      "status": 202
+    },
+    {
+      "name": "caregiver:old-token-denied-immediately",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "name": "caregiver:firebase-auth-user-removed",
+      "passed": true
+    },
+    {
+      "name": "caregiver:minimal-disabled-tombstone",
+      "passed": true
+    },
+    {
+      "name": "caregiver:private-collections-empty",
+      "passed": true,
+      "checkedCollections": 16,
+      "elapsedMs": 3957
+    },
+    {
+      "name": "caregiver:delete-job-removed",
+      "passed": true
+    },
+    {
+      "name": "caregiver:old-token-denied-after-cleanup",
+      "passed": true,
+      "status": 401
+    }
+  ],
+  "limitations": [
+    "Synthetic accounts were created with Firebase Admin emailVerified:true. This run does not test mail delivery, verification-link clicks, password reset, or Google sign-in.",
+    "This run exercises normal deployed API/Tasks/worker deletion. It does not inject Storage/Auth failures or prove failed-job retry recovery.",
+    "The Storage sentinel is synthetic text attached to a synthetic failed recognition job created directly for this owner; no recognition API or model is invoked.",
+    "Cloud revisions are recorded before and after the run; results apply to those revisions rather than a later final release.",
+    "The run populated synthetic profile, medication, invitations, invite-attempt and care records plus a failed sentinel job; other private collections were checked empty after deletion without exercising their individual workflows."
+  ],
+  "revisionsBefore": {
+    "web": {
+      "latestReadyRevision": "yzt-test-web-00011-9gc",
+      "traffic": [
+        {
+          "revision": "yzt-test-web-00011-9gc",
+          "percent": 100
+        }
+      ],
+      "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:d86eb5a06bcdd32f3fed4a0998f7359e6693d4f6d728043f93b95ff417eea2cc"
+    },
+    "worker": {
+      "latestReadyRevision": "yzt-test-worker-00011-6sd",
+      "traffic": [
+        {
+          "revision": "yzt-test-worker-00011-6sd",
+          "percent": 100
+        }
+      ],
+      "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:d86eb5a06bcdd32f3fed4a0998f7359e6693d4f6d728043f93b95ff417eea2cc"
+    }
+  },
+  "accountsCreated": 2,
+  "accountsFullyDeleted": 2,
+  "revisionsAfter": {
+    "web": {
+      "latestReadyRevision": "yzt-test-web-00011-9gc",
+      "traffic": [
+        {
+          "revision": "yzt-test-web-00011-9gc",
+          "percent": 100
+        }
+      ],
+      "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:d86eb5a06bcdd32f3fed4a0998f7359e6693d4f6d728043f93b95ff417eea2cc"
+    },
+    "worker": {
+      "latestReadyRevision": "yzt-test-worker-00011-6sd",
+      "traffic": [
+        {
+          "revision": "yzt-test-worker-00011-6sd",
+          "percent": 100
+        }
+      ],
+      "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:d86eb5a06bcdd32f3fed4a0998f7359e6693d4f6d728043f93b95ff417eea2cc"
+    }
+  },
+  "completedAt": "2026-10-21T04:31:04.136Z",
+  "checkCount": 40,
+  "passedChecks": 40,
+  "syntheticAccountsPendingCleanup": 0
+}

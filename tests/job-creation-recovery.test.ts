@@ -12,9 +12,8 @@ const identity: Identity = {
   verified: true,
   admin: false,
 };
-const image = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]).toString(
-  "base64",
-);
+const image =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWP4//8/AAX+Av5Y8msOAAAAAElFTkSuQmCC";
 
 function fixture() {
   const store = new MemoryStore();
@@ -54,9 +53,8 @@ describe("AI creation recovery through the real API and quota transaction", () =
     expect((await replay.json()).jobId).toBe(jobId);
     expect(await store.list("jobs")).toHaveLength(1);
     expect((await store.list("usage")).map((row) => row.count)).toEqual([1, 1]);
-    expect(blobs.put).toHaveBeenCalledTimes(2);
-    expect(blobs.delete).toHaveBeenCalledOnce();
-    expect(blobs.delete).not.toHaveBeenCalledWith(original!.input.imagePath);
+    expect(blobs.put).toHaveBeenCalledOnce();
+    expect(blobs.delete).not.toHaveBeenCalled();
     expect((await store.get("jobs", jobId))?.input.imagePath).toBe(
       original!.input.imagePath,
     );
@@ -79,8 +77,8 @@ describe("AI creation recovery through the real API and quota transaction", () =
     expect((await replay.json()).jobId).toBe(original.id);
     expect(await store.list("jobs")).toHaveLength(1);
     expect((await store.list("usage")).map((row) => row.count)).toEqual([1, 1]);
-    expect(blobs.delete).toHaveBeenCalledOnce();
-    expect(blobs.delete).not.toHaveBeenCalledWith(original.input.imagePath);
+    expect(blobs.put).toHaveBeenCalledOnce();
+    expect(blobs.delete).not.toHaveBeenCalled();
     expect(domain.enqueue).toHaveBeenNthCalledWith(2, original.id);
   });
 
@@ -89,16 +87,15 @@ describe("AI creation recovery through the real API and quota transaction", () =
     const originalResponse = await submit();
     const { jobId } = await originalResponse.json();
     const original = await store.get("jobs", jobId);
-    const changed = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1]).toString(
-      "base64",
-    );
+    const changed =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWNgYGAAAAAEAAGjChXjAAAAAElFTkSuQmCC";
     const conflict = await submit("synthetic-operation-001", changed);
     expect(conflict.status).toBe(409);
     expect((await conflict.json()).code).toBe("idempotency_conflict");
     expect(await store.list("jobs")).toHaveLength(1);
     expect((await store.list("usage")).map((row) => row.count)).toEqual([1, 1]);
     expect(await store.get("jobs", jobId)).toEqual(original);
-    expect(blobs.delete).toHaveBeenCalledOnce();
-    expect(blobs.delete).not.toHaveBeenCalledWith(original!.input.imagePath);
+    expect(blobs.put).toHaveBeenCalledOnce();
+    expect(blobs.delete).not.toHaveBeenCalled();
   });
 });

@@ -43,6 +43,14 @@ import {
 export const hash = (s: string | Buffer) =>
   createHash("sha256").update(s).digest("hex");
 export const now = () => new Date().toISOString();
+const jobPayloadHash = (kind: JobKind, input: Doc) =>
+  hash(
+    JSON.stringify(
+      kind === "recognition"
+        ? { imageHash: input.imageHash, mediaType: input.mediaType }
+        : input,
+    ),
+  );
 export class Domain {
   catalog: Catalog;
   enqueue: ((id: string) => Promise<void>) | null = null;
@@ -564,13 +572,7 @@ export class Domain {
       })),
     );
   }
-  async enqueueJob(
-    uid: string,
-    verified: boolean,
-    kind: JobKind,
-    input: Doc,
-    key: string,
-  ) {
+  private async authorizeJob(uid: string, verified: boolean, key: string) {
     if (!verified) return fail("email_unverified", "請先完成信箱驗證。", 403);
     if (!/^[a-zA-Z0-9-]{8,100}$/.test(key))
       return fail("invalid_request", "缺少有效的 Idempotency-Key。");
@@ -583,14 +585,53 @@ export class Domain {
         `尚未設定 ${aiConnection().label} 金鑰，可先手動建檔。`,
         503,
       );
-    const id = hash(uid + "|" + kind + "|" + key);
-    const payloadHash = hash(
-      JSON.stringify(
-        kind === "recognition"
-          ? { imageHash: input.imageHash, mediaType: input.mediaType }
-          : input,
-      ),
+  }
+  /** Read-only admission check before expensive photo decode or blob writes.
+   * enqueueJob still repeats access/quota checks in its final transaction.
+   */
+  async preflightJob(
+    uid: string,
+    verified: boolean,
+    kind: JobKind,
+    input: Doc,
+    key: string,
+  ) {
+    await this.authorizeJob(uid, verified, key);
+    const old = await this.store.get<Job & { payloadHash: string }>(
+      "jobs",
+      hash(uid + "|" + kind + "|" + key),
     );
+    if (old) {
+      if (old.payloadHash !== jobPayloadHash(kind, input))
+        return fail(
+          "idempotency_conflict",
+          "相同操作識別碼不能用於不同輸入。",
+          409,
+        );
+      return old;
+    }
+    const day = DateTime.now().setZone("Asia/Taipei").toISODate()!;
+    const [user, global] = await Promise.all([
+      this.store.get("usage", hash(uid + "|" + day)),
+      this.store.get("usage", "global-" + day),
+    ]);
+    if (
+      (user?.count || 0) >= config.userLimit ||
+      (global?.count || 0) >= config.globalLimit
+    )
+      return fail("quota_exceeded", "今日 AI 使用額度已達上限。", 429);
+    return null;
+  }
+  async enqueueJob(
+    uid: string,
+    verified: boolean,
+    kind: JobKind,
+    input: Doc,
+    key: string,
+  ) {
+    await this.authorizeJob(uid, verified, key);
+    const id = hash(uid + "|" + kind + "|" + key);
+    const payloadHash = jobPayloadHash(kind, input);
     const day = DateTime.now().setZone("Asia/Taipei").toISODate()!;
     const uk = hash(uid + "|" + day),
       gk = "global-" + day;

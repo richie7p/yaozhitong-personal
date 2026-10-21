@@ -12,6 +12,7 @@ import { extractLeaflet } from "./leaflets.js";
 import { tick } from "./scheduler.js";
 import { refreshCatalog } from "./import-catalog.js";
 import { completeGoogleProfile } from "./google-profile.js";
+import { validateRecognitionPhoto } from "./photo-validation.js";
 type Env = {
   Variables: { identity: Identity; account: Account; requestId: string };
 };
@@ -271,25 +272,24 @@ export function createApp(d: Domain, auth = authenticate) {
         mediaType: z.enum(["image/jpeg", "image/png"]),
       })
       .parse(await c.req.json());
+    const key = c.req.header("Idempotency-Key") || "";
+    const input = { mediaType: b.mediaType, imageHash: hash(b.image) };
+    const verified = c.get("identity").verified;
+    if (await d.preflightJob(uid(c), verified, "recognition", input, key)) {
+      const j = await d.enqueueJob(uid(c), verified, "recognition", input, key);
+      return c.json({ jobId: j.id, status: j.status }, 202);
+    }
     const data = Buffer.from(b.image, "base64");
-    if (
-      data.length > 8_000_000 ||
-      !(b.mediaType === "image/png"
-        ? data
-            .subarray(0, 8)
-            .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-        : data[0] === 255 && data[1] === 216)
-    )
-      return fail("invalid_image", "請上傳 8 MB 以內的 JPEG 或 PNG 圖片。");
+    await validateRecognitionPhoto(data, b.mediaType);
     const imagePath = `uploads/${uid(c)}/${randomUUID()}`;
     await d.blobs.put(imagePath, data, b.mediaType);
     try {
       const j = await d.enqueueJob(
         uid(c),
-        c.get("identity").verified,
+        verified,
         "recognition",
-        { imagePath, mediaType: b.mediaType, imageHash: hash(b.image) },
-        c.req.header("Idempotency-Key") || "",
+        { imagePath, ...input },
+        key,
       );
       if (j.input.imagePath !== imagePath) await d.blobs.delete(imagePath);
       return c.json({ jobId: j.id, status: j.status }, 202);

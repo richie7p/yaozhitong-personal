@@ -16,6 +16,7 @@ import { api, fileBase64, submitJob } from "./api";
 import { chatDraftSession } from "./chat-draft";
 import { recognitionPhotoType } from "./photo-input";
 import { recognitionDraftFlags } from "./recognition-draft";
+import { PrivacyLink } from "./Privacy";
 import {
   Button,
   Busy,
@@ -493,9 +494,12 @@ export function AddMedication({
               開始辨識 <ArrowRight size={17} />
             </Button>
             <small className="capture-format">
-              限 JPEG／PNG，8 MB 以內；圖片完成辨識後刪除。
+              限 JPEG／PNG，8 MB、3,200 萬像素以內；圖片完成辨識後刪除。
               相機未開啟時，可先用手機拍照，再選擇「上傳照片」。
             </small>
+            <p className="fine">
+              開始辨識會將照片送至雲端及 AI 供應商處理。上傳前請遮住個人識別資料，並閱讀 <PrivacyLink />。
+            </p>
           </div>
           {recognized.length > 0 && (
             <h2 id="capture-results" tabIndex={-1}>
