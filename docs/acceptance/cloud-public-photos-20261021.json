@@ -1,0 +1,704 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "kind": "public-real-photo-cloud-regression",
+  "status": "passed_workflows_with_documented_sample_and_identity_limits",
+  "base": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+  "release": {
+    "sourceCommit": "9620da3028545a54b6bc2062c3134ca7f4d9ec36",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:8ca733c0ea6c3293f98b1319d3266e278bf5a3c5eaf4530c0c8d4635996d34d7",
+    "buildId": "21c95839-2f84-424c-8902-50df37dfa86a",
+    "services": [
+      {
+        "name": "yzt-test-worker",
+        "revision": "yzt-test-worker-00016-lkf",
+        "configurationUnchanged": true,
+        "iamUnchanged": true
+      },
+      {
+        "name": "yzt-test-web",
+        "revision": "yzt-test-web-00016-nrw",
+        "configurationUnchanged": true,
+        "iamUnchanged": true
+      }
+    ],
+    "priorPhotoReviewFixCommit": "52e5d1c3d189f13b199fef0151021d966d0cbf61"
+  },
+  "validation": {
+    "sourceCommit": "9620da3028545a54b6bc2062c3134ca7f4d9ec36",
+    "cleanSourceUnitTests": {
+      "passed": 910,
+      "failed": 0
+    },
+    "cleanSourceBrowserTests": {
+      "passed": 146,
+      "failed": 0,
+      "projects": [
+        "desktop",
+        "mobile"
+      ],
+      "realProviderCalls": 0
+    },
+    "typecheck": "passed",
+    "build": "passed",
+    "githubValidationJob": {
+      "id": 119277451616,
+      "status": "completed",
+      "conclusion": "success",
+      "completedAt": "2026-10-21T14:27:14Z",
+      "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39616106533/job/119277451616",
+      "scope": "typecheck, deployment/hosting checks, unit tests, browser tests and local lifecycle check"
+    }
+  },
+  "fixes": [
+    {
+      "problem": "Selecting a catalog candidate replaced photographed strength/form, including deliberately blank fields.",
+      "resolution": "Photo review retains literal photographed strength/form. Manual catalog search keeps catalog enrichment."
+    },
+    {
+      "problem": "A real Kentamin recognition returned durationDays:null despite its own transcript explicitly saying 共30天, and guidance incorrectly said duration was absent.",
+      "resolution": "Original-null duration is recovered only from unambiguous literal prescription-duration text; conflicting usage still clears it. Resolved missing-duration wording is removed without dropping other field warnings."
+    }
+  ],
+  "samples": {
+    "uniqueHistoricalPublicRealPhotographs": 3,
+    "newIndependentSourcePhotographs": 0,
+    "additionalRepeatOfKentamin": 1,
+    "referenceStatus": "AI-assisted direct visual transcription declared before the initial run; not human-adjudicated clinical gold",
+    "photos": [
+      {
+        "id": "cgmh-bubdel",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:CGMH_medicine_bag_YS013643_20130907.JPG",
+        "author": "Solomon203",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "sourceSha256": "88cc7195613ea25fae71259923ccf15beb115fcc931a5864ccb0eb0aa0fcd51f",
+        "maskedPhotoSha256": "8cd5205fbcf6870e56d201a34946d33e80209e5be7cdb250c6729c3131465ab3",
+        "changedOutsideMasks": 0,
+        "metadataStripped": true,
+        "protectedMedicationRegionCount": 1,
+        "protectedMedicationRegionsUnchanged": true
+      },
+      {
+        "id": "cathay-secorine",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sijhih_Cathay_General_Hospital_medicine_bag_20151013_face.jpg",
+        "author": "Solomon203",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "sourceSha256": "978d33d0c3871d27525b346061ed718171136d2ef59d8f5b3067722969a89920",
+        "maskedPhotoSha256": "8611ff2ecc93ab205ba744a51a0d030be1c64c80ed8893d05d084044eeb923ba",
+        "changedOutsideMasks": 0,
+        "metadataStripped": true,
+        "protectedMedicationRegionCount": 1,
+        "protectedMedicationRegionsUnchanged": true
+      },
+      {
+        "id": "tzuchi-kentamin",
+        "sourceUrl": "https://www.epochtimes.com/b5/13/6/24/n3901268.htm",
+        "author": "花蓮慈濟醫院提供；中央社／大紀元，2013-06-24",
+        "license": "No verified open license",
+        "licenseUrl": null,
+        "sourceSha256": "6a0bf56c80e394696009c108b94758d49db0f90df597c764ba55d03a243554b3",
+        "maskedPhotoSha256": "b77a748553798ee056d1ed80d9d7056308ebd1f621d6cf01feda5772a7acd18e",
+        "changedOutsideMasks": 0,
+        "metadataStripped": true,
+        "protectedMedicationRegionCount": 4,
+        "protectedMedicationRegionsUnchanged": true
+      }
+    ],
+    "privacyMethod": "Decode source JPEG once to RGB; replace only declared rectangle pixels with solid black; lossless PNG; strip source metadata. No resize, rotate, crop, repaint or generated text.",
+    "authorization": "User explicitly authorized programmatic privacy masking with original medication pixels retained.",
+    "imageFilesPublishedToGitHub": false
+  },
+  "initialThreePhotoFlows": {
+    "completedAt": "2026-10-21T14:13:28.776Z",
+    "applicationSourceCommit": "52e5d1c3d189f13b199fef0151021d966d0cbf61",
+    "cases": [
+      {
+        "id": "cgmh-bubdel",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:CGMH_medicine_bag_YS013643_20130907.JPG",
+        "photoSha256": "8cd5205fbcf6870e56d201a34946d33e80209e5be7cdb250c6729c3131465ab3",
+        "recognizedMedicationCount": 1,
+        "status": "completed",
+        "recognitionAccuracyPassed": true,
+        "medications": [
+          {
+            "id": "bubdel",
+            "recognitionFields": [
+              {
+                "field": "name",
+                "expected": "Bubdel 普德",
+                "actual": "Bubdel 普德",
+                "status": "passed"
+              },
+              {
+                "field": "strength",
+                "expected": "80mg/tab",
+                "actual": "80mg/tab",
+                "status": "passed"
+              },
+              {
+                "field": "doseAmount",
+                "expected": 1,
+                "actual": 1,
+                "status": "passed"
+              },
+              {
+                "field": "doseUnit",
+                "expected": "粒",
+                "actual": "粒",
+                "status": "passed"
+              },
+              {
+                "field": "doseText",
+                "expected": "",
+                "actual": "",
+                "status": "passed"
+              },
+              {
+                "field": "frequencyRaw",
+                "expected": "需要時",
+                "actual": "需要時",
+                "status": "passed"
+              },
+              {
+                "field": "route",
+                "expected": "口服",
+                "actual": "口服",
+                "status": "passed"
+              },
+              {
+                "field": "durationDays",
+                "expected": null,
+                "actual": null,
+                "status": "passed"
+              }
+            ],
+            "confirmed": true,
+            "savedVisibleFields": {
+              "name": "Bubdel 普德",
+              "strength": "80mg/tab",
+              "form": "錠劑",
+              "doseAmount": 1,
+              "doseUnit": "粒",
+              "doseText": "",
+              "frequencyRaw": "需要時",
+              "route": "口服",
+              "durationDays": null,
+              "instructions": "",
+              "prn": true
+            },
+            "readingClaims": 3,
+            "quizQuestions": 3,
+            "quizPersisted": true,
+            "chatClaims": 2,
+            "safetySections": 2,
+            "coveredSafetySections": 2,
+            "canonicalTextSha256": "fca083b3029d17ec5b043f198477b34b3c589f16ce5b252ce9051d1b61482c03",
+            "sourceVersion": "fbf471a208627918"
+          }
+        ]
+      },
+      {
+        "id": "cathay-secorine",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sijhih_Cathay_General_Hospital_medicine_bag_20151013_face.jpg",
+        "photoSha256": "8611ff2ecc93ab205ba744a51a0d030be1c64c80ed8893d05d084044eeb923ba",
+        "recognizedMedicationCount": 1,
+        "status": "completed",
+        "recognitionAccuracyPassed": true,
+        "medications": [
+          {
+            "id": "secorine",
+            "recognitionFields": [
+              {
+                "field": "name",
+                "expected": "息咳寧糖漿",
+                "actual": "Secorine syrup",
+                "status": "passed"
+              },
+              {
+                "field": "strength",
+                "expected": "",
+                "actual": "",
+                "status": "passed"
+              },
+              {
+                "field": "doseAmount",
+                "expected": 2,
+                "actual": 2,
+                "status": "passed"
+              },
+              {
+                "field": "doseUnit",
+                "expected": "ml",
+                "actual": "ml",
+                "status": "passed"
+              },
+              {
+                "field": "doseText",
+                "expected": "",
+                "actual": "",
+                "status": "passed"
+              },
+              {
+                "field": "frequencyRaw",
+                "expected": "每天3次",
+                "actual": "每天3次",
+                "status": "passed"
+              },
+              {
+                "field": "route",
+                "expected": "口服",
+                "actual": "口服",
+                "status": "passed"
+              },
+              {
+                "field": "durationDays",
+                "expected": 5,
+                "actual": 5,
+                "status": "passed"
+              }
+            ],
+            "confirmed": true,
+            "savedVisibleFields": {
+              "name": "息咳寧糖漿",
+              "strength": "",
+              "form": "糖漿",
+              "doseAmount": 2,
+              "doseUnit": "ml",
+              "doseText": "",
+              "frequencyRaw": "每天3次",
+              "route": "口服",
+              "durationDays": 5,
+              "instructions": "飯後使用",
+              "prn": false
+            },
+            "readingClaims": 3,
+            "quizQuestions": 3,
+            "quizPersisted": true,
+            "chatClaims": 1,
+            "safetySections": 2,
+            "coveredSafetySections": 2,
+            "canonicalTextSha256": "eb204065097a17bde83fa9795ba8d632abf1ef07c6a2596854ce91695118f343",
+            "sourceVersion": "998437964f0a230a"
+          }
+        ]
+      },
+      {
+        "id": "tzuchi-kentamin",
+        "sourceUrl": "https://www.epochtimes.com/b5/13/6/24/n3901268.htm",
+        "photoSha256": "b77a748553798ee056d1ed80d9d7056308ebd1f621d6cf01feda5772a7acd18e",
+        "recognizedMedicationCount": 1,
+        "status": "completed",
+        "recognitionAccuracyPassed": false,
+        "medications": [
+          {
+            "id": "kentamin",
+            "recognitionFields": [
+              {
+                "field": "name",
+                "expected": "開恩達命",
+                "actual": "Kentamin（Thiamine & Pyridoxine & Cyanocobalamin）",
+                "status": "passed"
+              },
+              {
+                "field": "strength",
+                "expected": "",
+                "actual": "",
+                "status": "passed"
+              },
+              {
+                "field": "doseAmount",
+                "expected": 1,
+                "actual": 1,
+                "status": "passed"
+              },
+              {
+                "field": "doseUnit",
+                "expected": "顆",
+                "actual": "顆",
+                "status": "passed"
+              },
+              {
+                "field": "doseText",
+                "expected": "",
+                "actual": "",
+                "status": "passed"
+              },
+              {
+                "field": "frequencyRaw",
+                "expected": "每天一次",
+                "actual": "每天一次",
+                "status": "passed"
+              },
+              {
+                "field": "route",
+                "expected": "口服",
+                "actual": "口服",
+                "status": "passed"
+              },
+              {
+                "field": "durationDays",
+                "expected": 30,
+                "actual": null,
+                "status": "failed"
+              }
+            ],
+            "confirmed": true,
+            "savedVisibleFields": {
+              "name": "開恩達命",
+              "strength": "",
+              "form": "膠囊劑",
+              "doseAmount": 1,
+              "doseUnit": "顆",
+              "doseText": "",
+              "frequencyRaw": "每天一次",
+              "route": "口服",
+              "durationDays": 30,
+              "instructions": "早飯後使用",
+              "prn": false
+            },
+            "readingClaims": 6,
+            "quizQuestions": 6,
+            "quizPersisted": true,
+            "chatClaims": 1,
+            "safetySections": 5,
+            "coveredSafetySections": 5,
+            "canonicalTextSha256": "bef78e36db12199f0b44fad4ad0e1b66e2c19eadf8310b8669ca54427c63d528",
+            "sourceVersion": "04fac7184e45a93a"
+          }
+        ]
+      }
+    ],
+    "recognitionScoredFields": 24,
+    "recognitionMatchedFields": 23,
+    "readingClaims": 12,
+    "quizQuestionsCompletedAndPersisted": 12,
+    "chatClaims": 4,
+    "recognizedSafetySections": 9,
+    "coveredSafetySections": 9,
+    "semanticQA": {
+      "medicationsReviewed": 3,
+      "bundleClaimsReviewed": 12,
+      "quizQuestionsReviewed": 12,
+      "chatClaimsReviewed": 4,
+      "totalItemsReviewed": 28,
+      "recognizedSourceSafetySections": 9,
+      "bundleCoveredSourceSafetySections": 9,
+      "semanticIssuesFound": 0
+    }
+  },
+  "correctedKentaminRepeat": {
+    "completedAt": "2026-10-21T14:28:21.091Z",
+    "applicationSourceCommit": "9620da3028545a54b6bc2062c3134ca7f4d9ec36",
+    "cases": [
+      {
+        "id": "tzuchi-kentamin-fixed",
+        "sourceUrl": "https://www.epochtimes.com/b5/13/6/24/n3901268.htm",
+        "photoSha256": "b77a748553798ee056d1ed80d9d7056308ebd1f621d6cf01feda5772a7acd18e",
+        "recognizedMedicationCount": 1,
+        "status": "completed",
+        "recognitionAccuracyPassed": true,
+        "medications": [
+          {
+            "id": "kentamin",
+            "recognitionFields": [
+              {
+                "field": "name",
+                "expected": "開恩達命",
+                "actual": "Kentamin (Thiamine & Pyridoxine & Cyanocobalamin)",
+                "status": "passed"
+              },
+              {
+                "field": "strength",
+                "expected": "",
+                "actual": "",
+                "status": "passed"
+              },
+              {
+                "field": "doseAmount",
+                "expected": 1,
+                "actual": 1,
+                "status": "passed"
+              },
+              {
+                "field": "doseUnit",
+                "expected": "顆",
+                "actual": "顆",
+                "status": "passed"
+              },
+              {
+                "field": "doseText",
+                "expected": "",
+                "actual": "",
+                "status": "passed"
+              },
+              {
+                "field": "frequencyRaw",
+                "expected": "每天一次",
+                "actual": "每天一次",
+                "status": "passed"
+              },
+              {
+                "field": "route",
+                "expected": "口服",
+                "actual": "口服",
+                "status": "passed"
+              },
+              {
+                "field": "durationDays",
+                "expected": 30,
+                "actual": 30,
+                "status": "passed"
+              }
+            ],
+            "confirmed": true,
+            "savedVisibleFields": {
+              "name": "開恩達命",
+              "strength": "",
+              "form": "膠囊劑",
+              "doseAmount": 1,
+              "doseUnit": "顆",
+              "doseText": "",
+              "frequencyRaw": "每天一次",
+              "route": "口服",
+              "durationDays": 30,
+              "instructions": "早飯後使用",
+              "prn": false
+            },
+            "readingClaims": 6,
+            "quizQuestions": 6,
+            "quizPersisted": true,
+            "chatClaims": 1,
+            "safetySections": 5,
+            "coveredSafetySections": 5,
+            "canonicalTextSha256": "bef78e36db12199f0b44fad4ad0e1b66e2c19eadf8310b8669ca54427c63d528",
+            "sourceVersion": "04fac7184e45a93a"
+          }
+        ]
+      }
+    ],
+    "semanticQA": {
+      "schemaVersion": 1,
+      "reviewDate": "2026-10-21",
+      "status": "completed_content_pass_with_scope_limits",
+      "reviewType": "AI-assisted semantic content QA against each item's own provided citation; not clinical adjudication",
+      "semanticIssuesFound": 0,
+      "bundleClaimsReviewed": 6,
+      "quizQuestionsReviewed": 6,
+      "chatClaimsReviewed": 1,
+      "totalItemsReviewed": 13,
+      "medicationsReviewed": 1,
+      "recognizedSourceSafetySections": 5,
+      "bundleCoveredSourceSafetySections": 5,
+      "caseId": "tzuchi-kentamin-fixed",
+      "medicationId": "kentamin",
+      "sampleScope": "Regression retest of the same public photograph; not an additional independent photograph or medicine sample",
+      "sourceReport": "public-photo-report.json",
+      "sourceReportStatus": "completed_with_case_specific_scope",
+      "methods": [
+        "Read only the new local report and compare all six reading claims with their own cited passages, including indications, conditions, warning actions and qualifications.",
+        "Compare all six quiz questions, selected correct options, opposing options and explanations with their own citations.",
+        "Compare the chat claim with its own citation and distinguish that answer's scope from complete safety coverage.",
+        "No external APIs, cloud calls, browser interaction or credentials were used in this review. Only this dedicated review file was created."
+      ],
+      "recognitionReportObservation": {
+        "scope": "Local report observation only; not independent image adjudication",
+        "passedFields": 8,
+        "totalFields": 8,
+        "recognizedDurationDays": 30,
+        "savedDurationDays": 30,
+        "historicalInitialErrorRetained": true
+      },
+      "bundleClaims": [
+        {
+          "index": 0,
+          "category": "purpose",
+          "verdict": "supported",
+          "reason": "The claim retains vitamin deficiency as the condition for the listed neuralgia, muscle pain, back pain, shoulder pain and beriberi, plus the separate nutritional-supplementation contexts of fatigue, pregnancy/lactation and illness/recovery. It does not expand this into unrestricted pain treatment."
+        },
+        {
+          "index": 1,
+          "category": "warning",
+          "verdict": "supported",
+          "reason": "The contraindication preserves both vitamin B12 and excipient allergy, with the source's known severe allergy qualification."
+        },
+        {
+          "index": 2,
+          "category": "warning",
+          "verdict": "supported",
+          "reason": "The cobalt warning retains cobalt content, the known-cobalt-allergy condition, the action to inform medical personnel and the reported allergic contact dermatitis context."
+        },
+        {
+          "index": 3,
+          "category": "warning",
+          "verdict": "supported",
+          "reason": "The interactions claim reproduces the source's current lack of information. It does not convert absent information into an assertion that no interactions exist."
+        },
+        {
+          "index": 4,
+          "category": "warning",
+          "verdict": "supported",
+          "reason": "The adverse-reaction claim retains the post-marketing-report qualification, every listed skin/soft-tissue reaction, and the separate severe allergic reaction or anaphylactic shock reports. No action absent from the citation is invented."
+        },
+        {
+          "index": 5,
+          "category": "warning",
+          "verdict": "supported",
+          "reason": "The overdose claim preserves the source's current lack of information. It does not imply overdose is safe or that complete overdose guidance exists."
+        }
+      ],
+      "quiz": [
+        {
+          "index": 0,
+          "answerIndex": 0,
+          "verdict": "supported",
+          "reason": "The question includes known cobalt allergy; the correct option, informing medical personnel, is the cited action. The opposite option contradicts that action. The explanation retains the condition and contact-dermatitis report."
+        },
+        {
+          "index": 1,
+          "answerIndex": 0,
+          "verdict": "supported",
+          "reason": "The correct indication option retains the vitamin-deficiency condition and the separate nutritional-supplementation contexts. Its distractor incorrectly denies that the source records those uses. The explanation repeats the full cited indication."
+        },
+        {
+          "index": 2,
+          "answerIndex": 0,
+          "verdict": "supported",
+          "reason": "The correct option preserves known severe allergy to B12 or excipients as the contraindication. Its distractor falsely excludes that condition from contraindications. The question's section context and explanation preserve the prohibition meaning."
+        },
+        {
+          "index": 3,
+          "answerIndex": 0,
+          "verdict": "supported",
+          "reason": "The correct interaction-information answer is currently no information, which agrees with the citation. The opposing option claims complete information without source support. Neither the answer nor explanation claims there are no interactions."
+        },
+        {
+          "index": 4,
+          "answerIndex": 0,
+          "verdict": "supported",
+          "reason": "The correct skin-adverse-reaction option retains the post-marketing-report qualifier and listed reactions. The opposing option falsely guarantees those reactions will not occur. The explanation and citation also retain the separate severe-allergy/anaphylactic-shock report, although the selected key point does not assess that whole section."
+        },
+        {
+          "index": 5,
+          "answerIndex": 1,
+          "verdict": "supported",
+          "reason": "The correct overdose-information answer is currently no information. The opposing option claiming complete information contradicts the source. The explanation does not imply an absence of overdose risk."
+        }
+      ],
+      "chatClaims": [
+        {
+          "index": 0,
+          "category": "warning",
+          "verdict": "supported",
+          "reason": "The answer retains the full cited cobalt warning, including the known-allergy condition, informing medical personnel and the contact-dermatitis report. Added section numbers and whitespace do not change its meaning."
+        }
+      ],
+      "limitations": [
+        "This is a retest using the same Kentamin public photograph and source, not a fourth independent sample. Its six reading claims, six quiz questions and one chat claim are separate retest counts and do not replace or inflate the historical original-run counts of 12/12/4.",
+        "The original recognition's missing 30-day duration remains a recorded failure. The new report records 30 days recognized and saved with 8/8 expected fields passing; this does not retroactively make the original recognition accurate.",
+        "Reference transcription and this semantic review are AI-assisted, not human-adjudicated ground truth or clinical validation.",
+        "Purpose text preserves the source typography Bl/Bl2. Consistency with the provided source is verified here; independent source transcription correctness is outside this review.",
+        "Five recognized source safety sections are included in reading content. Two of those sections explicitly state that interaction or overdose information is unavailable; section coverage does not mean complete safety knowledge.",
+        "Safety quiz scope is one key point per section, not every precaution, contraindication or adverse reaction.",
+        "The chat answer covers the cobalt warning only and cannot be presented as complete safety coverage.",
+        "Rejected candidate counts are outside the presented claim/quiz semantic findings; only the returned six reading claims, six quiz questions and one chat claim are counted as reviewed.",
+        "No photographs, personal data or account identifiers are included in this review artifact."
+      ],
+      "publicSummaryDraft": "The Kentamin regression retest on the same public photograph records all 8 expected recognition fields passing, including a recognized and saved 30-day duration. Additional AI-assisted semantic QA checked 6 reading claims, 6 quiz questions and explanations, and 1 chat claim against each item's own citation, with no semantic mismatch found. This is a repeated sample, and the original missed-duration result remains preserved. The review is not clinical validation or a human-adjudicated accuracy benchmark."
+    }
+  },
+  "finalMobileReview": {
+    "device": "Pixel 5",
+    "browser": "Chromium",
+    "realHandset": false,
+    "completedAt": "2026-10-21T14:29:50.134Z",
+    "status": "passed_readonly_mobile_review",
+    "cases": [
+      {
+        "caseId": "cgmh-bubdel",
+        "status": "passed",
+        "readingClaims": 3,
+        "quizQuestions": 3,
+        "chatClaims": 2
+      },
+      {
+        "caseId": "cathay-secorine",
+        "status": "passed",
+        "readingClaims": 3,
+        "quizQuestions": 3,
+        "chatClaims": 1
+      },
+      {
+        "caseId": "tzuchi-kentamin-fixed",
+        "status": "passed",
+        "readingClaims": 6,
+        "quizQuestions": 6,
+        "chatClaims": 1
+      }
+    ],
+    "newAIJobs": 0,
+    "recordWrites": 0,
+    "recordCollectionsUnchanged": true,
+    "pageErrors": 0,
+    "applicationMutationAttempts": 0
+  },
+  "costAndLimits": {
+    "existingOrdinaryAccountReused": true,
+    "newAccounts": 0,
+    "admin": false,
+    "userDailyLimit": 20,
+    "globalDailyLimit": 200,
+    "testerSeatCap": 50,
+    "quotaConfigurationChanged": false,
+    "userQuotaUnitsConsumed": 12,
+    "applicationAIJobs": 12,
+    "successfulAIJobs": 12,
+    "jobRetries": 0,
+    "providerHTTPRequests": 20,
+    "providerStatuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "reportedTokens": 57043,
+    "unknownTokenRequests": 0,
+    "retainedCloudUploadObjects": 0,
+    "schedulesCreated": 0,
+    "monetaryCharge": "Not measured; reported tokens are provider telemetry rather than an invoice."
+  },
+  "recovery": {
+    "initialReviewScriptFailure": "Exact label lookup included the nonempty textarea value; an offline React reproduction confirmed this was a harness selector error. Corrected only the script.",
+    "firstMobileScriptFailure": "The first mobile run stopped during baseline reads without detailed error capture. Response waiting was moved after blank-page navigation to exclude older in-flight responses; subsequent runs passed. The original cause was not independently reproduced.",
+    "existingRecognitionBundleChatJobsRecoveredWithoutNewKeys": true,
+    "oldFailedReceiptsRetainedPrivately": true,
+    "quotaCountersNeverReset": true,
+    "wholeComputerRestart": false
+  },
+  "limitations": [
+    "These three historical public images have prior development exposure; this is regression acceptance, not independent dataset accuracy or clinical validation.",
+    "Secorine photograph does not establish manufacturer, flavor, concentration or license. Its explicit shared-leaflet selection validates the software path, not exact photographed product identity.",
+    "Visible usage was reviewed and edited before saving. The original Kentamin duration miss is retained in the initial result rather than reclassified as an original recognition pass.",
+    "Source warning coverage is limited to recognized sections. Each safety quiz tests one key point per section; chat answers the submitted question and does not guarantee all warnings are repeated.",
+    "Android camera/background push, iOS and HEIC were not tested in this run. Final mobile checks use Chromium Pixel 5 emulation.",
+    "Public operational readiness requirements remain tracked in docs/PUBLIC-READINESS.md."
+  ],
+  "secretsOrPatientIdentifiersIncluded": false
+}
