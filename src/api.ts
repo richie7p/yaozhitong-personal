@@ -254,12 +254,10 @@ export async function submitJob(
       "送出的資料格式無法確認，請重新操作。",
     );
   const requestBody: unknown = JSON.parse(serialized);
-  const [ownerHash, fingerprint] = await Promise.all([
-    jobFingerprint(identity!),
-    jobFingerprint(path + "\n" + serialized),
-  ]);
-  assertIdentity();
-  const flightKey = ownerHash + ":" + fingerprint;
+  // Register before hashing: a matching caller's slower digest must not start
+  // another operation after this one completes. This exact input key stays in
+  // memory only; pending-job storage still contains hashes and identifiers.
+  const flightKey = JSON.stringify([identity, epoch, path]) + "\n" + serialized;
   const existing = inFlightJobs.get(flightKey);
   if (existing) {
     if (onProgress) {
@@ -274,14 +272,6 @@ export async function submitJob(
     }
     return existing.promise;
   }
-  const record =
-    pendingJobs.get(ownerHash, fingerprint) ||
-    pendingJobs.create(ownerHash, fingerprint);
-  if (!record)
-    throw new ApiError(
-      "pending_limit",
-      "尚有多筆未完成的操作，請先到處理紀錄確認。",
-    );
   const listeners = new Set(onProgress ? [onProgress] : []);
   let latestProgress: string | undefined;
   const flight: InFlightJob = {
@@ -289,16 +279,31 @@ export async function submitJob(
     get latestProgress() {
       return latestProgress;
     },
-    promise: runJob(record, path, requestBody, assertIdentity, (message) => {
-      latestProgress = message;
-      for (const listener of listeners) {
-        try {
-          listener(message);
-        } catch {
-          /* A view cannot restart a background job. */
+    promise: (async () => {
+      const [ownerHash, fingerprint] = await Promise.all([
+        jobFingerprint(identity!),
+        jobFingerprint(path + "\n" + serialized),
+      ]);
+      assertIdentity();
+      const record =
+        pendingJobs.get(ownerHash, fingerprint) ||
+        pendingJobs.create(ownerHash, fingerprint);
+      if (!record)
+        throw new ApiError(
+          "pending_limit",
+          "尚有多筆未完成的操作，請先到處理紀錄確認。",
+        );
+      return runJob(record, path, requestBody, assertIdentity, (message) => {
+        latestProgress = message;
+        for (const listener of listeners) {
+          try {
+            listener(message);
+          } catch {
+            /* A view cannot restart a background job. */
+          }
         }
-      }
-    }).finally(() => {
+      });
+    })().finally(() => {
       if (inFlightJobs.get(flightKey) === flight)
         inFlightJobs.delete(flightKey);
     }),

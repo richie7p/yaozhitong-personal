@@ -315,7 +315,7 @@ test("multiple recognized medications can be saved one by one without repeating 
       ).toBeVisible();
     }
   }
-  await expect(page).toHaveURL(/\/#medications$/);
+  await expect(page).toHaveURL(/\/#medications\?saved=[^&]+$/);
   for (const name of names) {
     await expect(
       page.locator(".med-card").filter({ hasText: name }),

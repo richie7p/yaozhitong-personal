@@ -717,6 +717,67 @@ summary {
   min-width: 0;
   flex: 1;
 }
+.medication-identity,
+.record-identity {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.medication-identity {
+  margin: 6px 0;
+}
+.medication-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 20px 0;
+}
+.medication-filter .field {
+  flex: 1 1 260px;
+  margin: 0;
+}
+.medication-filter p {
+  font-size: 13px;
+}
+.frequency-explanation {
+  color: #546657;
+}
+.frequency-help {
+  margin: -8px 0 16px;
+  font-size: 12px;
+}
+.learning-medication-identity,
+.chat-record-medications {
+  margin: 14px 0;
+}
+.chat-exchange > summary {
+  cursor: pointer;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.chat-exchange > summary .question-bubble {
+  display: inline;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+.chat-exchange > summary .record-identity {
+  margin-top: 6px;
+}
+.chat-answer-status {
+  margin: 18px 0;
+}
+.chat-answer-followup {
+  margin: 12px 0;
+}
+.reminder-times-field > p {
+  margin: -6px 0 16px;
+  font-size: 13px;
+}
 .med-card h2 {
   margin: 9px 0 8px;
   font-size: calc(22px * var(--font-scale));

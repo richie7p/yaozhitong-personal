@@ -486,7 +486,9 @@ test("a new mocked demonstration photograph keeps its saved medication and learn
   await page
     .getByRole("button", { name: "確認並儲存藥品", exact: true })
     .click();
-  await expect(page).toHaveURL(/#medications\?from=demo&medication=[^&]+$/);
+  await expect(page).toHaveURL(
+    /#medications\?from=demo&medication=[^&]+&saved=[^&]+$/,
+  );
   const medicationId = new URLSearchParams(
     new URL(page.url()).hash.split("?")[1],
   ).get("medication");

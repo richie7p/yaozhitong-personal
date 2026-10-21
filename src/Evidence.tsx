@@ -13,6 +13,7 @@ import {
 } from "../shared/learning";
 import { api, ApiError } from "./api";
 import { Button, Notice, Speak } from "./components";
+import { Frequency } from "./medication-presentation";
 
 export const learningStateLabels: Record<LearningProgress["status"], string> = {
   not_started: "未開始",
@@ -49,7 +50,7 @@ function SourceQuotes({
   );
 }
 
-function CitationDetails({
+export function CitationDetails({
   citations,
   result,
 }: {
@@ -66,7 +67,7 @@ function CitationDetails({
   );
 }
 
-function HealthReferences({
+export function HealthReferences({
   claim,
 }: {
   claim: GroundedResult["claims"][number];
@@ -101,7 +102,7 @@ function EducationSummary({ medications }: { medications: Medication[] }) {
           <div key={m.id}>
             <strong>{m.name}</strong>
             <p>
-              每次 {doseLabel(m)} · {m.frequencyRaw}
+              每次 {doseLabel(m)} · <Frequency raw={m.frequencyRaw} />
             </p>
             {m.route && <p>途徑：{m.route}</p>}
             {m.prn && <p>需要時使用</p>}
@@ -133,7 +134,10 @@ function UnderstandingQuiz({
   result: GroundedResult;
   learningId: string;
   initialAnswers?: Record<string, number>;
-  onProgress?: (progress: LearningProgress, answers: Record<string, number>) => void;
+  onProgress?: (
+    progress: LearningProgress,
+    answers: Record<string, number>,
+  ) => void;
 }) {
   const radioName = useId();
   const [answers, setAnswers] = useState(() =>
@@ -375,7 +379,10 @@ export function Evidence({
   learningId?: string;
   medications?: Medication[];
   initialAnswers?: Record<string, number>;
-  onProgress?: (progress: LearningProgress, answers: Record<string, number>) => void;
+  onProgress?: (
+    progress: LearningProgress,
+    answers: Record<string, number>,
+  ) => void;
   showQuiz?: boolean;
   view?: "all" | "reading" | "quiz";
 }) {

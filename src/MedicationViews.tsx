@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   Plus,
   Search,
@@ -31,6 +37,13 @@ import { Evidence, learningStateLabels } from "./Evidence";
 import { FlowSteps } from "./UIFlow";
 import { learningProgress } from "../shared/learning";
 import { doseLabel } from "../shared/medication";
+import {
+  Frequency,
+  MedicationIdentity,
+  recordIdentity,
+} from "./medication-presentation";
+import { ScheduleForm } from "./ScheduleForm";
+import { ChatAnswer } from "./ChatAnswer";
 import type {
   GroundedResult,
   LearningProgress,
@@ -60,6 +73,7 @@ export function MedicationForm({
   initial?: any;
   onSave: (m: any) => Promise<void>;
 }) {
+  const frequencyHelp = useId();
   const [m, setM] = useState(() => {
       const value = { ...blank, ...initial };
       for (const key of [
@@ -156,13 +170,21 @@ export function MedicationForm({
           placeholder="例如藥袋寫「適量」；請照原文填寫"
         />
       </Field>
-      <Field label="頻次原文">
-        <input
-          value={m.frequencyRaw}
-          onChange={(e) => set("frequencyRaw", e.target.value)}
-          placeholder="例如：BID PC／一天兩次飯後"
-        />
-      </Field>
+      <div>
+        <Field label="頻次原文">
+          <input
+            value={m.frequencyRaw}
+            aria-describedby={m.frequencyRaw ? frequencyHelp : undefined}
+            onChange={(e) => set("frequencyRaw", e.target.value)}
+            placeholder="例如：BID PC／一天兩次飯後"
+          />
+        </Field>
+        {m.frequencyRaw && (
+          <p className="frequency-help" id={frequencyHelp}>
+            <Frequency raw={m.frequencyRaw} />
+          </p>
+        )}
+      </div>
       <Field label="給藥途徑">
         <input
           value={m.route}
@@ -498,7 +520,8 @@ export function AddMedication({
               相機未開啟時，可先用手機拍照，再選擇「上傳照片」。
             </small>
             <p className="fine">
-              開始辨識會將照片送至雲端及 AI 供應商處理。上傳前請遮住個人識別資料，並閱讀 <PrivacyLink />。
+              開始辨識會將照片送至雲端及 AI
+              供應商處理。上傳前請遮住個人識別資料，並閱讀 <PrivacyLink />。
             </p>
           </div>
           {recognized.length > 0 && (
@@ -513,6 +536,12 @@ export function AddMedication({
                 <span className="tag amber">請逐項確認</span>
               </div>
               <p>{m.rawText}</p>
+              {m.frequencyRaw && (
+                <p>
+                  頻次：
+                  <Frequency raw={m.frequencyRaw} />
+                </p>
+              )}
               <Button
                 disabled={saving}
                 onClick={() => {
@@ -679,8 +708,8 @@ export function AddMedication({
                   }
                 }
                 location.hash = fromDemo
-                  ? `medications?from=demo&medication=${encodeURIComponent(saved.id)}`
-                  : "medications";
+                  ? `medications?from=demo&medication=${encodeURIComponent(saved.id)}&saved=${encodeURIComponent(saved.id)}`
+                  : `medications?saved=${encodeURIComponent(saved.id)}`;
               } finally {
                 setSaving(false);
               }
@@ -695,13 +724,19 @@ export function Medications() {
   const { data, error, loading, refresh } = useData("/medications");
   const params = new URLSearchParams(location.hash.split("?")[1] || "");
   const fromDemo = params.get("from") === "demo";
+  const savedMedicationId = params.get("saved");
   const demoMedicationId = fromDemo ? params.get("medication") : null;
+  const focusMedicationId = savedMedicationId || demoMedicationId;
+  const savedMedication = data?.items.find(
+    (m: Medication) => m.id === savedMedicationId,
+  );
   const demoMedication = data?.items.find(
     (m: Medication) => m.id === demoMedicationId,
   );
   const [edit, setEdit] = useState<any>(null),
     [schedule, setSchedule] = useState<any>(null),
     [message, setMessage] = useState(""),
+    [filter, setFilter] = useState(""),
     [busy, setBusy] = useState(""),
     [result, setResult] = useState<LearningRecord | null>(null);
   const editHeading = useRef<HTMLHeadingElement>(null);
@@ -717,11 +752,27 @@ export function Medications() {
     resultHeading.current?.scrollIntoView({ block: "start" });
   }, [result?.id]);
   useEffect(() => {
-    if (!demoMedicationId || loading) return;
-    const heading = document.getElementById(`medication-${demoMedicationId}`);
-    heading?.focus({ preventScroll: true });
-    heading?.scrollIntoView({ block: "start" });
-  }, [demoMedicationId, loading]);
+    if (!focusMedicationId || loading) return;
+    const frame = requestAnimationFrame(() => {
+      const heading = document.getElementById(
+        `medication-${focusMedicationId}`,
+      );
+      heading?.focus({ preventScroll: true });
+      heading?.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusMedicationId, loading]);
+  const searchText = filter.normalize("NFKC").trim().toLocaleLowerCase();
+  const visibleMedications = [...(data?.items || [])]
+    .filter((m: Medication) =>
+      [m.name, m.strength, m.licenseNo].some((v) =>
+        (v || "").normalize("NFKC").toLocaleLowerCase().includes(searchText),
+      ),
+    )
+    .sort(
+      (a: Medication, b: Medication) =>
+        Number(b.id === savedMedicationId) - Number(a.id === savedMedicationId),
+    );
   async function explain(m: any) {
     setBusy("正在讀取已保存的仿單說明…");
     setMessage("");
@@ -763,6 +814,51 @@ export function Medications() {
       >
         藥品、藥袋用法與仿單說明，集中保存在這裡。
       </SectionTitle>
+      {savedMedication && (
+        <Notice>
+          已儲存「{savedMedication.name}」，已標示於清單。
+          <a
+            href={
+              fromDemo
+                ? `#medications?from=demo&medication=${encodeURIComponent(savedMedication.id)}&saved=${encodeURIComponent(savedMedication.id)}`
+                : `#medications?saved=${encodeURIComponent(savedMedication.id)}`
+            }
+            onClick={(event) => {
+              event.preventDefault();
+              setFilter("");
+              requestAnimationFrame(() => {
+                const heading = document.getElementById(
+                  `medication-${savedMedication.id}`,
+                );
+                heading?.focus({ preventScroll: true });
+                heading?.scrollIntoView({ block: "start" });
+              });
+            }}
+          >
+            查看這筆藥品
+          </a>
+        </Notice>
+      )}
+      {!loading && !!data?.items.length && (
+        <div className="medication-filter">
+          <Field label="搜尋我的藥品">
+            <input
+              type="search"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="輸入藥名、含量或許可證字號"
+            />
+          </Field>
+          <p className="muted" role="status">
+            顯示 {visibleMedications.length}／{data.items.length} 筆藥品
+          </p>
+          {filter && (
+            <Button className="ghost" onClick={() => setFilter("")}>
+              清除搜尋
+            </Button>
+          )}
+        </div>
+      )}
       {fromDemo && (
         <div className="demo-context">
           <BookOpen size={18} />
@@ -801,9 +897,16 @@ export function Medications() {
             新增後，可在這裡確認用法、設定提醒並對照仿單。
           </Empty>
         </section>
+      ) : data && visibleMedications.length === 0 ? (
+        <Empty
+          title="沒有符合搜尋的藥品"
+          action={<Button onClick={() => setFilter("")}>顯示全部藥品</Button>}
+        >
+          試試完整藥名的一部分、含量或許可證字號。
+        </Empty>
       ) : (
         <div className="med-grid">
-          {data?.items.map((m: any, index: number) => (
+          {visibleMedications.map((m: Medication, index: number) => (
             <article
               className="card med-card"
               key={m.id}
@@ -822,9 +925,14 @@ export function Medications() {
                 <h2 id={`medication-${m.id}`} tabIndex={-1}>
                   {m.name}
                 </h2>
-                {m.id === demoMedicationId && (
-                  <span className="tag">本次展示新增</span>
+                {m.id === savedMedicationId ? (
+                  <span className="tag green">本次儲存</span>
+                ) : (
+                  m.id === demoMedicationId && (
+                    <span className="tag">本次展示新增</span>
+                  )
                 )}
+                <MedicationIdentity medication={m} />
                 <p className="muted med-license">
                   {m.licenseNo || "尚未匹配許可證"}
                 </p>
@@ -838,7 +946,9 @@ export function Medications() {
                 </div>
                 <div>
                   <dt>使用頻次</dt>
-                  <dd>{m.frequencyRaw || "頻次待確認"}</dd>
+                  <dd>
+                    <Frequency raw={m.frequencyRaw} />
+                  </dd>
                 </div>
                 <div>
                   <dt>使用途徑</dt>
@@ -859,7 +969,19 @@ export function Medications() {
                   編輯用法
                 </Button>
                 {m.confirmed && !m.prn && (
-                  <Button className="ghost" onClick={() => setSchedule(m)}>
+                  <Button
+                    className="ghost"
+                    onClick={() => {
+                      if (schedule?.id === m.id) {
+                        const heading =
+                          document.querySelector<HTMLElement>(
+                            ".schedule-form h2",
+                          );
+                        heading?.focus({ preventScroll: true });
+                        heading?.scrollIntoView({ block: "start" });
+                      } else setSchedule({ ...m });
+                    }}
+                  >
                     <CalendarClock size={16} />
                     排定提醒
                   </Button>
@@ -890,6 +1012,12 @@ export function Medications() {
                     if (confirm("移除這款藥品？歷史紀錄會保留。")) {
                       try {
                         await api("/medications/" + m.id, "DELETE");
+                        setSchedule((current: any) =>
+                          current?.id === m.id ? null : current,
+                        );
+                        setEdit((current: any) =>
+                          current?.id === m.id ? null : current,
+                        );
                         setResult(null);
                         refresh();
                       } catch (e: any) {
@@ -925,7 +1053,10 @@ export function Medications() {
             initial={edit}
             onSave={async (m) => {
               await api("/medications/" + edit.id, "PUT", m);
-              setEdit(null);
+              setSchedule((current: any) =>
+                current?.id === edit.id ? null : current,
+              );
+              setEdit((current: any) => (current === edit ? null : current));
               setResult(null);
               refresh();
             }}
@@ -936,7 +1067,11 @@ export function Medications() {
         <ScheduleForm
           key={schedule.id}
           medication={schedule}
-          close={() => setSchedule(null)}
+          close={() =>
+            setSchedule((current: any) =>
+              current === schedule ? null : current,
+            )
+          }
         />
       )}{" "}
       {result && (
@@ -986,85 +1121,16 @@ export function Medications() {
     </>
   );
 }
-function ScheduleForm({
-  medication,
-  close,
-}: {
-  medication: any;
-  close: () => void;
-}) {
-  const [times, setTimes] = useState(""),
-    [start, setStart] = useState(
-      new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(
-        new Date(),
-      ),
-    ),
-    [end, setEnd] = useState(""),
-    [error, setError] = useState("");
-  return (
-    <section className="card">
-      <h2>排定提醒 · {medication.name}</h2>
-      <p>
-        已確認頻次：{medication.frequencyRaw}。請自行確認以下時間符合藥袋用法。
-      </p>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          try {
-            await api("/schedules", "POST", {
-              medicationId: medication.id,
-              times: times.split(/[,，、\s]+/).filter(Boolean),
-              startDate: start,
-              endDate: end || null,
-            });
-            close();
-          } catch (e: any) {
-            setError(e.message);
-          }
-        }}
-        className="form-grid"
-      >
-        <Field label="每天提醒時間（24 小時制，可用逗號分隔）">
-          <input
-            required
-            placeholder="例如：08:00, 20:00"
-            value={times}
-            onChange={(e) => setTimes(e.target.value)}
-          />
-        </Field>
-        <Field label="開始日期">
-          <input
-            required
-            type="date"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
-          />
-        </Field>
-        <Field label="結束日期（可留白）">
-          <input
-            type="date"
-            value={end}
-            onChange={(e) => setEnd(e.target.value)}
-          />
-        </Field>
-        <div className="full-grid">
-          {error && <Notice error>{error}</Notice>}
-          <Button type="submit" className="primary">
-            確認提醒時間
-          </Button>{" "}
-          <Button onClick={close}>取消</Button>
-        </div>
-      </form>
-    </section>
-  );
-}
 export function Learning() {
   const { data, loading, error, refresh } = useData<{
       items: LearningRecord[];
     }>("/learning"),
     meds = useData<{ items: Medication[] }>("/medications");
   const [updates, setUpdates] = useState<
-    Record<string, { progress: LearningProgress; answers: Record<string, number> }>
+    Record<
+      string,
+      { progress: LearningProgress; answers: Record<string, number> }
+    >
   >({});
   const [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(""),
@@ -1094,7 +1160,9 @@ export function Learning() {
   const recordMedications = (r: LearningRecord) =>
     (meds.data?.items || []).filter((m) => r.medicationIds.includes(m.id));
   const recordProgress = (r: LearningRecord) =>
-    updates[r.id]?.progress || r.progress || learningProgress(r.result.quiz, r.answers);
+    updates[r.id]?.progress ||
+    r.progress ||
+    learningProgress(r.result.quiz, r.answers);
   const recordName = (r: LearningRecord) =>
     recordMedications(r)
       .map((m) => m.name)
@@ -1185,17 +1253,29 @@ export function Learning() {
           {activeRecord.medicationIds.length === 2 && (
             <p>{recordName(activeRecord)}</p>
           )}
+          <p className="record-identity">{recordIdentity(activeRecord)}</p>
+          {recordMedications(activeRecord).map((medication) => (
+            <div className="learning-medication-identity" key={medication.id}>
+              <strong>{medication.name}</strong>
+              <MedicationIdentity medication={medication} />
+            </div>
+          ))}
           <Evidence
             result={activeRecord.result}
             learningId={activeRecord.id}
-            initialAnswers={updates[activeRecord.id]?.answers || activeRecord.answers}
+            initialAnswers={
+              updates[activeRecord.id]?.answers || activeRecord.answers
+            }
             medications={
               activeRecord.medicationIds.length === 1
                 ? recordMedications(activeRecord)
                 : undefined
             }
             onProgress={(progress, answers) =>
-              setUpdates((old) => ({ ...old, [activeRecord.id]: { progress, answers } }))
+              setUpdates((old) => ({
+                ...old,
+                [activeRecord.id]: { progress, answers },
+              }))
             }
           />
           <div className="learning-detail-actions">
@@ -1234,6 +1314,13 @@ export function Learning() {
                   {r.medicationIds.length === 2 && (
                     <p className="muted">交互作用核對</p>
                   )}
+                  <p className="record-identity">{recordIdentity(r)}</p>
+                  {recordMedications(r).map((medication) => (
+                    <MedicationIdentity
+                      key={medication.id}
+                      medication={medication}
+                    />
+                  ))}
                   <p className="learning-progress">
                     已作答 {progress.answered}／{progress.total} 題 · 已答對{" "}
                     {progress.correct} 題
@@ -1274,6 +1361,8 @@ export function Learning() {
                 <label className="choice" key={m.id}>
                   <input
                     type="checkbox"
+                    aria-label={m.name}
+                    aria-describedby={`learning-medication-${m.id}`}
                     checked={selected.includes(m.id)}
                     onChange={(e) =>
                       setSelected(
@@ -1283,7 +1372,12 @@ export function Learning() {
                       )
                     }
                   />
-                  {m.name}
+                  <span>
+                    <strong>{m.name}</strong>
+                    <span id={`learning-medication-${m.id}`}>
+                      <MedicationIdentity medication={m} />
+                    </span>
+                  </span>
                 </label>
               ))}
           </div>
@@ -1323,13 +1417,42 @@ export function Chat() {
   const [reloadingMeds, setReloadingMeds] = useState(false);
   const selector = useRef<HTMLElement>(null),
     lastCompleted = useRef(completed);
+  const exchangeNodes = useRef(new Map<string, HTMLDetailsElement>());
+  const completedAnswerId = useRef<string | null>(null);
+  const revealCompleted = useRef(false);
   useEffect(() => {
     if (lastCompleted.current === completed) return;
     lastCompleted.current = completed;
     // A remounted view reads history on mount. Only the current view refreshes
     // when its background question completes, without making it a failed send.
-    if (sent) void history.refresh();
+    if (sent) {
+      revealCompleted.current = true;
+      void history.refresh();
+    }
   }, [completed, sent]);
+  useEffect(() => {
+    if (
+      !revealCompleted.current ||
+      history.error ||
+      !history.data?.items?.some(
+        (record: any) => record.id === completedAnswerId.current,
+      )
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      const target = exchangeNodes.current.get(completedAnswerId.current || "");
+      if (!target) return;
+      revealCompleted.current = false;
+      completedAnswerId.current = null;
+      target.open = true;
+      target
+        .querySelector<HTMLElement>("summary")
+        ?.focus({ preventScroll: true });
+      target.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
+    // Clearing a read error must not reveal an older answer before fresh data arrives.
+  }, [history.data]);
   const loadingMeds = meds.loading || reloadingMeds;
   const confirmedMeds = (meds.data?.items || []).filter((m) => m.confirmed);
   const selectedIds = selected.filter((id) =>
@@ -1341,6 +1464,11 @@ export function Chat() {
     !meds.error &&
     selectedIds.length > 0 &&
     question.trim().length > 0;
+  const historyItems = [...(history.data?.items || [])].sort(
+    (a: any, b: any) =>
+      (b.createdAt || "").localeCompare(a.createdAt || "") ||
+      String(a.id).localeCompare(String(b.id)),
+  );
   const prerequisite = loadingMeds
     ? "正在讀取藥品，完成後即可選擇提問對象。"
     : meds.error
@@ -1375,14 +1503,60 @@ export function Chat() {
             <h2>關於用藥，你想了解什麼？</h2>
             <p>先選擇藥品，再提出問題。回答僅依已收錄的官方仿單。</p>
           </div>
-          {history.data?.items
-            .sort((a: any, b: any) => a.createdAt.localeCompare(b.createdAt))
-            .map((c: any) => (
-              <div className="chat-exchange" key={c.id}>
-                <div className="question-bubble">{c.question}</div>
-                <Evidence result={c.result} showQuiz={false} />
+          {historyItems.map((c: any, index: number) => (
+            <details
+              className="chat-exchange"
+              key={c.id}
+              data-chat-id={c.id}
+              ref={(element) => {
+                if (element) exchangeNodes.current.set(c.id, element);
+                else exchangeNodes.current.delete(c.id);
+              }}
+              open={index === 0}
+            >
+              <summary>
+                <span className="question-bubble">{c.question}</span>
+                <span className="record-identity">{recordIdentity(c)}</span>
+              </summary>
+              <div className="chat-record-medications">
+                {Array.isArray(c.medicationIds) &&
+                c.medicationIds.length > 0 ? (
+                  <>
+                    <p className="muted">
+                      提問時選取的藥品項目；用法依目前清單顯示。
+                    </p>
+                    {c.medicationIds.map((id: string) => {
+                      const medication = meds.data?.items.find(
+                        (m) => m.id === id,
+                      );
+                      return (
+                        <div key={id}>
+                          <strong>
+                            {medication?.name || "原藥品已不在目前清單"}
+                          </strong>
+                          <MedicationIdentity
+                            medication={medication || { id }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      仿單來源：
+                      {Object.keys(c.result.sourceVersions || {}).join("、") ||
+                        "未記錄許可證"}
+                    </p>
+                    <p className="muted">
+                      舊紀錄未保存所選藥品項目編號，無法確認當時選取的是同名藥品中的哪一筆。
+                    </p>
+                  </>
+                )}
               </div>
-            ))}
+              <ChatAnswer result={c.result} />
+            </details>
+          ))}
           {busy && <JobNotice text={busy} />}{" "}
           {error && <Notice error>{error}</Notice>}
           {sent && (
@@ -1439,11 +1613,12 @@ export function Chat() {
               if (!canSubmit || !draft.startSubmission()) return;
               const submittedQuestion = question.trim();
               try {
-                await submitJob(
+                const job = await submitJob(
                   "/chat",
                   { question: submittedQuestion, medicationIds: selectedIds },
                   draft.progress,
                 );
+                completedAnswerId.current = job.id;
                 draft.completeQuestion(question);
               } catch (e: any) {
                 draft.fail(e.message);
@@ -1484,6 +1659,8 @@ export function Chat() {
             <label className="choice" key={m.id}>
               <input
                 type="checkbox"
+                aria-label={m.name}
+                aria-describedby={`chat-medication-${m.id}`}
                 checked={selectedIds.includes(m.id)}
                 disabled={!!busy || !!meds.error || loadingMeds}
                 onChange={(e) => {
@@ -1493,7 +1670,12 @@ export function Chat() {
                   draft.update({ selected: next });
                 }}
               />
-              {m.name}
+              <span>
+                <strong>{m.name}</strong>
+                <span id={`chat-medication-${m.id}`}>
+                  <MedicationIdentity medication={m} />
+                </span>
+              </span>
             </label>
           ))}
           {!loadingMeds && !meds.error && !confirmedMeds.length && (

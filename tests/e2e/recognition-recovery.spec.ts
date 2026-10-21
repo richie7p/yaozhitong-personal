@@ -69,7 +69,7 @@ test("completed recognition survives navigation and a lost save response without
   await page
     .getByRole("button", { name: "確認並儲存藥品", exact: true })
     .click();
-  await expect(page).toHaveURL(/#medications$/);
+  await expect(page).toHaveURL(/#medications\?saved=[^&]+$/);
   await expect(page.locator(".med-card").filter({ hasText: name })).toHaveCount(
     1,
   );

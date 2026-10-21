@@ -5,6 +5,7 @@ import { learningProgress } from "../shared/learning";
 import { doseLabel } from "../shared/medication";
 import { Busy, Empty, Notice, SectionTitle, useData } from "./components";
 import { Evidence, learningStateLabels } from "./Evidence";
+import { Frequency } from "./medication-presentation";
 
 const stages = ["recognition", "reading", "quiz"] as const;
 const stageLabels = ["藥袋辨識", "仿單說明", "理解測驗"];
@@ -187,7 +188,9 @@ export function Demo() {
                       </div>
                       <div>
                         <dt>用法頻次</dt>
-                        <dd>{med.frequencyRaw || "未填寫"}</dd>
+                        <dd>
+                          <Frequency raw={med.frequencyRaw} />
+                        </dd>
                       </div>
                     </dl>
                     <details>

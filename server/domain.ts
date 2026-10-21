@@ -887,6 +887,7 @@ export class Domain {
               id,
               ownerId: j.ownerId,
               question: j.input.question,
+              medicationIds: [...ids],
               result,
               createdAt: now(),
             },

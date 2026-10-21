@@ -49,7 +49,9 @@ async function settle<T>(promise: Promise<T>): Promise<T> {
   if (!result && clockAdvances === 250)
     throw Error("Synthetic job did not settle within its polling budget.");
   if (!result)
-    throw Error("Synthetic job's real asynchronous preparation did not settle.");
+    throw Error(
+      "Synthetic job's real asynchronous preparation did not settle.",
+    );
   if ("error" in result) throw result.error;
   return result.value;
 }
@@ -279,6 +281,46 @@ describe("recovering an AI operation without creating another job", () => {
     expect(postKeys()).toHaveLength(1);
     expect(firstProgress).toHaveBeenCalled();
     expect(secondProgress).toHaveBeenCalled();
+  });
+
+  it("coalesces matching callers even when one fingerprint would finish after the other's job", async () => {
+    const delayedHashes = deferred<void>();
+    let digestCalls = 0;
+    const digest = webcrypto.subtle.digest.bind(webcrypto.subtle);
+    vi.stubGlobal("crypto", {
+      randomUUID: () => webcrypto.randomUUID(),
+      subtle: {
+        digest: async (...args: Parameters<typeof digest>) => {
+          // If each caller hashes independently, hold the second caller until
+          // the first job has completed and its pending record has been cleared.
+          if (++digestCalls > 2) await delayedHashes.promise;
+          return digest(...args);
+        },
+      },
+    });
+    const firstProgress = vi.fn(),
+      secondProgress = vi.fn();
+    const first = client.submitJob(
+      "/chat",
+      { question: "Synthetic delayed-hash question", medicationIds: ["a"] },
+      firstProgress,
+    );
+    const second = client.submitJob(
+      "/chat",
+      { medicationIds: ["a"], question: "Synthetic delayed-hash question" },
+      secondProgress,
+    );
+    try {
+      await settle(first);
+      delayedHashes.resolve();
+      await settle(second);
+      expect(postKeys()).toHaveLength(1);
+      expect(firstProgress).toHaveBeenCalled();
+      expect(secondProgress).toHaveBeenCalled();
+    } finally {
+      delayedHashes.resolve();
+      await settle(Promise.allSettled([first, second]));
+    }
   });
 
   it("preserves a lost-POST operation over a module reload without persisting health input", async () => {
