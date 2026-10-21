@@ -568,8 +568,8 @@ export function AddMedication({
                       ...m,
                       name: c.nameZh,
                       licenseNo: c.licenseNo,
-                      strength: c.strength,
-                      form: c.form,
+                      // Keep the photo transcription, including unknown fields,
+                      // separate from the candidate's catalog specification.
                       ...recognitionDraftFlags(m.frequencyRaw),
                     });
                   }}
