@@ -83,6 +83,25 @@ python tools/archive-tfda-assets.py collect --queue C:/yzt-data/assets.ndjson --
 
 附件封存每檔上限 100 MB、單次請求期限 90 秒，最多兩次嘗試；患者仿單發布的 15 MB 上限及抽取檢查維持原設定。`--reuse-corpus` 可重複指定既有下載或封存資料夾，重用前核對實際 bytes 與 SHA；相同網址取得不同版本時全部保留，不自行判定現行版本。報告分列成功網址數、網址／版本參照數及不同 SHA 原檔數。
 
+### 官方頁面連結的現行紙本
+
+紙本 PDF 可以透過原始官方電子頁面建立來源關聯。這條流程會重新解析 Info39 指向的 HTML，核對現行藥品身分、所有來源分支，以及唯一的現行紙本連結；候選自行聲稱的關聯或 SHA 不能取得發布資格。目前要求沒有歷史紙本 PDF。明確分離的歷史電子頁面會完整列出並排除，未分類或角色矛盾的連結則留待處理。
+
+紙本本身仍須通過原有的三引擎全文比對、每頁及版面檢查。發布時重算官方頁面與 PDF 的證據，並以只新增方式保存兩份原始檔。關聯證據上限為 100 KB，完整發布文件上限為 800 KB；超限保留原檔，不截短證據或正文。
+
+```powershell
+# 先完成主流程，再從雲端實際發布指標產生新的 protected 清單。
+# 同款藥品若主流程已發布 HTML，紙本流程就保留既有來源。
+node --import tsx tools/prepare-tfda-parent-papers.ts --inventory C:/yzt-data/index-20261022 --corpus C:/yzt-data/all-corpus --archive C:/yzt-data/asset-archive --output C:/yzt-data/current-paper-prepared --protected C:/yzt-data/current-published.json --limit 5000
+
+# 預設只有離線驗證；雲端 inspect/apply 仍須原有的明確專案、桶及快照雜湊。
+node --import tsx tools/publish-tfda-sources.ts --manifest C:/yzt-data/current-paper-prepared/batches/BATCH.json --parent-paper-mode strict-v1
+```
+
+`--limit` 是本機準備工作的上限，範圍 1 至 5,000；每份雲端 manifest 仍最多 50 款。檢查 summary 的 `counts.deferred_by_limit`、`selection` 及 `evaluationCoverageStatus`，確認是否仍有未處理項目。重跑會重新評估候選，已保存的輸入與 manifest 不覆寫。主流程與紙本流程應依序發布，避免兩種格式同時競爭同一許可證。
+
+成分表常見的點線不會改寫原文；文字品質檢查只對同一來源行、兩端為文字或數字的正常點線作例外。其他重複字元、亂碼、最低有效字數及文字比例門檻維持原設定。
+
 固定三筆曾誤納原料藥的更正使用 `tools/withdraw-tfda-raw-materials.ts`。預設 inspect 僅保存完整前快照；apply 須指定精確快照 SHA，並在交易中核對原仿單、發布指標及稽核紀錄。更正只將該來源退役並移除患者發布指標，保留原檔與全文。restore 以同一快照和擁有權紀錄恢復，遇到競爭變更即停止；不修改帳號、服藥紀錄或配額。
 
 ## 驗證與進度

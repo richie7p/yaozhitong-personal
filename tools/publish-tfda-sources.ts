@@ -5,15 +5,16 @@ import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import type { TfdaSourceInput } from "./tfda-source-core.js";
 import { verifyCandidateFromRaw } from "./tfda-candidate-verification.js";
+import { deriveSerialPaperPdf, verifyParentPaperSource } from "./tfda-parent-paper-verification.js";
 import {
   TFDA_PROTECTED_LICENSES, TFDA_PUBLICATION_ACTOR, TFDA_PUBLICATION_BUCKET,
   TFDA_PUBLICATION_PROJECT, applyTechnicalPublication, ensureTechnicalSourceBlob, assertFreshTimestamp,
-  assertPublicationBlob, assertPublicationWrite, assertOfficialPatientCategory, canonicalDocument, catalogCacheFilename, verifyCachedCatalog,
+  assertPublicationBlob, assertPublicationWrite, assertOfficialPatientCategory, assertTechnicalPublicationSize, canonicalDocument, catalogCacheFilename, verifyCachedCatalog,
   inspectTechnicalPublication, prepareTechnicalSource, publicationHash,
   publicationRequire as must, safePublicationFailure, sameDocument, technicalAuditId,
   validatePublicationManifest, type PreparedTechnicalSource,
   type PublicationBefore, type PublicationDoc, type PublicationManifest,
-  type PublicationRun, type PublicationStore, type TechnicalBlobState,
+  type PublicationRun, type PublicationStore, type TechnicalBlobState, type TechnicalBlobStore,
 } from "./tfda-publication-core.js";
 
 async function boundedRead(path: string, limit: number) {
@@ -45,7 +46,7 @@ function indexRows(raw: PublicationDoc[], license: string) {
     urls: String(r["仿單圖檔連結"] || "").match(/https?:\/\/[^\s;<>"\u3000]+/gu) || [],
   }));
 }
-export async function loadPublicationBatch(manifestPath: string, now = Date.now(), verificationOptions: { python?: string } = {}) {
+export async function loadPublicationBatch(manifestPath: string, now = Date.now(), verificationOptions: { python?: string; parentPaperMode?: "strict-v1" } = {}) {
   const path = resolve(manifestPath), bytes = await boundedRead(path, 2_000_000);
   const manifest = json(bytes);
   validatePublicationManifest(manifest);
@@ -69,23 +70,39 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
     must(Array.isArray(rows) && rows.length === evidence.rows, "official_index_row_count_mismatch");
     indexes.set(item.infoId, { rows, evidence });
   }
-  const loaded: { source: PreparedTechnicalSource; raw: Buffer }[] = [];
+  const loaded: { source: PreparedTechnicalSource; raw: Buffer; parentRaw?: Buffer }[] = [];
   for (const item of manifest.items) {
     const inputBytes = await boundedRead(pathFromManifest(item.candidateInputPath), 2_000_000);
     must(publicationHash(inputBytes) === item.candidateInputSha256, "candidate_input_hash_mismatch");
     const input = json(inputBytes) as TfdaSourceInput;
-    // The generic offline core can evaluate supplied association evidence. This
-    // CLI has no independent parent-raw verifier, so it cannot trust that claim.
-    must(!Object.hasOwn(input, "officialAssociation"), "unverified_parent_association_not_supported");
+    // Caller claims remain rejected by default. Only explicit strict parent mode
+    // may derive association evidence by reparsing independently pinned raw bytes.
+    const hasParentClaim = Object.hasOwn(input, "officialAssociation");
+    must(!hasParentClaim || verificationOptions.parentPaperMode === "strict-v1" && !!item.parentSource && !!input.officialAssociation,
+      "unverified_parent_association_not_supported");
+    must(!item.parentSource || hasParentClaim, "parent_source_requires_explicit_association");
     const catalog = indexes.get(36)!, index = indexes.get(39)!;
     must(input.catalogCheckedAt === catalog.evidence.retrievedAt && input.indexCheckedAt === index.evidence.retrievedAt &&
       sameDocument(input.catalogRows, catalogRows(catalog.rows, item.fullLicense)) &&
       sameDocument(input.indexRows, indexRows(index.rows, item.fullLicense)), "candidate_current_official_index_binding_mismatch");
     assertOfficialPatientCategory(catalog.rows, item.fullLicense, input.officialCategory);
+    let parentRaw: Buffer | undefined, parentVerification: PreparedTechnicalSource["parentVerification"];
+    if (hasParentClaim) {
+      must(input.format === "pdf", "parent_paper_child_must_be_pdf");
+      const parentPath = pathFromManifest(item.parentSource!.rawSourcePath);
+      parentRaw = await boundedRead(parentPath, 15_000_000);
+      parentVerification = (await verifyParentPaperSource(item.parentSource!, input, parentPath, parentRaw, catalog.rows, index.rows,
+        manifest.indexSnapshots, { python: verificationOptions.python, now })).proof;
+    }
     const raw = await boundedRead(pathFromManifest(item.rawSourcePath), 15_000_000);
     const source = prepareTechnicalSource(item, input, raw, now);
-    source.rawVerification = await verifyCandidateFromRaw(pathFromManifest(item.rawSourcePath), raw, input, verificationOptions);
-    loaded.push({ source, raw });
+    if (parentVerification) {
+      const derived = await deriveSerialPaperPdf(pathFromManifest(item.rawSourcePath), raw, verificationOptions);
+      must(input.numPages === derived.numPages && sameDocument(input.pages, derived.pages), "candidate_parent_paper_pdf_pages_do_not_match_raw");
+      source.rawVerification = derived.rawVerification; source.parentVerification = parentVerification;
+      assertTechnicalPublicationSize(source);
+    } else source.rawVerification = await verifyCandidateFromRaw(pathFromManifest(item.rawSourcePath), raw, input, verificationOptions);
+    loaded.push({ source, raw, ...(parentRaw ? { parentRaw } : {}) });
   }
   return { path, manifest: manifest as PublicationManifest, manifestSha256: publicationHash(bytes), indexes, loaded };
 }
@@ -98,6 +115,7 @@ interface PublicationOperation {
   draftSha256: string; assessmentSha256: string;
   rawVerificationSha256: string;
   decision: string; reason: string; before: PublicationBefore; blobBefore: TechnicalBlobState | null;
+  parentVerificationSha256?: string; parentBlobBefore?: TechnicalBlobState | null;
 }
 interface PublicationSnapshot {
   schema: "tfda-source-publication-snapshot/v1";
@@ -146,7 +164,8 @@ async function cloudMain(mode: string, options: Record<string, string>, batch: B
         op.rawSourceSha256 === batch.loaded[i].source.item.rawSourceSha256 &&
         op.draftSha256 === publicationHash(JSON.stringify(batch.loaded[i].source.draft)) &&
         op.assessmentSha256 === publicationHash(JSON.stringify(batch.loaded[i].source.assessment)) &&
-        op.rawVerificationSha256 === publicationHash(JSON.stringify(batch.loaded[i].source.rawVerification))), "fixed_snapshot_source_binding_mismatch");
+        op.rawVerificationSha256 === publicationHash(JSON.stringify(batch.loaded[i].source.rawVerification)) &&
+        op.parentVerificationSha256 === (batch.loaded[i].source.parentVerification ? publicationHash(JSON.stringify(batch.loaded[i].source.parentVerification)) : undefined)), "fixed_snapshot_source_binding_mismatch");
     must(!snapshot.operations.some((op) => op.decision === "conflict"), "fixed_snapshot_has_publication_conflict");
   }
   // Dynamic SDK imports start only after offline validation and explicit target checks.
@@ -235,6 +254,19 @@ async function cloudMain(mode: string, options: Record<string, string>, batch: B
       return { exists: false, generation: null, sha256: null };
     }
   }
+  // This projection is used only by the create-only blob helper, never written as a leaflet document.
+  const parentBlobSource = (source: PreparedTechnicalSource): PreparedTechnicalSource => {
+    const proof = source.parentVerification!;
+    return { ...source, draft: { ...source.draft, id: proof.parentStoragePath.slice(9, -5), sha256: proof.parentRawSha256,
+      storagePath: proof.parentStoragePath, sourceMediaType: "text/html" } };
+  };
+  const blobStore: TechnicalBlobStore = { state: blobState,
+    createIfAbsent: async (path, bytes, mediaType, owner, precondition) => {
+      assertPublicationBlob(path);
+      try { await bucket.file(path).save(bytes, { resumable: false, validation: "crc32c", preconditionOpts: precondition,
+        metadata: { contentType: mediaType, metadata: owner } }); }
+      catch (error) { if ((error as any)?.code !== 412) throw error; }
+    } };
   try {
     await mkdir(dirname(snapshotPath), { recursive: true });
     // Snapshot creation is exclusive (wx); cloud writes use generation-zero and transaction create/CAS.
@@ -257,7 +289,9 @@ async function cloudMain(mode: string, options: Record<string, string>, batch: B
           candidateInputSha256: source.item.candidateInputSha256, rawSourceSha256: source.item.rawSourceSha256,
           draftSha256: publicationHash(JSON.stringify(source.draft)), assessmentSha256: publicationHash(JSON.stringify(source.assessment)),
           rawVerificationSha256: publicationHash(JSON.stringify(source.rawVerification)),
-          ...state, before, blobBefore: state.decision === "create" ? await blobState(source) : null });
+          ...state, before, blobBefore: state.decision === "create" ? await blobState(source) : null,
+          ...(source.parentVerification ? { parentVerificationSha256: publicationHash(JSON.stringify(source.parentVerification)),
+            parentBlobBefore: state.decision === "create" ? await blobState(parentBlobSource(source)) : null } : {}) });
       }
       const { records: _records, cacheHit: _cacheHit, ...catalogSnapshot } = catalog;
       const output: PublicationSnapshot = { schema: "tfda-source-publication-snapshot/v1", inspectedAt: new Date().toISOString(),
@@ -293,9 +327,10 @@ async function cloudMain(mode: string, options: Record<string, string>, batch: B
     const results: PublicationDoc[] = [];
     try {
       for (let i = 0; i < batch.loaded.length; i++) {
-        const { source: loadedSource, raw } = batch.loaded[i], op = snapshot.operations[i];
+        const { source: loadedSource, raw, parentRaw } = batch.loaded[i], op = snapshot.operations[i];
         const source = prepareTechnicalSource(loadedSource.item, loadedSource.input, raw);
         source.rawVerification = loadedSource.rawVerification;
+        source.parentVerification = loadedSource.parentVerification;
         if (op.decision.startsWith("skip_")) {
           results.push({ fullLicense: op.fullLicense, status: op.decision, reason: op.reason });
           await journal(results.at(-1)!);
@@ -304,19 +339,12 @@ async function cloudMain(mode: string, options: Record<string, string>, batch: B
         must(op.decision === "create" || op.decision === "same_source_no_op", "unsupported_snapshot_publication_decision");
         if (op.decision === "create") {
           must(op.blobBefore !== null && cloudCatalogCurrent(source, catalog.records), "snapshot_blob_or_catalog_binding_missing");
-          const verified = await ensureTechnicalSourceBlob({
-            state: blobState,
-            createIfAbsent: async (path, bytes, mediaType, owner, precondition) => {
-              assertPublicationBlob(path);
-              try {
-                await bucket.file(path).save(bytes, { resumable: false, validation: "crc32c", preconditionOpts: precondition,
-                  metadata: { contentType: mediaType, metadata: owner } });
-              } catch (error) {
-                // The helper re-reads and verifies hash, generation and this run's marker after a race.
-                if ((error as any)?.code !== 412) throw error;
-              }
-            },
-          }, source, raw, op.blobBefore, run);
+          if (source.parentVerification) {
+            must(parentRaw && op.parentBlobBefore, "snapshot_verified_parent_blob_binding_missing");
+            const verifiedParent = await ensureTechnicalSourceBlob(blobStore, parentBlobSource(source), parentRaw, op.parentBlobBefore, run);
+            await journal({ fullLicense: op.fullLicense, phase: "parent_blob_verified", generation: verifiedParent.generation, sha256: verifiedParent.sha256 });
+          }
+          const verified = await ensureTechnicalSourceBlob(blobStore, source, raw, op.blobBefore, run);
           await journal({ fullLicense: op.fullLicense, phase: "blob_verified", generation: verified.generation, sha256: verified.sha256 });
         }
         const status = await applyTechnicalPublication(store, source, op.before, run);
@@ -336,14 +364,16 @@ async function cloudMain(mode: string, options: Record<string, string>, batch: B
 }
 export async function main(args = process.argv.slice(2)) {
   const options: Record<string, string> = {};
-  const allowed = ["--mode", "--manifest", "--project", "--bucket", "--snapshot", "--manifest-sha256", "--snapshot-sha256", "--catalog-cache", "--python"];
+  const allowed = ["--mode", "--manifest", "--project", "--bucket", "--snapshot", "--manifest-sha256", "--snapshot-sha256", "--catalog-cache", "--python", "--parent-paper-mode"];
   for (let i = 0; i < args.length; i += 2) {
     must(allowed.includes(args[i]) && !!args[i + 1] && !args[i + 1].startsWith("--") && !options[args[i]], "invalid_or_duplicate_cli_arguments");
     options[args[i]] = args[i + 1];
   }
   const mode = options["--mode"] || "validate";
   must(["validate", "inspect", "apply"].includes(mode) && !!options["--manifest"], "usage_requires_explicit_manifest_and_valid_mode");
-  const batch = await loadPublicationBatch(options["--manifest"], Date.now(), { python: options["--python"] });
+  must(!options["--parent-paper-mode"] || options["--parent-paper-mode"] === "strict-v1", "unsupported_parent_paper_mode");
+  const batch = await loadPublicationBatch(options["--manifest"], Date.now(), { python: options["--python"],
+    ...(options["--parent-paper-mode"] ? { parentPaperMode: "strict-v1" as const } : {}) });
   if (mode === "validate") {
     console.log(JSON.stringify({ status: "offline_technical_batch_validated", items: batch.loaded.length,
       manifestSha256: batch.manifestSha256, actor: TFDA_PUBLICATION_ACTOR, clinicalReviewed: false,

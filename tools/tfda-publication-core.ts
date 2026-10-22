@@ -7,6 +7,7 @@ import {
   isRawMaterialOfficialCategory, normalizeTfdaSourceText,
   type TfdaSourceAssessment,
   type TfdaSourceInput,
+  type TfdaFetchedArtifact,
 } from "./tfda-source-core.js";
 
 export const TFDA_PUBLICATION_PROJECT = "project-b6fe4904-e687-4365-b2f";
@@ -81,6 +82,8 @@ export interface PublicationBatchItem {
   candidateInputSha256: string;
   rawSourcePath: string;
   rawSourceSha256: string;
+  /** Accepted only by the explicit strict parent-paper mode after independent reparse. */
+  parentSource?: { rawSourcePath: string; rawSourceSha256: string; fetched: TfdaFetchedArtifact };
 }
 export interface PublicationIndexSnapshot {
   infoId: 36 | 39;
@@ -111,6 +114,9 @@ export function validatePublicationManifest(value: any): asserts value is Public
       must(typeof item[key] === "string" && item[key].length > 0, "explicit_candidate_and_raw_paths_required");
     for (const key of ["candidateInputSha256", "rawSourceSha256"])
       must(/^[a-f0-9]{64}$/.test(item[key] || ""), "explicit_candidate_and_raw_hashes_required");
+    if (item.parentSource !== undefined) must(item.parentSource && typeof item.parentSource.rawSourcePath === "string" &&
+      !!item.parentSource.rawSourcePath && /^[a-f0-9]{64}$/.test(item.parentSource.rawSourceSha256 || "") &&
+      item.parentSource.fetched && typeof item.parentSource.fetched === "object", "explicit_parent_source_path_hash_and_fetch_required");
   }
   for (const item of value.indexSnapshots) {
     must(typeof item.path === "string" && !!item.path && typeof item.evidencePath === "string" && !!item.evidencePath,
@@ -158,6 +164,22 @@ export interface PreparedTechnicalSource {
   assessment: TfdaSourceAssessment;
   input: TfdaSourceInput;
   rawVerification?: RawCandidateVerification;
+  parentVerification?: ParentPaperVerification;
+}
+/** Derived from actual indexed parent bytes; no local filesystem paths are persisted. */
+export interface ParentPaperVerification {
+  schema: "tfda-current-parent-paper-verification/v1";
+  method: "official_index_parent_raw_current_paper_reparse_v1";
+  licenseNo: string; indexUrl: string; parentFinalUrl: string;
+  parentRawSha256: string; parentRawBytes: number; parentStoragePath: string;
+  parentRetrievedAt: string; parentRedirectChain: string[];
+  currentPaperUrls: string[]; historicalPaperUrls: string[];
+  excludedHistoricalElectronicUrls: string[];
+  branchInventory: { popups: PublicationDoc[]; anchors: PublicationDoc[] };
+  childUrl: string; childRawSha256: string;
+  officialCatalogSha256: string; officialIndexSha256: string;
+  parentIdentitySha256: string; parentDomInspectionSha256: string;
+  parserHelperSha256: string; fetchDependencySha256: string; adapterSha256: string;
 }
 export interface RawCandidateVerification {
   schema: "tfda-candidate-raw-verification/v1";
@@ -289,14 +311,30 @@ function technicalVerification(source: PreparedTechnicalSource) {
     rawSourceSha256: source.item.rawSourceSha256,
     catalogCheckedAt: source.input.catalogCheckedAt, indexCheckedAt: source.input.indexCheckedAt,
     rawVerification: source.rawVerification,
+    ...(source.parentVerification ? { officialParentVerification: source.parentVerification } : {}),
     scope: "Official source identity and complete machine text checks; technical source availability only.",
   };
+}
+export function assertTechnicalPublicationSize(source: PreparedTechnicalSource, marker = {
+  runId: "x".repeat(100), batchId: "x".repeat(100), manifestSha256: "a".repeat(64), snapshotSha256: "b".repeat(64), at: "2099-12-31T23:59:59.999Z",
+}) {
+  must(Buffer.byteLength(JSON.stringify({ ...source.draft, status: "published", checkedBy: TFDA_PUBLICATION_ACTOR,
+    checkedAt: marker.at, sourceImport: marker, sourceVerification: technicalVerification(source) }), "utf8") <= 800_000,
+    "verified_source_document_exceeds_800000_bytes");
 }
 export async function applyTechnicalPublication(
   store: PublicationStore, source: PreparedTechnicalSource, before: PublicationBefore,
   run: PublicationRun, timestamp = new Date().toISOString(),
 ) {
   const draft = source.draft;
+  if (source.input.officialAssociation) {
+    const proof = source.parentVerification;
+    must(proof?.schema === "tfda-current-parent-paper-verification/v1" &&
+      proof.licenseNo === draft.licenseNo && proof.childRawSha256 === draft.sha256 &&
+      proof.childUrl === source.input.fetched.requestedUrl && proof.parentRawSha256 === source.input.officialAssociation.detailSha256 &&
+      proof.currentPaperUrls.length === 1 && proof.currentPaperUrls[0] === proof.childUrl && proof.historicalPaperUrls.length === 0,
+      "publication_requires_independently_verified_parent_association");
+  } else must(!source.parentVerification, "unexpected_parent_verification_without_association");
   must(source.rawVerification?.schema === "tfda-candidate-raw-verification/v1" &&
     source.rawVerification.rawSha256 === draft.sha256 &&
     source.rawVerification.canonicalTextSha256 === source.assessment.canonicalTextSha256,
@@ -306,6 +344,7 @@ export async function applyTechnicalPublication(
     sameTechnicalSource(source.assessment.draftLeaflet, draft), "publication_requires_revalidated_technical_source");
   must(!!run.runId && !!run.batchId && /^[a-f0-9]{64}$/.test(run.manifestSha256) &&
     /^[a-f0-9]{64}$/.test(run.snapshotSha256), "invalid_technical_publication_run");
+  assertTechnicalPublicationSize(source, { ...run, at: timestamp });
   const pointerId = publicationHash(draft.licenseNo), auditId = technicalAuditId(run.runId, draft.id);
   const sourceVerification = technicalVerification(source);
   return store.transaction(async (tx) => {
