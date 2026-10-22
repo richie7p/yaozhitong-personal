@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
 import type { Claim, GroundedResult } from "../shared/schema.js";
+import {
+  passageCitations,
+  sameCitationSet,
+  type PassageSupport,
+} from "./source-field-spans.js";
 
 export const SAFETY_SECTIONS = new Set([
   "警語",
@@ -15,23 +20,25 @@ export const SAFETY_SECTIONS = new Set([
   "交互作用",
 ]);
 
-interface SafetyPassage {
-  chunkId: string;
-  quote: string;
-  sourceSection?: string;
-}
+interface SafetyPassage extends PassageSupport {}
 const norm = (text: string) => text.normalize("NFKC").replace(/\s/gu, "");
 const sameCitation = (
   claim: { citations: Claim["citations"] },
   p: SafetyPassage,
-) =>
-  claim.citations.length === 1 &&
-  claim.citations[0].chunkId === p.chunkId &&
-  norm(claim.citations[0].quote) === norm(p.quote);
+) => sameCitationSet(claim.citations, passageCitations(p));
 const stableId = (p: SafetyPassage) =>
   "safety-" +
   createHash("sha256")
-    .update(p.chunkId + "\n" + (p.sourceSection || "") + "\n" + norm(p.quote))
+    .update(
+      p.chunkId +
+        "\n" +
+        (p.sourceSection || "") +
+        "\n" +
+        norm(p.quote) +
+        (passageCitations(p).length > 1
+          ? "\n" + JSON.stringify(passageCitations(p))
+          : ""),
+    )
     .digest("hex")
     .slice(0, 16);
 
@@ -75,7 +82,7 @@ function purposeReadingQuestion(passage: SafetyPassage) {
     answer,
     explain: `依仿單「${passage.sourceSection}」原文：${passage.quote.trim()}`,
     explanationKind: "source_quote" as const,
-    citations: [{ chunkId: passage.chunkId, quote: passage.quote }],
+    citations: passageCitations(passage),
     learningObjective: "purpose" as const,
     sourceSection: passage.sourceSection,
     assessmentScope: "one_key_point" as const,
@@ -129,7 +136,7 @@ export function completePurposeLearning(
       text: passage.quote.trim(),
       category: "purpose",
       kind: "source_exact_purpose",
-      citations: [{ chunkId: passage.chunkId, quote: passage.quote }],
+      citations: passageCitations(passage),
     });
     const fallback = purposeReadingQuestion(passage);
     if (fallback) quiz.push(fallback);
@@ -139,11 +146,12 @@ export function completePurposeLearning(
 }
 
 /**
- * Read a complete first sentence, retaining the field's introductory parent.
- * We never select a later sentence whose pronoun or exception may depend on
- * preceding material. The citation and displayed claim always retain the field.
+ * Use only a complete, bounded field. Sentence punctuation and item numbers
+ * do not prove that later parent conditions or exceptions are independent.
+ * A longer field remains fully readable without a template assessment.
  */
-function firstSafetyUnit(passage: SafetyPassage) {
+function completeSafetyUnit(passage: SafetyPassage) {
+  if (passage.modelEligible === false) return undefined;
   const name = [...passage.sourceSection!].join("\\s*");
   const heading = new RegExp(
     `^\\s*(?:\\d+[^\\S\\r\\n]+)?(?:【\\s*${name}\\s*】|${name}\\s*[:：]|${name}[^\\S\\r\\n]*\\r?\\n)\\s*`,
@@ -161,17 +169,8 @@ function firstSafetyUnit(passage: SafetyPassage) {
     const parent = subsection[1].replace(/\./gu, "\\.");
     body = body.replace(new RegExp(`^\\s*${parent}\\.\\d+\\t(?=\\S)`, "u"), "");
   }
-  let unit = body.match(/^[^。！？]+[。！？]/u)?.[0];
-  if (!unit) return undefined;
-  // An immediately following exception is part of the point, even when its
-  // author used a full stop. A numbered next item is an independent reminder.
-  const following = body.slice(unit.length);
-  if (/^\s*(?:但|然而|惟|除非|例外|不過)/u.test(following)) {
-    const continuation = following.match(/^\s*[^。！？]+[。！？]/u)?.[0];
-    if (!continuation) return undefined;
-    unit += continuation;
-  }
-  const visible = unit
+  if (!/[。！？.!?；;][」』”"')）]*\s*$/u.test(body)) return undefined;
+  const visible = body
     .replace(
       /^\s*(?:\(\s*\d+\s*\)|\d+[.、](?!\d)|[一二三四五六七八九十]+、)\s*/u,
       "",
@@ -190,7 +189,7 @@ function firstSafetyUnit(passage: SafetyPassage) {
  * Each template tests one source point; it does not certify all subordinate items.
  */
 export function safetyReadingQuestion(passage: SafetyPassage) {
-  const unit = firstSafetyUnit(passage);
+  const unit = completeSafetyUnit(passage);
   if (!unit) return undefined;
   // A modal nested inside uncertainty is not a proposition with an explicit
   // opposite (e.g. "possible adverse effects are unknown"). Keep it untested.
@@ -251,20 +250,25 @@ export function safetyReadingQuestion(passage: SafetyPassage) {
     incorrect = "目前已有完整資訊。";
     topic = "原文提供的資料狀況";
   }
-  if (!incorrect) return undefined;
+  // A source-reading question can test literal attribution when no safe
+  // medical opposite exists. Its distractor makes no medical assertion.
+  const literalReading = !incorrect;
+  if (!incorrect) incorrect = "本欄未記載這段可核對的原文。";
   const id = stableId(passage);
   const answer = parseInt(id.slice(-1), 16) % 2;
   const options = answer === 0 ? [unit, incorrect] : [incorrect, unit];
   return {
     id,
-    q: unknown
-      ? `依仿單「${passage.sourceSection}」欄，原文對此項提供的資料狀況為何？`
-      : `依仿單「${passage.sourceSection}」欄，關於「${topic}」，以下哪項與原文相符？`,
+    q: literalReading
+      ? `依仿單「${passage.sourceSection}」欄，哪項內容可在引用原文逐字核對？`
+      : unknown
+        ? `依仿單「${passage.sourceSection}」欄，原文對此項提供的資料狀況為何？`
+        : `依仿單「${passage.sourceSection}」欄，關於「${topic}」，以下哪項與原文相符？`,
     options,
     answer,
     explain: `依仿單「${passage.sourceSection}」原文：${passage.quote.trim()}`,
     explanationKind: "source_quote" as const,
-    citations: [{ chunkId: passage.chunkId, quote: passage.quote }],
+    citations: passageCitations(passage),
     learningObjective: "warning" as const,
     sourceSection: passage.sourceSection,
     coverageSectionId: id,
@@ -282,8 +286,10 @@ export function completeSafetyLearning(
   result: Pick<GroundedResult, "claims" | "quiz">,
   passages: SafetyPassage[],
 ): Pick<GroundedResult, "claims" | "quiz" | "safetyCoverage"> {
-  const safety = passages.filter((p) =>
-    SAFETY_SECTIONS.has(p.sourceSection || ""),
+  const safety = passages.filter(
+    (p) =>
+      SAFETY_SECTIONS.has(p.sourceSection || "") &&
+      p.evidenceKind !== "structural_container",
   );
   const claims = result.claims.filter(
     (claim) =>
@@ -291,10 +297,25 @@ export function completeSafetyLearning(
       !safety.some((p) => sameCitation(claim, p)),
   );
   const quiz = [...result.quiz];
-  const sections: NonNullable<GroundedResult["safetyCoverage"]>["sections"] =
-    [];
+  const groups = new Map<
+    string,
+    NonNullable<GroundedResult["safetyCoverage"]>["sections"][number]
+  >();
+  const groupId = (passage: SafetyPassage) =>
+    passage.originalFieldId || stableId(passage);
+  const alreadyReviewed = new Set(
+    safety
+      .filter((passage) =>
+        quiz.some(
+          (question) =>
+            question.learningObjective === "warning" &&
+            sameCitation(question, passage),
+        ),
+      )
+      .map(groupId),
+  );
   for (const passage of safety) {
-    const id = stableId(passage);
+    const id = groupId(passage);
     const reviewed = result.claims.find(
       (claim) => claim.category === "warning" && sameCitation(claim, passage),
     );
@@ -303,7 +324,7 @@ export function completeSafetyLearning(
       text: passage.quote.trim(),
       category: "warning",
       kind: "source_exact_safety",
-      citations: [{ chunkId: passage.chunkId, quote: passage.quote }],
+      citations: passageCitations(passage),
       ...(reviewed?.profileRefs?.length
         ? { profileRefs: reviewed.profileRefs }
         : {}),
@@ -320,22 +341,53 @@ export function completeSafetyLearning(
       question.coverageSectionId = id;
       question.assessmentScope = "one_key_point";
     }
-    const fallback = reviewedQuiz.length
-      ? undefined
-      : safetyReadingQuestion(passage);
-    if (fallback) quiz.push(fallback);
-    sections.push({
+    const fallback =
+      alreadyReviewed.has(id) || groups.get(id)?.quizIds.length
+        ? undefined
+        : safetyReadingQuestion(passage);
+    if (fallback) {
+      fallback.coverageSectionId = id;
+      quiz.push(fallback);
+    }
+    const group = groups.get(id) || {
       id,
       chunkId: passage.chunkId,
       sourceSection: passage.sourceSection!,
       claimIndex,
-      quizIds: reviewedQuiz.length
+      claimIndices: [],
+      quizIds: [],
+    };
+    group.claimIndices!.push(claimIndex);
+    group.quizIds.push(
+      ...(reviewedQuiz.length
         ? reviewedQuiz.map((question) => question.id)
         : fallback
           ? [fallback.id]
-          : [],
-    });
+          : []),
+    );
+    groups.set(id, group);
   }
+  const sections = [...groups.values()];
+  const covered = sections.filter((section) => {
+    const expected = safety.filter(
+      (passage) =>
+        (passage.originalFieldId || stableId(passage)) === section.id,
+    );
+    return (
+      expected.length ===
+        (expected[0].originalFieldUnitCount ?? expected.length) &&
+      (!expected[0].originalFieldUnitCount ||
+        expected.every(
+          (passage, index) => passage.originalFieldUnitIndex === index,
+        )) &&
+      expected.length === section.claimIndices!.length &&
+      expected.every((passage) =>
+        section.claimIndices!.some((index) =>
+          sameCitation(claims[index], passage),
+        ),
+      )
+    );
+  }).length;
   const tested = sections.filter((section) => section.quizIds.length).length;
   return {
     claims,
@@ -345,11 +397,11 @@ export function completeSafetyLearning(
       assessmentScope: "one_key_point_per_section",
       status: !sections.length
         ? "no_sections"
-        : tested === sections.length
+        : tested === sections.length && covered === sections.length
           ? "complete"
           : "partial",
       sourceSectionCount: sections.length,
-      coveredSectionCount: sections.length,
+      coveredSectionCount: covered,
       quizCoveredSectionCount: tested,
       sections,
     },

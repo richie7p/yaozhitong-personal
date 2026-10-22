@@ -389,6 +389,7 @@ describe("verified personalization and task output", () => {
           {
             ...chunk,
             id: "uncited",
+            licenseNo: "SYNTHETIC-UNCITED-LEARNING",
             text: "注意事項：合成情境A另有記載，這一段沒有被引用。",
           },
         ],

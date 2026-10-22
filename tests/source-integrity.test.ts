@@ -158,7 +158,10 @@ describe("complete atomic warning source passages", () => {
   });
 
   it.each([
-    ["overlong", "警語：" + "合成症狀".repeat(400) + "請洽醫師。"],
+    [
+      "source budget exceeded",
+      "警語：" + "合成症狀".repeat(5500) + "請洽醫師。",
+    ],
     ["unfinished", "警語：若有合成症狀，可能發生其他未完整"],
     [
       "original old 1000-character boundary",

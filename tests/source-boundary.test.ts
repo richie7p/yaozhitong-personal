@@ -125,7 +125,14 @@ describe("complete warning citation boundaries", () => {
         quote: passages.find((p) => p.sourceSection === "警語")!.quote,
       },
     ]);
-    expect(result.quiz.every((q) => q.id.startsWith("purpose-"))).toBe(true);
+    expect(result.quiz.every((q) => q.explanationKind === "source_quote")).toBe(
+      true,
+    );
+    const reading = result.quiz.find((q) => q.learningObjective === "warning")!;
+    expect(reading.q).toContain("逐字核對");
+    expect(reading.citations).toEqual(
+      result.claims.find((c) => c.category === "warning")!.citations,
+    );
     expect(reviewCalled).toBe(false);
     expect(result.rejectedCount).toBe(1);
   });

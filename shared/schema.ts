@@ -155,6 +155,12 @@ export interface Citation {
   chunkId: string;
   quote: string;
 }
+export interface OfficialSourceReference {
+  licenseNo: string;
+  version: string;
+  /** Server-authored allowed official HTTPS URL, never model-authored. */
+  sourceUrl?: string;
+}
 export const ClaimCategorySchema = z.enum([
   "purpose",
   "use",
@@ -205,12 +211,31 @@ export interface GroundedResult {
       chunkId: string;
       sourceSection: string;
       claimIndex: number;
+      claimIndices?: number[];
       quizIds: string[];
     }[];
   };
   followups: { question: string; claimIndex: number }[];
   rejectedCount: number;
   sourceVersions: Record<string, string>;
+  /** Server-authored pending state, never a generated medical conclusion. */
+  sourceReview?: {
+    reason: "safety_sections_pending";
+    sources: OfficialSourceReference[];
+  };
+  /** Full canonical source is preserved, but has not been interpreted by AI. */
+  sourceReading?: {
+    reason: "model_source_capacity";
+    sections: { sourceSection: string; citations: Citation[] }[];
+    /** Selected pages could not include this complete field within the limit. */
+    unavailableSections?: {
+      sourceSection: string;
+      licenseNo: string;
+      version: string;
+    }[];
+    /** Supplied only by the domain's verified published leaflet records. */
+    sources?: OfficialSourceReference[];
+  };
   verification: "model_assisted";
 }
 export interface QuizGrade {

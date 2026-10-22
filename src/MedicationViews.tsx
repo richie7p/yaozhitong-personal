@@ -861,7 +861,10 @@ export function Medications() {
         (r) =>
           r.medicationIds.length === 1 &&
           r.medicationIds[0] === m.id &&
-          r.result.status === "supported",
+          (r.result.status === "supported" ||
+            (r.result.status === "insufficient_data" &&
+              (r.result.sourceReview?.reason === "safety_sections_pending" ||
+                r.result.sourceReading?.reason === "model_source_capacity"))),
       );
       if (existing) {
         setResult(existing);

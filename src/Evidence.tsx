@@ -14,6 +14,8 @@ import {
 import { api, ApiError } from "./api";
 import { Button, Notice, Speak } from "./components";
 import { Frequency } from "./medication-presentation";
+import { SourceReviewNotice } from "./SourceReviewNotice";
+import { SourceReadingNotice } from "./SourceReadingNotice";
 
 export const learningStateLabels: Record<LearningProgress["status"], string> = {
   not_started: "未開始",
@@ -203,6 +205,13 @@ function UnderstandingQuiz({
       <p className="muted">
         一次一題，檢查答案後保存進度，並顯示解說。不影響用藥提醒。
       </p>
+      {result.safetyCoverage &&
+        result.safetyCoverage.quizCoveredSectionCount <
+          result.safetyCoverage.sourceSectionCount && (
+          <p className="fine">
+            理解測驗僅涵蓋部分警語欄目；完成這些題目後，仍請完整閱讀沒有理解題的仿單原文。
+          </p>
+        )}
       <p className="quiz-progress" aria-live="polite">
         已作答 {progress.answered}／{progress.total} 題 · 已答對{" "}
         {progress.correct} 題
@@ -398,7 +407,19 @@ export function Evidence({
   useEffect(() => {
     setProgress(learningProgress(result.quiz, JSON.parse(initialKey)));
   }, [learningId, initialKey, result.quiz]);
+  if (
+    result.status === "insufficient_data" &&
+    result.sourceReview?.reason === "safety_sections_pending"
+  )
+    return (
+      <div className="evidence source-review-view">
+        <SourceReviewNotice review={result.sourceReview} />
+        {medications && <EducationSummary medications={medications} />}
+      </div>
+    );
   const showReading = view !== "quiz";
+  const sourceReading =
+    result.status === "insufficient_data" && result.sourceReading;
   const canShowQuiz = view !== "reading" && showQuiz && !!learningId;
   const hasQuiz = canShowQuiz && result.quiz.length > 0;
   const claims = result.claims.map((claim, index) => ({ claim, index }));
@@ -459,6 +480,9 @@ export function Evidence({
         {c.category === "warning" && (
           <span className="tag">警語與注意事項</span>
         )}
+        {c.kind === "source_exact_safety" && (
+          <span className="tag">仿單警語原文</span>
+        )}
         <HealthReferences claim={c} />
         <p>{c.text}</p>
         <CitationDetails citations={c.citations} result={result} />
@@ -483,20 +507,21 @@ export function Evidence({
               "tag " + (result.status === "supported" ? "green" : "amber")
             }
           >
-            {labels[result.status]}
+            {sourceReading ? "部分內容尚未整理" : labels[result.status]}
           </span>
           {result.claims.length > 0 && (
             <Speak text={result.claims.map((c) => c.text).join("。")} />
           )}
         </div>
       )}
-      {showReading && result.status !== "supported" && (
+      {showReading && result.status !== "supported" && !sourceReading && (
         <Notice>
           {result.status === "refused"
             ? "目前提供仿單資訊整理。調整劑量、停藥、診斷與個人用藥判斷，請交由醫師或藥師協助。"
             : "你仍可保存藥品與已確認用法。沒有記載不代表沒有風險。"}
         </Notice>
       )}
+      <SourceReadingNotice result={result} />
       {showReading && (
         <>
           <nav className="reading-sections" aria-label="這份說明的閱讀段落">
@@ -510,7 +535,7 @@ export function Evidence({
               type="button"
               onClick={() => focusReadingTarget(warningsRef.current)}
             >
-              完整警語
+              {sourceReading ? "警語與原文" : "完整警語"}
             </button>
             {hasQuiz && (
               <button type="button" onClick={goToQuiz}>
@@ -574,8 +599,14 @@ export function Evidence({
             <div className="reading-section-heading">
               <span className="reading-step reading-kicker">02</span>
               <div>
-                <h3 id={sectionName + "-warnings"}>完整警語</h3>
-                <p>保留已整理的警語全文；每項都可以展開對照自己的仿單依據。</p>
+                <h3 id={sectionName + "-warnings"}>
+                  {sourceReading ? "警語與原文" : "完整警語"}
+                </h3>
+                <p>
+                  {sourceReading
+                    ? "部分欄位尚未提供 AI 說明，請展開上方完整仿單原文查閱。"
+                    : "保留已整理的警語全文；每項都可以展開對照自己的仿單依據。"}
+                </p>
               </div>
             </div>
             <div className="reading-body">
@@ -584,6 +615,9 @@ export function Evidence({
                   {result.safetyCoverage.status === "no_sections"
                     ? "這份已匯入仿單沒有獨立的警語或注意事項欄目；本次測驗確認藥品用途。"
                     : `已列出 ${result.safetyCoverage.coveredSectionCount} 個警語與注意事項欄目，其中 ${result.safetyCoverage.quizCoveredSectionCount} 個有理解題。題目只抽查各欄重點，請完整閱讀下列提醒。`}
+                  {result.safetyCoverage.quizCoveredSectionCount <
+                    result.safetyCoverage.sourceSectionCount &&
+                    " 理解測驗尚未涵蓋所有警語欄目。"}
                 </p>
               )}
               <div

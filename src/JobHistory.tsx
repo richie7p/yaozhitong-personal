@@ -143,7 +143,13 @@ export function JobHistory() {
             <div className="row spread">
               <h3>{names[job.kind]}</h3>
               <span className="tag">
-                {job.identityReviewRequired ? "產品待核對" : states[job.status]}
+                {job.identityReviewRequired
+                  ? "產品待核對"
+                  : job.sourceReviewPending
+                    ? "AI 內容待整理"
+                    : job.sourceReadingPending
+                      ? "部分內容尚未整理"
+                      : states[job.status]}
               </span>
             </div>
             <small>{new Date(job.createdAt).toLocaleString("zh-TW")}</small>

@@ -64,18 +64,19 @@ const approve: Llm = {
 
 describe("complete safety-source education and bounded section reading", () => {
   it.each([
-    ["040161", ["警語", "過量", "注意事項"]],
-    ["030418", ["使用上注意事項", "警語"]],
-    ["026087", ["副作用", "注意事項", "警語"]],
-    ["039632", ["注意事項"]],
-    ["040833", ["使用上注意事項", "警語"]],
+    ["040161", ["警語", "過量", "注意事項"], ["過量", "注意事項"]],
+    ["030418", ["使用上注意事項", "警語"], ["警語"]],
+    ["026087", ["副作用", "注意事項", "警語"], ["副作用", "注意事項", "警語"]],
+    ["039632", ["注意事項"], []],
+    ["040833", ["使用上注意事項", "警語"], ["警語"]],
     [
       "014025",
+      ["禁忌", "警語及注意事項", "交互作用", "副作用/不良反應", "過量"],
       ["禁忌", "警語及注意事項", "交互作用", "副作用/不良反應", "過量"],
     ],
   ])(
     "fills every real %s safety field even when generation omits all warnings and warning quizzes",
-    async (license, expected) => {
+    async (license, expected, tested) => {
       const page = original(license as string);
       const result = await grounded(
         approve,
@@ -89,10 +90,10 @@ describe("complete safety-source education and bounded section reading", () => {
       );
       expect(safety.map((p) => p.sourceSection)).toEqual(expected);
       expect(result.safetyCoverage).toMatchObject({
-        status: "complete",
+        status: expected.length === tested.length ? "complete" : "partial",
         sourceSectionCount: expected.length,
         coveredSectionCount: expected.length,
-        quizCoveredSectionCount: expected.length,
+        quizCoveredSectionCount: tested.length,
         assessmentScope: "one_key_point_per_section",
       });
       expect(result.chunks).toEqual([page]);
@@ -106,6 +107,10 @@ describe("complete safety-source education and bounded section reading", () => {
         expect(result.claims[section.claimIndex].citations).toEqual([
           { chunkId: page.id, quote: passage.quote },
         ]);
+        if (!tested.includes(passage.sourceSection!)) {
+          expect(section.quizIds).toEqual([]);
+          continue;
+        }
         const question = result.quiz.find((q) => q.id === section.quizIds[0])!;
         expect(question.assessmentScope).toBe("one_key_point");
         expect(question.citations).toEqual([
@@ -216,11 +221,11 @@ describe("complete safety-source education and bounded section reading", () => {
     }
   });
 
-  it("marks an untemplatable or overlong first point untested instead of manufacturing a question", () => {
+  it("marks an uncertain or overlong first point untested instead of manufacturing a question", () => {
     const p = {
       chunkId: "unknown",
       sourceSection: "警語",
-      quote: "警語：這是一段只在原文明示的合成資訊。",
+      quote: "警語：合成情境是否適用尚不明確。",
     };
     const complete = completeSafetyLearning({ claims: [], quiz: [] }, [p]);
     expect(complete.claims[0].text).toBe(p.quote);

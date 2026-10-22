@@ -32,6 +32,7 @@ import { Blobs } from "./blobs.js";
 import { localWorkerBootTime } from "./local-runner.js";
 import { nextTime, initialFamilyTime } from "./schedule-time.js";
 import { requestReminderRefresh } from "./reminder-state.js";
+import { withSourceReviewResult } from "./source-review-result.js";
 export { nextTime } from "./schedule-time.js";
 import { Catalog } from "./catalog.js";
 import {
@@ -846,8 +847,16 @@ export class Domain {
         const ids = j.input.medicationIds as string[];
         const meds = await this.jobMedications(j.ownerId, j.kind, j.input);
         inputRevisions = meds.map((m) => ({ id: m.id, revision: m.revision }));
+        // Different saved prescriptions may refer to the same official leaflet.
+        // Load each once so canonical source pages do not become duplicates.
         const leaflets = await Promise.all(
-          meds.map((m) => (m.licenseNo ? this.published(m.licenseNo) : null)),
+          [...new Set(meds.map((m) => m.licenseNo))].map(async (licenseNo) => {
+            const leaflet = licenseNo ? await this.published(licenseNo) : null;
+            return leaflet?.status === "published" &&
+              leaflet.licenseNo === licenseNo
+              ? leaflet
+              : null;
+          }),
         );
         const chunks = leaflets.flatMap((l) =>
           l?.status === "published" ? l.chunks : [],
@@ -948,15 +957,19 @@ export class Domain {
                 sourceVersions: {},
                 verification: "model_assisted",
               }
-            : await grounded(
-                llm,
-                String(
-                  j.input.question ||
-                    "請提供藥品用途、用法資訊、注意事項、警語、追問與小測驗。",
-                ),
-                chunks,
-                context,
-                j.kind,
+            : await withSourceReviewResult(
+                () =>
+                  grounded(
+                    llm!,
+                    String(
+                      j.input.question ||
+                        "請提供藥品用途、用法資訊、注意事項、警語、追問與小測驗。",
+                    ),
+                    chunks,
+                    context,
+                    j.kind,
+                  ),
+                leaflets as Leaflet[],
               );
           writes.push([
             "generated",
@@ -1039,7 +1052,12 @@ export class Domain {
           const leaflet = pointer
             ? await tx.get<Leaflet>("leaflets", pointer.leafletId)
             : null;
-          if (!leaflet || leaflet.version !== version)
+          if (
+            !leaflet ||
+            leaflet.status !== "published" ||
+            leaflet.licenseNo !== license ||
+            leaflet.version !== version
+          )
             return fail("stale_content", "仿單已更新，請重試產生新內容。", 409);
         }
         for (const [collection, key, value] of writes)
@@ -1196,7 +1214,11 @@ export class Domain {
       const current = pointer
         ? await reader.get<Leaflet>("leaflets", pointer.leafletId)
         : null;
-      if (current?.status !== "published" || current.version !== version)
+      if (
+        current?.status !== "published" ||
+        current.licenseNo !== license ||
+        current.version !== version
+      )
         return false;
     }
     return true;
@@ -1237,6 +1259,16 @@ export class Domain {
       ...summary,
       result: null,
       resultRequiresCheck: job.status === "succeeded",
+      sourceReviewPending:
+        job.status === "succeeded" &&
+        (job.result as GroundedResult | null)?.status === "insufficient_data" &&
+        (job.result as GroundedResult | null)?.sourceReview?.reason ===
+          "safety_sections_pending",
+      sourceReadingPending:
+        job.status === "succeeded" &&
+        (job.result as GroundedResult | null)?.status === "insufficient_data" &&
+        (job.result as GroundedResult | null)?.sourceReading?.reason ===
+          "model_source_capacity",
     };
   }
   async publicJob(uid: string, job: Job, reader = this.historyReader()) {

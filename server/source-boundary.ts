@@ -1,10 +1,11 @@
 import type { Chunk, Claim } from "../shared/schema.js";
+import {
+  passageCitations,
+  sameCitationSet,
+  type PassageSupport,
+} from "./source-field-spans.js";
 
-interface Passage {
-  chunkId: string;
-  quote: string;
-  sourceSection?: string;
-}
+interface Passage extends PassageSupport {}
 const norm = (text: string) => text.normalize("NFKC").replace(/\s/gu, "");
 const positions = (text: string, part: string) => {
   const found: number[] = [];
@@ -34,34 +35,53 @@ export function completeWarningCitations(
   passages: Passage[],
   warningSections: ReadonlySet<string>,
 ) {
-  return claim.citations.every((citation) => {
-    const chunk = chunks.find((candidate) => candidate.id === citation.chunkId);
-    if (!chunk) return false;
-    const text = norm(chunk.text),
-      quote = norm(citation.quote);
-    const starts = positions(text, quote);
-    if (!starts.length) return false;
-    const candidates = passages.filter(
-      (passage) => passage.chunkId === citation.chunkId,
-    );
-    const complete = (passage: Passage) =>
-      quote === norm(passage.quote) || quote === body(passage);
-    for (const passage of candidates.filter((p) =>
-      warningSections.has(p.sourceSection || ""),
-    )) {
-      const original = norm(passage.quote);
-      const overlaps = positions(text, original).some((start) =>
-        starts.some(
-          (quotedStart) =>
-            quotedStart < start + original.length &&
-            start < quotedStart + quote.length,
+  const exact = (passage: Passage) =>
+    sameCitationSet(claim.citations, passageCitations(passage));
+  const complete = (passage: Passage, citation: Claim["citations"][number]) =>
+    passageCitations(passage).length > 1
+      ? exact(passage)
+      : norm(citation.quote) === norm(passage.quote) ||
+        norm(citation.quote) === body(passage);
+  return (
+    claim.citations.length > 0 &&
+    claim.citations.every((citation) => {
+      const chunk = chunks.find(
+        (candidate) => candidate.id === citation.chunkId,
+      );
+      if (!chunk) return false;
+      const text = norm(chunk.text),
+        quote = norm(citation.quote);
+      const starts = positions(text, quote);
+      if (!quote || !starts.length) return false;
+      const candidates = passages.filter((passage) =>
+        passageCitations(passage).some(
+          (support) => support.chunkId === citation.chunkId,
         ),
       );
-      if (overlaps && !complete(passage)) return false;
-    }
-    // Unlabelled legacy sources still need a complete proposed passage when
-    // presented as a warning. Omitting/changing the category cannot bypass
-    // the labelled warning boundary checked above.
-    return claim.category !== "warning" || candidates.some(complete);
-  });
+      for (const passage of candidates.filter((candidate) =>
+        warningSections.has(candidate.sourceSection || ""),
+      )) {
+        const overlaps = passageCitations(passage)
+          .filter((support) => support.chunkId === citation.chunkId)
+          .some((support) =>
+            positions(text, norm(support.quote)).some((start) =>
+              starts.some(
+                (quoteStart) =>
+                  quoteStart < start + norm(support.quote).length &&
+                  quoteStart + quote.length > start,
+              ),
+            ),
+          );
+        if (
+          overlaps &&
+          (passage.modelEligible === false || !complete(passage, citation))
+        )
+          return false;
+      }
+      return (
+        claim.category !== "warning" ||
+        candidates.some((passage) => complete(passage, citation))
+      );
+    })
+  );
 }

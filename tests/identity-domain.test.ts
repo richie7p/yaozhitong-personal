@@ -384,6 +384,7 @@ describe("server product identity admission and history", () => {
       leafletId: "current-leaflet",
     });
     await store.set("leaflets", "current-leaflet", {
+      licenseNo: drug.licenseNo,
       status: "published",
       version: "v1",
     });
