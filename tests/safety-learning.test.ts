@@ -184,6 +184,38 @@ describe("complete safety-source education and bounded section reading", () => {
     ).not.toBe(question.id);
   });
 
+  it("cleans a proven TAB-separated adverse-reaction subheading without clipping decimal doses or conditions", () => {
+    const quote =
+      "8 副作用/不良反應\n8.1\t臨床重要副作用/不良反應\n\t8.1.1\t偶有噁心、腹瀉、口乾、食慾增加等副作用。\n";
+    const q = safetyReadingQuestion({
+      chunkId: "numbered-html",
+      sourceSection: "副作用/不良反應",
+      quote,
+    })!;
+    expect(q.options[q.answer]).toBe(
+      "偶有噁心、腹瀉、口乾、食慾增加等副作用。",
+    );
+    expect(q.citations[0].quote).toBe(quote);
+    expect(q.explain).toContain(quote.trim());
+    for (const body of [
+      "8.1mg之合成劑量不得使用。",
+      "8.1\n合成條件者不得使用。",
+      "8.1 臨床重要副作用/不良反應\n8.1.1\t偶有合成副作用。",
+      "8.1\t臨床重要副作用/不良反應\n8.2.1\t偶有合成副作用。",
+    ]) {
+      const original = "8 副作用/不良反應\n" + body;
+      const preserved = safetyReadingQuestion({
+        chunkId: "negative",
+        sourceSection: "副作用/不良反應",
+        quote: original,
+      })!;
+      expect(preserved.options[preserved.answer]).toContain(
+        body.includes("8.2.1") ? "8.2.1" : "8.1",
+      );
+      expect(preserved.citations[0].quote).toBe(original);
+    }
+  });
+
   it("marks an untemplatable or overlong first point untested instead of manufacturing a question", () => {
     const p = {
       chunkId: "unknown",

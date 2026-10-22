@@ -227,6 +227,21 @@ function explicitClinicalUse(quote: string) {
       /症|疾病|疼痛|咳嗽|發燒|感染|鼻炎|腹瀉|便秘|高血壓|糖尿病/u.test(text))
   );
 }
+function chatRequestsPurpose(question: string) {
+  const text = norm(question);
+  return (
+    /用途|適應症|功效|主治/u.test(text) &&
+    !/(?:不用|不必|不要|無需)(?:說明|介紹|整理|回答)?(?:用途|適應症|功效|主治)/u.test(
+      text,
+    ) &&
+    !/(?:我|本人|家人|孩子|小孩).{0,12}(?:可不可以|能不能|能否|可否|該不該|適不適合|應不應該|是否.{0,3}(?:能|可以|適合|應該)|可以(?:吃|服|用)|能(?:吃|服|用))/u.test(
+      text,
+    ) &&
+    !/(?:可不可以|能不能|能否|可否|該不該|是否(?:可以|能|應該)).{0,6}(?:停藥|停用|改藥|增量|加量|減量|調整劑量)/u.test(
+      text,
+    )
+  );
+}
 /** Contiguous original passages; short sentences stay with a neighbor, never padded. */
 export function sourcePassages(chunks: Chunk[]) {
   const passages: {
@@ -1069,7 +1084,11 @@ export async function grounded(
   let safetyCoverage: GroundedResult["safetyCoverage"];
   const originalFollowupClaims = claims;
   let incompletePurpose = false;
-  if (kind === "bundle") {
+  const requestedChatPurpose =
+    kind === "chat" &&
+    d.status === "supported" &&
+    chatRequestsPurpose(question);
+  if (kind === "bundle" || requestedChatPurpose) {
     // Keep all consecutive sentences from a real purpose field together: a
     // later age restriction or exception cannot disappear from the fallback.
     const purposeFields: {
@@ -1102,7 +1121,7 @@ export async function grounded(
       (passage) =>
         passage.sourceSection !== "效能" || explicitClinicalUse(passage.quote),
     );
-    if (eligible.length) {
+    if (kind === "bundle" && eligible.length) {
       const filled = completePurposeLearning(
         { claims, quiz: approvedQuiz },
         eligible,
@@ -1110,6 +1129,40 @@ export async function grounded(
       claims = filled.claims;
       approvedQuiz = filled.quiz;
       incompletePurpose = !filled.complete;
+    } else if (requestedChatPurpose) {
+      const covered = new Set<string>();
+      let unfilled = false;
+      for (const field of eligible) {
+        const chunk = selected.find((c) => c.id === field.chunkId);
+        const visible = field.quote.replace(/\s+/gu, " ").trim();
+        // Never shorten a purpose or join pages to make it fit. Later limits
+        // belong to the same exact canonical field as the indication itself.
+        if (
+          !chunk?.text.includes(field.quote) ||
+          visible.length > 1500 ||
+          !/[。！？.!?）)]$/u.test(visible)
+        ) {
+          unfilled = true;
+          continue;
+        }
+        covered.add(chunk.licenseNo);
+        const existing = claims.some(
+          (claim) =>
+            claim.category === "purpose" &&
+            claim.citations.length === 1 &&
+            claim.citations[0].chunkId === field.chunkId &&
+            norm(claim.citations[0].quote) === norm(field.quote),
+        );
+        if (!existing)
+          claims.push({
+            text: field.quote.trim(),
+            category: "purpose",
+            kind: "source_exact_purpose",
+            citations: [{ chunkId: field.chunkId, quote: field.quote }],
+          });
+      }
+      incompletePurpose =
+        unfilled || chunks.some((chunk) => !covered.has(chunk.licenseNo));
     }
   }
   if (

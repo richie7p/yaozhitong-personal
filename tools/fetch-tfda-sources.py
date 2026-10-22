@@ -14,7 +14,7 @@ MAX_BYTES = 15_000_000
 TIMEOUT_SECONDS = 25
 MAX_ATTEMPTS = 2
 MAX_REDIRECTS = 5
-PDF_PARSER_VERSION = 'tfda-pdf-independent-v3'
+PDF_PARSER_VERSION = 'tfda-pdf-independent-v4'
 PDF_STRUCTURE_VERSION = 'tfda-pdf-structure-v1'
 PDF_PARSE_DEADLINE_SECONDS = 45
 PAGE_TEXT_LIMIT = 22000
@@ -222,6 +222,94 @@ def html_account_main_blocks(mains, selected_main, sections):
             unaccounted+=1
         evidence.append(entry)
     return evidence,ignored,unaccounted
+HTML_OUTLINE_PARSER_VERSION='tfda-complete-dom-outline-v1'
+HTML_OUTLINE_SERIALIZATION_VERSION='tfda-numbered-outline-literal-v1'
+HTML_OUTLINE_EVIDENCE_VERSION='tfda-numbered-outline-evidence-v1'
+HTML_OUTLINE_ALLOWED_INLINE={'p','div','span','br','b','strong','i','em','u','s','small','sup','sub','font'}
+
+def html_outline_clean(text):
+    # Only whitespace is serialized; source words, punctuation and numbers stay literal.
+    return '\n'.join(re.sub(r'\s+',' ',line).strip() for line in text.splitlines() if line.strip())
+
+def html_numbered_outline_table(table,scope,table_indices,seen_labels,depth=0):
+    """A closed two-column section outline grammar, never a generic nested grid."""
+    if depth>6 or not re.fullmatch(r'[1-9]\d?(?:\.[1-9]\d?)*',scope):
+        raise ValueError('outline_scope_or_depth_invalid')
+    row_nodes=[]
+    def collect(parent):
+        for child in parent.children:
+            if isinstance(child,str):
+                if child.strip():raise ValueError('outline_text_outside_rows')
+            elif child.tag=='tr':row_nodes.append(child)
+            elif child.tag in ('thead','tbody','tfoot'):collect(child)
+            elif child.tag=='colgroup':
+                if child.text().strip() or any(n.tag not in ('colgroup','col') for n in child.walk()):
+                    raise ValueError('outline_colgroup_content_unknown')
+            elif child.tag=='col':
+                if child.text().strip():raise ValueError('outline_col_content_unknown')
+            else:raise ValueError('outline_table_child_unknown')
+    collect(table)
+    if not row_nodes or len(row_nodes)>500:raise ValueError('outline_row_count_invalid')
+    # A nested right-cell table may continue the exact enclosing numbered row.
+    # A top-level blank label has no such authority and remains rejected.
+    rows=[];last_label=scope if depth>0 else None;last_number=0
+    def text_only(node):
+        for child in node.children:
+            if isinstance(child,str):continue
+            if child.tag not in HTML_OUTLINE_ALLOWED_INLINE:raise ValueError('outline_left_content_unknown')
+            text_only(child)
+    def cell_pieces(cell,child_scope):
+        parts=[];buffer=[]
+        def flush():
+            value=html_outline_clean(''.join(buffer));buffer.clear()
+            if value:parts.append({'kind':'text','text':value})
+        def walk(node):
+            for child in node.children:
+                if isinstance(child,str):buffer.append(child);continue
+                if child.tag=='table':
+                    flush();parts.append({'kind':'table','table':html_numbered_outline_table(child,child_scope,table_indices,seen_labels,depth+1)})
+                elif child.tag in HTML_OUTLINE_ALLOWED_INLINE:
+                    walk(child)
+                    if child.tag in ('p','div','br'):buffer.append('\n')
+                else:raise ValueError('outline_right_content_unknown')
+        walk(cell);flush()
+        return parts
+    for row_number,row in enumerate(row_nodes):
+        if any(isinstance(n,str) and n.strip() for n in row.children):raise ValueError('outline_text_outside_cells')
+        cells=[n for n in row.children if isinstance(n,HtmlNode)]
+        if len(cells)!=2 or any(n.tag!='td' for n in cells):raise ValueError('outline_requires_two_td_cells')
+        if any(n.attrs.get('rowspan','1')!='1' or n.attrs.get('colspan','1')!='1' for n in cells):
+            raise ValueError('outline_spanning_cell')
+        text_only(cells[0]);left=html_outline_clean(cells[0].text());label=norm(left)
+        if '\n' in left or '\t' in left:raise ValueError('outline_label_not_scalar')
+        continuation=not label
+        if continuation:
+            if last_label is None:raise ValueError('outline_continuation_without_scope')
+            row_scope=last_label
+        else:
+            prefix=scope+'.'
+            if not label.startswith(prefix) or not re.fullmatch(r'[1-9]\d?',label[len(prefix):]):
+                raise ValueError('outline_label_outside_section_scope')
+            number=int(label[len(prefix):])
+            if number<=last_number or label in seen_labels:raise ValueError('outline_label_duplicate_or_unordered')
+            seen_labels.add(label);last_label=label;last_number=number;row_scope=label
+        pieces=cell_pieces(cells[1],row_scope)
+        if not pieces:raise ValueError('outline_empty_right_cell')
+        right='\n'.join(part['text'] if part['kind']=='text' else part['table']['serializedText'] for part in pieces)
+        original_right=cells[1].text()
+        if norm(right)!=norm(original_right):raise ValueError('outline_right_text_not_conserved')
+        right_lines=right.splitlines()
+        serialized=left+'\t'+right_lines[0]+''.join('\n\t'+line for line in right_lines[1:])
+        rows.append({'rowIndex':row_number,'leftText':left,'label':label or None,'continuation':continuation,'scope':row_scope,
+                     'rightPieces':pieces,'originalRightNormalizedSha256':sha_bytes(norm(original_right).encode()),
+                     'serializedRightNormalizedSha256':sha_bytes(norm(right).encode()),'serializedText':serialized})
+    serialized='\n'.join(row['serializedText'] for row in rows)
+    original=table.text()
+    if norm(original)!=norm(serialized):raise ValueError('outline_table_text_not_conserved')
+    return {'tableIndex':table_indices[id(table)],'scope':scope,'depth':depth,'inheritedScope':depth>0,'columnCount':2,'rowCount':len(rows),'rows':rows,
+            'originalNormalizedTextSha256':sha_bytes(norm(original).encode()),
+            'serializedNormalizedTextSha256':sha_bytes(norm(serialized).encode()),'serializedText':serialized}
+
 def inspect_html(raw,url):
  parser=HtmlParser();decoded=raw.decode('utf-8-sig',errors='replace');parser.feed(decoded)
  identity_occurrences=[];field_values={}
@@ -285,6 +373,161 @@ def inspect_html(raw,url):
    try:validate_official_https(resolved);destination.append(resolved)
    except (ValueError,Exception):continue
  return {'schemaVersion':4,'parserVersion':HTML_PARSER_VERSION,'sourceFormat':'html','identityFields':fields,'identityFieldOccurrences':identity_occurrences,'ambiguousIdentityFields':ambiguous,'toggleAllCount':len(mains),'bodyCandidateCount':len(candidates),'mainBlockEvidence':main_evidence,'ignoredMainBlocks':ignored_main_blocks,'unaccountedMainBlockCount':unaccounted_main_count,'allMainBlocksAccounted':all_main_blocks_accounted,'sections':sections,'completeDomText':main_text,'normalizedSectionText':complete,'fullDomConserved':conserved,'originalNormalizedDomSha256':sha_bytes(norm(source_main_text).encode()),'serializedNormalizedDomSha256':sha_bytes(norm(complete).encode()),'tableSerializationVersion':HTML_TABLE_SERIALIZATION_VERSION,'simpleTablesConserved':simple_conserved,'simpleTableCount':table_count-complex_count-empty_count,'complexTableCount':complex_count,'emptyLayoutTableCount':empty_count,'nonTextImages':images,'nonTextElements':non_text,'hasNonTextContent':bool(images or non_text),'hasUnverifiedNonTextContent':unverified,'tableCount':table_count,'paperLinks':list(dict.fromkeys(paper)),'historicalPaperLinks':list(dict.fromkeys(history)),'status':'independent_dom_extracted_draft' if conserved and not unverified and not ambiguous else 'needs_review','humanReviewed':False,'clinicalReviewed':False}
+
+def prove_pdf_content_flow_geometry(chars, width, height):
+    """Verify the original character stream; never sort, remove or rewrite it.
+
+    Font advance boxes can intersect during ordinary kerning. Reading order is
+    checked using both glyph origins and centers, with a minimum advance that
+    excludes near-stacked overprinting. Whole rows remain anchored to their
+    initial baseline, so a succession of small upward moves cannot pass.
+    """
+    evidence={'version':'tfda-pdf-content-flow-geometry-v1','passed':False}
+    def reject(reason, index=None):
+        evidence['reason']=reason
+        if index is not None:evidence['characterIndex']=index
+        return evidence
+    def finite(value):return type(value) in (int,float) and math.isfinite(value)
+    if not finite(width) or not finite(height) or width<=0 or height<=0 or not isinstance(chars,list):
+        return reject('invalid_page_or_character_inventory')
+    visible=[]
+    for index,char in enumerate(chars):
+        if not isinstance(char,dict) or not isinstance(char.get('text'),str):return reject('invalid_character',index)
+        if not norm(char['text']):continue
+        coords=[char.get(key) for key in ('x0','x1','top','bottom')];matrix=char.get('matrix')
+        if not all(finite(value) for value in coords) or not isinstance(matrix,(list,tuple)) or len(matrix)!=6 or not all(finite(value) for value in matrix):
+            return reject('invalid_character_geometry',index)
+        x0,x1,top,bottom=coords
+        if x1<=x0 or bottom<=top or x0<0 or x1>width or top<0 or bottom>height:return reject('outside_or_empty_character_geometry',index)
+        if char.get('upright') is not True or abs(matrix[1])>1e-6 or abs(matrix[2])>1e-6 or matrix[0]<=0 or matrix[3]<=0:
+            return reject('rotated_or_mirrored_character',index)
+        visible.append((index,char))
+    if not visible:return reject('no_visible_characters')
+    previous=visible[0][1];anchor=previous['matrix'][5]
+    row_height=min_height=previous['bottom']-previous['top'];rows=1
+    for index,char in visible[1:]:
+        baseline=char['matrix'][5];height0=char['bottom']-char['top']
+        if abs(baseline-anchor)<=max(0.5,min(min_height,height0)*0.25):
+            advance=min(char['x1']-char['x0'],previous['x1']-previous['x0'])*0.25
+            center_advance=(char['x0']+char['x1']-previous['x0']-previous['x1'])/2
+            if char['x0']-previous['x0']<advance or center_advance<advance:
+                return reject('same_row_origin_backtrack_or_near_stack',index)
+            row_height=max(row_height,height0);min_height=min(min_height,height0)
+        elif baseline<anchor-max(2.0,row_height*0.5):
+            if char['top']<previous['top']+min(min_height,height0)*0.25:
+                return reject('rows_not_visually_advancing',index)
+            rows+=1;anchor=baseline;row_height=min_height=height0
+        else:return reject('baseline_upward_or_ambiguous',index)
+        previous=char
+    stream=norm(''.join(char['text'] for _,char in visible))
+    evidence.update(passed=True,rows=rows,characters=len(visible),orderedNormalizedCharacterSha256=sha_bytes(stream.encode()))
+    return evidence
+
+def select_pdf_content_flow_text(page, spatial_text, pypdf_text, unverified_structure):
+    """A narrow extraction alternative; the downstream PDFJS comparison remains required."""
+    if unverified_structure is not False or page is None or norm(spatial_text)==norm(pypdf_text):return spatial_text,None
+    proof=prove_pdf_content_flow_geometry(page.chars,page.width,page.height)
+    evidence={'version':'tfda-pdf-content-flow-v1','used':False,'geometry':proof}
+    if not proof['passed']:return spatial_text,evidence
+    try:flow=page.extract_text(use_text_flow=True) or ''
+    except Exception as error:
+        evidence['reason']='content_flow_extraction_failed';evidence['errorType']=type(error).__name__;return spatial_text,evidence
+    raw_characters=norm(''.join(char['text'] for char in page.chars))
+    ordered=norm(flow)
+    if len(flow)>PAGE_TEXT_LIMIT or not ordered or ordered!=raw_characters or ordered!=norm(pypdf_text):
+        evidence['reason']='complete_ordered_character_or_pypdf_mismatch';return spatial_text,evidence
+    # This recovery is exclusively ordering: no original character may be added
+    # or removed, including repeated overprints or punctuation.
+    if collections.Counter(norm(spatial_text))!=collections.Counter(ordered):
+        evidence['reason']='spatial_character_inventory_changed';return spatial_text,evidence
+    evidence.update(used=True,normalizedTextSha256=sha_bytes(ordered.encode()),originalSpatialNormalizedTextSha256=sha_bytes(norm(spatial_text).encode()))
+    return flow,evidence
+
+def inspect_html_outline(raw,url):
+    """Explicit opt-in. The legacy v4 parser and its reports remain untouched."""
+    base=inspect_html(raw,url)
+    parser=HtmlParser();parser.feed(raw.decode('utf-8-sig',errors='replace'))
+    mains=[node for node in parser.root.walk() if node.has('toggle-all')]
+    candidates=[]
+    for main in mains:
+        sections=[node for node in main.children if isinstance(node,HtmlNode) and node.has('toggle')]
+        if sections and all(len([n for n in section.walk() if n.has('toggle-inner')])==1 for section in sections):
+            candidates.append((main,sections))
+    roots=[];outline_lookup={};table_lookup={};sections=[];errors=[];seen=set();new_count=0
+    if len(candidates)==1:
+        main,section_nodes=candidates[0]
+        all_tables=[node for node in main.walk() if node.tag=='table']
+        table_indices={id(node):i for i,node in enumerate(all_tables)}
+        table_lookup={id(node):html_table_evidence(node) for node in all_tables}
+        for section_index,section in enumerate(section_nodes):
+            header=[node for node in section.children if isinstance(node,HtmlNode) and node.has('toggle-title')]
+            titles=[node for h in header for node in h.walk() if node.has('title-name')]
+            title=titles[0].text() if titles else ''
+            match=re.match(r'^([1-9]\d?(?:\.[1-9]\d?)*)(?:\s|$)',title)
+            body=next(node for node in section.walk() if node.has('toggle-inner'))
+            for table in [node for node in body.walk() if node.tag=='table']:
+                ancestor=table.parent;inside_table=False
+                while ancestor is not None and ancestor is not body:
+                    if ancestor.tag=='table':inside_table=True;break
+                    ancestor=ancestor.parent
+                old=table_lookup[id(table)]
+                if inside_table or old['simple'] or old['kind']=='empty_layout_placeholder':continue
+                if not match:errors.append({'tableIndex':table_indices[id(table)],'reason':'outline_section_scope_missing'});continue
+                trial_seen=set(seen)
+                try:
+                    proof=html_numbered_outline_table(table,match.group(1),table_indices,trial_seen)
+                    def register(node):
+                        outline_lookup[id(all_tables[node['tableIndex']])]=node
+                        for row in node['rows']:
+                            for piece in row['rightPieces']:
+                                if piece['kind']=='table':register(piece['table'])
+                    register(proof);seen=trial_seen
+                    roots.append({'sectionIndex':section_index,'sectionTitle':title,'table':proof})
+                except ValueError as error:errors.append({'tableIndex':table_indices[id(table)],'reason':str(error)})
+        def literal(node):
+            def raw_text(current):
+                if isinstance(current,str):return current.replace('\t',' ')
+                if current.tag in ('script','style'):return ''
+                if current.tag=='table' and id(current) in outline_lookup:return '\n'+outline_lookup[id(current)]['serializedText']+'\n'
+                old=table_lookup.get(id(current))
+                if current.tag=='table' and old and old['simple']:return '\n'+old['serializedText']+'\n'
+                suffix='\n' if current.tag in ('p','tr','div','br','h1','h2','h3','li') else ' ' if current.tag in ('td','th') else ''
+                return ''.join(raw_text(child) for child in current.children)+suffix
+            lines=[]
+            for line in raw_text(node).splitlines():
+                if '\t' in line:lines.append('\t'.join(re.sub(r'\s+',' ',cell).strip() for cell in line.split('\t')))
+                elif line.strip():lines.append(re.sub(r'\s+',' ',line).strip())
+            return '\n'.join(lines)
+        for section in section_nodes:
+            header=[node for node in section.children if isinstance(node,HtmlNode) and node.has('toggle-title')]
+            titles=[node for h in header for node in h.walk() if node.has('title-name')]
+            body=next(node for node in section.walk() if node.has('toggle-inner'))
+            sections.append({'title':titles[0].text() if titles else '','text':literal(body),
+                             'tables':[table_lookup[id(node)] for node in body.walk() if node.tag=='table']})
+        complete='\n\n'.join(section['title']+'\n'+section['text'] for section in sections)
+        main_text=literal(main);source_text=main.text()
+        conserved=bool(sections) and all(norm(s['title']) and norm(s['text']) for s in sections) and norm(source_text)==norm(main_text)==norm(complete) and base['allMainBlocksAccounted']
+        complex_count=sum(not table_lookup[id(node)]['simple'] and table_lookup[id(node)]['kind']!='empty_layout_placeholder' and id(node) not in outline_lookup for node in all_tables)
+        new_count=sum(not table_lookup[key]['simple'] and table_lookup[key]['kind']!='empty_layout_placeholder' for key in outline_lookup)
+        simple_conserved=conserved and all(t['literalTextConserved'] for t in table_lookup.values() if t['simple'])
+    else:
+        complete=base['normalizedSectionText'];main_text=base['completeDomText'];source_text=''
+        conserved=False;complex_count=base['complexTableCount'];simple_conserved=False
+    evidence={'version':HTML_OUTLINE_EVIDENCE_VERSION,'policy':'two_column_section_number_hierarchy_v1',
+              'status':'verified' if roots and new_count and not errors and conserved and complex_count==0 else 'review_required',
+              'tableCount':len(outline_lookup),'newlySupportedComplexTableCount':new_count,'roots':roots,
+              'tableIndices':sorted(node['tableIndex'] for node in outline_lookup.values()),'rejections':errors,
+              'originalNormalizedDomSha256':sha_bytes(norm(source_text).encode()),
+              'serializedNormalizedDomSha256':sha_bytes(norm(complete).encode())}
+    unverified=bool(base['nonTextImages'] or base['nonTextElements']) or complex_count>0 or not simple_conserved or evidence['status']!='verified'
+    result={**base,'schemaVersion':5,'parserVersion':HTML_OUTLINE_PARSER_VERSION,
+            'sections':sections,'completeDomText':main_text,'normalizedSectionText':complete,'fullDomConserved':conserved,
+            'originalNormalizedDomSha256':sha_bytes(norm(source_text).encode()),'serializedNormalizedDomSha256':sha_bytes(norm(complete).encode()),
+            'tableSerializationVersion':HTML_OUTLINE_SERIALIZATION_VERSION,'simpleTablesConserved':simple_conserved,
+            'complexTableCount':complex_count,'numberedOutlineEvidence':evidence,
+            'hasUnverifiedNonTextContent':unverified,
+            'status':'independent_dom_extracted_draft' if conserved and not unverified and not base['ambiguousIdentityFields'] else 'needs_review'}
+    return result
 
 def inspect_pdf_structure(page, width, height, text):
     """Conservative geometry suspicion, not proof of correct/clinical layout."""
@@ -435,6 +678,8 @@ def inspect_pdf_direct(path):
                 except Exception: image_count=0;image_unknown=True
             image_large=any(area>0.10 for area in image_areas) or sum(image_areas)>0.15 or image_unknown
             unverified_structure,structure_evidence=inspect_pdf_structure(pp if plumber else None,width,height,text)
+            text,content_flow_evidence=select_pdf_content_flow_text(pp if plumber else None,text,secondary,unverified_structure)
+            if content_flow_evidence is not None:structure_evidence['contentFlowEvidence']=content_flow_evidence
             char_counts={'primary':len(norm(text)),'pypdf':len(norm(secondary))}
             characters=len(text);too_large=characters>PAGE_TEXT_LIMIT or len(secondary)>PAGE_TEXT_LIMIT
             pages.append({'page':number,'text':'' if too_large else text,'characters':characters,'normalizedCharacters':char_counts['primary'],'width':width,'height':height,'primaryEngine':'pdfplumber' if plumber else 'pypdf','pypdfText':'' if too_large else secondary,'pypdfCharacters':char_counts['pypdf'],'primaryParseError':primary_error,'pypdfParseError':secondary_error,'imageCount':image_count,'imageAreaRatios':image_areas,'imageAreaSum':sum(image_areas),'imageLarge':image_large,'imageGeometryUnknown':image_unknown,'hasUnverifiedStructure':unverified_structure,'structureEvidence':structure_evidence,'pageCharacterLimitExceeded':too_large,'textOmittedReason':'page_text_over_22000_character_limit_raw_preserved' if too_large else None,'blankClassification':'text_empty_image_present_requires_review' if not text.strip() and image_count else 'text_empty_requires_render_confirmation' if not text.strip() else 'text_present','replacementCharacters':text.count('\ufffd'),'allEnginesAgreeAfterWhitespaceNfkc':norm(text)==norm(secondary)})
@@ -595,6 +840,7 @@ def main(argv=None):
     parser.add_argument('--output',type=pathlib.Path)
     parser.add_argument('--inspect-pdf-internal',type=pathlib.Path,help=argparse.SUPPRESS)
     parser.add_argument('--inspect-html-internal',nargs=2,metavar=('FILE','URL'),help=argparse.SUPPRESS)
+    parser.add_argument('--inspect-html-outline-internal',nargs=2,metavar=('FILE','URL'),help=argparse.SUPPRESS)
     parser.add_argument('--limit',type=int,default=50,help='Maximum unique URLs attempted during this invocation (default 50).')
     parser.add_argument('--workers',type=int,default=4)
     parser.add_argument('--all',action='store_true',help='Explicitly process all remaining URLs in the frozen inventory.')
@@ -603,6 +849,12 @@ def main(argv=None):
     parser.add_argument('--reextract-format',choices=('html','pdf','all'),default='all',help='Source format to re-extract; valid only with --reextract-cached.')
     parser.add_argument('--extract-active-from',type=pathlib.Path,help='Bind this active inventory SHA; other URLs are acquired as archive raw only without PDF/HTML inspection.')
     args=parser.parse_args(argv)
+    if args.inspect_html_outline_internal:
+        filename,url=args.inspect_html_outline_internal
+        raw=pathlib.Path(filename).read_bytes()
+        report=inspect_html_outline(raw,url)
+        report.update(rawSha256=sha_bytes(raw),rawBytes=len(raw),sourceUrl=url)
+        print(json.dumps(report,ensure_ascii=False));return 0
     if args.inspect_html_internal:
         filename,url=args.inspect_html_internal
         raw=pathlib.Path(filename).read_bytes()

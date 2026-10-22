@@ -149,7 +149,18 @@ function firstSafetyUnit(passage: SafetyPassage) {
     `^\\s*(?:\\d+[^\\S\\r\\n]+)?(?:【\\s*${name}\\s*】|${name}\\s*[:：]|${name}[^\\S\\r\\n]*\\r?\\n)\\s*`,
     "u",
   );
-  const body = passage.quote.normalize("NFKC").replace(heading, "");
+  let body = passage.quote.normalize("NFKC").replace(heading, "");
+  // Only a known standalone subsection heading proves these TAB-separated
+  // numbers are outline labels. A decimal dose or condition remains content.
+  const subsection =
+    passage.sourceSection === "副作用/不良反應"
+      ? body.match(/^\s*(\d+\.\d+)\t臨床重要副作用\/不良反應[^\S\r\n]*\r?\n/u)
+      : null;
+  if (subsection) {
+    body = body.slice(subsection[0].length);
+    const parent = subsection[1].replace(/\./gu, "\\.");
+    body = body.replace(new RegExp(`^\\s*${parent}\\.\\d+\\t(?=\\S)`, "u"), "");
+  }
   let unit = body.match(/^[^。！？]+[。！？]/u)?.[0];
   if (!unit) return undefined;
   // An immediately following exception is part of the point, even when its
@@ -161,8 +172,10 @@ function firstSafetyUnit(passage: SafetyPassage) {
     unit += continuation;
   }
   const visible = unit
-    .replace(/^\s*\d+(?:\.\d+)+\s*$/gmu, "")
-    .replace(/^\s*(?:\(\s*\d+\s*\)|\d+[.、]|[一二三四五六七八九十]+、)\s*/u, "")
+    .replace(
+      /^\s*(?:\(\s*\d+\s*\)|\d+[.、](?!\d)|[一二三四五六七八九十]+、)\s*/u,
+      "",
+    )
     .replace(/\s+/gu, " ")
     .trim();
   return (visible.length >= 8 || norm(visible) === "目前尚無資訊。") &&

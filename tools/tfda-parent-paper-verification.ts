@@ -110,7 +110,7 @@ export async function deriveSerialPaperPdf(rawPath: string, raw: Buffer, { pytho
   const rawSha256 = hash(raw), count = canonical.numPages;
   must(canonical.rawSha256 === rawSha256 && independent.rawSha256 === rawSha256 && canonical.rawBytes === raw.length && independent.rawBytes === raw.length &&
     !canonical.error && !independent.error && canonical.parser === "pdfjs-dist" && independent.sourceFormat === "pdf" && independent.schemaVersion === 3 &&
-    independent.parserVersion === "tfda-pdf-independent-v3" && independent.allPhysicalPagesExtracted === true, "paper_pdf_complete_independent_extraction_failed");
+    independent.parserVersion === "tfda-pdf-independent-v4" && independent.allPhysicalPagesExtracted === true, "paper_pdf_complete_independent_extraction_failed");
   must(Number.isSafeInteger(count) && count > 0 && count <= 200 && independent.physicalPageCount === count && Array.isArray(canonical.pages) && Array.isArray(independent.pages) &&
     canonical.pages.length === count && independent.pages.length === count && canonical.pages.every((page: any, i: number) => page.page === i + 1 && typeof page.text === "string") &&
     independent.pages.every((page: any, i: number) => page.page === i + 1), "paper_pdf_complete_physical_inventory_invalid");

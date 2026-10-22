@@ -94,6 +94,9 @@ export interface TfdaHtmlEvidence {
   canonicalTextSha256: string;
   sectionCount: number;
   hasUnverifiedNonTextContent: boolean;
+  /** Explicit capability for newly re-derived two-column numbered outlines only. */
+  tableSerializationVersion?: "tfda-numbered-outline-literal-v1";
+  numberedOutlineEvidenceSha256?: string;
 }
 export interface TfdaSourceInput {
   licenseNo: string;

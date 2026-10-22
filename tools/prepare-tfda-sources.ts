@@ -6,6 +6,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify, isDeepStrictEqual } from "node:util";
 import { evaluateTfdaSource, isRawMaterialOfficialCategory, normalizeTfdaSourceText, type TfdaSourceInput, type TfdaFetchedArtifact } from "./tfda-source-core.js";
+import { HTML_OUTLINE_SERIALIZATION, validateHtmlNumberedOutlineReport } from "./tfda-candidate-verification.js";
 
 const runFile = promisify(execFile);
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
@@ -117,11 +118,14 @@ async function main() {
   }
   const options: Record<string, string> = {};
   for (let i = 0; i < args.length; i += 2) {
-    if (!["--inventory", "--corpus", "--output", "--protected", "--limit", "--source-format"].includes(args[i]) || !args[i + 1] || options[args[i]]) throw Error("invalid_arguments");
+    if (!["--inventory", "--corpus", "--output", "--protected", "--limit", "--source-format", "--html-mode", "--python"].includes(args[i]) || !args[i + 1] || options[args[i]]) throw Error("invalid_arguments");
     options[args[i]] = args[i + 1];
   }
   if (!["--inventory", "--corpus", "--output"].every((key) => options[key])) throw Error("requires_inventory_corpus_output");
   const sourceFormat = parseSourceFormat(options["--source-format"]);
+  const htmlMode = options["--html-mode"] || "legacy";
+  if (!["legacy", "numbered-outline-v1"].includes(htmlMode)) throw Error("invalid_html_mode");
+  if (htmlMode !== "legacy" && sourceFormat !== "html") throw Error("numbered_outline_requires_html_source_format");
   const inventory = resolve(options["--inventory"]), corpus = resolve(options["--corpus"]), output = resolve(options["--output"]);
   const limit = Number(options["--limit"] || "100000");
   if (!Number.isSafeInteger(limit) || limit < 1) throw Error("invalid_limit");
@@ -172,18 +176,31 @@ async function main() {
     if (hash(raw) !== record.sourceBlobSha256) throw Error("raw_object_integrity_failure");
     const extractionPath = record.extractionPath && resolve(corpus, record.extractionPath);
     const extraction = extractionPath ? await optional(extractionPath) : null;
-    const independent = extraction?.sourceBlobSha256 === record.sourceBlobSha256 && extraction?.urlHash === record.urlHash ? extraction : null;
+    let independent = extraction?.sourceBlobSha256 === record.sourceBlobSha256 && extraction?.urlHash === record.urlHash ? extraction : null;
+    if (record.sourceType === "html" && htmlMode === "numbered-outline-v1") {
+      const result = await runFile(options["--python"] || "python", ["-X", "utf8", fileURLToPath(new URL("./fetch-tfda-sources.py", import.meta.url)),
+        "--inspect-html-outline-internal", rawPath, record.finalUrl], {
+        timeout: 45_000, maxBuffer: 8_000_000, windowsHide: true, encoding: "utf8",
+        env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" },
+      });
+      independent = JSON.parse(result.stdout.trim());
+      if (independent.rawSha256 !== record.sourceBlobSha256 || independent.rawBytes !== raw.length ||
+        independent.sourceUrl !== record.finalUrl) throw Error("outline_raw_reparse_binding_mismatch");
+    }
     // A seeded original is useful for acquisition recovery, but must receive the
     // current independent extraction before an expensive canonical PDF parse.
     const currentExtraction = record.sourceType === "html"
-      ? independent?.parserVersion === "tfda-complete-dom-v4"
-      : independent?.parserVersion === "tfda-pdf-independent-v3";
+      ? htmlMode === "numbered-outline-v1"
+        ? independent?.schemaVersion === 5 && independent?.parserVersion === "tfda-complete-dom-outline-v1"
+        : independent?.parserVersion === "tfda-complete-dom-v4"
+      : independent?.parserVersion === "tfda-pdf-independent-v4";
     if (!currentExtraction) {
       counts.awaiting_current_extraction = (counts.awaiting_current_extraction || 0) + 1;
       continue;
     }
     processed++;
-    const fingerprint = hash(JSON.stringify({ toolHash, evaluationDay: day(), indexes: indexSnapshots.map((s) => [s.sha256, s.evidenceSha256]), records: records.map((r) => [r.sourceUrl, r.sourceBlobSha256, r.parserVersion, r.fetchedAt, r.finalUrl, r.redirectChain]), extractionHash: extractionPath ? hash(await readFile(extractionPath)) : null, branchesReady }));
+    const fingerprint = hash(JSON.stringify({ toolHash, evaluationDay: day(), indexes: indexSnapshots.map((s) => [s.sha256, s.evidenceSha256]), records: records.map((r) => [r.sourceUrl, r.sourceBlobSha256, r.parserVersion, r.fetchedAt, r.finalUrl, r.redirectChain]), extractionHash: extractionPath ? hash(await readFile(extractionPath)) : null, branchesReady,
+      ...(htmlMode !== "legacy" ? { htmlMode, outlineInspectionSha256: hash(JSON.stringify(independent)) } : {}) }));
     const destination = join(output, "assessments", hash(licenseNo) + ".json");
     let prepared = await optional(destination);
     const retryCanonical = prepared?.canonicalRetry?.attempts < 2 && Date.now() >= prepared.canonicalRetry.nextAfter;
@@ -228,14 +245,22 @@ async function main() {
         const text = prefix + "\n\n" + (independent?.normalizedSectionText || "");
         // Only explicit literal TAB/cell + newline/row conservation can authorize
         // simple HTML tables. Spans, nested data tables and media stay pending.
+        let outlineVerified = false;
+        if (htmlMode === "numbered-outline-v1") {
+          try { validateHtmlNumberedOutlineReport(independent); outlineVerified = true; } catch { /* Unsupported structures remain held. */ }
+        }
+        const correctHtmlVersion = htmlMode === "numbered-outline-v1"
+          ? independent?.parserVersion === "tfda-complete-dom-outline-v1" && independent?.tableSerializationVersion === HTML_OUTLINE_SERIALIZATION && outlineVerified
+          : independent?.parserVersion === "tfda-complete-dom-v4" && independent?.tableSerializationVersion === "tfda-simple-table-literal-v1";
         const unverified = independent?.hasUnverifiedNonTextContent !== false ||
           independent?.simpleTablesConserved !== true || independent?.complexTableCount !== 0 ||
-          independent?.parserVersion !== "tfda-complete-dom-v4" ||
           independent?.unaccountedMainBlockCount !== 0 || independent?.allMainBlocksAccounted !== true ||
-          independent?.tableSerializationVersion !== "tfda-simple-table-literal-v1";
+          !correctHtmlVersion;
         const documentLicenseMatches = typeof fields["許可證號"] === "string" && normalizeTfdaSourceText(fields["許可證號"]) === normalizeTfdaSourceText(licenseNo);
         input.numPages = 1; input.pages = [{ page: 1, text, embeddedImages: independent?.nonTextImages?.length || 0, hasLargeUnverifiedImage: unverified }];
-        input.htmlEvidence = { completeMainDocument: independent?.fullDomConserved === true && documentLicenseMatches, domConservationPassed: independent?.fullDomConserved === true && documentLicenseMatches, canonicalTextSha256: hash(text), sectionCount: independent?.sections?.length || 0, hasUnverifiedNonTextContent: unverified };
+        input.htmlEvidence = { completeMainDocument: independent?.fullDomConserved === true && documentLicenseMatches, domConservationPassed: independent?.fullDomConserved === true && documentLicenseMatches, canonicalTextSha256: hash(text), sectionCount: independent?.sections?.length || 0, hasUnverifiedNonTextContent: unverified,
+          ...(htmlMode === "numbered-outline-v1" ? { tableSerializationVersion: HTML_OUTLINE_SERIALIZATION,
+            numberedOutlineEvidenceSha256: hash(JSON.stringify(independent.numberedOutlineEvidence)) } : {}) };
         if (!documentLicenseMatches) preparationError = "html_current_license_field_missing_or_mismatch";
       }
       const assessment = evaluateTfdaSource(input);
@@ -256,7 +281,8 @@ async function main() {
     const manifest = { schema: "tfda-source-publication-batch/v1", batchId, project: "project-b6fe4904-e687-4365-b2f", bucket: "project-b6fe4904-e687-4365-b2f-yzt-test-data", indexSnapshots, items };
     await atomic(manifestPath, manifest); manifestPaths.push(manifestPath);
   }
-  const summary = { schema: "tfda-source-preparation-summary/v1", at: new Date().toISOString(), corpus, inventory, sourceFormat, selectedSourceCounts, deferredSourceCounts, products: products.length, assessed: processed, reused, counts, reasons, eligible: eligible.length, manifests: manifestPaths, aiCalls: 0, cloudWrites: 0, humanReviewed: false, clinicalReviewed: false };
+  const summary = { schema: "tfda-source-preparation-summary/v1", at: new Date().toISOString(), corpus, inventory, sourceFormat,
+    ...(htmlMode !== "legacy" ? { htmlMode } : {}), selectedSourceCounts, deferredSourceCounts, products: products.length, assessed: processed, reused, counts, reasons, eligible: eligible.length, manifests: manifestPaths, aiCalls: 0, cloudWrites: 0, humanReviewed: false, clinicalReviewed: false };
   await atomic(join(output, "summary.json"), summary);
   console.log(JSON.stringify(summary));
 }

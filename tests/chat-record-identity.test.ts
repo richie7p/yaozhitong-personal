@@ -102,7 +102,7 @@ it("persists exact selected same-name medication records after the completed cha
   const second = await medication("synthetic-chat-owner", 2);
   const unselected = await medication("synthetic-chat-owner", 3);
   const selectedIds = [second.id, first.id];
-  const question = "這份合成測試資料的用途是什麼？";
+  const question = "這份合成測試資料記載了什麼？";
   const job = await domain.enqueueJob(
     "synthetic-chat-owner",
     true,
