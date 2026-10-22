@@ -19,6 +19,25 @@ const official = (value: string) => { try { const u = new URL(value); return u.p
 const urls = (value: unknown) => typeof value === "string" ? value.match(/https?:\/\/[^\s;<>"\u3000]+/gu) || [] : [];
 const inside = (root: string, path: string) => { const value = relative(root, path); return !isAbsolute(value) && value !== ".." && !value.startsWith(".." + sep); };
 const rowsByLicense = (rows: PublicationDoc[]) => { const result = new Map<string, PublicationDoc[]>(); for (const row of rows) { const key = row["許可證字號"]; result.set(key, [...(result.get(key) || []), row]); } return result; };
+export interface ParentLicenseSelection { path: string; sha256: string; licenses: readonly string[] }
+export function parseParentLicenseSelection(bytes: Buffer): readonly string[] {
+  must(bytes.length <= 2_000_000, "parent_license_list_exceeds_2000000_bytes");
+  let value: unknown;
+  try { value = JSON.parse(bytes.toString("utf8").replace(/^\uFEFF/u, "")); } catch { must(false, "parent_license_list_invalid_json"); }
+  must(Array.isArray(value) && value.length > 0 && value.length <= 5000 && value.every((license) =>
+    typeof license === "string" && /^(?:衛署|衛部|內衛)[\p{Script=Han}]{1,12}字第(?:R\d{5,7}|\d{6,8})號$/u.test(license)),
+    "parent_license_list_requires_1_to_5000_complete_licenses");
+  must(new Set(value).size === value.length, "parent_license_list_duplicate_complete_license");
+  return Object.freeze([...value]);
+}
+export async function readParentLicenseSelection(path: string): Promise<ParentLicenseSelection> {
+  const absolute = resolve(path); must((await stat(absolute)).size <= 2_000_000, "parent_license_list_exceeds_2000000_bytes");
+  const bytes = await readFile(absolute);
+  return Object.freeze({ path: absolute, sha256: hash(bytes), licenses: parseParentLicenseSelection(bytes) });
+}
+export async function assertParentLicenseSelectionUnchanged(selection: ParentLicenseSelection) {
+  must(hash(await readFile(selection.path)) === selection.sha256, "parent_license_list_changed_during_evaluation");
+}
 export function fetchedFromSuccessfulReceipt(record: any, format: "html" | "pdf"): TfdaFetchedArtifact {
   const requested = record.requestedUrl || record.sourceUrl, final = record.finalUrl;
   must(record.httpStatus === 200 && official(requested) && official(final), "parent_prepare_successful_official_HTTP200_receipt_required");
@@ -60,10 +79,13 @@ async function acquiredPaperRows(archive: string, python: string) {
 export async function main(args = process.argv.slice(2)) {
   const options: Record<string, string> = {};
   for (let i = 0; i < args.length; i += 2) {
-    must(["--inventory", "--corpus", "--archive", "--output", "--protected", "--python", "--limit", "--license"].includes(args[i]) &&
+    must(["--inventory", "--corpus", "--archive", "--output", "--protected", "--python", "--limit", "--license", "--license-list"].includes(args[i]) &&
       !!args[i + 1] && !options[args[i]], "parent_prepare_invalid_arguments"); options[args[i]] = args[i + 1];
   }
   must(["--inventory", "--corpus", "--archive", "--output", "--protected"].every((key) => options[key]), "parent_prepare_explicit_paths_required");
+  must(!(options["--license"] && options["--license-list"]), "parent_prepare_license_and_list_mutually_exclusive");
+  const licenseSelection = options["--license-list"] ? await readParentLicenseSelection(options["--license-list"]) : undefined;
+  const selectedLicenses = licenseSelection ? new Set(licenseSelection.licenses) : undefined;
   const inventory = resolve(options["--inventory"]), corpus = resolve(options["--corpus"]), archive = resolve(options["--archive"]), output = resolve(options["--output"]);
   must([corpus, archive, inventory].every((path) => !inside(path, output) && !inside(output, path)), "parent_prepare_separate_output_required");
   const limit = Number(options["--limit"] || 100), python = options["--python"] || "python";
@@ -93,6 +115,7 @@ export async function main(args = process.argv.slice(2)) {
     const current = job.parents.filter((parent: any) => parent.discoveryType === "current_paper" && parent.licenseState === "active");
     const licenses = [...new Set<string>(current.map((parent: any) => parent.fullLicense))];
     if (options["--license"] && !licenses.includes(options["--license"])) continue;
+    if (selectedLicenses && !licenses.some((license) => selectedLicenses.has(license))) continue;
     if (licenses.length !== 1 || job.parents.some((parent: any) => parent.fullLicense && parent.fullLicense !== licenses[0]) ||
       job.origin === "derived_known_official_license_route" || job.parents.some((parent: any) => parent.association === "no_Info39_association")) { increment("ambiguous_or_unindexed_parent_scope"); continue; }
     const licenseNo = licenses[0];
@@ -142,6 +165,9 @@ export async function main(args = process.argv.slice(2)) {
     } catch (error) { record.failure = safePublicationFailure(error); increment("technical_validation_blocked"); }
     results.push(record);
   }
+  if (licenseSelection) {
+    await assertParentLicenseSelectionUnchanged(licenseSelection);
+  }
   const manifests: string[] = [];
   for (let offset = 0; offset < items.length; offset += 50) {
     const chunk = items.slice(offset, offset + 50), batchId = "tfda-parent-" + hash(JSON.stringify({ snapshots, items: chunk })).slice(0, 24);
@@ -149,11 +175,12 @@ export async function main(args = process.argv.slice(2)) {
     const path = join(output, "batches", batchId + ".json"); await immutable(path, manifest); manifests.push(path);
   }
   const summary = { schema: "tfda-parent-paper-preparation/v1", at: new Date().toISOString(), attempted, eligible: items.length, counts, results, manifests,
-    acquiredCurrentPaperRows: rows.length, selection: { license: options["--license"] || null, limit },
-    evaluationCoverageStatus: counts.deferred_by_limit ? "partial_bounded_evaluation" : options["--license"] ? "explicit_license_selection_evaluated" : "selected_existing_archive_candidates_evaluated",
+    acquiredCurrentPaperRows: rows.length, selection: { license: options["--license"] || null, limit,
+      ...(licenseSelection ? { licenseList: { path: licenseSelection.path, sha256: licenseSelection.sha256, count: licenseSelection.licenses.length } } : {}) },
+    evaluationCoverageStatus: counts.deferred_by_limit ? "partial_bounded_evaluation" : options["--license"] || licenseSelection ? "explicit_license_selection_evaluated" : "selected_existing_archive_candidates_evaluated",
     coverageNotice: "Only acquired current-paper candidates selected by these filters were evaluated; failures/drafts/archive-only items are not published source coverage.",
     netAdditionalCoverage: "Not established by offline preparation. Wait for main completion, then reprepare against fresh actual published pointers before any parent publication.",
-    requiredPublisherOption: "--parent-paper-mode strict-v1", humanReviewed: false, clinicalReviewed: false, aiCalls: 0, cloudWrites: 0, networkRequests: 0, maxConcurrentPdfChildProcesses: 1 };
+    requiredPublisherOption: "--parent-paper-mode strict-v2", humanReviewed: false, clinicalReviewed: false, aiCalls: 0, cloudWrites: 0, networkRequests: 0, maxConcurrentPdfChildProcesses: 1 };
   const summaryPath = join(output, "summaries", hash(JSON.stringify(summary)) + ".json"); await immutable(summaryPath, summary);
   console.log(JSON.stringify({ ...summary, summaryPath })); return summary;
 }

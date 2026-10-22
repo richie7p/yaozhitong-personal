@@ -85,7 +85,7 @@ python tools/archive-tfda-assets.py collect --queue C:/yzt-data/assets.ndjson --
 
 ### 官方頁面連結的現行紙本
 
-紙本 PDF 可以透過原始官方電子頁面建立來源關聯。這條流程會重新解析 Info39 指向的 HTML，核對現行藥品身分、所有來源分支，以及唯一的現行紙本連結；候選自行聲稱的關聯或 SHA 不能取得發布資格。目前要求沒有歷史紙本 PDF。明確分離的歷史電子頁面會完整列出並排除，未分類或角色矛盾的連結則留待處理。
+紙本 PDF 可以透過原始官方電子頁面建立來源關聯。這條流程會重新解析 Info39 指向的 HTML，核對現行藥品身分、所有來源分支，以及唯一的現行紙本連結；候選自行聲稱的關聯或 SHA 不能取得發布資格。明確分離、官方 HTTPS 且與現行連結互斥的歷史紙本及電子頁面，會按原始順序完整列出並排除。歷史內容不加入現行正文；未分類、角色矛盾或有多個現行連結的資料仍留待處理。
 
 紙本本身仍須通過原有的三引擎全文比對、每頁及版面檢查。發布時重算官方頁面與 PDF 的證據，並以只新增方式保存兩份原始檔。關聯證據上限為 100 KB，完整發布文件上限為 800 KB；超限保留原檔，不截短證據或正文。
 
@@ -95,10 +95,12 @@ python tools/archive-tfda-assets.py collect --queue C:/yzt-data/assets.ndjson --
 node --import tsx tools/prepare-tfda-parent-papers.ts --inventory C:/yzt-data/index-20261022 --corpus C:/yzt-data/all-corpus --archive C:/yzt-data/asset-archive --output C:/yzt-data/current-paper-prepared --protected C:/yzt-data/current-published.json --limit 5000
 
 # 預設只有離線驗證；雲端 inspect/apply 仍須原有的明確專案、桶及快照雜湊。
-node --import tsx tools/publish-tfda-sources.ts --manifest C:/yzt-data/current-paper-prepared/batches/BATCH.json --parent-paper-mode strict-v1
+node --import tsx tools/publish-tfda-sources.ts --manifest C:/yzt-data/current-paper-prepared/batches/BATCH.json --parent-paper-mode strict-v2
 ```
 
 `--limit` 是本機準備工作的上限，範圍 1 至 5,000；每份雲端 manifest 仍最多 50 款。檢查 summary 的 `counts.deferred_by_limit`、`selection` 及 `evaluationCoverageStatus`，確認是否仍有未處理項目。重跑會重新評估候選，已保存的輸入與 manifest 不覆寫。主流程與紙本流程應依序發布，避免兩種格式同時競爭同一許可證。
+
+`--license-list` 可讀取含 1 至 5,000 個不重複完整字號的 JSON 陣列，並保存選集的路徑、SHA 與筆數；不能與 `--license` 並用。離線排程可先排除主流程待發布的相同產品，但這些候選不能算成已發布。正式紙本發布前仍須以雲端實際指標重新建立 protected 清單。舊版 v1 試跑資料保留作為離線證據，發布須重新產生 v2 來源證據。詳細選集用法見 [紙本來源工具說明](../tools/README-tfda-parent-papers.md)。
 
 成分表常見的點線不會改寫原文；文字品質檢查只對同一來源行、兩端為文字或數字的正常點線作例外。其他重複字元、亂碼、最低有效字數及文字比例門檻維持原設定。
 

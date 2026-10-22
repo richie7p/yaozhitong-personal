@@ -9,8 +9,10 @@ import argparse,hashlib,importlib.util,json,pathlib,re,sys,urllib.parse
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 FETCH_PATH=ROOT/'tools/fetch-tfda-sources.py'
-PARSER_VERSION='tfda-parent-paper-strict-v1'
-SCOPE='single_current_paper_excluding_explicit_electronic_history'
+SCHEMA='tfda-parent-paper-association/v2'
+SCHEMA_VERSION=2
+PARSER_VERSION='tfda-parent-paper-strict-v2'
+SCOPE='single_current_paper_excluding_explicit_history'
 MAX_PARENT_BYTES=15_000_000
 CURRENT_TITLE='紙本仿單樣式(自行上傳)'
 HISTORY_TITLE='歷史仿單'
@@ -71,7 +73,7 @@ def collision_key(url):
 def inspect_parent(raw,source_url):
     reasons=[]
     def invalid(reason):append_unique(reasons,reason)
-    result={'schema':'tfda-parent-paper-association/v1','schemaVersion':1,'parserVersion':PARSER_VERSION,'scope':SCOPE,'rawSha256':sha(raw),'rawBytes':len(raw),'sourceUrl':source_url,'parserHelperSha256':sha(pathlib.Path(__file__).read_bytes()),'fetchDependencySha256':sha(FETCH_PATH.read_bytes()),'requiredIdentityLabels':list(REQUIRED_LABELS),'identityFieldOccurrences':[],'identityFields':{},'ambiguousIdentityFields':{},'identityHeaderEvidence':[],'duplicateAttributeEvidence':[],'baseElementEvidence':[],'orderedPopups':[],'orderedAnchors':[],'orderedScopedResources':[],'currentPaperUrls':[],'currentOtherUrls':[],'historicalPaperUrls':[],'historicalOtherUrls':[],'excludedHistoricalElectronicUrls':[],'invalidReasons':reasons,'associationValid':False,'humanReviewed':False,'clinicalReviewed':False,'networkRequests':0}
+    result={'schema':SCHEMA,'schemaVersion':SCHEMA_VERSION,'parserVersion':PARSER_VERSION,'scope':SCOPE,'rawSha256':sha(raw),'rawBytes':len(raw),'sourceUrl':source_url,'parserHelperSha256':sha(pathlib.Path(__file__).read_bytes()),'fetchDependencySha256':sha(FETCH_PATH.read_bytes()),'requiredIdentityLabels':list(REQUIRED_LABELS),'identityFieldOccurrences':[],'identityFields':{},'ambiguousIdentityFields':{},'identityHeaderEvidence':[],'duplicateAttributeEvidence':[],'baseElementEvidence':[],'orderedPopups':[],'orderedAnchors':[],'orderedScopedResources':[],'currentPaperUrls':[],'currentOtherUrls':[],'historicalPaperUrls':[],'historicalOtherUrls':[],'excludedHistoricalElectronicUrls':[],'excludedHistoricalPaperUrls':[],'invalidReasons':reasons,'associationValid':False,'humanReviewed':False,'clinicalReviewed':False,'networkRequests':0}
     if len(raw)>MAX_PARENT_BYTES:invalid('parent_raw_exceeds_15mb');return result
     try:
         normalized_source=normalize_official(source_url)
@@ -163,7 +165,11 @@ def inspect_parent(raw,source_url):
             else:entry['classification']='unsupported_current_link';append_unique(result['currentOtherUrls'],normalized);anchor_invalid('unsupported_current_link')
         elif role=='historical':
             append_unique(history_role_urls,normalized)
-            if paper:entry['classification']='historical_paper_attachment';append_unique(result['historicalPaperUrls'],normalized);anchor_invalid('historical_paper_present_outside_first_scope')
+            if paper:
+                append_unique(result['historicalPaperUrls'],normalized)
+                if entry['officialHttps']and not entry['invalidReasons']:
+                    entry['classification']='excluded_history_paper';append_unique(result['excludedHistoricalPaperUrls'],normalized)
+                else:entry['classification']='unsupported_historical_paper_link';anchor_invalid('unsupported_historical_paper_link')
             else:
                 append_unique(result['historicalOtherUrls'],normalized)
                 if entry['officialHttps']and is_known_history_electronic(normalized,normalized_source):entry['classification']='excluded_history_electronic';append_unique(result['excludedHistoricalElectronicUrls'],normalized)
@@ -184,7 +190,7 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--raw',type=pathlib.Path,required=True);parser.add_argument('--source-url',required=True);args=parser.parse_args(argv)
     with args.raw.open('rb')as stream:raw=stream.read(MAX_PARENT_BYTES+1)
     if len(raw)>MAX_PARENT_BYTES:
-        print(json.dumps({'schema':'tfda-parent-paper-association/v1','schemaVersion':1,'parserVersion':PARSER_VERSION,'scope':SCOPE,'sourceUrl':args.source_url,'rawSha256':None,'rawBytes':None,'rawBytesObservedAtLeast':len(raw),'associationValid':False,'invalidReasons':['parent_raw_exceeds_15mb'],'networkRequests':0}));return 0
+        print(json.dumps({'schema':SCHEMA,'schemaVersion':SCHEMA_VERSION,'parserVersion':PARSER_VERSION,'scope':SCOPE,'sourceUrl':args.source_url,'rawSha256':None,'rawBytes':None,'rawBytesObservedAtLeast':len(raw),'associationValid':False,'invalidReasons':['parent_raw_exceeds_15mb'],'networkRequests':0}));return 0
     print(json.dumps(inspect_parent(raw,args.source_url),ensure_ascii=False));return 0
 if __name__=='__main__':
     try:sys.exit(main())

@@ -15,7 +15,7 @@ def inspect(raw):return module.inspect_parent(raw,SOURCE)
 class ParentPaperTests(unittest.TestCase):
     def test_single_current_and_exact_close_inventory_without_leaflet_body(self):
         raw=document();r=inspect(raw)
-        self.assertTrue(r['associationValid']);self.assertEqual(r['schema'],'tfda-parent-paper-association/v1');self.assertEqual(r['rawSha256'],hashlib.sha256(raw).hexdigest());self.assertEqual(r['rawBytes'],len(raw))
+        self.assertTrue(r['associationValid']);self.assertEqual(r['schema'],'tfda-parent-paper-association/v2');self.assertEqual(r['schemaVersion'],2);self.assertEqual(r['parserVersion'],'tfda-parent-paper-strict-v2');self.assertEqual(r['scope'],'single_current_paper_excluding_explicit_history');self.assertEqual(r['rawSha256'],hashlib.sha256(raw).hexdigest());self.assertEqual(r['rawBytes'],len(raw))
         self.assertEqual(r['currentPaperUrls'],['https://mcp.fda.gov.tw/fileshow/child?c=2']);self.assertTrue(r['allScopedAnchorsAccounted']);self.assertEqual(len(r['orderedAnchors']),2);self.assertEqual(r['orderedAnchors'][1]['classification'],'ignored_exact_popup_close_ui')
         self.assertEqual(r['identityFields']['許可證號'],'衛署藥製字第011202號');self.assertEqual(r['parserHelperSha256'],hashlib.sha256((ROOT/'tools/inspect-tfda-parent-paper.py').read_bytes()).hexdigest());self.assertEqual(r['fetchDependencySha256'],hashlib.sha256((ROOT/'tools/fetch-tfda-sources.py').read_bytes()).hexdigest());self.assertEqual(r['networkRequests'],0)
 
@@ -24,9 +24,35 @@ class ParentPaperTests(unittest.TestCase):
         self.assertTrue(r['associationValid']);self.assertEqual(r['historicalOtherUrls'],['https://mcp.fda.gov.tw/im_detail_1/test?item=123']);self.assertEqual(r['historicalOtherUrls'],r['excludedHistoricalElectronicUrls']);self.assertEqual(r['historicalPaperUrls'],[])
         self.assertEqual([a['classification']for a in r['orderedAnchors']].count('excluded_history_electronic'),1)
 
-    def test_history_paper_always_blocks_first_scope(self):
+    def test_disjoint_official_history_paper_is_excluded_without_becoming_current(self):
         r=inspect(document(history=popup('<a href="/fileshow/old">old.pdf</a>',module.HISTORY_TITLE,'popup-history')))
-        self.assertFalse(r['associationValid']);self.assertIn('historical_paper_present_outside_first_scope',r['invalidReasons']);self.assertEqual(r['historicalPaperUrls'],['https://mcp.fda.gov.tw/fileshow/old'])
+        self.assertTrue(r['associationValid']);self.assertEqual(r['invalidReasons'],[]);self.assertEqual(r['historicalPaperUrls'],['https://mcp.fda.gov.tw/fileshow/old']);self.assertEqual(r['historicalPaperUrls'],r['excludedHistoricalPaperUrls']);self.assertEqual(r['currentPaperUrls'],['https://mcp.fda.gov.tw/fileshow/child?c=2'])
+        self.assertTrue(r['allScopedAnchorsAccounted']);self.assertEqual([a['classification']for a in r['orderedAnchors']],['current_paper_attachment','ignored_exact_popup_close_ui','excluded_history_paper','ignored_exact_popup_close_ui'])
+
+    def test_all_disjoint_paper_and_electronic_history_branches_keep_literal_order(self):
+        history=popup('<a href="/fileshow/old?version=1&amp;kind=paper">old1</a><a href="/im_detail_1/test?item=123">electronic</a><a href="/insert/pdfcasefile/old-2">old2</a>',module.HISTORY_TITLE,'popup-history')
+        r=inspect(document(history=history));self.assertTrue(r['associationValid']);self.assertEqual(r['historicalPaperUrls'],['https://mcp.fda.gov.tw/fileshow/old?version=1&kind=paper','https://mcp.fda.gov.tw/insert/pdfcasefile/old-2']);self.assertEqual(r['excludedHistoricalPaperUrls'],r['historicalPaperUrls']);self.assertEqual(r['historicalOtherUrls'],r['excludedHistoricalElectronicUrls'])
+        scoped=[a for a in r['orderedAnchors']if a['role']=='historical'and a['classification']!='ignored_exact_popup_close_ui']
+        self.assertEqual([a['classification']for a in scoped],['excluded_history_paper','excluded_history_electronic','excluded_history_paper']);self.assertEqual([a['literalHref']for a in scoped],['/fileshow/old?version=1&kind=paper','/im_detail_1/test?item=123','/insert/pdfcasefile/old-2']);self.assertEqual(r['networkRequests'],0)
+
+    def test_history_paper_http_offsite_fragment_and_controls_still_block(self):
+        for href in ['http://mcp.fda.gov.tw/fileshow/old','https://evil.example/old.pdf','/fileshow/old#page=2','/fileshow/old\n']:
+            with self.subTest(href=href):
+                r=inspect(document(history=popup('<a href="'+href+'">old</a>',module.HISTORY_TITLE,'popup-history')));self.assertFalse(r['associationValid']);self.assertEqual(len(r['historicalPaperUrls']),1);self.assertEqual(r['excludedHistoricalPaperUrls'],[]);self.assertIn('unsupported_historical_paper_link',r['invalidReasons']);self.assertEqual([a['literalHref']for a in r['orderedAnchors']if a['role']=='historical'][0],href)
+
+    def test_historical_title_cannot_authorize_fake_role_or_orphan_paper(self):
+        for history in [popup('<a href="/fileshow/old">old</a>',module.HISTORY_TITLE,'unrelated'),popup('<a href="/fileshow/old">old</a>',module.HISTORY_TITLE,'popup-new2')]:
+            r=inspect(document(history=history));self.assertFalse(r['associationValid']);self.assertIn('unaccounted_paper_popup',r['invalidReasons']);self.assertEqual(r['excludedHistoricalPaperUrls'],[])
+        r=inspect(document(extra='<a href="/fileshow/old">historical-looking orphan</a>'));self.assertFalse(r['associationValid']);self.assertIn('orphan_paper_anchor',r['invalidReasons'])
+
+    def test_multiple_current_urls_still_block_with_explicit_disjoint_history(self):
+        r=inspect(document(current='<a href="/fileshow/current-1">c1</a><a href="/fileshow/current-2">c2</a>',history=popup('<a href="/fileshow/old">old</a>',module.HISTORY_TITLE,'popup-history')))
+        self.assertFalse(r['associationValid']);self.assertIn('current_paper_url_count_not_one',r['invalidReasons']);self.assertEqual(len(r['currentPaperUrls']),2);self.assertEqual(r['excludedHistoricalPaperUrls'],['https://mcp.fda.gov.tw/fileshow/old'])
+
+    def test_history_exclusion_never_relaxes_conflicting_identity_or_unknown_resource(self):
+        history=popup('<a href="/fileshow/old">old</a>',module.HISTORY_TITLE,'popup-history')
+        r=inspect(document(history=history,extra='<div class="page_name"><label>中文品名</label><span>衝突品名</span></div>'));self.assertFalse(r['associationValid']);self.assertIn('conflicting_duplicate_identity_label',r['invalidReasons'])
+        r=inspect(document(history=popup('<a href="/fileshow/old">old</a><iframe src="/fileshow/unclassified"></iframe>',module.HISTORY_TITLE,'popup-history')));self.assertFalse(r['associationValid']);self.assertIn('unaccounted_historical_resource_or_control',r['invalidReasons'])
 
     def test_every_unsupported_current_anchor_is_retained_and_blocks(self):
         r=inspect(document(current='<a href="/fileshow/good">good</a><a href="https://evil.example/other.pdf">other</a><a href="/unexpected">unknown</a>'))
@@ -44,6 +70,10 @@ class ParentPaperTests(unittest.TestCase):
     def test_role_collision_blocks_even_when_pdf_query_order_differs(self):
         r=inspect(document(current='<a href="/fileshow/child?a=1&b=2">c</a>',history=popup('<a href="/fileshow/child?b=2&a=1">h</a>',module.HISTORY_TITLE,'popup-history')))
         self.assertIn('current_historical_url_role_collision',r['invalidReasons']);self.assertFalse(r['associationValid'])
+
+    def test_role_collision_blocks_encoded_path_alias_in_excluded_history(self):
+        r=inspect(document(current='<a href="/fileshow/child?c=2">c</a>',history=popup('<a href="/fileshow/%63hild?c=2">h</a>',module.HISTORY_TITLE,'popup-history')))
+        self.assertFalse(r['associationValid']);self.assertIn('current_historical_url_role_collision',r['invalidReasons']);self.assertEqual(r['excludedHistoricalPaperUrls'],['https://mcp.fda.gov.tw/fileshow/%63hild?c=2'])
 
     def test_history_nonofficial_unknown_and_wrong_detail_path_are_inventory_failures(self):
         for href in ['https://evil.example/history','/unrecognized?item=123','/im_detail_1/other?item=123','/im_detail_1/test?item=not_numeric','/im_detail_1/test?item=1&item=2']:

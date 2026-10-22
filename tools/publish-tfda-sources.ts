@@ -46,7 +46,7 @@ function indexRows(raw: PublicationDoc[], license: string) {
     urls: String(r["仿單圖檔連結"] || "").match(/https?:\/\/[^\s;<>"\u3000]+/gu) || [],
   }));
 }
-export async function loadPublicationBatch(manifestPath: string, now = Date.now(), verificationOptions: { python?: string; parentPaperMode?: "strict-v1" } = {}) {
+export async function loadPublicationBatch(manifestPath: string, now = Date.now(), verificationOptions: { python?: string; parentPaperMode?: "strict-v2" } = {}) {
   const path = resolve(manifestPath), bytes = await boundedRead(path, 2_000_000);
   const manifest = json(bytes);
   validatePublicationManifest(manifest);
@@ -78,7 +78,7 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
     // Caller claims remain rejected by default. Only explicit strict parent mode
     // may derive association evidence by reparsing independently pinned raw bytes.
     const hasParentClaim = Object.hasOwn(input, "officialAssociation");
-    must(!hasParentClaim || verificationOptions.parentPaperMode === "strict-v1" && !!item.parentSource && !!input.officialAssociation,
+    must(!hasParentClaim || verificationOptions.parentPaperMode === "strict-v2" && !!item.parentSource && !!input.officialAssociation,
       "unverified_parent_association_not_supported");
     must(!item.parentSource || hasParentClaim, "parent_source_requires_explicit_association");
     const catalog = indexes.get(36)!, index = indexes.get(39)!;
@@ -371,9 +371,9 @@ export async function main(args = process.argv.slice(2)) {
   }
   const mode = options["--mode"] || "validate";
   must(["validate", "inspect", "apply"].includes(mode) && !!options["--manifest"], "usage_requires_explicit_manifest_and_valid_mode");
-  must(!options["--parent-paper-mode"] || options["--parent-paper-mode"] === "strict-v1", "unsupported_parent_paper_mode");
+  must(!options["--parent-paper-mode"] || options["--parent-paper-mode"] === "strict-v2", "unsupported_parent_paper_mode");
   const batch = await loadPublicationBatch(options["--manifest"], Date.now(), { python: options["--python"],
-    ...(options["--parent-paper-mode"] ? { parentPaperMode: "strict-v1" as const } : {}) });
+    ...(options["--parent-paper-mode"] ? { parentPaperMode: "strict-v2" as const } : {}) });
   if (mode === "validate") {
     console.log(JSON.stringify({ status: "offline_technical_batch_validated", items: batch.loaded.length,
       manifestSha256: batch.manifestSha256, actor: TFDA_PUBLICATION_ACTOR, clinicalReviewed: false,

@@ -62,9 +62,10 @@ describe("independently reparsed indexed parent paper boundary", () => {
   it("keeps default association rejection and allows only explicit strict mode with actual parent/child replay", async () => {
     const item = await fixture();
     await expect(loadPublicationBatch(item.path, Date.now(), { python })).rejects.toThrow("unverified_parent_association_not_supported");
-    const loaded = await loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" }), source = loaded.loaded[0].source;
+    const loaded = await loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" }), source = loaded.loaded[0].source;
     expect(source.assessment.eligibleTechnical && source.assessment.runtimeCompatible).toBe(true);
-    expect(source.parentVerification).toMatchObject({ licenseNo: license, currentPaperUrls: [childUrl], historicalPaperUrls: [], excludedHistoricalElectronicUrls: [], childRawSha256: hash(raw) });
+    expect(source.parentVerification).toMatchObject({ schema: "tfda-current-parent-paper-verification/v2", scope: "single_current_paper_excluding_explicit_history",
+      licenseNo: license, currentPaperUrls: [childUrl], historicalPaperUrls: [], excludedHistoricalPaperUrls: [], excludedHistoricalElectronicUrls: [], childRawSha256: hash(raw) });
     expect(source.parentVerification?.branchInventory.anchors).toHaveLength(1);
     expect(JSON.stringify(source.parentVerification)).not.toContain(folder);
     expect(() => assertPublicationBlob(parentBlobPath(source.parentVerification!.parentRawSha256))).not.toThrow();
@@ -72,45 +73,69 @@ describe("independently reparsed indexed parent paper boundary", () => {
   it("records explicitly scoped electronic history but never uses it as the current source", async () => {
     const electronic = parentFinal.split("?")[0] + "?item=123";
     const item = await fixture({ parent: parentHtml(undefined, `<a href="${electronic}">檢視</a>`) });
-    const loaded = await loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" });
+    const loaded = await loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" });
     expect(loaded.loaded[0].source.parentVerification?.excludedHistoricalElectronicUrls).toEqual([electronic]);
     expect(loaded.loaded[0].source.parentVerification?.branchInventory.anchors.some((anchor) => anchor.classification === "excluded_history_electronic")).toBe(true);
   }, 20000);
+  it("conserves disjoint explicit historical paper and electronic branches without selecting or reading historical files", async () => {
+    const oldPaper = "https://mcp.fda.gov.tw/insert/pdfcasefile/synthetic-old-paper", electronic = parentFinal.split("?")[0] + "?item=123";
+    const item = await fixture({ parent: parentHtml(undefined, `<a href="${oldPaper}">歷史紙本</a><a href="${electronic}">歷史電子</a>`) });
+    const batch = await loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" });
+    const source = batch.loaded[0].source, proof = source.parentVerification!;
+    expect(proof.historicalPaperUrls).toEqual([oldPaper]); expect(proof.excludedHistoricalPaperUrls).toEqual([oldPaper]);
+    expect(proof.excludedHistoricalElectronicUrls).toEqual([electronic]); expect(proof.currentPaperUrls).toEqual([childUrl]);
+    expect(source.input.officialAssociation!.linkedSourceUrls).toEqual([childUrl]);
+    expect(proof.branchInventory.anchors.map((anchor) => anchor.classification)).toEqual(["current_paper_attachment", "excluded_history_paper", "excluded_history_electronic"]);
+    const writes: string[] = [], store: PublicationStore = { transaction: async (operation) => operation({ get: async () => null,
+      create: (collection) => { writes.push(collection); } }) };
+    proof.excludedHistoricalPaperUrls = [];
+    await expect(applyTechnicalPublication(store, source, { leaflet: null, pointer: null, audit: null }, {
+      runId: "synthetic-forged-exclusion", batchId: batch.manifest.batchId, manifestSha256: batch.manifestSha256, snapshotSha256: "c".repeat(64) }))
+      .rejects.toThrow("publication_requires_independently_verified_parent_association");
+    expect(writes).toEqual([]);
+  }, 20000);
   it.each([
-    ["historical paper", parentHtml(undefined, `<a href="https://mcp.fda.gov.tw/fileshow/old">舊紙本</a>`)],
     ["current link placed only in history", parentHtml("", `<a href="${childUrl}">錯誤角色</a>`)],
     ["multiple current branches", parentHtml(`<a href="${childUrl}">甲</a><a href="https://mcp.fda.gov.tw/fileshow/other">乙</a>`)],
     ["same URL in both roles", parentHtml(undefined, `<a href="${childUrl}">舊紙本</a>`)],
     ["unparsed current resource", parentHtml(`<a href="${childUrl}">甲</a><iframe src="https://mcp.fda.gov.tw/other"></iframe>`)],
     ["HTTP downgrade", parentHtml(`<a href="http://mcp.fda.gov.tw/fileshow/synthetic-current-paper">甲</a>`)],
+    ["historical HTTP downgrade", parentHtml(undefined, `<a href="http://mcp.fda.gov.tw/fileshow/old">舊紙本</a>`)],
+    ["historical offsite paper", parentHtml(undefined, `<a href="https://example.invalid/old.pdf">舊紙本</a>`)],
+    ["encoded current URL collision in history", parentHtml(undefined, `<a href="https://mcp.fda.gov.tw/fileshow/%73ynthetic-current-paper">舊紙本</a>`)],
+    ["unknown historical route", parentHtml(undefined, `<a href="https://mcp.fda.gov.tw/unknown-history">未知</a>`)],
   ])("rejects %s with complete raw branch evidence", async (_label, parent) => {
     const item = await fixture({ parent: parent as Buffer });
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" })).rejects.toThrow("parent_current_paper_branch_inventory_ambiguous_or_historical");
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" })).rejects.toThrow("parent_current_paper_branch_inventory_ambiguous_or_historical");
+  });
+  it("rejects the retired strict-v1 caller mode even with a valid raw parent", async () => {
+    const item = await fixture();
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" as any })).rejects.toThrow("unverified_parent_association_not_supported");
   });
   it.each([
     ["license", parentHtml(undefined, "", "衛部藥製字第999977號")],
     ["old brand or strength", parentHtml(undefined, "", license, "合成舊品牌錠50毫克")],
   ])("rejects a raw parent %s mismatch despite a matching candidate claim", async (_label, parent) => {
     const item = await fixture({ parent: parent as Buffer });
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" })).rejects.toThrow("parent_current_complete_identity_or_category_mismatch");
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" })).rejects.toThrow("parent_current_complete_identity_or_category_mismatch");
   });
   it("rejects forged parent bytes/hash and forged candidate association independently", async () => {
     const item = await fixture(); item.input.officialAssociation!.detailSha256 = "f".repeat(64); await item.save();
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" })).rejects.toThrow("candidate_parent_claim_differs_from_raw_parent");
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" })).rejects.toThrow("candidate_parent_claim_differs_from_raw_parent");
     item.manifest.items[0].parentSource!.rawSourceSha256 = "f".repeat(64); await item.save();
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" })).rejects.toThrow("parent_raw_bytes_hash_or_html_signature_mismatch");
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" })).rejects.toThrow("parent_raw_bytes_hash_or_html_signature_mismatch");
   });
   it.each([{ "註銷狀態": "已註銷" }, { "有效日期": "2001/12/31" }])("checks actual current official revoked/expiry metadata %j", async (catalogChange) => {
     const item = await fixture({ catalogChange });
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" })).rejects.toThrow("parent_current_license_revoked_expired_or_missing");
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" })).rejects.toThrow("parent_current_license_revoked_expired_or_missing");
   });
   it("does not choose the first of multiple actual Info39 parent URLs", async () => {
     const item = await fixture({ indexUrls: [parentRequested, "https://mcp.fda.gov.tw/synthetic/second-parent"] });
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" })).rejects.toThrow("parent_must_be_unique_actual_Info39_url");
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" })).rejects.toThrow("parent_must_be_unique_actual_Info39_url");
   });
   it("blocks an oversized complete branch proof before publication without truncating parent raw", async () => {
     const parent = parentHtml(`<a href="${childUrl}">${"SYNTHETIC ".repeat(11000)}</a>`), item = await fixture({ parent });
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" }))
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" }))
       .rejects.toThrow("parent_branch_proof_exceeds_100000_bytes_no_truncation");
     expect(await readFile(item.manifest.items[0].parentSource!.rawSourcePath)).toEqual(parent);
   });
@@ -118,10 +143,10 @@ describe("independently reparsed indexed parent paper boundary", () => {
     const item = await fixture();
     const page = item.input.pages[0], text = page.text.replace("complete synthetic source", "invented different narrative");
     Object.assign(page, { text, independentText: text, additionalIndependentText: text }); await item.save();
-    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" })).rejects.toThrow("candidate_parent_paper_pdf_pages_do_not_match_raw");
+    await expect(loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" })).rejects.toThrow("candidate_parent_paper_pdf_pages_do_not_match_raw");
   }, 20000);
   it("persists the full independently derived parent proof without local paths, preserving whole child pages", async () => {
-    const item = await fixture(), batch = await loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v1" });
+    const item = await fixture(), batch = await loadPublicationBatch(item.path, Date.now(), { python, parentPaperMode: "strict-v2" });
     const data: Record<string, PublicationDoc> = {}, writes: string[] = [];
     const store: PublicationStore = { transaction: async (operation) => operation({ get: async (collection, id) => data[collection + "/" + id] || null,
       create: (collection, id, value) => { assertPublicationWrite(collection, id); expect(data[collection + "/" + id]).toBeUndefined(); data[collection + "/" + id] = value; writes.push(collection); } }) };

@@ -59,14 +59,16 @@ export async function verifyParentPaperSource(parent: NonNullable<PublicationBat
     { ...options, timeout: 45_000, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1", OMP_NUM_THREADS: "1" } }); report = JSON.parse(result.stdout.trim()); }
   catch { throw Error("parent_raw_reparse_unavailable_or_failed"); }
   const [parserBytes, dependencyBytes, adapterBytes] = await Promise.all([readFile(parentHelper), readFile(fetchHelper), readFile(adapter)]);
-  must(report.schema === "tfda-parent-paper-association/v1" && report.parserVersion === "tfda-parent-paper-strict-v1" && report.schemaVersion === 1 &&
+  must(report.schema === "tfda-parent-paper-association/v2" && report.parserVersion === "tfda-parent-paper-strict-v2" && report.schemaVersion === 2 &&
     report.rawSha256 === hash(raw) && report.rawBytes === raw.length && canonicalUrl(report.sourceUrl) === final &&
     report.parserHelperSha256 === hash(parserBytes) && report.fetchDependencySha256 === hash(dependencyBytes), "parent_raw_reparse_binding_invalid");
   must(report.associationValid === true && Array.isArray(report.invalidReasons) && report.invalidReasons.length === 0 &&
-    report.scope === "single_current_paper_excluding_explicit_electronic_history" && report.allScopedAnchorsAccounted === true &&
+    report.scope === "single_current_paper_excluding_explicit_history" && report.allScopedAnchorsAccounted === true &&
     report.currentPopupCount === 1 && report.historicalPopupCount <= 1 && Array.isArray(report.currentOtherUrls) && report.currentOtherUrls.length === 0 &&
     Array.isArray(report.orderedScopedResources) && report.orderedScopedResources.length === 0 &&
-    Array.isArray(report.currentPaperUrls) && report.currentPaperUrls.length === 1 && Array.isArray(report.historicalPaperUrls) && report.historicalPaperUrls.length === 0 &&
+    Array.isArray(report.currentPaperUrls) && report.currentPaperUrls.length === 1 && Array.isArray(report.historicalPaperUrls) &&
+    Array.isArray(report.excludedHistoricalPaperUrls) && sameDocument(report.historicalPaperUrls, report.excludedHistoricalPaperUrls) &&
+    report.excludedHistoricalPaperUrls.every(official) &&
     Array.isArray(report.excludedHistoricalElectronicUrls) && Array.isArray(report.historicalOtherUrls) &&
     sameDocument(report.historicalOtherUrls, report.excludedHistoricalElectronicUrls) && report.excludedHistoricalElectronicUrls.every(official) &&
     Array.isArray(report.orderedPopups) && Array.isArray(report.orderedAnchors) && report.ambiguousIdentityFields && !Object.keys(report.ambiguousIdentityFields).length,
@@ -75,17 +77,20 @@ export async function verifyParentPaperSource(parent: NonNullable<PublicationBat
     norm(report.identityFields?.["中文品名"]) === norm(catalog["中文品名"] || "") && norm(report.identityFields?.["英文品名"]) === norm(catalog["英文品名"] || "") &&
     norm(report.identityFields?.["藥品類別"]) === norm(assertOfficialPatientCategory(catalogRows, input.licenseNo)), "parent_current_complete_identity_or_category_mismatch");
   const childUrl = canonicalUrl(input.fetched.requestedUrl);
-  must(canonicalUrl(report.currentPaperUrls[0]) === childUrl && !report.excludedHistoricalElectronicUrls.some((url: string) => canonicalUrl(url) === childUrl) &&
+  must(canonicalUrl(report.currentPaperUrls[0]) === childUrl &&
+    ![...report.excludedHistoricalPaperUrls, ...report.excludedHistoricalElectronicUrls].some((url: string) => canonicalUrl(url) === childUrl) &&
     /^[a-f0-9]{64}$/u.test(input.fetched.sha256), "parent_current_child_url_not_exact_match");
   const association: TfdaOfficialAssociation = { indexUrl: parent.fetched.requestedUrl, detailUrl: parent.fetched.finalUrl,
     licenseNo: input.licenseNo, linkedSourceUrls: [input.fetched.requestedUrl], retrievedAt: parent.fetched.retrievedAt, detailSha256: hash(raw) };
   if (input.officialAssociation !== undefined) must(sameDocument(input.officialAssociation, association), "candidate_parent_claim_differs_from_raw_parent");
   const catalogSnapshot = snapshots.find((entry) => entry.infoId === 36), indexSnapshot = snapshots.find((entry) => entry.infoId === 39);
   must(catalogSnapshot && indexSnapshot, "parent_both_official_index_hashes_required");
-  const proof: ParentPaperVerification = { schema: "tfda-current-parent-paper-verification/v1", method: "official_index_parent_raw_current_paper_reparse_v1",
+  const proof: ParentPaperVerification = { schema: "tfda-current-parent-paper-verification/v2", method: "official_index_parent_raw_current_paper_reparse_v2",
+    scope: "single_current_paper_excluding_explicit_history",
     licenseNo: input.licenseNo, indexUrl: parent.fetched.requestedUrl, parentFinalUrl: parent.fetched.finalUrl,
     parentRawSha256: hash(raw), parentRawBytes: raw.length, parentStoragePath: parentBlobPath(hash(raw)), parentRetrievedAt: parent.fetched.retrievedAt,
-    parentRedirectChain: hops, currentPaperUrls: [input.fetched.requestedUrl], historicalPaperUrls: [], childUrl: input.fetched.requestedUrl, childRawSha256: input.fetched.sha256,
+    parentRedirectChain: hops, currentPaperUrls: [input.fetched.requestedUrl], historicalPaperUrls: report.historicalPaperUrls,
+    excludedHistoricalPaperUrls: report.excludedHistoricalPaperUrls, childUrl: input.fetched.requestedUrl, childRawSha256: input.fetched.sha256,
     excludedHistoricalElectronicUrls: report.excludedHistoricalElectronicUrls, branchInventory: { popups: report.orderedPopups, anchors: report.orderedAnchors },
     officialCatalogSha256: catalogSnapshot.sha256, officialIndexSha256: indexSnapshot.sha256,
     parentIdentitySha256: hash(JSON.stringify(report.identityFieldOccurrences)), parentDomInspectionSha256: hash(JSON.stringify(report)),

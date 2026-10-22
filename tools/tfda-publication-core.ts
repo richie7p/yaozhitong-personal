@@ -168,12 +168,14 @@ export interface PreparedTechnicalSource {
 }
 /** Derived from actual indexed parent bytes; no local filesystem paths are persisted. */
 export interface ParentPaperVerification {
-  schema: "tfda-current-parent-paper-verification/v1";
-  method: "official_index_parent_raw_current_paper_reparse_v1";
+  schema: "tfda-current-parent-paper-verification/v2";
+  method: "official_index_parent_raw_current_paper_reparse_v2";
+  scope: "single_current_paper_excluding_explicit_history";
   licenseNo: string; indexUrl: string; parentFinalUrl: string;
   parentRawSha256: string; parentRawBytes: number; parentStoragePath: string;
   parentRetrievedAt: string; parentRedirectChain: string[];
   currentPaperUrls: string[]; historicalPaperUrls: string[];
+  excludedHistoricalPaperUrls: string[];
   excludedHistoricalElectronicUrls: string[];
   branchInventory: { popups: PublicationDoc[]; anchors: PublicationDoc[] };
   childUrl: string; childRawSha256: string;
@@ -331,10 +333,16 @@ export async function applyTechnicalPublication(
   const draft = source.draft;
   if (source.input.officialAssociation) {
     const proof = source.parentVerification;
-    must(proof?.schema === "tfda-current-parent-paper-verification/v1" &&
+    const roleKey = (value: string) => { try { const url = new URL(value); return JSON.stringify([url.protocol, url.hostname,
+      decodeURIComponent(url.pathname), [...url.searchParams.entries()].sort(([leftKey, leftValue], [rightKey, rightValue]) =>
+        leftKey.localeCompare(rightKey) || leftValue.localeCompare(rightValue))]); } catch { return null; } };
+    must(proof?.schema === "tfda-current-parent-paper-verification/v2" &&
+      proof.method === "official_index_parent_raw_current_paper_reparse_v2" && proof.scope === "single_current_paper_excluding_explicit_history" &&
       proof.licenseNo === draft.licenseNo && proof.childRawSha256 === draft.sha256 &&
       proof.childUrl === source.input.fetched.requestedUrl && proof.parentRawSha256 === source.input.officialAssociation.detailSha256 &&
-      proof.currentPaperUrls.length === 1 && proof.currentPaperUrls[0] === proof.childUrl && proof.historicalPaperUrls.length === 0,
+      proof.currentPaperUrls.length === 1 && proof.currentPaperUrls[0] === proof.childUrl &&
+      sameDocument(proof.historicalPaperUrls, proof.excludedHistoricalPaperUrls) && roleKey(proof.childUrl) !== null &&
+      [...proof.excludedHistoricalPaperUrls, ...proof.excludedHistoricalElectronicUrls].every((url) => roleKey(url) !== null && roleKey(url) !== roleKey(proof.childUrl)),
       "publication_requires_independently_verified_parent_association");
   } else must(!source.parentVerification, "unexpected_parent_verification_without_association");
   must(source.rawVerification?.schema === "tfda-candidate-raw-verification/v1" &&
