@@ -4,41 +4,113 @@
       "collectionGroup": "schedules",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "active", "order": "ASCENDING" },
-        { "fieldPath": "nextAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "schedules",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "active", "order": "ASCENDING" },
-        { "fieldPath": "nextFamilyAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextFamilyAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "leaseUntil", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leaseUntil",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "jobs",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "leaseUntil", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leaseUntil",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "supportTickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ]
     }
   ],
   "fieldOverrides": [
-    { "collectionGroup": "leaflets", "fieldPath": "chunks", "indexes": [] },
-    { "collectionGroup": "generated", "fieldPath": "result", "indexes": [] },
-    { "collectionGroup": "learning", "fieldPath": "result", "indexes": [] },
-    { "collectionGroup": "jobs", "fieldPath": "result", "indexes": [] },
-    { "collectionGroup": "jobs", "fieldPath": "input", "indexes": [] },
-    { "collectionGroup": "chats", "fieldPath": "result", "indexes": [] }
+    {
+      "collectionGroup": "leaflets",
+      "fieldPath": "chunks",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "generated",
+      "fieldPath": "result",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "learning",
+      "fieldPath": "result",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "jobs",
+      "fieldPath": "result",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "jobs",
+      "fieldPath": "input",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "chats",
+      "fieldPath": "result",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "supportTickets",
+      "fieldPath": "message",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "supportTickets",
+      "fieldPath": "replies",
+      "indexes": []
+    }
   ]
 }

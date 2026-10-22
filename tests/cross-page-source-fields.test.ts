@@ -578,7 +578,5 @@ describe("canonical cross-page safety fields", () => {
     },
   );
   it("bumps generated-cache semantics", () =>
-    expect(GROUNDING_VERSION).toBe(
-      "grounded-v17-requested-chat-safety-coverage",
-    ));
+    expect(GROUNDING_VERSION).toBe("grounded-v18-whole-field-plain-language"));
 });

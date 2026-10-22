@@ -124,7 +124,6 @@ describe("actual leaflet section names and clinical purpose scope", () => {
       reviewInput.claims.find((c: any) => c.checkType === "content")
         .sourceSections,
     ).toEqual(["效能"]);
-    expect(prompt).toContain("claims.text直接逐字照抄該完整sources.text");
   });
   it("keeps original 適應症 supported, including spaces inside Chinese heading labels", async () => {
     const source = chunk(
@@ -183,14 +182,14 @@ describe("actual leaflet section names and clinical purpose scope", () => {
     const { result, reviewInput } = await run(
       clinical,
       (generation) => {
-        generation.claims[0].text = "用於治療合成症狀甲與未記載的合成症狀乙。";
+        generation.claims[0].text = "用於治療合成症狀甲與合成症狀乙。";
       },
       false,
     );
     const checked = reviewInput.claims.find(
       (c: any) => c.checkType === "content",
     );
-    expect(checked.text).toContain("未記載");
+    expect(checked.text).toContain("症狀乙");
     expect(checked.citations[0].quote).not.toContain("症狀乙");
     expect(result.claims).toHaveLength(2);
     expect(

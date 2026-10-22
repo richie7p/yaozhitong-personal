@@ -1,6 +1,6 @@
 import { createServer, type Server } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppError, config } from "../server/config";
+import { AppError, aiRoutingIdentity, config } from "../server/config";
 import { JsonLlm } from "../server/llm";
 
 let originalConfig: typeof config;
@@ -15,12 +15,14 @@ beforeEach(() => {
     textModel: "gpt-6-luna",
     visionModel: "gpt-6-luna",
     aiRequestTimeoutMs: 45000,
+    aiTextRequestTimeoutMs: undefined,
     aiPrimaryTimeoutMs: 18000,
     aiTextPrimaryTimeoutMs: 12000,
     nvidiaTextFallbackModels: [],
     nvidiaVisionFallbackModels: [],
     aiJobTimeoutMs: 120000,
     aiTextMaxTokens: 2400,
+    aiTextReasoningEffort: "none",
     aiVisionMaxTokens: 2600,
   });
 });
@@ -43,6 +45,113 @@ const completion = (value: unknown = { ok: true }, finishReason = "stop") =>
   });
 
 describe("provider transport", () => {
+  it("can give reasoning text more time while preserving the shorter vision timeout", async () => {
+    config.aiRequestTimeoutMs = 25;
+    config.aiTextRequestTimeoutMs = 120;
+    vi.stubGlobal(
+      "fetch",
+      (_url: unknown, init?: RequestInit) =>
+        new Promise<Response>((resolve, reject) => {
+          const timer = setTimeout(() => resolve(completion()), 70);
+          init?.signal?.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(timer);
+              reject(
+                new DOMException("Synthetic request aborted", "AbortError"),
+              );
+            },
+            { once: true },
+          );
+        }),
+    );
+    const text = new JsonLlm(),
+      vision = new JsonLlm();
+    const result = await Promise.allSettled([
+      text.json("JSON", {}),
+      vision.json("JSON", [], true),
+    ]);
+    expect(result[0]).toMatchObject({
+      status: "fulfilled",
+      value: { ok: true },
+    });
+    expect(result[1]).toMatchObject({
+      status: "rejected",
+      reason: { code: "ai_timeout" },
+    });
+    expect(text.requests).toHaveLength(1);
+    expect(vision.requests).toHaveLength(1);
+  });
+  it.each(["medium", "high"] as const)(
+    "uses Luna %s for both text stages without starving review or changing vision",
+    async (effort) => {
+      config.aiTextReasoningEffort = effort;
+      config.aiTextMaxTokens = 6000;
+      const bodies: any[] = [];
+      vi.stubGlobal("fetch", async (_url: unknown, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)));
+        return completion();
+      });
+      const llm = new JsonLlm();
+      await llm.json("Generate JSON", {});
+      await llm.json("Verify JSON", { expectedIds: ["claim-0"] });
+      await llm.json("Transcribe JSON", [], true);
+      for (const body of bodies.slice(0, 2)) {
+        expect(body).toMatchObject({
+          model: "gpt-6-luna",
+          reasoning_effort: effort,
+          max_completion_tokens: 6000,
+          store: false,
+          service_tier: "default",
+        });
+        expect(body).not.toHaveProperty("temperature");
+      }
+      expect(bodies[2]).toMatchObject({
+        model: "gpt-6-luna",
+        reasoning_effort: "none",
+        max_completion_tokens: 2600,
+        temperature: 0.1,
+      });
+      const identity = aiRoutingIdentity();
+      expect(identity.textReasoningEffort).toBe(effort);
+      config.aiTextReasoningEffort = "none";
+      expect(aiRoutingIdentity()).not.toEqual(identity);
+    },
+  );
+  it("records token accounting without storing reasoning text", async () => {
+    config.aiTextReasoningEffort = "medium";
+    vi.stubGlobal("fetch", async () =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: '{"ok":true}',
+              reasoning_content: "private synthetic reasoning",
+            },
+          },
+        ],
+        usage: {
+          total_tokens: 120,
+          prompt_tokens: 20,
+          completion_tokens: 100,
+          completion_tokens_details: { reasoning_tokens: 75 },
+        },
+      }),
+    );
+    const llm = new JsonLlm();
+    await expect(llm.json("JSON", {})).resolves.toEqual({ ok: true });
+    expect(llm.requests[0]).toMatchObject({
+      tokens: 120,
+      promptTokens: 20,
+      completionTokens: 100,
+      reasoningTokens: 75,
+      reasoningEffort: "medium",
+    });
+    expect(JSON.stringify(llm.requests)).not.toContain(
+      "private synthetic reasoning",
+    );
+  });
   it.each(["gpt-6-luna", "gpt-5.4-mini"])(
     "sends OpenAI %s its own credentials and supported non-reasoning JSON parameters",
     async (model) => {
@@ -65,6 +174,7 @@ describe("provider transport", () => {
         model,
         temperature: 0.1,
         store: false,
+        service_tier: "default",
         response_format: { type: "json_object" },
         reasoning_effort: "none",
         max_completion_tokens: 2400,
@@ -109,6 +219,7 @@ describe("provider transport", () => {
     expect(body).not.toHaveProperty("max_completion_tokens");
     expect(body).not.toHaveProperty("reasoning_effort");
     expect(body).not.toHaveProperty("store");
+    expect(body).not.toHaveProperty("service_tier");
     expect(llm.requests[0].provider).toBe("nvidia");
   });
 
@@ -139,6 +250,7 @@ describe("provider transport", () => {
         model: "gpt-6-luna",
         temperature: 0.1,
         store: false,
+        service_tier: "default",
         reasoning_effort: "none",
         response_format: { type: "json_object" },
       });

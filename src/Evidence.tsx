@@ -15,6 +15,7 @@ import { api, ApiError } from "./api";
 import { Button, Notice, Speak } from "./components";
 import { Frequency } from "./medication-presentation";
 import { SourceReviewNotice } from "./SourceReviewNotice";
+import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { SourceReadingNotice } from "./SourceReadingNotice";
 
 export const learningStateLabels: Record<LearningProgress["status"], string> = {
@@ -278,6 +279,9 @@ function UnderstandingQuiz({
             <div className="quiz-feedback">
               <Notice error={!grade.correct}>
                 {grade.correct ? "答對了。" : "再看一下："}
+                {q.explanationKind === "verified_plain_language" && (
+                  <strong>白話解說：</strong>
+                )}
                 {q.explain}
               </Notice>
               <h4>回看這題的仿單依據</h4>
@@ -472,6 +476,9 @@ export function Evidence({
       <div className="claim-number">{String(index + 1).padStart(2, "0")}</div>
       <div>
         {c.category === "use" && <span className="tag">仿單一般用法</span>}
+        {c.kind === "source_plain_language" && (
+          <span className="tag">AI 白話說明</span>
+        )}
         {c.kind === "source_exact_purpose" &&
           c.citations.length === 1 &&
           c.text === c.citations[0].quote.trim() && (
@@ -522,6 +529,7 @@ export function Evidence({
         </Notice>
       )}
       <SourceReadingNotice result={result} />
+      <PlainLanguageStatus result={result} />
       {showReading && (
         <>
           <nav className="reading-sections" aria-label="這份說明的閱讀段落">

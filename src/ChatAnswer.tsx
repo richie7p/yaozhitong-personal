@@ -3,6 +3,7 @@ import type { GroundedResult } from "../shared/schema";
 import { CitationDetails, HealthReferences } from "./Evidence";
 import { Button, Notice, Speak } from "./components";
 import { SourceReviewNotice } from "./SourceReviewNotice";
+import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { SourceReadingNotice } from "./SourceReadingNotice";
 
 const answerStatusLabels: Record<GroundedResult["status"], string> = {
@@ -50,6 +51,7 @@ export function ChatAnswer({ result }: { result: GroundedResult }) {
         </Notice>
       )}
       <SourceReadingNotice result={result} />
+      <PlainLanguageStatus result={result} />
       {result.claims.map((claim, index) => (
         <article
           className="claim chat-answer-claim"
@@ -71,6 +73,12 @@ export function ChatAnswer({ result }: { result: GroundedResult }) {
             )}
             {claim.kind === "source_exact_safety" && (
               <span className="tag">仿單警語原文</span>
+            )}
+            {claim.kind === "source_plain_language" && (
+              <span className="tag">AI 白話說明</span>
+            )}
+            {claim.kind === "source_exact_purpose" && (
+              <span className="tag">仿單用途原文</span>
             )}
             <HealthReferences claim={claim} />
             <p>{claim.text}</p>

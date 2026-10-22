@@ -25,7 +25,16 @@ const fallbackModels = (name: string) => {
     );
   return models;
 };
+const publicAccess = process.env.PUBLIC_ACCESS_MODE || "approved";
+if (!["approved", "verified"].includes(publicAccess))
+  throw new Error("PUBLIC_ACCESS_MODE must be approved or verified.");
+const textReasoningEffort = process.env.AI_TEXT_REASONING_EFFORT || "none";
+if (!["none", "low", "medium", "high"].includes(textReasoningEffort))
+  throw new Error(
+    "AI_TEXT_REASONING_EFFORT must be none, low, medium or high.",
+  );
 export const config = {
+  publicAccess: publicAccess as "approved" | "verified",
   mode: process.env.APP_MODE || "local",
   project: process.env.GOOGLE_CLOUD_PROJECT || "",
   bucket: process.env.STORAGE_BUCKET || "",
@@ -33,6 +42,8 @@ export const config = {
   port: Number(process.env.PORT || 8080),
   localPath: process.env.LOCAL_DATA_PATH || ".local",
   aiProvider: provider as "nvidia" | "openai",
+  aiTextReasoningEffort: textReasoningEffort as
+    "none" | "low" | "medium" | "high",
   textModel:
     process.env.AI_TEXT_MODEL ||
     (provider === "openai"
@@ -51,6 +62,9 @@ export const config = {
   openaiBase: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
   openaiKey: (process.env.OPENAI_API_KEY || "").trim(),
   aiRequestTimeoutMs: bounded("AI_REQUEST_TIMEOUT_MS", 45000, 1000, 90000),
+  aiTextRequestTimeoutMs: process.env.AI_TEXT_REQUEST_TIMEOUT_MS
+    ? bounded("AI_TEXT_REQUEST_TIMEOUT_MS", 45000, 1000, 180000)
+    : undefined,
   aiPrimaryTimeoutMs: bounded("AI_PRIMARY_TIMEOUT_MS", 22000, 1000, 45000),
   aiTextPrimaryTimeoutMs: bounded(
     "AI_TEXT_PRIMARY_TIMEOUT_MS",
@@ -61,10 +75,10 @@ export const config = {
   nvidiaTextFallbackModels: fallbackModels("NVIDIA_TEXT_FALLBACK_MODELS"),
   nvidiaVisionFallbackModels: fallbackModels("NVIDIA_VISION_FALLBACK_MODELS"),
   aiJobTimeoutMs: bounded("AI_JOB_TIMEOUT_MS", 120000, 1000, 300000),
-  aiTextMaxTokens: bounded("AI_TEXT_MAX_TOKENS", 2400, 256, 6000),
+  aiTextMaxTokens: bounded("AI_TEXT_MAX_TOKENS", 2400, 256, 25000),
   aiVisionMaxTokens: bounded("AI_VISION_MAX_TOKENS", 2600, 512, 6000),
   userLimit: Number(process.env.DAILY_USER_LIMIT || 20),
-  globalLimit: Number(process.env.DAILY_GLOBAL_LIMIT || 200),
+  globalLimit: Number(process.env.DAILY_GLOBAL_LIMIT || 1000),
   workerUrl: process.env.WORKER_URL || "",
   workerEmail: process.env.WORKER_SERVICE_ACCOUNT || "",
   location: process.env.TASKS_LOCATION || "asia-east1",
@@ -94,13 +108,16 @@ export function aiRoutingIdentity() {
   return {
     policy:
       config.aiProvider === "openai"
-        ? "openai-chat-json-none-v2"
+        ? "openai-chat-json-reasoning-v3"
         : "nvidia-fallback-v2",
     sourceMentions: "literal-conditions-v1",
     doseTranscription: "literal-dose-text-v1",
     textModels: aiModelRoute(),
     visionModels: aiModelRoute(true),
+    textReasoningEffort: config.aiTextReasoningEffort,
     requestTimeoutMs: config.aiRequestTimeoutMs,
+    textRequestTimeoutMs:
+      config.aiTextRequestTimeoutMs ?? config.aiRequestTimeoutMs,
     primaryTimeoutMs: config.aiPrimaryTimeoutMs,
     textPrimaryTimeoutMs: config.aiTextPrimaryTimeoutMs,
     jobTimeoutMs: config.aiJobTimeoutMs,

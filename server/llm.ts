@@ -43,9 +43,18 @@ export class JsonLlm implements Llm {
     const models = availableModels.length ? availableModels : configuredModels;
     const expectedIds = (content as { expectedIds?: unknown[] })?.expectedIds;
     const verifying = Array.isArray(expectedIds);
+    const primary = configuredModels[0];
+    const reasoningEffort =
+      config.aiProvider === "openai" &&
+      (primary === "gpt-6-luna" || /^gpt-5\.[24](?:-|$)/.test(primary))
+        ? vision
+          ? "none"
+          : config.aiTextReasoningEffort
+        : undefined;
+    const reasoningEnabled = !!reasoningEffort && reasoningEffort !== "none";
     const maxTokens = vision
       ? config.aiVisionMaxTokens
-      : verifying
+      : verifying && !reasoningEnabled
         ? Math.min(1600, Math.max(256, 100 + expectedIds.length * 45))
         : config.aiTextMaxTokens;
     const jobDeadline = this.startedAt + config.aiJobTimeoutMs;
@@ -56,7 +65,10 @@ export class JsonLlm implements Llm {
         : 0;
     const deadline = Math.min(
       jobDeadline - reserve,
-      Date.now() + config.aiRequestTimeoutMs,
+      Date.now() +
+        (vision
+          ? config.aiRequestTimeoutMs
+          : (config.aiTextRequestTimeoutMs ?? config.aiRequestTimeoutMs)),
     );
     const timeout = () =>
       new AppError("ai_timeout", "AI 回應逾時，輸入已保留，請稍後重試。", 503);
@@ -87,6 +99,7 @@ export class JsonLlm implements Llm {
         attempt: attempt + 1,
         latencyMs: 0,
         tokens: null,
+        ...(reasoningEffort ? { reasoningEffort } : {}),
         ...(fallbackFrom ? { fallbackFrom } : {}),
       };
       this.requests.push(metric);
@@ -115,15 +128,15 @@ export class JsonLlm implements Llm {
                       : JSON.stringify(content),
                 },
               ],
-              temperature: 0.1,
+              ...(!reasoningEnabled ? { temperature: 0.1 } : {}),
               ...(config.aiProvider === "openai"
                 ? {
                     store: false,
+                    service_tier: "default",
                     max_completion_tokens: maxTokens,
                     response_format: { type: "json_object" },
-                    ...(model === "gpt-6-luna" ||
-                    /^gpt-5\.[24](?:-|$)/.test(model)
-                      ? { reasoning_effort: "none" }
+                    ...(reasoningEffort
+                      ? { reasoning_effort: reasoningEffort }
                       : {}),
                   }
                 : {
@@ -211,6 +224,16 @@ export class JsonLlm implements Llm {
         const body: any = await response.json();
         const usage = body.usage?.total_tokens;
         metric.tokens = Number.isFinite(usage) ? usage : null;
+        for (const [key, value] of [
+          ["promptTokens", body.usage?.prompt_tokens],
+          ["completionTokens", body.usage?.completion_tokens],
+          [
+            "reasoningTokens",
+            body.usage?.completion_tokens_details?.reasoning_tokens,
+          ],
+        ] as const) {
+          if (Number.isSafeInteger(value) && value >= 0) metric[key] = value;
+        }
         this.tokens += metric.tokens || 0;
         const choice = body.choices?.[0];
         metric.finishReason = choice?.finish_reason;

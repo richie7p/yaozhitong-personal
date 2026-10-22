@@ -191,7 +191,7 @@ export interface GroundedResult {
     options: string[];
     answer: number;
     explain: string;
-    explanationKind?: "source_quote";
+    explanationKind?: "source_quote" | "verified_plain_language";
     citations: Citation[];
     learningObjective?: "purpose" | "warning";
     sourceSection?: string;
@@ -213,6 +213,28 @@ export interface GroundedResult {
       claimIndex: number;
       claimIndices?: number[];
       quizIds: string[];
+    }[];
+  };
+  /** Server-authored whole-field teaching coverage, independent of raw reading
+   * and of testing only one key point in a field. */
+  plainLanguageCoverage?: {
+    scope: "recognized_source_fields";
+    status: "complete" | "partial" | "no_fields";
+    fields: {
+      fieldId: string;
+      licenseNo: string;
+      sourceSection: string;
+      sourceSpanCount: number;
+      explainedSpanCount: number;
+      status: "complete" | "partial" | "unavailable";
+      claimIndices: number[];
+      quizIds: string[];
+      reason?:
+        | "job_budget"
+        | "source_not_interpretable"
+        | "generation_unusable"
+        | "generation_overflow"
+        | "verification_incomplete";
     }[];
   };
   followups: { question: string; claimIndex: number }[];
@@ -278,6 +300,10 @@ export interface AiRequestMetric {
   latencyMs: number;
   status?: number;
   tokens: number | null;
+  promptTokens?: number;
+  completionTokens?: number;
+  reasoningTokens?: number;
+  reasoningEffort?: string;
   finishReason?: string;
   error?: string;
   fallbackFrom?: string;

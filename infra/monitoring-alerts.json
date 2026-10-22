@@ -1,0 +1,119 @@
+{
+  "schema": "silent-operational-alert-policies/v1",
+  "notificationMode": "Rules only; zero notification channels by explicit operator choice.",
+  "policies": [
+    {
+      "displayName": "YZT web sustained server errors",
+      "enabled": true,
+      "combiner": "OR",
+      "notificationChannels": [],
+      "conditions": [
+        {
+          "displayName": "At least 5 web 5xx responses in 5 minutes",
+          "conditionThreshold": {
+            "filter": "resource.type = \"cloud_run_revision\" AND resource.label.service_name = \"yzt-test-web\" AND resource.label.location = \"asia-east1\" AND metric.type = \"run.googleapis.com/request_count\" AND metric.label.response_code_class = \"5xx\"",
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_SUM",
+                "crossSeriesReducer": "REDUCE_SUM"
+              }
+            ],
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 4,
+            "duration": "0s",
+            "trigger": {
+              "count": 1
+            }
+          }
+        }
+      ],
+      "alertStrategy": {
+        "autoClose": "1800s"
+      },
+      "documentation": {
+        "mimeType": "text/markdown",
+        "content": "Check current Cloud Run web revision, request status and deployment health. Do not print user content or secrets. Roll back only a verified bad revision under the incident procedure."
+      }
+    },
+    {
+      "displayName": "YZT worker infrastructure errors",
+      "enabled": true,
+      "combiner": "OR",
+      "notificationChannels": [],
+      "conditions": [
+        {
+          "displayName": "Worker error log excluding known client status",
+          "conditionMatchedLog": {
+            "filter": "resource.type=\"cloud_run_revision\" resource.labels.service_name=\"yzt-test-worker\" resource.labels.location=\"asia-east1\" severity>=ERROR (jsonPayload.status>=500 OR NOT jsonPayload.status:*)"
+          }
+        }
+      ],
+      "alertStrategy": {
+        "notificationRateLimit": {
+          "period": "300s"
+        },
+        "autoClose": "1800s"
+      },
+      "documentation": {
+        "mimeType": "text/markdown",
+        "content": "Inspect worker revision errors, Cloud Tasks retries and failed jobs. The application emits a redacted job_failed event after persisting a failed attempt. Its numeric status distinguishes expected client failures from provider/infrastructure errors; the filter excludes known 4xx statuses. Never log user content or credentials."
+      }
+    },
+    {
+      "displayName": "YZT AI task queue backlog",
+      "enabled": true,
+      "combiner": "OR",
+      "notificationChannels": [],
+      "conditions": [
+        {
+          "displayName": "More than 10 queued tasks for 10 minutes",
+          "conditionThreshold": {
+            "filter": "resource.type = \"cloud_tasks_queue\" AND resource.label.queue_id = \"yzt-test-ai\" AND resource.label.location = \"asia-east1\" AND metric.type = \"cloudtasks.googleapis.com/queue/depth\"",
+            "aggregations": [
+              {
+                "alignmentPeriod": "60s",
+                "perSeriesAligner": "ALIGN_MAX",
+                "crossSeriesReducer": "REDUCE_MAX"
+              }
+            ],
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 10,
+            "duration": "600s",
+            "trigger": {
+              "count": 1
+            },
+            "evaluationMissingData": "EVALUATION_MISSING_DATA_INACTIVE"
+          }
+        },
+        {
+          "displayName": "p95 dispatch delay exceeds 5 minutes",
+          "conditionThreshold": {
+            "filter": "resource.type = \"cloud_tasks_queue\" AND resource.label.queue_id = \"yzt-test-ai\" AND resource.label.location = \"asia-east1\" AND metric.type = \"cloudtasks.googleapis.com/queue/task_attempt_delays\"",
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                "crossSeriesReducer": "REDUCE_MAX"
+              }
+            ],
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 300000,
+            "duration": "300s",
+            "trigger": {
+              "count": 1
+            },
+            "evaluationMissingData": "EVALUATION_MISSING_DATA_INACTIVE"
+          }
+        }
+      ],
+      "alertStrategy": {
+        "autoClose": "1800s"
+      },
+      "documentation": {
+        "mimeType": "text/markdown",
+        "content": "Check queue RUNNING state, worker readiness and dispatch/auth responses. Retain configured dispatch concurrency and retry bounds. Do not replay completed jobs or alter quota counters. Missing metrics alone do not establish healthy queue processing."
+      }
+    }
+  ]
+}

@@ -79,6 +79,9 @@ export function ScheduleForm({
               startDate: start,
               endDate: end || null,
             });
+            // Saving can finish after navigation. Invalidate the current agenda
+            // without carrying medication data or a previous account's response.
+            window.dispatchEvent(new Event("yzt-schedules-changed"));
             close();
           } catch (e: unknown) {
             setError(

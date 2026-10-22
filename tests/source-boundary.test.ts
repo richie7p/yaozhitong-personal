@@ -128,11 +128,16 @@ describe("complete warning citation boundaries", () => {
     expect(result.quiz.every((q) => q.explanationKind === "source_quote")).toBe(
       true,
     );
-    const reading = result.quiz.find((q) => q.learningObjective === "warning")!;
-    expect(reading.q).toContain("逐字核對");
-    expect(reading.citations).toEqual(
-      result.claims.find((c) => c.category === "warning")!.citations,
-    );
+    // Exact source conservation does not itself supply a meaningful safety
+    // comprehension assessment, and a rejected direct quote cannot create one.
+    expect(
+      result.quiz.find((q) => q.learningObjective === "warning"),
+    ).toBeUndefined();
+    expect(result.safetyCoverage).toMatchObject({
+      coveredSectionCount: 1,
+      quizCoveredSectionCount: 0,
+      status: "partial",
+    });
     expect(reviewCalled).toBe(false);
     expect(result.rejectedCount).toBe(1);
   });

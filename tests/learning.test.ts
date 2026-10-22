@@ -1230,17 +1230,8 @@ describe("complete citation coverage for formulation details", () => {
         {},
         "bundle",
       );
-      expect(r.claims).toEqual(
-        expectedQuestions
-          ? [purpose]
-          : [
-              {
-                ...purpose,
-                text: purpose.citations[0].quote,
-                kind: "source_exact_purpose",
-              },
-            ],
-      );
+      // A rejected quiz does not invalidate this independently supported purpose.
+      expect(r.claims).toEqual([purpose]);
       expect(r.quiz.filter((q) => q.id.startsWith("q"))).toHaveLength(
         expectedQuestions,
       );

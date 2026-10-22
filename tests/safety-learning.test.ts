@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { grounded, sourcePassages, type Llm } from "../server/ai";
 import {
+  completePurposeLearning,
   completeSafetyLearning,
   safetyReadingQuestion,
   SAFETY_SECTIONS,
@@ -72,7 +73,7 @@ describe("complete safety-source education and bounded section reading", () => {
     [
       "014025",
       ["禁忌", "警語及注意事項", "交互作用", "副作用/不良反應", "過量"],
-      ["禁忌", "警語及注意事項", "交互作用", "副作用/不良反應", "過量"],
+      ["禁忌", "警語及注意事項", "副作用/不良反應"],
     ],
   ])(
     "fills every real %s safety field even when generation omits all warnings and warning quizzes",
@@ -260,9 +261,8 @@ describe("complete safety-source education and bounded section reading", () => {
       }),
     ).toBeUndefined();
     expect(
-      safetyReadingQuestion({ ...passage, quote: "警語：目前尚無資訊。" })
-        ?.options,
-    ).toContain("目前已有完整資訊。");
+      safetyReadingQuestion({ ...passage, quote: "警語：目前尚無資訊。" }),
+    ).toBeUndefined();
   });
 
   it("does not fabricate warning fields for an official source without recognized safety sections", () => {
@@ -378,9 +378,9 @@ describe("complete safety-source education and bounded section reading", () => {
     );
     expect(result.status).toBe("supported");
     expect(result.safetyCoverage).toMatchObject({
-      status: "complete",
+      status: "partial",
       coveredSectionCount: 5,
-      quizCoveredSectionCount: 5,
+      quizCoveredSectionCount: 3,
     });
     const question = result.quiz.find(
       (q) => q.learningObjective === "purpose",
@@ -394,7 +394,82 @@ describe("complete safety-source education and bounded section reading", () => {
     expect(page.text).toContain(exact.citations[0].quote);
   });
 
-  it("replaces a missing approved purpose quiz with a short whole-field reading question, keeping later restrictions", async () => {
+  it.each([true, false])(
+    "keeps purpose text only when independently approved (%s), even when its quiz omits the actual heading",
+    async (supported) => {
+      const source = {
+        ...original("014025"),
+        text: "【用途(適應症)】緩解合成症狀甲，僅限成人使用。",
+      };
+      const explanation = "本藥用來減輕合成症狀甲，且僅限成人使用。";
+      let reviewCalled = false;
+      const result = await grounded(
+        {
+          json: async (_system, input: any) => {
+            if (input.expectedIds) {
+              reviewCalled = true;
+              expect(input.expectedIds).not.toContain("quiz-0");
+              return {
+                verdicts: input.expectedIds.map((id: string) => ({
+                  id,
+                  supported,
+                })),
+              };
+            }
+            const purpose = input.sources.find(
+              (item: any) => item.purposeEligible,
+            );
+            return {
+              status: "supported",
+              claims: [
+                {
+                  text: explanation,
+                  category: "purpose",
+                  citations: [{ sourceId: purpose.id }],
+                },
+              ],
+              quiz: [
+                {
+                  q: "哪項符合仿單列出的用途？",
+                  options: ["僅供成人緩解合成症狀甲", "只作合成包裝"],
+                  answer: 0,
+                  claimIndex: 0,
+                  learningObjective: "purpose",
+                  sourceSection: "用途(適應症)",
+                  requiredConditions: [],
+                  citations: [{ sourceId: purpose.id }],
+                },
+              ],
+            };
+          },
+        },
+        "用途學習",
+        [source],
+        {},
+        "bundle",
+      );
+      expect(reviewCalled).toBe(true);
+      expect(result.claims.some((claim) => claim.text === explanation)).toBe(
+        supported,
+      );
+      expect(
+        result.claims.filter((claim) => claim.category === "purpose"),
+      ).toHaveLength(1);
+      expect(result.claims[0].kind).toBe(
+        supported ? undefined : "source_exact_purpose",
+      );
+      expect(
+        result.quiz.some((quiz) => quiz.q === "哪項符合仿單列出的用途？"),
+      ).toBe(false);
+      const fallback = result.quiz.find(
+        (quiz) => quiz.learningObjective === "purpose",
+      )!;
+      expect(fallback.explanationKind).toBe("source_quote");
+      expect(fallback.citations[0].quote).toContain("僅限成人使用");
+    },
+  );
+
+  it("fills a missing approved purpose quiz with a short whole-field reading question, keeping later restrictions", async () => {
     const page = {
       ...original("014025"),
       id: "purpose-conditions",
@@ -443,8 +518,11 @@ describe("complete safety-source education and bounded section reading", () => {
       "bundle",
     );
     const purpose = result.claims.find(
-      (claim) => claim.kind === "source_exact_purpose",
+      (claim) => claim.category === "purpose",
     )!;
+    expect(
+      result.claims.filter((claim) => claim.category === "purpose"),
+    ).toHaveLength(1);
     const question = result.quiz.find(
       (q) => q.learningObjective === "purpose",
     )!;
@@ -453,6 +531,66 @@ describe("complete safety-source education and bounded section reading", () => {
       norm("除非有合成指示，兒童不可使用"),
     );
     expect(result.quiz.some((q) => q.q === "本品主要功效為何？")).toBe(false);
+  });
+
+  it("does not pair one complete purpose field's approved quiz with another field", () => {
+    const first = {
+      chunkId: "purpose-A",
+      sourceSection: "適應症",
+      quote: "【適應症】緩解合成甲症狀。",
+    };
+    const second = {
+      chunkId: "purpose-B",
+      sourceSection: "適應症",
+      quote: "【適應症】緩解合成乙症狀，僅限成人。",
+    };
+    const claim = {
+      text: "本藥用於減輕合成甲症狀。",
+      category: "purpose" as const,
+      citations: [{ chunkId: first.chunkId, quote: first.quote }],
+    };
+    const reviewed = {
+      id: "reviewed-A",
+      q: "依適應症，哪項符合甲欄？",
+      options: ["甲症狀", "只作包裝"],
+      answer: 0,
+      explain: first.quote,
+      citations: claim.citations,
+      learningObjective: "purpose" as const,
+      sourceSection: "適應症",
+    };
+    const result = completePurposeLearning(
+      { claims: [claim], quiz: [reviewed] },
+      [first, second],
+    );
+    expect(result.claims).toContainEqual(claim);
+    expect(
+      result.claims.find((item) => item.kind === "source_exact_purpose")!
+        .citations[0].chunkId,
+    ).toBe(second.chunkId);
+    expect(result.quiz).toContainEqual(reviewed);
+    expect(
+      result.quiz.find((item) => item.id !== reviewed.id)!.citations[0].quote,
+    ).toBe(second.quote);
+  });
+
+  it("retains independently approved whole-support purpose text without claiming assessment complete when a bounded fallback question is unavailable", () => {
+    const passage = {
+      chunkId: "purpose-long",
+      sourceSection: "適應症",
+      quote: "【適應症】" + "合成用途的完整條件與相關限制。".repeat(35),
+    };
+    const claim = {
+      text: "經獨立核對的合成用途說明。",
+      category: "purpose" as const,
+      citations: [{ chunkId: passage.chunkId, quote: passage.quote }],
+    };
+    const result = completePurposeLearning({ claims: [claim], quiz: [] }, [
+      passage,
+    ]);
+    expect(result.claims).toEqual([claim]);
+    expect(result.quiz).toEqual([]);
+    expect(result.complete).toBe(false);
   });
 
   it("keeps an approved purpose and its own approved question unchanged", async () => {

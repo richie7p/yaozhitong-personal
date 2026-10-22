@@ -1,7 +1,19 @@
-param([Parameter(Mandatory=$true)][string]$ProjectId,[Parameter(Mandatory=$true)][string]$BackupResource,[Parameter(Mandatory=$true)][ValidatePattern('^restore-drill-[a-z0-9-]+$')][string]$DestinationDatabase)
-$ErrorActionPreference='Stop'
-if ($BackupResource -notlike "projects/$ProjectId/locations/*/backups/*") { throw 'Backup must belong to the specified project.' }
-# Always restore into a new database, never overwrite the live database.
-gcloud firestore databases restore --project=$ProjectId --source-backup=$BackupResource --destination-database=$DestinationDatabase
-if ($LASTEXITCODE -ne 0) { throw 'Restore failed.' }
-Write-Host "Restored into $DestinationDatabase. Verify document counts and a test account export before recording the drill result. This script does not delete the restored database."
+param(
+  [Parameter(Mandatory=$true)][string]$PlanPath,
+  [Parameter(Mandatory=$true)][string]$ReceiptDirectory,
+  [switch]$ExecuteRestore
+)
+$ErrorActionPreference = 'Stop'
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$resolvedPlan = (Resolve-Path -LiteralPath $PlanPath).Path
+$receiptPath = [System.IO.Path]::GetFullPath($ReceiptDirectory)
+$runner = Join-Path $projectRoot 'tools/ops-restore.ts'
+$arguments = @('--import', 'tsx', $runner, '--plan', $resolvedPlan, '--receipts', $receiptPath)
+if ($ExecuteRestore) { $arguments += '--execute' }
+# Read-only preflight by default. The reviewed plan fixes both full resources.
+# One intent journal precedes at most one POST; no delete/app/Auth/IAM changes.
+Push-Location -LiteralPath $projectRoot
+try {
+  & node @arguments
+  if ($LASTEXITCODE -ne 0) { throw 'Restore preflight/operation failed; inspect the private journal before any follow-up. Never blindly retry.' }
+} finally { Pop-Location }

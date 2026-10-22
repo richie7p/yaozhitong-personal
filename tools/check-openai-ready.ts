@@ -54,7 +54,7 @@ try {
   built =
     web.isFile() &&
     server.includes(targetModel) &&
-    server.includes("openai-chat-json-none-v2");
+    server.includes("openai-chat-json-reasoning-v3");
 } catch {}
 check("prepared-build", built, "請先完成本次 GPT-6 Luna 版本建置。");
 
@@ -79,7 +79,11 @@ const report = {
   status,
   targetModel,
   activeProvider: config.aiProvider,
-  stagedOpenAIModels: { text: textModel, vision: visionModel },
+  stagedOpenAIModels: {
+    text: textModel === targetModel ? targetModel : "other_or_invalid_model",
+    vision:
+      visionModel === targetModel ? targetModel : "other_or_invalid_model",
+  },
   keyConfigured,
   keyValidityVerified: false,
   realAiCalls: 0,
@@ -88,10 +92,16 @@ const report = {
   canStartOptInRealAcceptance: !blockers.length && keyConfigured && activated,
   requestPolicy: {
     endpoint: "chat/completions",
-    reasoningEffort: "none",
+    reasoningEffort: config.aiTextReasoningEffort,
+    visionReasoningEffort: "none",
     store: false,
+    serviceTier: "default",
     responseFormat: "json_object",
     requestTimeoutMs: config.aiRequestTimeoutMs,
+    textRequestTimeoutMs:
+      config.aiTextRequestTimeoutMs ?? config.aiRequestTimeoutMs,
+    textMaxTokens: config.aiTextMaxTokens,
+    visionMaxTokens: config.aiVisionMaxTokens,
     jobTimeoutMs: config.aiJobTimeoutMs,
     crossProviderFallback: false,
   },
@@ -100,7 +110,7 @@ const report = {
   pending: [
     ...(!keyConfigured ? ["在 .env 設定 OPENAI_API_KEY。"] : []),
     ...(!activated ? ["金鑰到位後改 AI_PROVIDER=openai 並重新啟動服務。"] : []),
-    "尚須真實驗證帳戶權限與額度，再連續完成五輪三段流程、來源核對及失敗恢復驗收。",
+    "以已驗證的一般帳號測試上傳、核對保存、仿單說明、理解測驗及問答，另外檢查實際內容、來源與失敗恢復。",
   ],
   note: "只檢查本機準備狀態；金鑰存在不代表權限、額度或模型品質已驗證。",
 };

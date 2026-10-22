@@ -9,6 +9,7 @@ param(
   [ValidateSet('openai','nvidia')][string]$AiProvider='openai',
   [string]$TextModel,
   [string]$VisionModel,
+  [string]$TextReasoningEffort='',
   [switch]$ValidateOnly
 )
 $ErrorActionPreference='Stop'
@@ -32,7 +33,7 @@ $Environment = $Environment.ToLowerInvariant()
 . (Join-Path $PSScriptRoot 'deploy-config.ps1')
 $webConfig = Get-Content -Raw -LiteralPath $FirebaseConfigPath | ConvertFrom-Json
 if ($webConfig.projectId -ne $ProjectId) { throw 'Firebase config projectId must match ProjectId.' }
-$ai = Get-YztAiDeploymentConfig -AiProvider $AiProvider -TextModel $TextModel -VisionModel $VisionModel -Environment $Environment
+$ai = Get-YztAiDeploymentConfig -AiProvider $AiProvider -TextModel $TextModel -VisionModel $VisionModel -TextReasoningEffort $TextReasoningEffort -Environment $Environment
 if ($ValidateOnly) {
   [ordered]@{
     validationPassed = $true
@@ -40,6 +41,7 @@ if ($ValidateOnly) {
     aiProvider = $ai.aiProvider
     textModel = $ai.textModel
     visionModel = $ai.visionModel
+    textReasoningEffort = $ai.environmentVariables.AI_TEXT_REASONING_EFFORT
     secretName = $ai.secretName
     keyEnvironmentVariable = $ai.keyEnvironmentVariable
     keyConfigured = $ai.keyConfigured
@@ -161,7 +163,7 @@ try {
 }
 $envFile=Join-Path ([System.IO.Path]::GetTempPath()) ("yzt-env-"+[guid]::NewGuid().ToString()+'.yaml')
 try {
-  $base=[ordered]@{APP_MODE='firebase';GOOGLE_CLOUD_PROJECT=$ProjectId;STORAGE_BUCKET=$bucket;TASKS_LOCATION=$Region;TASKS_QUEUE="$name-ai";WORKER_SERVICE_ACCOUNT=$caller;FIREBASE_WEB_CONFIG=($webConfig|ConvertTo-Json -Compress);FIREBASE_VAPID_KEY=$VapidKey;DAILY_USER_LIMIT='20';DAILY_GLOBAL_LIMIT='200';SERVICE_ROLE='worker'}
+  $base=[ordered]@{APP_MODE='firebase';GOOGLE_CLOUD_PROJECT=$ProjectId;STORAGE_BUCKET=$bucket;TASKS_LOCATION=$Region;TASKS_QUEUE="$name-ai";WORKER_SERVICE_ACCOUNT=$caller;FIREBASE_WEB_CONFIG=($webConfig|ConvertTo-Json -Compress);FIREBASE_VAPID_KEY=$VapidKey;DAILY_USER_LIMIT='20';DAILY_GLOBAL_LIMIT='1000';PUBLIC_ACCESS_MODE='verified';SERVICE_ROLE='worker'}
   $base.GOOGLE_OAUTH_CLIENT_ID=$GoogleOAuthClientId
   if ($PublicAppUrl) { $base.APP_URL=$PublicAppUrl }
   foreach ($entry in $ai.environmentVariables.GetEnumerator()) { $base[$entry.Key] = $entry.Value }

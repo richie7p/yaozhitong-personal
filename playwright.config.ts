@@ -6,7 +6,7 @@ export default defineConfig({
   timeout: 40000,
   use: { baseURL: "http://127.0.0.1:5190", trace: "retain-on-failure" },
   webServer: {
-    command: "npm run build && tsx tests/support/e2e-server.ts",
+    command: "npm run build && node --import tsx tests/support/e2e-server.ts",
     env: {
       APP_MODE: "local",
       AI_PROVIDER: "nvidia",

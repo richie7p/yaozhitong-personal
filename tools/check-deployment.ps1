@@ -211,7 +211,8 @@ function Assert-Validation {
 }
 
 function Assert-CloudRunCalls {
-  param($Result, [string]$Provider, [string]$TextModel, [string]$VisionModel, [string]$Environment = 'test', [switch]$Partial, [string]$ExpectedPublicAppUrl = '')
+  param($Result, [string]$Provider, [string]$TextModel, [string]$VisionModel, [string]$Environment = 'test', [switch]$Partial, [string]$ExpectedPublicAppUrl = '', [string]$ExpectedReasoningEffort = '')
+  if (-not $ExpectedReasoningEffort) { $ExpectedReasoningEffort = if ($Provider -eq 'openai') { 'medium' } else { 'none' } }
   $keyName = if ($Provider -eq 'openai') { 'OPENAI_API_KEY' } else { 'NVIDIA_API_KEY' }
   $otherKey = if ($Provider -eq 'openai') { 'NVIDIA_API_KEY' } else { 'OPENAI_API_KEY' }
   $secretValue = if ($Provider -eq 'openai') { $openaiSentinel } else { $nvidiaSentinel }
@@ -262,6 +263,8 @@ function Assert-CloudRunCalls {
     }
     Assert-Deployment ($call.EnvironmentValues.GOOGLE_OAUTH_CLIENT_ID -ceq $googleClientId) "$($Result.Name): Google token audience is missing or changed."
     Assert-Deployment ($call.EnvironmentValues.APP_MODE -eq 'firebase') "$($Result.Name): production mode changed."
+    Assert-Deployment ($call.EnvironmentValues.PUBLIC_ACCESS_MODE -ceq 'verified') "$($Result.Name): all verified accounts must have access."
+    Assert-Deployment ($call.EnvironmentValues.DAILY_USER_LIMIT -ceq '20' -and $call.EnvironmentValues.DAILY_GLOBAL_LIMIT -ceq '1000') "$($Result.Name): authorized public quotas changed."
     Assert-Deployment ($call.EnvironmentValues.AI_PROVIDER -ceq $Provider) "$($Result.Name): Cloud Run provider mismatch."
     Assert-Deployment ($call.EnvironmentValues.STORAGE_BUCKET -ceq "$projectId-yzt-$Environment-data") "$($Result.Name): bucket name is incorrect or not lowercase."
     Assert-Deployment ($call.EnvironmentValues.TASKS_QUEUE -ceq "yzt-$Environment-ai") "$($Result.Name): queue name is incorrect or not lowercase."
@@ -274,9 +277,15 @@ function Assert-CloudRunCalls {
     Assert-Deployment ($call.EnvironmentValues[$selectedBase] -eq $expectedBase -and -not $call.EnvironmentValues.ContainsKey($otherBase)) "$($Result.Name): provider endpoint mismatch."
     foreach ($setting in @{
       AI_REQUEST_TIMEOUT_MS = '45000'; AI_PRIMARY_TIMEOUT_MS = '22000'; AI_TEXT_PRIMARY_TIMEOUT_MS = '12000'
-      AI_JOB_TIMEOUT_MS = '120000'; AI_TEXT_MAX_TOKENS = '2400'; AI_VISION_MAX_TOKENS = '2600'
+      AI_JOB_TIMEOUT_MS = $(if ($Provider -eq 'openai' -and $ExpectedReasoningEffort -eq 'high') { '300000' } elseif ($Provider -eq 'openai' -and $ExpectedReasoningEffort -ne 'none') { '240000' } else { '120000' }); AI_TEXT_MAX_TOKENS = $(if ($Provider -eq 'openai' -and $ExpectedReasoningEffort -eq 'high') { '25000' } elseif ($Provider -eq 'openai' -and $ExpectedReasoningEffort -ne 'none') { '12000' } else { '2400' }); AI_VISION_MAX_TOKENS = '2600'
+      AI_TEXT_REASONING_EFFORT = $ExpectedReasoningEffort
     }.GetEnumerator()) {
       Assert-Deployment ($call.EnvironmentValues[$setting.Key] -eq $setting.Value) "$($Result.Name): bounded runtime settings changed."
+    }
+    if ($Provider -eq 'openai' -and $ExpectedReasoningEffort -ne 'none') {
+      Assert-Deployment ($call.EnvironmentValues.AI_TEXT_REQUEST_TIMEOUT_MS -eq $(if ($ExpectedReasoningEffort -eq 'high') { '120000' } else { '90000' })) "$($Result.Name): text reasoning request timeout mismatch."
+    } else {
+      Assert-Deployment (-not $call.EnvironmentValues.ContainsKey('AI_TEXT_REQUEST_TIMEOUT_MS')) "$($Result.Name): text-only reasoning timeout leaked into a non-reasoning route."
     }
     Assert-Deployment ($call.Arguments -ccontains "--set-secrets=$keyName=yzt-$Environment-$Provider-key`:latest") "$($Result.Name): replace-all selected secret binding missing or resource case changed."
     Assert-Deployment (-not (($call.Arguments -join ' ') -match "(?:--set-secrets|--update-secrets)=[^ ]*$otherKey=")) "$($Result.Name): another provider secret was bound."
@@ -419,7 +428,7 @@ try {
   }
 
   $bothKeys = @{ OPENAI_API_KEY = $openaiSentinel; NVIDIA_API_KEY = $nvidiaSentinel }
-  Assert-Deployment ($requiredIndexes.Count -eq 4) 'Expected four due-query indexes in the repository manifest.'
+  Assert-Deployment ($requiredIndexes.Count -eq 5 -and @($requiredIndexes | Where-Object collectionGroup -eq 'supportTickets').Count -eq 1) 'Expected four due-query indexes and one private support pagination index.'
   $result = Invoke-DeploymentScenario 'No cloud indexes stops before build, Cloud Run and Scheduler' -Environment $bothKeys -IndexJson '[]' -ExpectFailure
   Assert-IndexGateFailure $result -ExpectRepairInstruction
   $partialIndexes = @($readyIndexes | Select-Object -Skip 1)
@@ -453,6 +462,13 @@ try {
 
   $result = Invoke-DeploymentScenario 'OpenAI default full mocked deployment' -Environment $bothKeys
   Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna'
+  foreach ($effort in @('none','low','medium','high')) {
+    $result = Invoke-DeploymentScenario "Luna $effort reasoning survives all service deploys with a larger text budget" -Environment $bothKeys -Parameters @{ TextReasoningEffort = $effort }
+    Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna' -ExpectedReasoningEffort $effort
+  }
+  $result = Invoke-DeploymentScenario 'Invalid reasoning strength is rejected before cloud access' -Environment $bothKeys -Parameters @{ TextReasoningEffort = 'synthetic-invalid-effort' } -ExpectFailure
+  Assert-Deployment ($result.Calls.Count -eq 0) "$($result.Name): invalid reasoning reached gcloud."
+  $script:passedChecks++
   $result = Invoke-DeploymentScenario 'Hosting origin survives every service deploy and update without changing worker routing' -Environment $bothKeys -Parameters @{ PublicAppUrl = 'https://synthetic-app.web.app/' }
   Assert-CloudRunCalls $result 'openai' 'gpt-6-luna' 'gpt-6-luna' -ExpectedPublicAppUrl 'https://synthetic-app.web.app'
   $originRunCalls = @($result.Calls | Where-Object EnvironmentPath)

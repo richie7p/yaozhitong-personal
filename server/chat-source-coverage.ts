@@ -75,6 +75,36 @@ function completeFieldText(field: PassageSupport, claim: Claim) {
   );
 }
 
+function requestedScope(question: string) {
+  const excludedTopic =
+    "(?:禁忌(?:症)?|禁用(?:情形)?|禁服|交互作用|交互影響|藥物相互作用|過量(?:資訊)?|超量|副作用|不良反應|警語|警告|注意事項|contraindications?|interactions?|overdose|adversereactions?|sideeffects?|warnings?|precautions?)";
+  const exclusion = new RegExp(
+    `(?:不需要|不需|無需|不必|不用|不要)(?:再)?(?:說明|回答|列出|提供|解釋|介紹|給我)?(?:有關|關於)?${excludedTopic}(?:(?:或|和|及|以及|、|/|與)${excludedTopic})*(?!以外|之外|除外)(?=$|[，,。；;！？!?]|但|不過|另外|只|僅|請|再)`,
+    "giu",
+  );
+  const requestedQuestion = compactSource(question).replace(exclusion, "");
+  return {
+    requestedQuestion,
+    requested: topics.filter((topic) =>
+      topic.requested.test(requestedQuestion),
+    ),
+  };
+}
+
+/** Use the same requested-topic scope for generation and final omission checks. */
+export function requestedSafetyFields<T extends PassageSupport>(
+  question: string,
+  passages: T[],
+): T[] {
+  const { requested } = requestedScope(question);
+  return passages.filter(
+    (field) =>
+      SAFETY_SECTIONS.has(field.sourceSection || "") &&
+      field.evidenceKind !== "structural_container" &&
+      requested.some((topic) => topic.matches(field)),
+  );
+}
+
 /** Coverage is proved per actual canonical field and publication, after review.
  * A full citation attached to a one-point summary does not prove a full answer.
  * Unassessed source text is retained separately and never becomes an AI claim. */
@@ -85,20 +115,31 @@ export function completeRequestedChatCoverage(
   passages: (PassageSupport & { licenseNo: string })[],
   claims: Claim[],
   existing?: GroundedResult["sourceReading"],
+  /** Internal verified protocol result; never read from provider claim metadata. */
+  reviewedCompleteFields: PassageSupport[] = [],
 ): { incomplete: boolean; sourceReading?: GroundedResult["sourceReading"] } {
   // Remove only an adjacent named safety topic or a list of those names.
   // Negating an unrelated object cannot cancel a later positive safety request.
   // Ambiguous wording remains conservative instead of discarding a clause tail.
-  const excludedTopic =
-    "(?:禁忌(?:症)?|禁用(?:情形)?|禁服|交互作用|交互影響|藥物相互作用|過量(?:資訊)?|超量|副作用|不良反應|警語|警告|注意事項|contraindications?|interactions?|overdose|adversereactions?|sideeffects?|warnings?|precautions?)";
-  const exclusion = new RegExp(
-    `(?:不需要|不需|無需|不必|不用|不要)(?:再)?(?:說明|回答|列出|提供|解釋|介紹|給我)?(?:有關|關於)?${excludedTopic}(?:(?:或|和|及|以及|、|/|與)${excludedTopic})*(?!以外|之外|除外)(?=$|[，,。；;！？!?]|但|不過|另外|只|僅|請|再)`,
-    "giu",
-  );
-  const requestedQuestion = compactSource(question).replace(exclusion, "");
-  const requested = topics.filter((topic) =>
-    topic.requested.test(requestedQuestion),
-  );
+  const { requestedQuestion, requested } = requestedScope(question);
+  const reviewed = (field: PassageSupport) =>
+    reviewedCompleteFields.some((complete) =>
+      sameCitationSet(passageCitations(complete), passageCitations(field)),
+    );
+  if (existing && reviewedCompleteFields.length) {
+    const sections = existing.sections.filter(
+      (section) =>
+        !reviewedCompleteFields.some((complete) =>
+          sameCitationSet(passageCitations(complete), section.citations),
+        ),
+    );
+    existing =
+      sections.length ||
+      existing.unavailableSections?.length ||
+      existing.missingTopics?.length
+        ? { ...existing, sections }
+        : undefined;
+  }
   if (!requested.length) {
     const explicitPurposeOnly =
       /[只僅].{0,8}(?:用途|適應症|效能)/u.test(requestedQuestion) &&
@@ -143,7 +184,10 @@ export function completeRequestedChatCoverage(
           version: document.version,
         });
       for (const field of matching)
-        if (!claims.some((claim) => completeFieldText(field, claim)))
+        if (
+          !reviewed(field) &&
+          !claims.some((claim) => completeFieldText(field, claim))
+        )
           missing.set(JSON.stringify(passageCitations(field)), field);
     }
   }

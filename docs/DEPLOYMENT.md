@@ -1,8 +1,10 @@
+> 最新公開模式、20／1,000 次配額、備份還原及告警驗收請見 [PUBLIC-READINESS](PUBLIC-READINESS.md)。下列 2026-10-20／21 版本數據為歷史紀錄。
+
 # Google Cloud 與 Firebase 部署
 
 2026-10-20 已完成 `asia-east1` 的 Google Cloud TEST 首次部署，並以真實 Firebase 登入、雲端資料庫／佇列及 OpenAI API 跑通固定合成藥袋流程。目前是受控測試環境，尚未完成大眾公開使用所需的全部驗收。
 
-## 目前狀態（2026-10-21）
+## 歷史狀態（2026-10-21）
 
 目前發布來源為 `9620da3028545a54b6bc2062c3134ca7f4d9ec36`，映像標籤 `20261021-duration-recovery`，Cloud Build `21c95839-2f84-424c-8902-50df37dfa86a`，digest `sha256:8ca733c0ea6c3293f98b1319d3266e278bf5a3c5eaf4530c0c8d4635996d34d7`。Web `yzt-test-web-00016-nrw`、worker `yzt-test-worker-00016-lkf` 各承接 100% 流量。
 

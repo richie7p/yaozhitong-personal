@@ -9,7 +9,11 @@ import {
 } from "node:fs/promises";
 import { dirname } from "node:path";
 import { initializeApp, getApps, applicationDefault } from "firebase-admin/app";
-import { getFirestore, type Transaction } from "firebase-admin/firestore";
+import {
+  getFirestore,
+  FieldPath,
+  type Transaction,
+} from "firebase-admin/firestore";
 import { config } from "./config.js";
 export type Doc = Record<string, any>;
 export interface Tx {
@@ -29,6 +33,12 @@ export interface Store {
     field: string,
     cutoff: string | number,
     where?: [string, unknown],
+  ): Promise<T[]>;
+  recent?<T = Doc>(
+    collection: string,
+    limit: number,
+    before?: { createdAt: string; id: string },
+    ownerId?: string,
   ): Promise<T[]>;
   set(collection: string, id: string, value: unknown): Promise<void>;
   delete(collection: string, id: string): Promise<void>;
@@ -103,6 +113,25 @@ export class MemoryStore implements Store {
         )
         .map(([, value]) => value),
     );
+  }
+  async recent<T = Doc>(
+    c: string,
+    limit: number,
+    before?: { createdAt: string; id: string },
+    ownerId?: string,
+  ): Promise<T[]> {
+    return (await this.list<any>(c, ownerId ? ["ownerId", ownerId] : undefined))
+      .filter(
+        (row) =>
+          !before ||
+          row.createdAt < before.createdAt ||
+          (row.createdAt === before.createdAt && row.id < before.id),
+      )
+      .sort(
+        (a, b) =>
+          b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id),
+      )
+      .slice(0, limit);
   }
   async set(c: string, id: string, v: unknown) {
     await this.transaction(async (tx) => {
@@ -215,6 +244,21 @@ export class FirestoreStore implements Store {
     const rows: T[] = [];
     for await (const d of q.stream()) rows.push((d as any).data() as T);
     return rows;
+  }
+  async recent<T = Doc>(
+    c: string,
+    limit: number,
+    before?: { createdAt: string; id: string },
+    ownerId?: string,
+  ): Promise<T[]> {
+    let query = this.db
+      .collection(c)
+      .orderBy("createdAt", "desc")
+      .orderBy(FieldPath.documentId(), "desc");
+    if (ownerId) query = query.where("ownerId", "==", ownerId);
+    if (before) query = query.startAfter(before.createdAt, before.id);
+    const snapshot = await query.limit(limit).get();
+    return snapshot.docs.map((doc) => doc.data() as T);
   }
   async set(c: string, id: string, v: unknown) {
     await this.db

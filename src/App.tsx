@@ -29,6 +29,7 @@ import { JobHistory } from "./JobHistory";
 import { Notifications } from "./NotificationViews";
 import { Demo } from "./Demo";
 import { Home, BagDrawing } from "./Home";
+import { SupportPage } from "./Support";
 import { PrivacyPage, PrivacyLink } from "./Privacy";
 const navigation = [
   ["home", "今日總覽", House],
@@ -114,6 +115,7 @@ export function App() {
       window.removeEventListener("offline", net);
     };
   }, []);
+  if (pageName === "support") return <SupportPage />;
   if (pageName === "privacy") return <PrivacyPage />;
   if (auth.loading) return <Busy />;
   if (!auth.me) return <Login />;
@@ -245,6 +247,10 @@ export function App() {
             <HistoryIcon size={18} />
             處理紀錄與恢復
           </a>
+          <a href="#support">
+            <MessageCircle size={18} />
+            問題回報
+          </a>
           <a href="#profile">
             <Settings size={18} />
             帳號與設定
@@ -338,7 +344,10 @@ export function App() {
         <footer className="site-footer">
           <span>藥智通・用藥手帳</span>
           <span>以官方仿單為依據，陪你看懂每一份用藥資訊。</span>
-          <PrivacyLink />
+          <PrivacyLink />{" "}
+          <a className="text-link" href="#support">
+            問題回報
+          </a>
         </footer>
       </div>
       <nav className="bottom-nav" aria-label="手機主要導覽">
@@ -475,7 +484,9 @@ function Login() {
           </h2>
           <p className="muted">
             {mode === "register"
-              ? "先建立帳號並驗證信箱，再確認 AI 試用資格。"
+              ? config?.publicAccess === "verified"
+                ? "建立帳號並驗證信箱，即可開始使用。"
+                : "先建立帳號並驗證信箱，再確認 AI 試用資格。"
               : mode === "reset"
                 ? "輸入註冊時使用的信箱，我們會寄送重設密碼連結。"
                 : "開啟你的藥品、說明與服藥紀錄。"}
@@ -621,8 +632,9 @@ function Login() {
                     id="registration-trial-notice"
                     className="registration-trial-notice"
                   >
-                    目前為受控試用。完成註冊與信箱驗證後，仍需另行取得 AI
-                    試用資格，才能使用 AI 功能。
+                    {config?.publicAccess === "verified"
+                      ? `完成註冊與信箱驗證後，即可使用全部一般功能。AI 每人每日 ${config.dailyUserLimit} 次，全站每日 ${config.dailyGlobalLimit} 次，額滿後隔日恢復。`
+                      : "目前為受控試用。完成註冊與信箱驗證後，仍需另行取得 AI 試用資格，才能使用 AI 功能。"}
                   </p>
                 )}
                 <Button className="primary full" type="submit" disabled={busy}>
@@ -675,7 +687,10 @@ function Login() {
           <p className="fine">
             本服務提供仿單資訊整理與用藥紀錄，不能取代醫師或藥師的專業判斷。
           </p>
-          <PrivacyLink />
+          <PrivacyLink />{" "}
+          <a className="text-link" href="#support">
+            問題回報
+          </a>
         </div>
       </section>
     </div>

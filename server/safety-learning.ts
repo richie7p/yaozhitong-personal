@@ -92,7 +92,9 @@ function purposeReadingQuestion(passage: SafetyPassage) {
 /**
  * Call only with actual clinical-purpose fields identified by the source parser.
  * This reproduces source bytes, never repairs a glyph or infers an indication.
- * Every approved purpose with its own reviewed question stays unchanged.
+ * Independently approved purpose text stays unchanged even when its question
+ * is rejected. The complete original field and reading question are separate
+ * fallbacks; a question's heading/option failure cannot invalidate safe text.
  */
 export function completePurposeLearning(
   result: Pick<GroundedResult, "claims" | "quiz">,
@@ -123,21 +125,22 @@ export function completePurposeLearning(
       )
     )
       continue;
-    const removed = purposes;
-    claims = claims.filter((claim) => !removed.includes(claim));
-    quiz = quiz.filter(
-      (question) =>
-        !(
-          question.learningObjective === "purpose" &&
-          removed.some((claim) => sameSupport(question, claim))
-        ),
+    // A review of a shortened citation cannot establish later restrictions in
+    // this whole purpose field. Preserve only approved text whose own support
+    // includes this complete field; otherwise retain the exact-source fallback.
+    const fullyScoped = purposes.filter((claim) =>
+      sameSupport(claim, { citations: passageCitations(passage) }),
     );
-    claims.push({
-      text: passage.quote.trim(),
-      category: "purpose",
-      kind: "source_exact_purpose",
-      citations: passageCitations(passage),
-    });
+    claims = claims.filter(
+      (claim) => !purposes.includes(claim) || fullyScoped.includes(claim),
+    );
+    if (!fullyScoped.length)
+      claims.push({
+        text: passage.quote.trim(),
+        category: "purpose",
+        kind: "source_exact_purpose",
+        citations: passageCitations(passage),
+      });
     const fallback = purposeReadingQuestion(passage);
     if (fallback) quiz.push(fallback);
     else complete = false;
@@ -250,20 +253,16 @@ export function safetyReadingQuestion(passage: SafetyPassage) {
     incorrect = "目前已有完整資訊。";
     topic = "原文提供的資料狀況";
   }
-  // A source-reading question can test literal attribution when no safe
-  // medical opposite exists. Its distractor makes no medical assertion.
-  const literalReading = !incorrect;
-  if (!incorrect) incorrect = "本欄未記載這段可核對的原文。";
+  // Source attribution or acknowledging unavailable information is reading,
+  // not safety comprehension. Leave that field unassessed instead of filling
+  // the safety count with a question about whether this text was printed.
+  if (!incorrect || unknown) return undefined;
   const id = stableId(passage);
   const answer = parseInt(id.slice(-1), 16) % 2;
   const options = answer === 0 ? [unit, incorrect] : [incorrect, unit];
   return {
     id,
-    q: literalReading
-      ? `依仿單「${passage.sourceSection}」欄，哪項內容可在引用原文逐字核對？`
-      : unknown
-        ? `依仿單「${passage.sourceSection}」欄，原文對此項提供的資料狀況為何？`
-        : `依仿單「${passage.sourceSection}」欄，關於「${topic}」，以下哪項與原文相符？`,
+    q: `依仿單「${passage.sourceSection}」欄，關於「${topic}」，以下哪項與原文相符？`,
     options,
     answer,
     explain: `依仿單「${passage.sourceSection}」原文：${passage.quote.trim()}`,

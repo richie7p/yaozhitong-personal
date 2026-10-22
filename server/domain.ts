@@ -29,6 +29,7 @@ import {
 } from "./config.js";
 import { firebaseApp, type Store, type Doc } from "./store.js";
 import { Blobs } from "./blobs.js";
+import { jobFailureEvent } from "./job-telemetry.js";
 import { localWorkerBootTime } from "./local-runner.js";
 import { nextTime, initialFamilyTime } from "./schedule-time.js";
 import { requestReminderRefresh } from "./reminder-state.js";
@@ -91,6 +92,9 @@ export class Domain {
       }
       return u;
     });
+  }
+  aiAccess(account: Account) {
+    return config.publicAccess === "verified" || account.eligible;
   }
   async active(uid: string) {
     const u = await this.store.get<Account>("users", uid);
@@ -649,7 +653,7 @@ export class Domain {
     if (!/^[a-zA-Z0-9-]{8,100}$/.test(key))
       return fail("invalid_request", "缺少有效的 Idempotency-Key。");
     const u = await this.active(uid);
-    if (!u.eligible)
+    if (!this.aiAccess(u))
       return fail("not_eligible", "此帳號尚未取得測試資格。", 403);
     if (!aiConnection().key && this.llmFactory().constructor === Nvidia)
       return fail(
@@ -713,7 +717,7 @@ export class Domain {
       const currentUser = await tx.get<Account>("users", uid);
       if (!currentUser || currentUser.disabled || currentUser.deleting)
         return fail("account_disabled", "帳號已停用。", 403);
-      if (!currentUser.eligible)
+      if (!this.aiAccess(currentUser))
         return fail("not_eligible", "此帳號尚未取得測試資格。", 403);
       await this.jobMedications(uid, kind, input, tx);
       const old = await tx.get<Job & { payloadHash: string }>("jobs", id);
@@ -822,7 +826,7 @@ export class Domain {
         return;
       }
       const u = await this.active(j.ownerId);
-      if (!u.eligible)
+      if (!this.aiAccess(u))
         return fail("not_eligible", "此帳號目前沒有 AI 測試資格。", 403);
       await this.jobMedications(j.ownerId, j.kind, j.input);
       llm = this.llmFactory();
@@ -1113,6 +1117,16 @@ export class Domain {
         });
         return true;
       });
+      if (completedCurrentAttempt)
+        console.error(
+          JSON.stringify(
+            jobFailureEvent(
+              j,
+              error.code,
+              e instanceof AppError ? e.status : 500,
+            ),
+          ),
+        );
     } finally {
       // Only the attempt that committed a terminal state may remove its input.
       // A recovered worker can still need the same photo when an expired
@@ -1157,6 +1171,11 @@ export class Domain {
         return fail("account_deleted", "刪除中的帳號不能恢復。", 409);
       if (id === actor && data.disabled)
         return fail("invalid_request", "不能停用自己。");
+      if (config.publicAccess === "verified" && data.eligible !== undefined)
+        return fail(
+          "invalid_request",
+          "公開模式中，已驗證帳號皆可使用 AI；如需限制帳號請使用停用。",
+        );
       const seats = (await tx.get("settings", "testerSeats")) || {
         uids: [] as string[],
       };
@@ -1381,6 +1400,7 @@ export class Domain {
       "cabinet",
       "chats",
       "learning",
+      "supportTickets",
     ])
       result[c] = await this.store.list(c, ["ownerId", uid]);
     return result;
@@ -1433,6 +1453,8 @@ export class Domain {
       "devices",
       "invites",
       "inviteAttempts",
+      "supportTickets",
+      "supportLimits",
       "usage",
       "notifications",
       "jobs",

@@ -18,6 +18,7 @@ import { extractLeaflet } from "./leaflets.js";
 import { tick } from "./scheduler.js";
 import { refreshCatalog } from "./import-catalog.js";
 import { completeGoogleProfile } from "./google-profile.js";
+import { Support } from "./support.js";
 import { validateRecognitionPhoto } from "./photo-validation.js";
 type Env = {
   Variables: { identity: Identity; account: Account; requestId: string };
@@ -52,6 +53,22 @@ export function createApp(d: Domain, auth = authenticate) {
         ),
     }),
   );
+  for (const path of ["/api/v1/support", "/api/v1/admin/support/*"])
+    app.use(
+      path,
+      bodyLimit({
+        maxSize: 8000,
+        onError: (c) =>
+          c.json(
+            {
+              code: "payload_too_large",
+              message: "回報內容太長，請縮短後重試。",
+              requestId: c.get("requestId"),
+            },
+            413,
+          ),
+      }),
+    );
   app.get("/health", (c) => c.json({ status: "ok" }));
   app.get("/api/v1/config", (c) =>
     c.json({
@@ -70,6 +87,10 @@ export function createApp(d: Domain, auth = authenticate) {
       aiVisionFallbackModels:
         config.aiProvider === "nvidia" ? config.nvidiaVisionFallbackModels : [],
       localAccounts: config.mode === "local" ? localPeople : [],
+      publicAccess: config.publicAccess,
+      dailyUserLimit: config.userLimit,
+      dailyGlobalLimit: config.globalLimit,
+      support: "private_form",
       appVersion: "0.1.0",
     }),
   );
@@ -117,6 +138,22 @@ export function createApp(d: Domain, auth = authenticate) {
       ),
     ),
   );
+  const support = new Support(d.store);
+  app.get("/api/v1/support", async (c) =>
+    c.json(await support.page(c.req.query("cursor"), uid(c))),
+  );
+  app.post("/api/v1/support", async (c) => {
+    if (!c.get("identity").verified)
+      return fail("email_unverified", "請先完成信箱驗證再提交回報。", 403);
+    return c.json(
+      await support.create(
+        uid(c),
+        c.req.header("Idempotency-Key") || "",
+        await c.req.json(),
+      ),
+      201,
+    );
+  });
   app.get("/api/v1/me", async (c) => c.json(await d.me(uid(c))));
   app.put("/api/v1/me", async (c) =>
     c.json(await d.profile(uid(c), await c.req.json())),
@@ -371,8 +408,8 @@ export function createApp(d: Domain, auth = authenticate) {
     }),
   );
   app.post("/api/v1/jobs/:id/retry", async (c) => {
-    if (!c.get("identity").verified || !c.get("account").eligible)
-      return fail("forbidden", "需要驗證信箱及測試資格。", 403);
+    if (!c.get("identity").verified || !d.aiAccess(c.get("account")))
+      return fail("forbidden", "請先驗證信箱，並確認帳號可使用 AI。", 403);
     return c.json(await d.retryJob(uid(c), c.req.param("id")), 202);
   });
   app.get("/api/v1/chat", async (c) => c.json(await d.chatHistory(uid(c))));
@@ -403,6 +440,19 @@ export function createApp(d: Domain, auth = authenticate) {
       return fail("forbidden", "需要管理員權限。", 403);
     await next();
   });
+  app.get("/api/v1/admin/support", async (c) =>
+    c.json(await support.page(c.req.query("cursor"))),
+  );
+  app.patch("/api/v1/admin/support/:id", async (c) =>
+    c.json(
+      await support.reply(
+        uid(c),
+        c.req.param("id"),
+        await c.req.json(),
+        c.req.header("Idempotency-Key") || "",
+      ),
+    ),
+  );
   app.get("/api/v1/admin/users", async (c) => {
     const q = (c.req.query("q") || "").toLowerCase();
     return c.json({

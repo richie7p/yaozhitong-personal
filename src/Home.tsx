@@ -62,10 +62,15 @@ export function Home() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState("");
   useEffect(() => {
-    const timer = setInterval(() => {
+    const refreshToday = () => {
       void today.refresh();
-    }, 30000);
-    return () => clearInterval(timer);
+    };
+    const timer = setInterval(refreshToday, 30000);
+    window.addEventListener("yzt-schedules-changed", refreshToday);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("yzt-schedules-changed", refreshToday);
+    };
   }, []);
   const rows = today.data?.items || [];
   const done = rows.filter((r: any) => r.log?.status === "taken").length;

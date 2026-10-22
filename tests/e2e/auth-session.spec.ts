@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 // Every Firebase/Google request is fulfilled locally. No account, email or
 // identity credential in this fixture reaches an external service.
-async function syntheticAuth(page: Page) {
+async function syntheticAuth(page: Page, publicAccess = "approved") {
   let uid = "synthetic-email-user";
   let email = "person@example.invalid";
   let verified = true;
@@ -152,6 +152,9 @@ async function syntheticAuth(page: Page) {
       await route.fulfill({
         json: {
           mode: "firebase",
+          publicAccess,
+          dailyUserLimit: 20,
+          dailyGlobalLimit: 1000,
           googleOAuthClientId: "synthetic-client.apps.googleusercontent.com",
           firebase: {
             apiKey: "synthetic-api-key",
@@ -633,4 +636,15 @@ test("blocked sessionStorage falls back to a usable memory-only email session", 
   await expect(
     page.getByRole("button", { name: "登入", exact: true }),
   ).toBeVisible();
+});
+
+
+test("public registration explains verified access and current daily limits", async ({ page }) => {
+  await page.setViewportSize({ width: 500, height: 757 });
+  await syntheticAuth(page, "verified");
+  await page.goto("/"); await page.getByRole("button", { name: "建立新帳號", exact: true }).click();
+  await expect(page.getByText("建立帳號並驗證信箱，即可開始使用。", { exact: true })).toBeVisible();
+  await expect(page.locator("#registration-trial-notice")).toContainText("AI 每人每日 20 次，全站每日 1000 次");
+  await expect(page.locator("#registration-trial-notice")).not.toContainText("另行取得");
+  await expectPrimaryInFirstScreen(page, "建立帳號");
 });

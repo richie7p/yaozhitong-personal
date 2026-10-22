@@ -1,0 +1,18 @@
+{
+  "project": "replace-with-project-id",
+  "region": "asia-east1",
+  "sourceDatabase": "projects/replace-with-project-id/databases/(default)",
+  "sourceDatabaseUid": "00000000-0000-0000-0000-000000000000",
+  "sourceBackup": "projects/replace-with-project-id/locations/asia-east1/backups/00000000-0000-0000-0000-000000000000",
+  "targetDatabase": "projects/replace-with-project-id/databases/restore-drill-yyyymmdd-01",
+  "limits": {"restoreRequests": 1, "documentReadsUpper": 50000, "targetHours": 2},
+  "instructions": [
+    "Replace every source identity from read-only metadata; freeze and hash the reviewed plan.",
+    "infra/restore-drill.ps1 -PlanPath <plan> -ReceiptDirectory <new private folder> performs read-only preflight.",
+    "Add -ExecuteRestore only after reviewing the exact source and isolated target. Never retry an uncertain operation or reuse a journal folder.",
+    "The restore runner reads metadata only. documentReadsUpper records the separate validation budget; it does not perform or enforce the later document scan.",
+    "Completion requires separate named-database count/ID/hash, deleted-account, relationship and canonical-source validation. Restore completion alone is not recovery proof.",
+    "Firebase Auth, Storage, TTL, rules, IAM and application configuration require their own recovery plan. Never reenable historical deleted/disabled users.",
+    "Cleanup requires a separate exact target UID/etag review and approval after receipts are saved. This runner never deletes databases."
+  ]
+}

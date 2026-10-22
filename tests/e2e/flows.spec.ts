@@ -81,9 +81,9 @@ test("manual medication, scheduling, log, isolation and care revocation", async 
   await card.getByRole("button", { name: "排定提醒" }).click();
   await page.getByLabel("每天提醒時間").fill("23:59");
   await page.getByRole("button", { name: "確認提醒時間" }).click();
-  await expect(page.getByRole("button", { name: "確認提醒時間" })).toHaveCount(
-    0,
-  );
+  // The submit button changes its name while saving; only the form closing
+  // confirms the schedule POST completed before navigating to today's agenda.
+  await expect(page.locator(".schedule-form")).toHaveCount(0);
   await page.goto("/#home");
   await expect(
     page.getByRole("heading", { name: name, exact: true }),
@@ -124,6 +124,74 @@ test("manual medication, scheduling, log, isolation and care revocation", async 
   ).toBe(true);
   expect(errors).toEqual([]);
   await second.close();
+});
+test("today refreshes when a reminder save completes after navigation", async ({
+  page,
+  request,
+}) => {
+  const { token } = await (
+    await request.post("/api/v1/auth/local", { data: { uid: "local-owner" } })
+  ).json();
+  const name = "延後儲存提醒-" + Date.now();
+  const saved = await request.post("/api/v1/medications", {
+    headers: { authorization: "Bearer " + token },
+    data: {
+      name,
+      doseAmount: 1,
+      doseUnit: "錠",
+      frequencyRaw: "QD",
+      confirmed: true,
+    },
+  });
+  expect(saved.status()).toBe(201);
+  await page.goto("/");
+  await page.getByRole("button", { name: "本機使用者", exact: true }).click();
+  await page.goto("/#medications");
+  const card = page
+    .locator("article")
+    .filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await card.getByRole("button", { name: "排定提醒" }).click();
+  await page.getByLabel("每天提醒時間").fill("23:59");
+  let releaseSave!: () => void;
+  const saveGate = new Promise<void>((resolve) => {
+    releaseSave = resolve;
+  });
+  let saveStarted!: () => void;
+  const pendingSave = new Promise<void>((resolve) => {
+    saveStarted = resolve;
+  });
+  await page.route("**/api/v1/schedules", async (route) => {
+    if (route.request().method() === "POST") {
+      saveStarted();
+      await saveGate;
+    }
+    await route.continue();
+  });
+  try {
+    await page.getByRole("button", { name: "確認提醒時間" }).click();
+    await pendingSave;
+    await expect(
+      page.getByRole("button", { name: "儲存提醒中…", exact: true }),
+    ).toBeDisabled();
+    const firstToday = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/v1/today",
+    );
+    await page.getByRole("link", { name: /^(今日|今日總覽)$/ }).click();
+    await firstToday;
+    await expect(page.getByRole("heading", { name, exact: true })).toHaveCount(
+      0,
+    );
+    releaseSave();
+    await expect(
+      page.getByRole("heading", { name, exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".agenda-row").filter({ hasText: name }).locator("time"),
+    ).toHaveText("23:59");
+  } finally {
+    releaseSave();
+    await page.unrouteAll({ behavior: "wait" });
+  }
 });
 test("admin access and privacy boundary", async ({ page }) => {
   await page.goto("/");

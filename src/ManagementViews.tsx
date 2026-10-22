@@ -1,3 +1,4 @@
+import { SupportInbox } from "./Support";
 import { useEffect, useState } from "react";
 import {
   Users,
@@ -572,9 +573,13 @@ export function Profile() {
             <h2>登入與通知</h2>
             <p>{auth.me.account.email}</p>
             <span className="tag">
-              {auth.me.account.eligible
-                ? "已取得測試資格"
-                : "尚待管理員開通 AI 測試資格"}
+              {auth.config.publicAccess === "verified"
+                ? auth.emailVerified
+                  ? "已驗證，可使用全部一般功能"
+                  : "請驗證信箱以啟用 AI"
+                : auth.me.account.eligible
+                  ? "已取得測試資格"
+                  : "尚待管理員開通 AI 測試資格"}
             </span>
             <div className="stack">
               <Button
@@ -700,6 +705,7 @@ export function Profile() {
   );
 }
 export function Admin() {
+  const { config } = useAuth();
   const [tab, setTab] = useState("users"),
     [message, setMessage] = useState("");
   const users = useData("/admin/users"),
@@ -720,6 +726,7 @@ export function Admin() {
           ["users", "帳號管理"],
           ["leaflets", "仿單管理"],
           ["usage", "用量與任務"],
+          ["support", "問題回報"],
         ].map(([id, t]) => (
           <button
             key={id}
@@ -731,6 +738,7 @@ export function Admin() {
         ))}
       </div>
       {message && <Notice>{message}</Notice>}
+      {tab === "support" && <SupportInbox />}
       {tab === "users" && (
         <section className="card">
           <Field label="搜尋帳號">
@@ -755,20 +763,22 @@ export function Admin() {
                 <span className="tag">
                   {u.disabled ? "停用" : u.admin ? "管理員" : "使用者"}
                 </span>
-                <Button
-                  onClick={async () => {
-                    try {
-                      await api("/admin/users/" + u.id, "PATCH", {
-                        eligible: !u.eligible,
-                      });
-                      users.refresh();
-                    } catch (e: any) {
-                      setMessage(e.message);
-                    }
-                  }}
-                >
-                  {u.eligible ? "取消資格" : "開通測試"}
-                </Button>
+                {config.publicAccess !== "verified" && (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await api("/admin/users/" + u.id, "PATCH", {
+                          eligible: !u.eligible,
+                        });
+                        users.refresh();
+                      } catch (e: any) {
+                        setMessage(e.message);
+                      }
+                    }}
+                  >
+                    {u.eligible ? "取消資格" : "開通測試"}
+                  </Button>
+                )}
                 <Button
                   onClick={async () => {
                     try {

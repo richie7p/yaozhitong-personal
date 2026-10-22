@@ -337,8 +337,11 @@ describe("whole safety source scope and model eligibility", () => {
   it("deduplicates repeated references to an identical published page while rejecting conflicting duplicate ids", async () => {
     const page = chunk(forward);
     const llm = {
-      json: async () => {
-        throw new Error("no model-eligible sources");
+      json: async (_system: string, input: any) => {
+        expect(input.sources).toEqual([]);
+        expect(input.teachingFields).toHaveLength(1);
+        expect(input.teachingFields[0].fullSourceField).toBe(forward);
+        return { status: "insufficient_data", claims: [], quiz: [] };
       },
     };
     const result = await grounded(
@@ -428,14 +431,16 @@ describe("whole safety source scope and model eligibility", () => {
     expect(result).not.toHaveProperty("sourceReading");
   });
 
-  it("returns typed unassessed complete source reading without a model call when no eligible evidence remains", async () => {
+  it("retains complete source reading when full-context teaching produces no verified explanation, without changing legacy eligibility", async () => {
     let calls = 0;
     const chunks = [chunk(forward)];
     const result = await grounded(
       {
-        json: async () => {
+        json: async (_system, input: any) => {
           calls++;
-          throw new Error("no eligible model source");
+          expect(input.sources).toEqual([]);
+          expect(input.teachingFields[0].fullSourceField).toBe(forward);
+          return { status: "insufficient_data", claims: [], quiz: [] };
         },
       },
       "仿單一般警語",
@@ -443,7 +448,7 @@ describe("whole safety source scope and model eligibility", () => {
       {},
       "chat",
     );
-    expect(calls).toBe(0);
+    expect(calls).toBe(1);
     expect(result).toMatchObject({
       status: "insufficient_data",
       claims: [],
