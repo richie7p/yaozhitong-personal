@@ -57,6 +57,8 @@ node --import tsx tools/publish-tfda-sources.ts --manifest C:/yzt-data/prepared-
 
 `--reuse` 可離線重播已凍結的索引，會核驗原始回應、JSON、證據與 checksum；重播不會更新資料取得時間。下載目錄綁定清單雜湊，換清單須使用新目錄。過期索引必須重新取得，不能藉重播延長有效時間。
 
+準備大量候選時，可用 `--source-format html` 或 `--source-format pdf` 分批處理，預設 `all`。兩種格式使用不同輸出目錄，並各自保存 summary 與 manifest。格式選擇只決定當次要處理的原始主來源；同款藥品的全部索引分支、缺檔狀態及其他格式附件仍參與完整性核對，不會改選另一個較容易處理的來源。summary 的 `sourceFormat`、`selectedSourceCounts` 及 `deferredSourceCounts` 會列出選擇範圍；延後處理不計入完成或發布數。
+
 雲端發布另須明確指定 `--mode inspect`、專案、儲存桶及新快照路徑；`--mode apply` 還須帶入 inspect 回傳的 `--manifest-sha256` 與 `--snapshot-sha256`。目前發布工具固定支援既有藥智通 TEST 專案，使用既有 Google Application Default Credentials，不在程式或命令列傳入金鑰。
 
 需要持續完成整份清單時，可使用一次性批次工具。`--protected` 是既有已發布字號的 JSON 清單（`leaflets` 陣列，每項含 `licenseNo` 與 `status: "published"`）；工具只更新輸出目錄內的衍生清單。不同 queue 須用不同 corpus。
@@ -112,8 +114,25 @@ node --import tsx tools/publish-tfda-sources.ts --manifest C:/yzt-data/current-p
 
 ```powershell
 python -m unittest discover -s tests -p 'test_tfda_*.py'
-npx vitest run tests/tfda-source-core.test.ts tests/tfda-source-preparation.test.ts tests/tfda-source-publication.test.ts tests/tfda-pdf-raw-verification.test.ts
+npx vitest run tests/tfda-source-core.test.ts tests/tfda-source-preparation.test.ts tests/tfda-source-publication.test.ts tests/tfda-pdf-raw-verification.test.ts tests/tfda-source-format.test.ts tests/tfda-legacy-title-check.test.ts
 npm run typecheck
 ```
 
-本機 `summary.json`、`progress.json` 及發布紀錄分別記錄盤點、下載、候選與雲端進度。原始大量資料不提交 GitHub。這次雲端小批的結果另存於 [技術驗收紀錄](acceptance/tfda-ingestion-20261022.json)。新藥品的 AI 說明與測驗品質仍需個別評估，資料匯入檢查沒有代替該項評估。
+本機 `summary.json`、`progress.json` 及發布紀錄分別記錄盤點、下載、候選與雲端進度。原始大量資料與測試帳號資料保留於本機。初始小批結果見 [初始驗收紀錄](acceptance/tfda-ingestion-20261022.json)，本輪擴充結果見 [仿單擴充與雲端抽測紀錄](acceptance/tfda-leaflet-expansion-20261022.json)。
+
+截至 2026-10-22，雲端共有 **2,025 款**仿單，本輪從 1,804 款新增 **221 款**：207 份 HTML、7 份直接 PDF、7 份經官方頁面確認關聯的紙本 PDF。既有八款維持原樣，三筆退役原料藥沒有患者發布指標。全量讀回核對了 2,032 個原始物件，包含七份紙本的官方父頁。
+
+兩筆既有 PDF 的完整品名因中英文交錯排版與引號字形差異，被原名稱檢查標記。`tools/tfda-legacy-title-check.ts` 另以原始第一頁的完整中英文標題、官方索引及原檔 SHA 完成補充核對，原始報告仍保留。這項診斷只處理既有來源的標題排版，不授予新來源發布資格。
+
+| 現行資料範圍 | 數量 |
+| --- | ---: |
+| 有官方索引來源、已發布的完整字號 | 2,025 |
+| 有官方索引來源、尚未發布的完整字號 | 16,158 |
+| 缺少索引或來源連結的完整字號 | 3,050 |
+| 現行索引網址已取得原檔 | 20,743／20,746 |
+
+尚未發布的集合包含原料藥，以及掃描圖、複雜版面、抽取不一致、現行品名或多來源關聯待釐清的資料。取得原檔仍須經過內容與身分檢查才能發布。另有 11 筆未分類解析操作錯誤，在一次有限重試後仍待診斷；非現行來源的封存工作保留 8,513 個待下載網址及 27 個失敗網址。批次匯入使用 0 次 AI；配額維持每人每日 20 次、全站每日 200 次及 50 個試用名額。
+
+雲端網站以既有一般測試帳號完成三筆合成藥品的核對保存，抽測賽普寧錠（HTML）與麻舒痛乳膏（PDF）的說明、共十題理解測驗、重新整理及問答歷史，並檢查 375px 版面。一般問答保留「尚無資訊」的不確定性；涉及自行用藥的 PDF 問題採取拒答，未產生原定的矛盾段落解釋。缺少來源的第三款顯示「目前仿單資料不足」，沒有生成說明或測驗，也沒有呼叫模型。
+
+本輪網站測試共使用五次任務額度、七個模型 HTTP 請求；恢復驗收沿用原結果。原有十九筆藥品與試用名額紀錄維持原樣。此次為兩款來源的功能抽測；全部 2,025 款的生成內容尚未逐款評估，部分測驗選項措辭也仍需改善。
