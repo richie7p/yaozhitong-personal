@@ -102,7 +102,8 @@ export async function verifyCandidateFromRaw(
     report.sourceFormat === "html" && report.tableSerializationVersion === "tfda-simple-table-literal-v1" &&
     report.toggleAllCount >= 1 && report.bodyCandidateCount === 1 &&
     report.allMainBlocksAccounted === true && report.unaccountedMainBlockCount === 0 &&
-    report.identityFields && report.ambiguousIdentityFields && Object.keys(report.ambiguousIdentityFields).length === 0 &&
+    report.identityFields && report.ambiguousIdentityFields &&
+    Object.keys(report.ambiguousIdentityFields).every((label) => ["製造廠名稱", "製造廠地址"].includes(label)) &&
     Array.isArray(report.sections) && Array.isArray(report.nonTextImages), "raw_html_inspection_structure_invalid");
   const fields = report.identityFields;
   const labels = ["中文品名", "英文品名", "許可證號", "藥品類別"];
@@ -125,11 +126,18 @@ export async function verifyCandidateFromRaw(
     sectionCount: report.sections.length, hasUnverifiedNonTextContent: unverified };
   must(input.numPages === 1 && sameDocument(input.pages, pages), "candidate_html_pages_do_not_match_raw_source");
   must(sameDocument(input.htmlEvidence, htmlEvidence), "candidate_html_evidence_does_not_match_raw_source");
-  must(report.fullDomConserved === true && !unverified && report.status === "independent_dom_extracted_draft",
+  // The helper's needs_review summary also covers repeated factory metadata.
+  // All other ambiguity and every conservation/nontext condition were checked above.
+  const multiFactoryMetadata = Object.keys(report.ambiguousIdentityFields).length > 0;
+  must(report.fullDomConserved === true && !unverified && (report.status === "independent_dom_extracted_draft" ||
+    multiFactoryMetadata && report.status === "needs_review"),
     "raw_html_conservation_or_nontext_gate_failed");
   return { schema: "tfda-candidate-raw-verification/v1", method: "html_raw_dom_reparse_v4",
     rawSha256: publicationHash(raw), rawBytes: raw.length, canonicalTextSha256: publicationHash(text),
     derivedPagesSha256: publicationHash(JSON.stringify(pages)), derivedHtmlEvidenceSha256: publicationHash(JSON.stringify(htmlEvidence)),
     parserHelperSha256: publicationHash(helperBytes), adapterSha256: publicationHash(adapterBytes),
-    canonicalAdapterSha256: null, rawInspectionSha256: publicationHash(JSON.stringify(report)) };
+    canonicalAdapterSha256: null, rawInspectionSha256: publicationHash(JSON.stringify(report)),
+    // Several factories/processes may be listed for one product. Preserve every value;
+    // this does not establish a unique manufacturer or relax product identity checks.
+    ...(multiFactoryMetadata ? { htmlMultiFactoryMetadata: report.ambiguousIdentityFields } : {}) };
 }

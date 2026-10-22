@@ -193,6 +193,8 @@ export interface RawCandidateVerification {
   adapterSha256: string;
   canonicalAdapterSha256: string | null;
   rawInspectionSha256: string;
+  /** Complete repeated factory metadata from the raw HTML report; never a unique-factory claim. */
+  htmlMultiFactoryMetadata?: Partial<Record<"製造廠名稱" | "製造廠地址", string[]>>;
 }
 export function prepareTechnicalSource(
   item: PublicationBatchItem, input: TfdaSourceInput, raw: Buffer, now = Date.now(),

@@ -69,7 +69,7 @@ class MemoryPublicationStore implements PublicationStore {
 }
 const temp: string[] = [];
 afterEach(async () => { vi.restoreAllMocks(); for (const path of temp.splice(0)) await rm(path, { recursive: true, force: true }); });
-async function batchFixture() {
+async function batchFixture(extraHeaders = "") {
   const path = await mkdtemp(join(tmpdir(), "tfda-publication-synthetic-")); temp.push(path);
   const input = candidate();
   const body = "這份合成來源保留真正原始檔的完整文字。必要條件、例外與順序全部保留，此內容只供測試，不是真實藥品資訊或醫療指示。".repeat(4);
@@ -78,6 +78,7 @@ async function batchFixture() {
     <div class="page_name"><label>英文品名</label><span>${nameEn}</span></div>
     <div class="page_name"><label>許可證號</label><span>${license}</span></div>
     <div class="page_name"><label>藥品類別</label><span>合成處方藥</span></div>
+    ${extraHeaders}
     <div class="toggle-all"><div class="toggle"><div class="toggle-title"><div class="title-name">適應症</div></div>
     <div class="toggle-inner"><p>${body}</p><table><tr><th>合成條件</th><th>合成例外</th></tr><tr><td>甲</td><td>乙</td></tr></table></div>
     </div></div></body></html>`);
@@ -272,6 +273,30 @@ describe("bounded source and index binding", () => {
     await writeFile(fixture.manifestPath, JSON.stringify(fixture.manifest));
     await expect(loadPublicationBatch(fixture.manifestPath, now)).rejects.toThrow("candidate_html_pages_do_not_match_raw_source");
   });
+
+  it("preserves both official 009931 factory values without declaring one unique factory", async () => {
+    // Exact public factory metadata values from the frozen official 009931 HTML;
+    // the surrounding product identity, prose and raw document remain synthetic.
+    const metadata = { "製造廠名稱": ["生達化學製藥股份有限公司二廠", "生達化學製藥股份有限公司二廠 (製程：上衣)"],
+      "製造廠地址": ["台南市新營區開元路154號 (TAIWAN， ROC)", "台南市新營區開元路１５４號 (TAIWAN， ROC)"] };
+    const headers = Object.entries(metadata).flatMap(([label, values]) => values.map((value) =>
+      `<div class="page_name"><label>${label}</label><span>${value}</span></div>`)).join("\n");
+    const fixture = await batchFixture(headers), loaded = await loadPublicationBatch(fixture.manifestPath, now);
+    const prepared = loaded.loaded[0].source;
+    expect(prepared.rawVerification?.htmlMultiFactoryMetadata).toEqual(metadata);
+    expect(prepared.draft.chunks.map((chunk) => chunk.text)).toEqual(fixture.input.pages.map((page) => page.text));
+    const db = new MemoryPublicationStore();
+    await applyTechnicalPublication(db, prepared, empty, run, when);
+    expect(db.data.leaflets[prepared.draft.id].sourceVerification.rawVerification.htmlMultiFactoryMetadata).toEqual(metadata);
+  });
+
+  it.each(["中文品名", "英文品名", "許可證號", "藥品類別", "有效日期", "申請商名稱", "未知來源欄位"])(
+    "rejects ambiguous %s even when the body and candidate hashes are otherwise exact", async (label) => {
+      const headers = ["衝突值甲", "衝突值乙"].map((value) =>
+        `<div class="page_name"><label>${label}</label><span>${value}</span></div>`).join("\n");
+      const fixture = await batchFixture(headers);
+      await expect(loadPublicationBatch(fixture.manifestPath, now)).rejects.toThrow("raw_html_inspection_structure_invalid");
+    });
   it("fails closed when the raw verifier runtime is unavailable", async () => {
     const fixture = await batchFixture();
     await expect(loadPublicationBatch(fixture.manifestPath, now, { python: join(fixture.path, "missing-python-executable") }))
