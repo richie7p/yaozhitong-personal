@@ -864,7 +864,9 @@ export function Medications() {
           (r.result.status === "supported" ||
             (r.result.status === "insufficient_data" &&
               (r.result.sourceReview?.reason === "safety_sections_pending" ||
-                r.result.sourceReading?.reason === "model_source_capacity"))),
+                ["model_source_capacity", "requested_topic_coverage"].includes(
+                  r.result.sourceReading?.reason || "",
+                )))),
       );
       if (existing) {
         setResult(existing);

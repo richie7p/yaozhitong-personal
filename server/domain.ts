@@ -1267,8 +1267,9 @@ export class Domain {
       sourceReadingPending:
         job.status === "succeeded" &&
         (job.result as GroundedResult | null)?.status === "insufficient_data" &&
-        (job.result as GroundedResult | null)?.sourceReading?.reason ===
-          "model_source_capacity",
+        ["model_source_capacity", "requested_topic_coverage"].includes(
+          (job.result as GroundedResult | null)?.sourceReading?.reason || "",
+        ),
     };
   }
   async publicJob(uid: string, job: Job, reader = this.historyReader()) {

@@ -144,52 +144,55 @@ describe("official source URL allowlist", () => {
   });
 });
 
-it("binds a preserved-source reading state only to published metadata, replacing any claimed links", async () => {
-  const result: GroundedResult = {
-    status: "insufficient_data",
-    claims: [],
-    chunks: [],
-    quiz: [],
-    followups: [],
-    rejectedCount: 0,
-    sourceVersions: { [leaflet.licenseNo]: leaflet.version },
-    verification: "model_assisted",
-    sourceReading: {
-      reason: "model_source_capacity",
-      sections: [
-        {
-          sourceSection: "警語",
-          citations: [{ chunkId: "synthetic", quote: "合成完整原文。" }],
-        },
-      ],
-      sources: [
-        {
-          licenseNo: "invented",
-          version: "untrusted",
-          sourceUrl: "https://evil.invalid",
-        },
-      ],
-    },
-  };
-  const reading = await withSourceReviewResult(async () => result, [leaflet]);
-  expect(reading.sourceReading?.sections).toEqual(
-    result.sourceReading?.sections,
-  );
-  expect(reading.sourceReading?.sources).toEqual([
-    {
-      licenseNo: leaflet.licenseNo,
-      version: leaflet.version,
-      sourceUrl: leaflet.sourceUrl,
-    },
-  ]);
-  expect(reading.claims).toEqual([]);
-  expect(reading.quiz).toEqual([]);
-  const refusal = {
-    ...result,
-    status: "refused" as const,
-    sourceReading: undefined,
-  };
-  expect(await withSourceReviewResult(async () => refusal, [leaflet])).toBe(
-    refusal,
-  );
-});
+it.each(["model_source_capacity", "requested_topic_coverage"] as const)(
+  "binds a %s reading state only to published metadata, replacing any claimed links",
+  async (reason) => {
+    const result: GroundedResult = {
+      status: "insufficient_data",
+      claims: [],
+      chunks: [],
+      quiz: [],
+      followups: [],
+      rejectedCount: 0,
+      sourceVersions: { [leaflet.licenseNo]: leaflet.version },
+      verification: "model_assisted",
+      sourceReading: {
+        reason,
+        sections: [
+          {
+            sourceSection: "警語",
+            citations: [{ chunkId: "synthetic", quote: "合成完整原文。" }],
+          },
+        ],
+        sources: [
+          {
+            licenseNo: "invented",
+            version: "untrusted",
+            sourceUrl: "https://evil.invalid",
+          },
+        ],
+      },
+    };
+    const reading = await withSourceReviewResult(async () => result, [leaflet]);
+    expect(reading.sourceReading?.sections).toEqual(
+      result.sourceReading?.sections,
+    );
+    expect(reading.sourceReading?.sources).toEqual([
+      {
+        licenseNo: leaflet.licenseNo,
+        version: leaflet.version,
+        sourceUrl: leaflet.sourceUrl,
+      },
+    ]);
+    expect(reading.claims).toEqual([]);
+    expect(reading.quiz).toEqual([]);
+    const refusal = {
+      ...result,
+      status: "refused" as const,
+      sourceReading: undefined,
+    };
+    expect(await withSourceReviewResult(async () => refusal, [leaflet])).toBe(
+      refusal,
+    );
+  },
+);

@@ -225,7 +225,7 @@ export interface GroundedResult {
   };
   /** Full canonical source is preserved, but has not been interpreted by AI. */
   sourceReading?: {
-    reason: "model_source_capacity";
+    reason: "model_source_capacity" | "requested_topic_coverage";
     sections: { sourceSection: string; citations: Citation[] }[];
     /** Selected pages could not include this complete field within the limit. */
     unavailableSections?: {
@@ -233,6 +233,8 @@ export interface GroundedResult {
       licenseNo: string;
       version: string;
     }[];
+    /** Requested topics with no matching actual canonical field in a source. */
+    missingTopics?: { topic: string; licenseNo: string; version: string }[];
     /** Supplied only by the domain's verified published leaflet records. */
     sources?: OfficialSourceReference[];
   };

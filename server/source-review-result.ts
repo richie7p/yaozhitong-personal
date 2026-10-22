@@ -28,7 +28,10 @@ export async function withSourceReviewResult(
     const result = await generate();
     if (
       result.status === "insufficient_data" &&
-      result.sourceReading?.reason === "model_source_capacity" &&
+      !!result.sourceReading &&
+      ["model_source_capacity", "requested_topic_coverage"].includes(
+        result.sourceReading.reason,
+      ) &&
       leaflets.length &&
       leaflets.every((leaflet) => leaflet.status === "published")
     )

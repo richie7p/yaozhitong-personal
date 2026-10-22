@@ -387,69 +387,84 @@ for (const view of ["reading", "chat"] as const)
     expect(unexpected).toEqual([]);
   });
 
-for (const view of ["chat", "learning", "jobs", "medications"] as const)
-  test(`preserved source capacity notice survives reload in ${view} without implying a complete AI answer`, async ({
-    page,
-  }) => {
-    const result: GroundedResult = {
-      ...pendingResult,
-      sourceReview: undefined,
-      chunks: canonicalResult().chunks,
-      sourceReading: {
-        reason: "model_source_capacity",
-        sections: [
-          {
-            sourceSection: "警語",
-            citations: [
-              { chunkId: "synthetic-canonical-0", quote: longCanonicalText },
-            ],
-          },
-        ],
-        sources: pendingResult.sourceReview!.sources,
-      },
-    };
-    const { unexpected } = await mockSavedReview(page, result);
-    await page.goto(
-      view === "learning"
-        ? `/#learning?record=${recordId}&section=reading`
-        : `/#${view}`,
-    );
-    for (let visit = 0; visit < 2; visit++) {
-      if (visit) await page.reload();
-      if (view === "jobs") {
-        const card = page.locator(`[data-job-id="${recordId}"]`);
+for (const reason of [
+  "model_source_capacity",
+  "requested_topic_coverage",
+] as const)
+  for (const view of ["chat", "learning", "jobs", "medications"] as const)
+    test(`preserved source ${reason} notice survives reload in ${view} without implying a complete AI answer`, async ({
+      page,
+    }) => {
+      const result: GroundedResult = {
+        ...pendingResult,
+        sourceReview: undefined,
+        chunks: canonicalResult().chunks,
+        sourceReading: {
+          reason,
+          sections: [
+            {
+              sourceSection: "警語",
+              citations: [
+                { chunkId: "synthetic-canonical-0", quote: longCanonicalText },
+              ],
+            },
+          ],
+          sources: pendingResult.sourceReview!.sources,
+        },
+      };
+      const { unexpected } = await mockSavedReview(page, result);
+      await page.goto(
+        view === "learning"
+          ? `/#learning?record=${recordId}&section=reading`
+          : `/#${view}`,
+      );
+      for (let visit = 0; visit < 2; visit++) {
+        if (visit) await page.reload();
+        if (view === "jobs") {
+          const card = page.locator(`[data-job-id="${recordId}"]`);
+          await expect(
+            card.getByText("部分內容尚未整理", { exact: true }),
+          ).toBeVisible();
+          await expect(card.getByText("已完成", { exact: true })).toHaveCount(
+            0,
+          );
+          await card.locator("summary").first().click();
+        }
+        if (view === "medications")
+          await page
+            .locator(".med-card")
+            .getByRole("button", { name: "仿單說明", exact: true })
+            .click();
+        const notice = page.locator(".source-reading");
         await expect(
-          card.getByText("部分內容尚未整理", { exact: true }),
+          notice.getByRole("heading", {
+            name: "部分內容尚未整理",
+            exact: true,
+          }),
         ).toBeVisible();
-        await expect(card.getByText("已完成", { exact: true })).toHaveCount(0);
-        await card.locator("summary").first().click();
-      }
-      if (view === "medications")
-        await page
-          .locator(".med-card")
-          .getByRole("button", { name: "仿單說明", exact: true })
+        await expect(notice).toContainText("本次回答尚未完整涵蓋這些內容");
+        if (reason === "requested_topic_coverage")
+          await expect(notice).toContainText(
+            "本次問題所問的部分安全主題尚未獲得完整回答",
+          );
+        await notice
+          .getByText("警語：展開完整仿單原文", { exact: true })
           .click();
-      const notice = page.locator(".source-reading");
-      await expect(
-        notice.getByRole("heading", { name: "部分內容尚未整理", exact: true }),
-      ).toBeVisible();
-      await expect(notice).toContainText("本次回答沒有涵蓋這些內容");
-      await notice.getByText("警語：展開完整仿單原文", { exact: true }).click();
-      const quote = notice.locator("blockquote");
-      await expect(quote).toBeVisible();
-      await expect(quote).toContainText(longCanonicalText);
-      await expect(quote).toHaveCSS("white-space", "pre-wrap");
-      await notice.getByText("查看官方仿單原文", { exact: true }).click();
-      await expect(
-        notice.getByRole("link", { name: "開啟官方仿單原文", exact: true }),
-      ).toHaveAttribute("href", sourceUrl);
-      await expect(page.locator(".quiz")).toHaveCount(0);
-      await expect(
-        page.getByRole("heading", { name: "完整警語", exact: true }),
-      ).toHaveCount(0);
-    }
-    expect(unexpected).toEqual([]);
-  });
+        const quote = notice.locator("blockquote");
+        await expect(quote).toBeVisible();
+        await expect(quote).toContainText(longCanonicalText);
+        await expect(quote).toHaveCSS("white-space", "pre-wrap");
+        await notice.getByText("查看官方仿單原文", { exact: true }).click();
+        await expect(
+          notice.getByRole("link", { name: "開啟官方仿單原文", exact: true }),
+        ).toHaveAttribute("href", sourceUrl);
+        await expect(page.locator(".quiz")).toHaveCount(0);
+        await expect(
+          page.getByRole("heading", { name: "完整警語", exact: true }),
+        ).toHaveCount(0);
+      }
+      expect(unexpected).toEqual([]);
+    });
 
 test("a field omitted by the reading limit exposes its official source without partial or invented text", async ({
   page,
@@ -479,5 +494,42 @@ test("a field omitted by the reading limit exposes its official source without p
   await expect(
     notice.getByRole("link", { name: "開啟官方仿單原文", exact: true }),
   ).toHaveAttribute("href", sourceUrl);
+  expect(unexpected).toEqual([]);
+});
+
+test("a requested topic with no matching field is separate from an omitted canonical field and never implies no risk", async ({
+  page,
+}) => {
+  const result: GroundedResult = {
+    ...pendingResult,
+    sourceReview: undefined,
+    sourceReading: {
+      reason: "requested_topic_coverage",
+      sections: [],
+      missingTopics: [
+        { topic: "交互作用", licenseNo: medication.licenseNo, version },
+      ],
+      sources: pendingResult.sourceReview!.sources,
+    },
+  };
+  const { unexpected } = await mockSavedReview(page, result);
+  await page.goto("/#chat");
+  const notice = page.locator(".source-reading");
+  await expect(notice).toContainText(
+    "本次問題所問的部分安全主題尚未獲得完整回答",
+  );
+  await expect(notice).toContainText(
+    "尚未找到可核對的完整仿單欄位，不能據此判定沒有相關風險",
+  );
+  await expect(notice).toContainText("交互作用");
+  await expect(notice).not.toContainText("本次未載入以下欄位的完整原文");
+  await expect(notice.locator("blockquote")).toHaveCount(0);
+  await expect(page.locator(".quiz")).toHaveCount(0);
+  await notice.getByText("查看官方仿單原文", { exact: true }).click();
+  await expect(
+    notice.getByRole("link", { name: "開啟官方仿單原文", exact: true }),
+  ).toHaveAttribute("href", sourceUrl);
+  await page.reload();
+  await expect(page.locator(".source-reading")).toContainText("交互作用");
   expect(unexpected).toEqual([]);
 });
