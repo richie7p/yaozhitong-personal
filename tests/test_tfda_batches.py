@@ -166,6 +166,51 @@ class TfdaBatchRunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(runner.BatchError, 'runner_inputs_changed'):
             self.execute(MockChildren(), '--max-batches', '1', '--queue', 'active')
 
+    def test_fetch_all_once_is_explicit_and_requires_all_queue_with_active_extraction_policy(self):
+        for extra in (['--max-batches', '1'], ['--all'], ['--all', '--queue', 'all']):
+            with self.subTest(extra=extra), self.assertRaisesRegex(runner.BatchError, 'fetch_all_once_requires_all_queue_and_active_policy'):
+                runner.arguments(self.args(*extra, '--fetch-all-once'))
+
+    def test_fetch_all_once_uses_unchanged_downloader_all_once_without_limit_or_failed_retry(self):
+        child = MockChildren(fetches=[(1, 0), (0, 2)])
+        policy = self.inventory / 'active-candidates.ndjson'
+        state = self.execute(child, '--all', '--queue', 'all', '--extract-active-from', str(policy),
+                             '--fetch-all-once', '--batch-size', '3')
+        fetches = [command for command in child.calls if any(value.endswith('fetch-tfda-sources.py') for value in command)]
+        self.assertEqual(len(fetches), 2)
+        self.assertIn('--all', fetches[0]); self.assertNotIn('--limit', fetches[0])
+        self.assertNotIn('--all', fetches[1]); self.assertEqual(fetches[1][fetches[1].index('--limit') + 1], '3')
+        self.assertTrue(all(command[command.index('--extract-active-from') + 1] == str(policy) for command in fetches))
+        self.assertTrue(all(command[command.index('--workers') + 1] == '4' for command in fetches))
+        self.assertFalse(any('--retry-failed' in command for command in child.calls))
+        self.assertEqual(state['status'], 'selected_queue_exhausted_with_failures')
+        self.assertEqual(self.protected.read_bytes(), self.original)
+
+    def test_fetch_all_once_preserves_saved_fetch_and_legacy_binding_before_next_missing_stage(self):
+        policy = self.inventory / 'active-candidates.ndjson'
+        first = MockChildren(fetches=[(1, 0)], fail_once='prepare')
+        with self.assertRaisesRegex(runner.BatchError, 'child_failed_prepare'):
+            self.execute(first, '--max-batches', '1', '--queue', 'all', '--extract-active-from', str(policy))
+        before = self.state(); saved_fetch = before['currentBatch']['fetch']
+        second = MockChildren()
+        state = self.execute(second, '--all', '--queue', 'all', '--extract-active-from', str(policy), '--fetch-all-once')
+        self.assertTrue(any(value.endswith('prepare-tfda-sources.ts') for value in second.calls[0]))
+        fetches = [command for command in second.calls if any(value.endswith('fetch-tfda-sources.py') for value in command)]
+        self.assertEqual(len(fetches), 1); self.assertIn('--all', fetches[0]); self.assertNotIn('--limit', fetches[0])
+        self.assertEqual(saved_fetch['statusCounts']['pending'], 1)
+        self.assertEqual(state['binding'], before['binding'])
+        self.assertEqual(state['completedBatches'], 2)
+
+    def test_fetch_all_once_does_not_refetch_an_already_exhausted_saved_stage(self):
+        policy = self.inventory / 'active-candidates.ndjson'
+        with self.assertRaisesRegex(runner.BatchError, 'child_failed_prepare'):
+            self.execute(MockChildren(fail_once='prepare'), '--max-batches', '1', '--queue', 'all', '--extract-active-from', str(policy))
+        child = MockChildren()
+        self.execute(child, '--all', '--queue', 'all', '--extract-active-from', str(policy), '--fetch-all-once', '--publish')
+        self.assertFalse(any(any(value.endswith('fetch-tfda-sources.py') for value in command) for command in child.calls))
+        self.assertEqual(len(child.apply_calls), 1)
+        self.assertEqual(len(runner.read_json(pathlib.Path(child.apply_calls[0][child.apply_calls[0].index('--manifest') + 1]))['items']), 1)
+
     def test_stale_indexes_stop_before_any_child(self):
         runner.atomic(self.inventory / 'info36.evidence.json', {'retrievedAt': (dt.datetime.now(dt.UTC) - dt.timedelta(hours=25)).isoformat()})
         child = MockChildren()

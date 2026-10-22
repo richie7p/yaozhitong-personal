@@ -222,6 +222,7 @@ class Runner:
             require(report.get('interrupted') is False and report.get('cachedObjectIntegrityFailures', 0) == 0, 'reextract_interrupted_or_cache_corrupt')
             self.state['reextractedHelperSha256'] = digest(helper); self.save()
         completed = 0
+        fetch_all_once = args.fetch_all_once
         while args.all or completed < args.max_batches:
             self.fresh_indexes()
             batch = self.state['currentBatch']
@@ -229,7 +230,12 @@ class Runner:
                 batch = {'number': self.state['completedBatches'] + 1}
                 self.state['currentBatch'] = batch; self.save()
             if 'fetch' not in batch:
-                report = self.child([*fetch, '--limit', str(args.batch_size)], 'fetch')
+                # Amortize the unchanged downloader's complete cache integrity scan.
+                # A saved fetch report is still authoritative; consume this preference
+                # only when the next acquisition stage actually needs a child.
+                fetch_selection = ['--all'] if fetch_all_once else ['--limit', str(args.batch_size)]
+                fetch_all_once = False
+                report = self.child([*fetch, *fetch_selection], 'fetch')
                 counts = report.get('statusCounts')
                 require(isinstance(counts, dict) and all(type(value) is int and value >= 0 for value in counts.values()), 'fetch_status_counts_invalid')
                 require(report.get('interrupted') is False and report.get('cachedObjectIntegrityFailures', 0) == 0, 'fetch_interrupted_or_cache_corrupt')
@@ -264,6 +270,8 @@ def arguments(argv=None):
     parser.add_argument('--python', default=sys.executable)
     parser.add_argument('--batch-size', type=int, default=100)
     parser.add_argument('--fetch-workers', type=int, default=4, help='Local download/extraction workers (1..4).')
+    parser.add_argument('--fetch-all-once', action='store_true',
+                        help='Use the existing downloader --all for the next unsaved fetch stage; requires --all, --queue all and --extract-active-from.')
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument('--max-batches', type=int); selection.add_argument('--all', action='store_true')
     parser.add_argument('--publish', action='store_true'); parser.add_argument('--reextract-existing', action='store_true')
@@ -273,6 +281,8 @@ def arguments(argv=None):
     args = parser.parse_args(argv)
     require(1 <= args.batch_size <= 500 and (args.max_batches is None or args.max_batches > 0), 'invalid_batch_size_or_max_batches')
     require(1 <= args.fetch_workers <= 4, 'invalid_fetch_workers')
+    require(not args.fetch_all_once or (args.all and args.queue == 'all' and args.extract_active_from is not None),
+            'fetch_all_once_requires_all_queue_and_active_policy')
     return args
 
 
