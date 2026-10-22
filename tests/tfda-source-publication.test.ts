@@ -87,7 +87,7 @@ async function batchFixture() {
   input.pages = [{ page: 1, text: canonical, embeddedImages: 0, hasLargeUnverifiedImage: false }];
   input.htmlEvidence = { completeMainDocument: true, domConservationPassed: true, canonicalTextSha256: publicationHash(canonical), sectionCount: 1, hasUnverifiedNonTextContent: false };
   const info36 = [{ "許可證字號": license, "中文品名": nameZh, "英文品名": nameEn,
-    "劑型": "合成錠劑", "製造商名稱": "合成製造商", "有效日期": "2030/12/31", "註銷狀態": "" }];
+    "劑型": "合成錠劑", "製造商名稱": "合成製造商", "有效日期": "2030/12/31", "註銷狀態": "", "藥品類別": "合成處方藥" }];
   const info39 = [{ "許可證字號": license, "中文品名": nameZh, "英文品名": nameEn, "仿單圖檔連結": url }];
   const encoded = Buffer.from(JSON.stringify(input));
   await writeFile(join(path, "candidate.json"), encoded); await writeFile(join(path, "source.html"), sourceRaw);
@@ -306,6 +306,25 @@ describe("bounded source and index binding", () => {
     fixture.manifest.items[0].candidateInputSha256 = publicationHash(bytes);
     await writeFile(fixture.manifestPath, JSON.stringify(fixture.manifest));
     await expect(loadPublicationBatch(fixture.manifestPath, now)).rejects.toThrow("candidate_current_official_index_binding_mismatch");
+  });
+  it.each(["原料藥", "製劑原料", "自用製劑原料"])("rejects official raw category %s even when source text and candidate claim a patient category", async (category) => {
+    const fixture = await batchFixture();
+    fixture.input.officialCategory = "合成處方藥";
+    const candidateBytes = Buffer.from(JSON.stringify(fixture.input));
+    await writeFile(join(fixture.path, "candidate.json"), candidateBytes);
+    fixture.manifest.items[0].candidateInputSha256 = publicationHash(candidateBytes);
+    const rows = JSON.parse(await readFile(join(fixture.path, "info36.json"), "utf8"));
+    rows[0]["藥品類別"] = category;
+    const rawIndex = Buffer.from(JSON.stringify(rows));
+    const evidence = JSON.parse(await readFile(join(fixture.path, "evidence36.json"), "utf8"));
+    evidence.jsonSha256 = publicationHash(rawIndex); evidence.jsonBytes = rawIndex.length;
+    const evidenceBytes = Buffer.from(JSON.stringify(evidence));
+    await writeFile(join(fixture.path, "info36.json"), rawIndex);
+    await writeFile(join(fixture.path, "evidence36.json"), evidenceBytes);
+    fixture.manifest.indexSnapshots[0].sha256 = publicationHash(rawIndex);
+    fixture.manifest.indexSnapshots[0].evidenceSha256 = publicationHash(evidenceBytes);
+    await writeFile(fixture.manifestPath, JSON.stringify(fixture.manifest));
+    await expect(loadPublicationBatch(fixture.manifestPath, now)).rejects.toThrow("official_raw_material_source_not_patient_leaflet");
   });
   it("rejects index/evidence tampering rather than trusting embedded candidate claims", async () => {
     const fixture = await batchFixture(); await writeFile(join(fixture.path, "info39.json"), "[]");

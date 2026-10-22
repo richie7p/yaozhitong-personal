@@ -18,6 +18,8 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 PROJECT = 'project-b6fe4904-e687-4365-b2f'
 BUCKET = PROJECT + '-yzt-test-data'
 SUCCESS = {'published_technical_source', 'same_source_no_op', 'recovered_committed_publication', 'skip_protected_publication'}
+READ_ONLY_TRANSIENT = {'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'ECONNRESET'}
+SAFE_FAILURE_CODES = READ_ONLY_TRANSIENT | {'UNKNOWN', 'VALIDATION_FAILED', 'RESOURCE_EXHAUSTED', 'UNAUTHENTICATED', 'PERMISSION_DENIED', 'INVALID_ARGUMENT', 'NOT_FOUND', 'ALREADY_EXISTS', 'FAILED_PRECONDITION', 'ABORTED', 'CANCELLED', 'OUT_OF_RANGE', 'UNIMPLEMENTED', 'INTERNAL', 'DATA_LOSS', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND', 'ENOENT', 'EACCES', 'EPERM', 'ENOSPC'} | {f'HTTP_{code}' for code in (400, 401, 403, 404, 408, 409, 412, 429, 500, 502, 503, 504)}
 
 
 class BatchError(ValueError):
@@ -106,6 +108,9 @@ class Runner:
     def child(self, arguments, phase):
         token = phase.replace('/', '-') + '-' + uuid4().hex
         stdout, stderr = self.logs / (token + '.stdout.log'), self.logs / (token + '.stderr.log')
+        if self.state.get('error'):
+            self.state['lastFailure'] = {'error': self.state.pop('error'), 'phase': self.state.get('lastPhase'),
+                                         'at': self.state.get('updatedAt'), 'diagnostic': self.state.get('lastChildFailure')}
         self.state.update(status='running', lastPhase=phase, lastLogs={'stdout': str(stdout), 'stderr': str(stderr)})
         self.save()
         with stdout.open('w', encoding='utf-8') as out, stderr.open('w', encoding='utf-8') as err:
@@ -113,7 +118,22 @@ class Runner:
             if os.name == 'nt':
                 options['creationflags'] = subprocess.CREATE_NO_WINDOW
             result = subprocess.run([str(value) for value in arguments], **options)
-        require(result.returncode == 0, 'child_failed_' + phase)
+        if result.returncode != 0:
+            diagnostic = {'code': 'UNKNOWN', 'validation': False, 'readOnlyTransient': False}
+            try:
+                require(stderr.stat().st_size <= 1_000_000, 'child_stderr_too_large')
+                error_report = json.loads([line for line in stderr.read_text(encoding='utf-8-sig').splitlines() if line.strip()][-1])
+                require(isinstance(error_report, dict), 'child_error_report_not_object')
+                supplied = error_report.get('diagnostic', {})
+                if error_report.get('status') == 'failed' and isinstance(supplied, dict):
+                    # Only standard allowlisted codes can authorize another read.
+                    diagnostic = {'code': supplied.get('code') if supplied.get('code') in SAFE_FAILURE_CODES else 'UNKNOWN',
+                                  'validation': supplied.get('validation') is not False,
+                                  'readOnlyTransient': supplied.get('validation') is False and supplied.get('code') in READ_ONLY_TRANSIENT}
+            except (ValueError, TypeError, IndexError, OSError):
+                pass
+            self.state['lastChildFailure'] = {'phase': phase, **diagnostic}; self.save()
+            raise BatchError('child_failed_' + phase)
         require(stdout.stat().st_size <= 20_000_000, 'child_stdout_exceeds_json_limit_' + phase)
         lines = [line for line in stdout.read_text(encoding='utf-8-sig').splitlines() if line.strip()]
         require(bool(lines), 'child_final_json_missing_' + phase)
@@ -159,9 +179,16 @@ class Runner:
             if operation['stage'] in ('new', 'inspecting'):
                 # Until stdout hashes are durably saved, no apply can have started.
                 # Re-inspect into a fresh path rather than trusting an orphaned file.
-                snapshot = self.output / ('snapshot-' + uuid4().hex + '.json')
-                operation.update(stage='inspecting', snapshot=str(snapshot)); self.save()
-                report = self.child(self.node('publish-tfda-sources.ts', '--mode', 'inspect', *common, '--snapshot', snapshot), 'inspect')
+                for attempt in range(1, 3):  # At most two READONLY attempts, never an apply retry.
+                    snapshot = self.output / ('snapshot-' + uuid4().hex + '.json')
+                    operation.update(stage='inspecting', snapshot=str(snapshot), inspectAttempt=attempt); self.save()
+                    try:
+                        report = self.child(self.node('publish-tfda-sources.ts', '--mode', 'inspect', *common, '--snapshot', snapshot), 'inspect')
+                        break
+                    except BatchError as error:
+                        failure = self.state.get('lastChildFailure', {})
+                        if str(error) != 'child_failed_inspect' or attempt == 2 or failure.get('validation') is not False or failure.get('readOnlyTransient') is not True:
+                            raise
                 require(report.get('status') == 'cloud_readonly_snapshot_created' and report.get('manifestSha256') == operation['manifestSha256'] and
                         report.get('snapshotSha256') == digest(snapshot), 'inspect_snapshot_or_manifest_hash_mismatch')
                 snapshot_sha = report['snapshotSha256']
@@ -186,7 +213,10 @@ class Runner:
         else:
             require(not self.state['pendingPublications'], 'unfinished_cloud_batch_requires_publish_to_reconcile')
         helper = PROJECT_ROOT / 'tools' / 'fetch-tfda-sources.py'
-        fetch = [args.python, '-B', helper, '--inventory', self.queue, '--output', args.corpus.resolve()]
+        fetch = [args.python, '-B', helper, '--inventory', self.queue, '--output', args.corpus.resolve(), '--workers', str(args.fetch_workers)]
+        if args.extract_active_from is not None:
+            # The downloader owns policy SHA binding/migration. Keep legacy runner bindings intact.
+            fetch.extend(['--extract-active-from', args.extract_active_from.resolve()])
         if args.reextract_existing and self.state.get('reextractedHelperSha256') != digest(helper):
             report = self.child([*fetch, '--reextract-cached', '--all'], 'reextract')
             require(report.get('interrupted') is False and report.get('cachedObjectIntegrityFailures', 0) == 0, 'reextract_interrupted_or_cache_corrupt')
@@ -233,12 +263,16 @@ def arguments(argv=None):
         parser.add_argument('--' + flag, required=True, type=pathlib.Path)
     parser.add_argument('--python', default=sys.executable)
     parser.add_argument('--batch-size', type=int, default=100)
+    parser.add_argument('--fetch-workers', type=int, default=4, help='Local download/extraction workers (1..4).')
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument('--max-batches', type=int); selection.add_argument('--all', action='store_true')
     parser.add_argument('--publish', action='store_true'); parser.add_argument('--reextract-existing', action='store_true')
     parser.add_argument('--queue', choices=('active', 'all'), default='active')
+    parser.add_argument('--extract-active-from', type=pathlib.Path,
+                        help='Forward an active-only extraction policy to fetch/reextract; archive other raw URLs without parsing.')
     args = parser.parse_args(argv)
     require(1 <= args.batch_size <= 500 and (args.max_batches is None or args.max_batches > 0), 'invalid_batch_size_or_max_batches')
+    require(1 <= args.fetch_workers <= 4, 'invalid_fetch_workers')
     return args
 
 

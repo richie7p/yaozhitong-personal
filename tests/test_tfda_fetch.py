@@ -320,4 +320,66 @@ class PdfStructureTests(unittest.TestCase):
   self.assertTrue(page['hasUnverifiedStructure']);self.assertEqual(report['status'],'needs_review')
   self.assertTrue(any('gutter' in reason or 'column_gap' in reason for reason in page['structureEvidence']['reasons']))
 
+class ActiveArchiveExtractionTests(unittest.TestCase):
+ def database(self,path):
+  database=sqlite3.connect(path);database.execute('CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT NOT NULL)');return database
+ def active_file(self,path,url='https://mcp.fda.gov.tw/active',**changes):
+  source={'sourceUrl':url,'sourceKeySha256':module.sha_bytes(url.encode())};item={'fullLicense':'衛部藥製字第999991號','active':True,'sources':[source]};item.update(changes)
+  path.write_text(json.dumps(item,ensure_ascii=False)+'\n',encoding='utf8');return item
+ def test_policy_hashes_are_computed_from_actual_file_and_urls(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);active=root/'active.ndjson';self.active_file(active);database=self.database(root/'checkpoint.sqlite3')
+   hashes,policy=module.bind_active_extraction_policy(database,active)
+   self.assertEqual(policy['inventorySha256'],module.sha_file(active));self.assertEqual(hashes,{module.sha_bytes(b'https://mcp.fda.gov.tw/active')});self.assertEqual(policy['urlCount'],1)
+   saved=dict(database.execute('select key,value from meta'));self.assertEqual(saved['active_extraction_inventory_sha256'],module.sha_file(active));database.close()
+ def test_changed_active_inventory_cannot_reuse_old_checkpoint_binding(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);active=root/'active.ndjson';self.active_file(active);database=self.database(root/'checkpoint.sqlite3');module.bind_active_extraction_policy(database,active)
+   self.active_file(active,url='https://mcp.fda.gov.tw/different')
+   with self.assertRaisesRegex(module.SourceError,'active_extraction_inventory_changed'):module.bind_active_extraction_policy(database,active)
+   database.close()
+ def test_bound_policy_cannot_be_omitted_on_resume(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);active=root/'active.ndjson';self.active_file(active);database=self.database(root/'checkpoint.sqlite3');module.bind_active_extraction_policy(database,active)
+   with self.assertRaisesRegex(module.SourceError,'flag_required'):module.bind_active_extraction_policy(database,None)
+   database.close()
+ def test_forged_declared_source_hash_cannot_mark_other_url_active(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);active=root/'active.ndjson';self.active_file(active,sources=[{'sourceUrl':'https://mcp.fda.gov.tw/actual','sourceKeySha256':'0'*64}]);database=self.database(root/'checkpoint.sqlite3')
+   with self.assertRaisesRegex(module.SourceError,'source_key_hash_mismatch'):module.bind_active_extraction_policy(database,active)
+   self.assertEqual(database.execute('select count(*) from meta').fetchone()[0],0);database.close()
+ def test_nonactive_row_is_not_a_valid_active_inventory(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);active=root/'active.ndjson';self.active_file(active,active=False);database=self.database(root/'checkpoint.sqlite3')
+   with self.assertRaisesRegex(module.SourceError,'nonactive'):module.bind_active_extraction_policy(database,active)
+   database.close()
+ def test_archive_raw_download_never_calls_pdf_or_html_inspection(self):
+  for raw,kind in [(b'%PDF-synthetic-raw','pdf'),(b'<html>archive source</html>','html')]:
+   with self.subTest(kind=kind),tempfile.TemporaryDirectory() as directory:
+    root=pathlib.Path(directory);job={'url_hash':module.sha_bytes(kind.encode()),'url':'https://mcp.fda.gov.tw/archive-'+kind,'rawOnlyArchive':True,'activeExtractionPolicy':{'inventorySha256':'a'*64,'urlSetSha256':'b'*64}}
+    metadata={'finalUrl':job['url'],'httpStatus':200,'contentType':'application/pdf'if kind=='pdf'else'text/html','redirects':[]}
+    with patch.object(module,'fetch_bounded',return_value=(raw,metadata)),patch.object(module,'inspect_pdf',side_effect=AssertionError('archive must not inspect PDF')),patch.object(module,'inspect_html',side_effect=AssertionError('archive must not inspect HTML')):
+     result=module.process_source(job,root)
+    self.assertEqual(result['status'],'downloaded_archive_raw');self.assertTrue(result['rawOnlyArchive']);self.assertEqual(result['sourceType'],kind);self.assertEqual(result['sourceBlobSha256'],module.sha_bytes(raw));self.assertIsNone(result['extractionPath']);self.assertIsNone(result['parserVersion']);self.assertFalse(result['publicationEligible'])
+    self.assertEqual((root/result['blobPath']).read_bytes(),raw)
+ def test_cached_archive_reextract_reuses_raw_and_never_inspects(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);blob=root/'raw.html';blob.write_bytes(b'<html>archive</html>');url='https://mcp.fda.gov.tw/archive';key=module.sha_bytes(url.encode())
+   module.write_json(root/'records'/(key+'.json'),{'sourceUrl':url,'sourceBlobSha256':module.sha_file(blob),'blobPath':blob.name,'finalUrl':url,'contentType':'text/html','httpStatus':200,'redirects':[],'rawOnlyArchive':True})
+   with patch.object(module,'fetch_bounded',side_effect=AssertionError('no network')),patch.object(module,'inspect_html',side_effect=AssertionError('no extraction')):
+    result=module.process_source({'url_hash':key,'url':url,'reextractOnly':True,'rawOnlyArchive':True},root)
+   self.assertEqual(result['attempts'],0);self.assertEqual(result['status'],'downloaded_archive_raw');self.assertTrue(result['resumedVerifiedRawCheckpoint'])
+ def test_shared_active_and_archive_url_always_normal_extracts(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=pathlib.Path(directory);active=root/'active.ndjson';item=self.active_file(active);url=item['sources'][0]['sourceUrl'];inventory=root/'all.ndjson';archive_only='https://mcp.fda.gov.tw/archive-only'
+   inventory.write_text('\n'.join(json.dumps(row)for row in [item,{'fullLicense':'衛署藥製字第999992號','active':False,'sources':[{'sourceUrl':url},{'sourceUrl':archive_only}]}])+'\n',encoding='utf8');seen={}
+   def worker(job,output):
+    seen[job['url']]=job['rawOnlyArchive'];return {'urlHash':job['url_hash'],'sourceUrl':job['url'],'at':module.now(),'status':'failed_synthetic_no_network'}
+   old_int=signal.getsignal(signal.SIGINT);old_term=signal.getsignal(signal.SIGTERM)
+   try:
+    with patch.object(module,'process_source',side_effect=worker),contextlib.redirect_stdout(io.StringIO()):
+     result=module.main(['--inventory',str(inventory),'--output',str(root/'output'),'--extract-active-from',str(active),'--limit','5'])
+   finally:signal.signal(signal.SIGINT,old_int);signal.signal(signal.SIGTERM,old_term)
+   self.assertEqual(result,0);self.assertEqual(seen,{url:False,archive_only:True})
+
 if __name__=='__main__':unittest.main(verbosity=2)

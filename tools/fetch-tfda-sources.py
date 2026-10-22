@@ -460,6 +460,8 @@ def inspect_pdf(path):
 
 def process_source(job, root):
     result={'schemaVersion':1,'urlHash':job['url_hash'],'sourceUrl':job['url'],'at':now(),'status':'failed','attempts':0,'humanReviewed':False,'clinicalReviewed':False}
+    if job.get('activeExtractionPolicy'):
+        result.update(activeExtractionPolicy=job['activeExtractionPolicy'],rawOnlyArchive=job.get('rawOnlyArchive') is True)
     if is_placeholder(job['url'],job.get('disposition','')):
         return {**result,'status':'unresolved_placeholder','error':'placeholder_not_requested'}
     try: validate_official_https(job['url'])
@@ -497,6 +499,10 @@ def process_source(job, root):
             if os.path.exists(tmp): os.unlink(tmp)
     result.update(sourceBlobSha256=digest,sourceType=file_type,bytes=len(raw),blobPath=str(blob.relative_to(root)),error=None,status='downloaded_'+file_type+'_draft')
     result.update(requestedUrl=job['url'],redirectChain=result.get('redirects',[]),fetchedAt=result.get('fetchedAt',result['at']),sha256=digest,mediaType=result.get('contentType',''),rawPath=str(blob))
+    if job.get('rawOnlyArchive') is True:
+        result.update(status='downloaded_archive_raw',rawOnlyArchive=True,extractionStatus='archive_raw_only_not_extracted',extractionPath=None,parserVersion=None,publicationEligible=False,archiveOnlyReason='source_url_not_in_bound_active_inventory')
+        write_json(cached_record,result)
+        return result
     write_json(cached_record,{**result,'status':'raw_downloaded_pending_independent_extraction'})
     report_path=root/'extraction'/(job['url_hash']+'.json')
     try:
@@ -550,6 +556,39 @@ def load_inventory(database, path):
     database.execute("insert into meta(key,value) values('inventory_path',?)",(str(path),))
     database.commit();return digest
 
+def bind_active_extraction_policy(database, path):
+    """Bind an actual active inventory, never a caller-supplied digest or flag."""
+    previous=dict(database.execute("select key,value from meta where key like 'active_extraction_%'").fetchall())
+    if path is None:
+        if previous:raise SourceError('bound_active_extraction_inventory_flag_required')
+        return None,None
+    path=path.resolve();inventory_raw=path.read_bytes();file_digest=sha_bytes(inventory_raw);urls=set();products=0
+    # Parse and hash the same read, so a changed path cannot bind another set.
+    with io.StringIO(inventory_raw.decode('utf-8-sig')) as stream:
+        for line in stream:
+            if not line.strip():continue
+            item=json.loads(line)
+            if item.get('active') is not True or not isinstance(item.get('fullLicense'),str) or not item['fullLicense']:
+                raise SourceError('active_extraction_inventory_contains_nonactive_or_invalid_product')
+            if not isinstance(item.get('sources'),list):raise SourceError('active_extraction_inventory_sources_missing')
+            products+=1
+            for source in item['sources']:
+                url=source.get('sourceUrl')
+                if not isinstance(url,str) or not url:raise SourceError('active_extraction_inventory_url_missing')
+                derived=sha_bytes(url.encode())
+                if source.get('sourceKeySha256') not in (None,derived):raise SourceError('active_extraction_inventory_source_key_hash_mismatch')
+                urls.add(url)
+    if not products or not urls:raise SourceError('active_extraction_inventory_empty')
+    urlset_digest=sha_bytes(json.dumps(sorted(urls),ensure_ascii=False,separators=(',',':')).encode())
+    expected={'active_extraction_inventory_sha256':file_digest,'active_extraction_urlset_sha256':urlset_digest,'active_extraction_url_count':str(len(urls)),'active_extraction_product_count':str(products)}
+    if previous:
+        if any(previous.get(key)!=value for key,value in expected.items()):raise SourceError('active_extraction_inventory_changed_use_new_output_directory')
+    else:
+        for key,value in {**expected,'active_extraction_inventory_path':str(path)}.items():database.execute('insert into meta(key,value) values(?,?)',(key,value))
+        database.commit()
+    policy={'inventorySha256':file_digest,'urlSetSha256':urlset_digest,'urlCount':len(urls),'productCount':products}
+    return {sha_bytes(url.encode()) for url in urls},policy
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inventory',type=pathlib.Path)
@@ -562,6 +601,7 @@ def main(argv=None):
     parser.add_argument('--retry-failed',action='store_true')
     parser.add_argument('--reextract-cached',action='store_true',help='Re-extract cached successful sources with the current parser; no network requests.')
     parser.add_argument('--reextract-format',choices=('html','pdf','all'),default='all',help='Source format to re-extract; valid only with --reextract-cached.')
+    parser.add_argument('--extract-active-from',type=pathlib.Path,help='Bind this active inventory SHA; other URLs are acquired as archive raw only without PDF/HTML inspection.')
     args=parser.parse_args(argv)
     if args.inspect_html_internal:
         filename,url=args.inspect_html_internal
@@ -588,6 +628,7 @@ def main(argv=None):
         database=sqlite3.connect(root/'checkpoint.sqlite3');database.row_factory=sqlite3.Row
         database.executescript('CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS sources(url_hash TEXT PRIMARY KEY,url TEXT NOT NULL,disposition TEXT,status TEXT NOT NULL,result_json TEXT); CREATE TABLE IF NOT EXISTS product_sources(full_license TEXT NOT NULL,url_hash TEXT NOT NULL,PRIMARY KEY(full_license,url_hash));')
         inventory_hash=load_inventory(database,args.inventory.resolve())
+        active_url_hashes,active_extraction_policy=bind_active_extraction_policy(database,args.extract_active_from)
         # Verify known objects locally; corrupt/missing blobs are never silently refetched.
         verified=0;invalidated=0
         for row in database.execute("select url_hash,result_json from sources where status like 'downloaded_%'").fetchall():
@@ -602,6 +643,10 @@ def main(argv=None):
         if args.reextract_cached and args.reextract_format!='all':
             jobs=[job for job in jobs if json.loads(job['result_json']).get('sourceType')==args.reextract_format]
         for job in jobs:job.pop('result_json',None)
+        if active_url_hashes is not None:
+            for job in jobs:
+                job['rawOnlyArchive']=job['url_hash'] not in active_url_hashes
+                job['activeExtractionPolicy']=active_extraction_policy
         if not args.all:jobs=jobs[:args.limit]
         if args.reextract_cached:
             for job in jobs:job['reextractOnly']=True
@@ -630,7 +675,7 @@ def main(argv=None):
                         submit(pool)
         finally:journal.close()
         counts={row['status']:row['n'] for row in database.execute('select status,count(*) n from sources group by status')}
-        summary={'schemaVersion':3,'at':now(),'inventorySha256':inventory_hash,'output':str(root),'operation':'reextract_cached_no_network' if args.reextract_cached else 'acquire_sources','reextractFormat':args.reextract_format if args.reextract_cached else None,'htmlParserVersion':HTML_PARSER_VERSION,'htmlTableSerializationVersion':HTML_TABLE_SERIALIZATION_VERSION,'pdfParserVersion':PDF_PARSER_VERSION,'scheduledThisRun':len(jobs),'completedThisRun':completed,'interrupted':stopped.is_set(),'cachedObjectsHashVerified':verified,'cachedObjectIntegrityFailures':invalidated,'uniqueSourceCount':sum(counts.values()),'productCount':database.execute('select count(distinct full_license) from product_sources').fetchone()[0],'statusCounts':counts,'aiCalls':0,'cloudWrites':0,'publicationActions':0,'humanReviewed':False,'clinicalReviewed':False}
+        summary={'schemaVersion':3,'at':now(),'inventorySha256':inventory_hash,'output':str(root),'operation':'reextract_cached_no_network' if args.reextract_cached else 'acquire_sources','reextractFormat':args.reextract_format if args.reextract_cached else None,'activeExtractionPolicy':active_extraction_policy,'scheduledArchiveRawOnly':sum(job.get('rawOnlyArchive') is True for job in jobs),'scheduledNormalExtraction':sum(job.get('rawOnlyArchive') is not True for job in jobs),'htmlParserVersion':HTML_PARSER_VERSION,'htmlTableSerializationVersion':HTML_TABLE_SERIALIZATION_VERSION,'pdfParserVersion':PDF_PARSER_VERSION,'scheduledThisRun':len(jobs),'completedThisRun':completed,'interrupted':stopped.is_set(),'cachedObjectsHashVerified':verified,'cachedObjectIntegrityFailures':invalidated,'uniqueSourceCount':sum(counts.values()),'productCount':database.execute('select count(distinct full_license) from product_sources').fetchone()[0],'statusCounts':counts,'aiCalls':0,'cloudWrites':0,'publicationActions':0,'humanReviewed':False,'clinicalReviewed':False}
         write_json(root/'summary.json',summary);database.close();print(json.dumps(summary,ensure_ascii=False),flush=True)
     return 130 if stopped.is_set() else 0
 

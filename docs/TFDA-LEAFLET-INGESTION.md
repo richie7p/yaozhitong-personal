@@ -28,7 +28,7 @@
 
 表格合併儲存格、複雜巢狀表格、掃描圖片、疑似 PDF 多欄、版面分析失敗、舊品名及多來源關聯未釐清等情況會留待補正。PDF 版面偵測是保守的風險篩選；未偵測到風險不等於已完成語意或臨床驗證。
 
-原文明示「製劑原料」等分類的資料保留供盤點，不發布為患者仿單。個別下載失敗、超出大小上限或官方缺檔也會記錄原因；批次不會無限重試或自行提高發布上限。
+TFDA 主檔的「藥品類別」若為原料藥、製劑原料或醫藥原料，資料僅供封存，不發布為患者仿單。準備候選與發布時都會檢查；發布工具會自行讀取原始官方主檔，不能只相信候選資料的分類。缺少或矛盾的分類也會保留待處理。原文另外出現原料分類時仍會攔截。個別下載失敗、超出大小上限或官方缺檔均記錄原因。
 
 `sourceVerification` 保存自動技術檢查條件及原檔重解析證據，明確記錄 `humanReviewed: false`、`clinicalReviewed: false`。既有八款已發布仿單受保護，其餘已存在的不同發布版本也不能被批次工具覆寫。
 
@@ -62,10 +62,28 @@ node --import tsx tools/publish-tfda-sources.ts --manifest C:/yzt-data/prepared-
 需要持續完成整份清單時，可使用一次性批次工具。`--protected` 是既有已發布字號的 JSON 清單（`leaflets` 陣列，每項含 `licenseNo` 與 `status: "published"`）；工具只更新輸出目錄內的衍生清單。不同 queue 須用不同 corpus。
 
 ```powershell
-python tools/run-tfda-batches.py --inventory C:/yzt-data/index-20261022 --corpus C:/yzt-data/all-corpus --output C:/yzt-data/full-run --protected C:/yzt-data/published-sources.json --queue all --batch-size 500 --all --publish
+python tools/run-tfda-batches.py --inventory C:/yzt-data/index-20261022 --corpus C:/yzt-data/all-corpus --output C:/yzt-data/full-run --protected C:/yzt-data/published-sources.json --queue all --batch-size 500 --all --publish --extract-active-from C:/yzt-data/index-20261022/active-candidates.ndjson --fetch-workers 2
 ```
 
 省略 `--publish` 就只做本機收集與檢查。`--max-batches 1` 可取代 `--all` 先跑小批。失敗後用同一組參數續跑，未完成的發布會沿用原快照與雜湊；原始索引過期、來源改變或檢查失敗時停止，不能藉重開程序解除條件。進行中的發布期間請保留工具版本，以免舊快照因抽取器變更而失效。
+
+`--extract-active-from` 將有效藥品清單的 SHA 綁定至下載 checkpoint；其餘網址只保存官方原檔，不花時間解析歷史資料。與有效藥品共用的網址仍會正常抽取。綁定後不能省略或換成不同的清單。`--fetch-workers` 可設為 1 至 4；同時執行附件封存時，兩個程序的工作數合計應維持在 4 以內。
+
+只讀 inspect 遇到明確的連線重設、服務暫時不可用或期限錯誤時，最多嘗試兩次。驗證失敗、權限、配額、未知錯誤及 apply 失敗不會自動重試。診斷僅輸出標準錯誤代碼，不輸出 SDK 請求或憑證。
+
+## 附件封存與資料更正
+
+`tools/archive-tfda-assets.py` 另外收集電子仿單列出的現行紙本、歷史附件與圖檔。其 queue 必須先凍結並計算 SHA；每個 queue 使用獨立輸出資料夾。封存程序不寫入雲端，也不將檔案直接發布為患者仿單。
+
+```powershell
+python tools/archive-tfda-assets.py collect --queue C:/yzt-data/assets.ndjson --output C:/yzt-data/asset-archive --reuse-corpus C:/yzt-data/all-corpus --cohort oversize --limit 10 --workers 2
+# 核對小批 summary.json 與原檔後，對同一 queue 續跑所有附件。
+python tools/archive-tfda-assets.py collect --queue C:/yzt-data/assets.ndjson --output C:/yzt-data/asset-archive --reuse-corpus C:/yzt-data/all-corpus --cohort all --limit 50000 --workers 2
+```
+
+附件封存每檔上限 100 MB、單次請求期限 90 秒，最多兩次嘗試；患者仿單發布的 15 MB 上限及抽取檢查維持原設定。`--reuse-corpus` 可重複指定既有下載或封存資料夾，重用前核對實際 bytes 與 SHA；相同網址取得不同版本時全部保留，不自行判定現行版本。報告分列成功網址數、網址／版本參照數及不同 SHA 原檔數。
+
+固定三筆曾誤納原料藥的更正使用 `tools/withdraw-tfda-raw-materials.ts`。預設 inspect 僅保存完整前快照；apply 須指定精確快照 SHA，並在交易中核對原仿單、發布指標及稽核紀錄。更正只將該來源退役並移除患者發布指標，保留原檔與全文。restore 以同一快照和擁有權紀錄恢復，遇到競爭變更即停止；不修改帳號、服藥紀錄或配額。
 
 ## 驗證與進度
 

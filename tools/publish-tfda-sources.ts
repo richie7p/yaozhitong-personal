@@ -8,9 +8,9 @@ import { verifyCandidateFromRaw } from "./tfda-candidate-verification.js";
 import {
   TFDA_PROTECTED_LICENSES, TFDA_PUBLICATION_ACTOR, TFDA_PUBLICATION_BUCKET,
   TFDA_PUBLICATION_PROJECT, applyTechnicalPublication, ensureTechnicalSourceBlob, assertFreshTimestamp,
-  assertPublicationBlob, assertPublicationWrite, canonicalDocument, catalogCacheFilename, verifyCachedCatalog,
+  assertPublicationBlob, assertPublicationWrite, assertOfficialPatientCategory, canonicalDocument, catalogCacheFilename, verifyCachedCatalog,
   inspectTechnicalPublication, prepareTechnicalSource, publicationHash,
-  publicationRequire as must, sameDocument, technicalAuditId,
+  publicationRequire as must, safePublicationFailure, sameDocument, technicalAuditId,
   validatePublicationManifest, type PreparedTechnicalSource,
   type PublicationBefore, type PublicationDoc, type PublicationManifest,
   type PublicationRun, type PublicationStore, type TechnicalBlobState,
@@ -78,6 +78,7 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
     must(input.catalogCheckedAt === catalog.evidence.retrievedAt && input.indexCheckedAt === index.evidence.retrievedAt &&
       sameDocument(input.catalogRows, catalogRows(catalog.rows, item.fullLicense)) &&
       sameDocument(input.indexRows, indexRows(index.rows, item.fullLicense)), "candidate_current_official_index_binding_mismatch");
+    assertOfficialPatientCategory(catalog.rows, item.fullLicense, input.officialCategory);
     const raw = await boundedRead(pathFromManifest(item.rawSourcePath), 15_000_000);
     const source = prepareTechnicalSource(item, input, raw, now);
     source.rawVerification = await verifyCandidateFromRaw(pathFromManifest(item.rawSourcePath), raw, input, verificationOptions);
@@ -354,9 +355,7 @@ export async function main(args = process.argv.slice(2)) {
 }
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   main().catch((error) => {
-    const message = error instanceof Error && /^[a-zA-Z0-9_:,.-]{1,1500}$/.test(error.message)
-      ? error.message : "cloud_or_file_operation_failed";
-    console.error(JSON.stringify({ status: "failed", error: message, aiCalls: 0 }));
+    console.error(JSON.stringify(safePublicationFailure(error)));
     process.exitCode = 1;
   });
 }

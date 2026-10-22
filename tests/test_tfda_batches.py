@@ -17,9 +17,10 @@ LICENSE = '衛部藥製字第999992號'
 
 
 class MockChildren:
-    def __init__(self, fetches=None, fail_once=None, invalid_phase=None):
+    def __init__(self, fetches=None, fail_once=None, invalid_phase=None, failure_diagnostic=None, failures=1):
         self.fetches = list(fetches or [(0, 0)])
         self.fail_once, self.invalid_phase = fail_once, invalid_phase
+        self.failure_diagnostic, self.remaining_failures = failure_diagnostic, failures
         self.calls, self.apply_calls, self.prepare_count = [], [], 0
 
     def __call__(self, command, **options):
@@ -33,8 +34,10 @@ class MockChildren:
             assert value('--manifest-sha256') == runner.digest(pathlib.Path(value('--manifest')))
             assert value('--snapshot-sha256') == runner.digest(pathlib.Path(value('--snapshot')))
         if phase == self.fail_once:
-            self.fail_once = None
-            options['stderr'].write('Synthetic controlled child failure\n')
+            self.remaining_failures -= 1
+            if self.remaining_failures == 0:
+                self.fail_once = None
+            options['stderr'].write(json.dumps({'status': 'failed', 'diagnostic': self.failure_diagnostic}) + '\n' if self.failure_diagnostic else 'Synthetic controlled child failure\n')
             return subprocess.CompletedProcess(command, 1)
         if phase == self.invalid_phase:
             options['stdout'].write('not valid final JSON\n')
@@ -93,6 +96,7 @@ class TfdaBatchRunnerTests(unittest.TestCase):
         self.assertEqual(len(child.calls), 2)
         self.assertFalse(any('publish-tfda-sources.ts' in ' '.join(command) for command in child.calls))
         self.assertTrue(child.calls[0][0].endswith('synthetic-python-executable'))
+        self.assertEqual(child.calls[0][child.calls[0].index('--workers') + 1], '4')
         self.assertEqual(self.protected.read_bytes(), self.original)
         self.assertNotIn(LICENSE, state['protectedLicenses'])
         self.assertEqual(state['status'], 'selected_queue_exhausted')
@@ -130,6 +134,8 @@ class TfdaBatchRunnerTests(unittest.TestCase):
         self.execute(second, '--max-batches', '1')
         self.assertEqual(len(second.calls), 1)
         self.assertTrue(any('prepare-tfda-sources.ts' in value for value in second.calls[0]))
+        self.assertNotIn('error', self.state())
+        self.assertEqual(self.state()['lastFailure']['error'], 'child_failed_prepare')
 
     def test_invalid_last_json_stops_before_prepare_and_records_logs(self):
         child = MockChildren(invalid_phase='fetch')
@@ -168,6 +174,46 @@ class TfdaBatchRunnerTests(unittest.TestCase):
         self.assertEqual(child.calls, [])
         self.assertEqual(self.state()['status'], 'failed')
 
+    def test_inspect_retries_only_confirmed_transient_code_with_a_new_snapshot(self):
+        child = MockChildren(fail_once='inspect', failure_diagnostic={'code': 'UNAVAILABLE', 'validation': False})
+        state = self.execute(child, '--max-batches', '1', '--publish')
+        inspections = [command for command in child.calls if '--mode' in command and command[command.index('--mode') + 1] == 'inspect']
+        self.assertEqual(len(inspections), 2)
+        self.assertNotEqual(inspections[0][inspections[0].index('--snapshot') + 1], inspections[1][inspections[1].index('--snapshot') + 1])
+        self.assertEqual(len(child.apply_calls), 1)
+        self.assertIn(LICENSE, state['protectedLicenses'])
+
+    def test_confirmed_transient_inspect_is_bounded_to_two_attempts(self):
+        child = MockChildren(fail_once='inspect', failures=3, failure_diagnostic={'code': 'DEADLINE_EXCEEDED', 'validation': False})
+        with self.assertRaisesRegex(runner.BatchError, 'child_failed_inspect'):
+            self.execute(child, '--max-batches', '1', '--publish')
+        inspections = [command for command in child.calls if '--mode' in command]
+        self.assertEqual(len(inspections), 2)
+        self.assertEqual(child.apply_calls, [])
+        self.assertEqual(self.state()['pendingPublications'][0]['inspectAttempt'], 2)
+
+    def test_generic_or_validation_inspect_failure_is_never_retried(self):
+        for number, diagnostic in enumerate((None, {'code': 'UNAVAILABLE', 'validation': True})):
+            with self.subTest(diagnostic=diagnostic):
+                self.output = pathlib.Path(self.temp.name) / f'no-retry-{number}'
+                child = MockChildren(fail_once='inspect', failure_diagnostic=diagnostic)
+                with self.assertRaisesRegex(runner.BatchError, 'child_failed_inspect'):
+                    self.execute(child, '--max-batches', '1', '--publish')
+                self.assertEqual(len([command for command in child.calls if '--mode' in command]), 1)
+                self.assertEqual(child.apply_calls, [])
+
+    def test_active_extract_policy_forwards_to_both_fetch_modes_without_changing_legacy_runner_binding(self):
+        self.execute(MockChildren(), '--max-batches', '1')
+        original_binding = self.state()['binding']
+        child = MockChildren()
+        policy = self.inventory / 'active-candidates.ndjson'
+        self.execute(child, '--max-batches', '1', '--extract-active-from', str(policy), '--reextract-existing')
+        fetches = [command for command in child.calls if any(value.endswith('fetch-tfda-sources.py') for value in command)]
+        self.assertEqual(len(fetches), 2)
+        for command in fetches:
+            self.assertEqual(command[command.index('--extract-active-from') + 1], str(policy))
+        self.assertEqual(self.state()['binding'], original_binding)
+
     def test_reextract_flag_is_checkpointed_and_never_enables_failed_network_retries(self):
         first = MockChildren()
         self.execute(first, '--max-batches', '1', '--reextract-existing')
@@ -175,6 +221,16 @@ class TfdaBatchRunnerTests(unittest.TestCase):
         second = MockChildren()
         self.execute(second, '--max-batches', '1', '--reextract-existing')
         self.assertFalse(any('--reextract-cached' in command for command in second.calls))
+
+    def test_local_workers_are_bounded_and_forwarded_to_fetch_and_reextract(self):
+        child = MockChildren()
+        self.execute(child, '--max-batches', '1', '--reextract-existing', '--fetch-workers', '2')
+        fetches = [command for command in child.calls if any(value.endswith('fetch-tfda-sources.py') for value in command)]
+        self.assertEqual(len(fetches), 2)
+        self.assertTrue(all(command[command.index('--workers') + 1] == '2' for command in fetches))
+        for invalid in ('0', '5'):
+            with self.assertRaisesRegex(runner.BatchError, 'invalid_fetch_workers'):
+                runner.arguments(self.args('--max-batches', '1', '--fetch-workers', invalid))
 
     def test_all_or_max_batches_is_required_and_limits_are_validated(self):
         with contextlib.redirect_stderr(io.StringIO()):

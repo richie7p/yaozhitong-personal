@@ -1,11 +1,11 @@
 /** Local-only preparation. Never loads .env, application Domain, AI or Firebase. */
-import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rename, link, unlink } from "node:fs/promises";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { evaluateTfdaSource, normalizeTfdaSourceText, type TfdaSourceInput, type TfdaFetchedArtifact } from "./tfda-source-core.js";
+import { promisify, isDeepStrictEqual } from "node:util";
+import { evaluateTfdaSource, isRawMaterialOfficialCategory, normalizeTfdaSourceText, type TfdaSourceInput, type TfdaFetchedArtifact } from "./tfda-source-core.js";
 
 const runFile = promisify(execFile);
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
@@ -21,6 +21,36 @@ async function atomic(path: string, value: unknown) {
 }
 const day = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const urls = (value: unknown): string[] => typeof value === "string" ? value.match(/https?:\/\/[^\s;<>"\u3000]+/gu) || [] : [];
+export function officialCategoryDisposition(product: any): "patient_candidate" | "archive_only_raw_material" | "archive_only_unconfirmed_category" {
+  const categories = (product.catalogRows || []).map((row: any) => String(row.record?.["藥品類別"] || "").trim());
+  if (categories.some(isRawMaterialOfficialCategory)) return "archive_only_raw_material";
+  return categories.length && categories.every(Boolean) && new Set(categories.map(normalizeTfdaSourceText)).size === 1
+    ? "patient_candidate" : "archive_only_unconfirmed_category";
+}
+export function sameCandidateExceptEvaluation(left: TfdaSourceInput, right: TfdaSourceInput): boolean {
+  const strip = ({ checkedAt: _checkedAt, ...source }: TfdaSourceInput) => source;
+  return isDeepStrictEqual(strip(left), strip(right));
+}
+/** Candidate bytes named by their full hash are immutable, including historical manifest inputs. */
+export async function storeImmutableCandidateInput(output: string, input: TfdaSourceInput, previousPath?: string) {
+  let bytes = Buffer.from(JSON.stringify(input, null, 2) + "\n");
+  const priorPath = previousPath || join(output, "inputs", hash(input.licenseNo) + ".json");
+  try {
+    const prior = await readFile(priorPath);
+    if (sameCandidateExceptEvaluation(JSON.parse(prior.toString("utf8").replace(/^\uFEFF/u, "")), input)) bytes = prior;
+  } catch (error: any) { if (error.code !== "ENOENT") throw error; }
+  const candidateInputSha256 = hash(bytes);
+  const candidateInputPath = join(output, "inputs", hash(input.licenseNo) + "-" + candidateInputSha256 + ".json");
+  await mkdir(dirname(candidateInputPath), { recursive: true });
+  const temporary = candidateInputPath + ".tmp-" + randomUUID();
+  try {
+    await writeFile(temporary, bytes, { flag: "wx", mode: 0o600 });
+    try { await link(temporary, candidateInputPath); }
+    catch (error: any) { if (error.code !== "EEXIST") throw error; }
+    if (!(await readFile(candidateInputPath)).equals(bytes)) throw Error("immutable_candidate_input_content_conflict");
+  } finally { await unlink(temporary).catch((error: any) => { if (error.code !== "ENOENT") throw error; }); }
+  return { candidateInputPath, candidateInputSha256 };
+}
 
 async function extractOne(path: string) {
   const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
@@ -102,6 +132,11 @@ async function main() {
   let processed = 0, reused = 0;
   for (const product of products) {
     const licenseNo = product.fullLicense;
+    const categoryDisposition = officialCategoryDisposition(product);
+    if (categoryDisposition !== "patient_candidate") {
+      counts[categoryDisposition] = (counts[categoryDisposition] || 0) + 1;
+      continue;
+    }
     if (protectedLicenses.has(licenseNo)) { counts.existing_published_preserved = (counts.existing_published_preserved || 0) + 1; continue; }
     const records: any[] = [];
     let branchesReady = true;
@@ -139,6 +174,7 @@ async function main() {
     else {
       const input: TfdaSourceInput = {
         licenseNo, checkedAt: new Date().toISOString(), asOfDate: day(),
+        officialCategory: String(product.catalogRows[0].record["藥品類別"]).trim(),
         catalogCheckedAt: evidence36.retrievedAt, indexCheckedAt: evidence39.retrievedAt,
         catalogRows: product.catalogRows.map((row: any) => row.record).map((r: any) => ({ licenseNo: r["許可證字號"], nameZh: r["中文品名"] || "", nameEn: r["英文品名"] || "", form: r["劑型"] || "", manufacturer: r["製造商名稱"] || "", effectiveUntil: r["有效日期"] || "", revoked: !!String(r["註銷狀態"] || "").trim() })),
         indexRows: product.indexRows.map((row: any) => row.record).map((r: any) => ({ licenseNo: r["許可證字號"], nameZh: r["中文品名"] || "", nameEn: r["英文品名"] || "", urls: urls(r["仿單圖檔連結"]) })),
@@ -186,9 +222,8 @@ async function main() {
         if (!documentLicenseMatches) preparationError = "html_current_license_field_missing_or_mismatch";
       }
       const assessment = evaluateTfdaSource(input);
-      const candidateInputPath = join(output, "inputs", hash(licenseNo) + ".json");
-      await atomic(candidateInputPath, input);
-      prepared = { schema: "tfda-source-preparation/v1", fingerprint, fullLicense: licenseNo, branchesReady, preparationError, canonicalRetry, candidateInputPath, candidateInputSha256: hash(await readFile(candidateInputPath)), rawSourcePath: rawPath, rawSourceSha256: hash(raw), assessment };
+      const storedInput = await storeImmutableCandidateInput(output, input, prepared?.candidateInputPath);
+      prepared = { schema: "tfda-source-preparation/v1", fingerprint, fullLicense: licenseNo, branchesReady, preparationError, canonicalRetry, ...storedInput, rawSourcePath: rawPath, rawSourceSha256: hash(raw), assessment };
       await atomic(destination, prepared);
     }
     const label = prepared.assessment.eligibleTechnical && prepared.assessment.runtimeCompatible ? "technically_eligible_runtime_compatible" : prepared.assessment.status === "technically_eligible" ? "source_complete_over_model_budget" : prepared.assessment.status;

@@ -29,7 +29,7 @@ async function writeBatch(fixture: Case, input: TfdaSourceInput, label: string) 
   const candidatePath = join(folder, `${label}-candidate.json`), candidateBytes = Buffer.from(JSON.stringify(input));
   await writeFile(candidatePath, candidateBytes);
   const info36 = [{ "許可證字號": licenseNo, "中文品名": nameZh, "英文品名": PDF_FIXTURE_NAME_EN,
-    "劑型": "合成錠劑", "製造商名稱": "合成測試製造商", "有效日期": "2099/12/31", "註銷狀態": "" }];
+    "劑型": "合成錠劑", "製造商名稱": "合成測試製造商", "有效日期": "2099/12/31", "註銷狀態": "", "藥品類別": "合成處方藥" }];
   const info39 = [{ "許可證字號": licenseNo, "中文品名": nameZh, "英文品名": PDF_FIXTURE_NAME_EN, "仿單圖檔連結": sourceUrl }];
   const indexSnapshots = [];
   for (const [infoId, rows] of [[36, info36], [39, info39]] as const) {

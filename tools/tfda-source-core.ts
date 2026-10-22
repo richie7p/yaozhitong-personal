@@ -97,6 +97,8 @@ export interface TfdaHtmlEvidence {
 }
 export interface TfdaSourceInput {
   licenseNo: string;
+  /** Optional compatibility field. Publication independently checks raw InfoId36. */
+  officialCategory?: string;
   /** Explicit evaluation time makes this function reproducible. */
   checkedAt: string;
   /** Optional local calendar day for inclusive expiry checks; otherwise UTC day. */
@@ -207,6 +209,9 @@ export function normalizeTfdaSourceText(value: string): string {
     .replace(/[“”„‟〝〞]/gu, '"')
     .replace(/[‘’]/gu, "'")
     .replace(/\s/gu, "");
+}
+export function isRawMaterialOfficialCategory(value: unknown): boolean {
+  return typeof value === "string" && /原料藥|製劑原料|醫藥原料/u.test(normalizeTfdaSourceText(value));
 }
 const hashPattern = /^[a-f0-9]{64}$/;
 const licenseBody =
@@ -325,7 +330,7 @@ export function evaluateTfdaSource(
   // An official source can describe manufacturing material rather than a
   // patient medicine. Keep it in the corpus, outside patient-facing publication.
   const materialCategory = /^(?:(?:本品)?僅供)?(?:製劑原料|醫藥原料|原料藥)(?:使用|用)?[。.]?$/u;
-  if (input.pages.some((page) => page.text.split(/\r?\n/u).some((line) => materialCategory.test(line.trim()))))
+  if (isRawMaterialOfficialCategory(input.officialCategory) || input.pages.some((page) => page.text.split(/\r?\n/u).some((line) => materialCategory.test(line.trim()))))
     add("raw_material_source_not_patient_leaflet");
   if (product) {
     if (

@@ -119,6 +119,10 @@ function setPageText(input: TfdaSourceInput, texts: string[]) {
 }
 
 describe("synthetic TFDA technical source gates", () => {
+  it.each(["原料藥", "製劑原料", "自用製劑原料"])("rejects official category %s without relying on a printed category line", (category) => {
+    const input = candidate(); input.officialCategory = category;
+    expect(evaluateTfdaSource(input).reasons).toContain("raw_material_source_not_patient_leaflet");
+  });
   it("requires explicit PDF structure evidence even when all text engines agree", () => {
     const input = candidate();
     delete input.pages[0].hasUnverifiedStructure;

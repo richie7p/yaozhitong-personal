@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from "node:util";
 import type { Leaflet } from "../shared/schema.js";
 import {
   evaluateTfdaSource,
+  isRawMaterialOfficialCategory, normalizeTfdaSourceText,
   type TfdaSourceAssessment,
   type TfdaSourceInput,
 } from "./tfda-source-core.js";
@@ -21,8 +22,43 @@ export const TFDA_PROTECTED_LICENSES = [
 export type PublicationDoc = Record<string, any>;
 export const publicationHash = (value: string | Buffer) =>
   createHash("sha256").update(value).digest("hex");
+/** Authoritative raw official metadata, never a candidate-supplied category claim. */
+export function assertOfficialPatientCategory(rawRows: PublicationDoc[], licenseNo: string, declaredCategory?: string): string {
+  const rows = rawRows.filter((row) => row["許可證字號"] === licenseNo);
+  const categories = rows.map((row) => String(row["藥品類別"] || "").trim());
+  publicationRequire(rows.length > 0 && categories.every(Boolean), "official_product_category_missing");
+  publicationRequire(!categories.some(isRawMaterialOfficialCategory), "official_raw_material_source_not_patient_leaflet");
+  publicationRequire(new Set(categories.map(normalizeTfdaSourceText)).size === 1, "official_product_category_ambiguous");
+  if (declaredCategory !== undefined)
+    publicationRequire(typeof declaredCategory === "string" && normalizeTfdaSourceText(declaredCategory) === normalizeTfdaSourceText(categories[0]), "candidate_official_category_mismatch");
+  return categories[0];
+}
+export class PublicationValidationError extends Error {
+  constructor(code: string) {
+    super(code);
+    this.name = "PublicationValidationError";
+  }
+}
 export function publicationRequire(condition: unknown, code: string): asserts condition {
-  if (!condition) throw Error(code);
+  if (!condition) throw new PublicationValidationError(code);
+}
+/** Never serialize SDK messages, details, request objects, headers or credentials. */
+export function safePublicationFailure(error: unknown) {
+  const validation = error instanceof PublicationValidationError;
+  const grpc = ["OK", "CANCELLED", "UNKNOWN", "INVALID_ARGUMENT", "DEADLINE_EXCEEDED", "NOT_FOUND", "ALREADY_EXISTS",
+    "PERMISSION_DENIED", "RESOURCE_EXHAUSTED", "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE", "UNIMPLEMENTED",
+    "INTERNAL", "UNAVAILABLE", "DATA_LOSS", "UNAUTHENTICATED"];
+  const known = new Set([...grpc, "ECONNRESET", "ETIMEDOUT", "EAI_AGAIN", "ENOTFOUND", "ENOENT", "EACCES", "EPERM", "ENOSPC"]);
+  let code = validation ? "VALIDATION_FAILED" : "UNKNOWN";
+  for (let current: any = error, depth = 0; !validation && current && depth < 4; current = current.cause, depth++) {
+    const value = current.code ?? current.status ?? current.statusCode;
+    if (typeof value === "number" && Number.isInteger(value) && value >= 1 && value < grpc.length) { code = grpc[value]; break; }
+    if (typeof value === "string" && known.has(value)) { code = value; break; }
+    if (typeof value === "number" && [400, 401, 403, 404, 408, 409, 412, 429, 500, 502, 503, 504].includes(value)) { code = `HTTP_${value}`; break; }
+  }
+  return { status: "failed", error: validation && /^[a-zA-Z0-9_:,.-]{1,1500}$/.test(error.message)
+    ? error.message : "cloud_or_file_operation_failed", diagnostic: { code, validation,
+      readOnlyTransient: !validation && ["UNAVAILABLE", "DEADLINE_EXCEEDED", "ECONNRESET"].includes(code) }, aiCalls: 0 };
 }
 const must: typeof publicationRequire = publicationRequire;
 export function canonicalDocument(value: unknown): any {
