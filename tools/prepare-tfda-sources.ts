@@ -6,7 +6,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify, isDeepStrictEqual } from "node:util";
 import { evaluateTfdaSource, isRawMaterialOfficialCategory, normalizeTfdaSourceText, type TfdaSourceInput, type TfdaFetchedArtifact } from "./tfda-source-core.js";
-import { HTML_OUTLINE_SERIALIZATION, validateHtmlNumberedOutlineReport } from "./tfda-candidate-verification.js";
+import { HTML_OUTLINE_SERIALIZATION, HTML_RECTANGULAR_OUTLINE_SERIALIZATION, validateHtmlNumberedOutlineReport, validateHtmlRectangularOutlineReport } from "./tfda-candidate-verification.js";
 
 const runFile = promisify(execFile);
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
@@ -124,7 +124,8 @@ async function main() {
   if (!["--inventory", "--corpus", "--output"].every((key) => options[key])) throw Error("requires_inventory_corpus_output");
   const sourceFormat = parseSourceFormat(options["--source-format"]);
   const htmlMode = options["--html-mode"] || "legacy";
-  if (!["legacy", "numbered-outline-v1"].includes(htmlMode)) throw Error("invalid_html_mode");
+  const outlineMode = htmlMode !== "legacy", rectangularOutline = htmlMode === "numbered-outline-rectangular-v1";
+  if (!["legacy", "numbered-outline-v1", "numbered-outline-rectangular-v1"].includes(htmlMode)) throw Error("invalid_html_mode");
   if (htmlMode !== "legacy" && sourceFormat !== "html") throw Error("numbered_outline_requires_html_source_format");
   const inventory = resolve(options["--inventory"]), corpus = resolve(options["--corpus"]), output = resolve(options["--output"]);
   const limit = Number(options["--limit"] || "100000");
@@ -177,9 +178,9 @@ async function main() {
     const extractionPath = record.extractionPath && resolve(corpus, record.extractionPath);
     const extraction = extractionPath ? await optional(extractionPath) : null;
     let independent = extraction?.sourceBlobSha256 === record.sourceBlobSha256 && extraction?.urlHash === record.urlHash ? extraction : null;
-    if (record.sourceType === "html" && htmlMode === "numbered-outline-v1") {
+    if (record.sourceType === "html" && outlineMode) {
       const result = await runFile(options["--python"] || "python", ["-X", "utf8", fileURLToPath(new URL("./fetch-tfda-sources.py", import.meta.url)),
-        "--inspect-html-outline-internal", rawPath, record.finalUrl], {
+        rectangularOutline ? "--inspect-html-outline-rectangular-internal" : "--inspect-html-outline-internal", rawPath, record.finalUrl], {
         timeout: 45_000, maxBuffer: 8_000_000, windowsHide: true, encoding: "utf8",
         env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" },
       });
@@ -190,8 +191,8 @@ async function main() {
     // A seeded original is useful for acquisition recovery, but must receive the
     // current independent extraction before an expensive canonical PDF parse.
     const currentExtraction = record.sourceType === "html"
-      ? htmlMode === "numbered-outline-v1"
-        ? independent?.schemaVersion === 5 && independent?.parserVersion === "tfda-complete-dom-outline-v1"
+      ? outlineMode
+        ? independent?.schemaVersion === (rectangularOutline ? 6 : 5) && independent?.parserVersion === (rectangularOutline ? "tfda-complete-dom-outline-v2" : "tfda-complete-dom-outline-v1")
         : independent?.parserVersion === "tfda-complete-dom-v4"
       : independent?.parserVersion === "tfda-pdf-independent-v4";
     if (!currentExtraction) {
@@ -246,11 +247,11 @@ async function main() {
         // Only explicit literal TAB/cell + newline/row conservation can authorize
         // simple HTML tables. Spans, nested data tables and media stay pending.
         let outlineVerified = false;
-        if (htmlMode === "numbered-outline-v1") {
-          try { validateHtmlNumberedOutlineReport(independent); outlineVerified = true; } catch { /* Unsupported structures remain held. */ }
+        if (outlineMode) {
+          try { (rectangularOutline ? validateHtmlRectangularOutlineReport : validateHtmlNumberedOutlineReport)(independent); outlineVerified = true; } catch { /* Unsupported structures remain held. */ }
         }
-        const correctHtmlVersion = htmlMode === "numbered-outline-v1"
-          ? independent?.parserVersion === "tfda-complete-dom-outline-v1" && independent?.tableSerializationVersion === HTML_OUTLINE_SERIALIZATION && outlineVerified
+        const correctHtmlVersion = outlineMode
+          ? independent?.parserVersion === (rectangularOutline ? "tfda-complete-dom-outline-v2" : "tfda-complete-dom-outline-v1") && independent?.tableSerializationVersion === (rectangularOutline ? HTML_RECTANGULAR_OUTLINE_SERIALIZATION : HTML_OUTLINE_SERIALIZATION) && outlineVerified
           : independent?.parserVersion === "tfda-complete-dom-v4" && independent?.tableSerializationVersion === "tfda-simple-table-literal-v1";
         const unverified = independent?.hasUnverifiedNonTextContent !== false ||
           independent?.simpleTablesConserved !== true || independent?.complexTableCount !== 0 ||
@@ -259,7 +260,7 @@ async function main() {
         const documentLicenseMatches = typeof fields["許可證號"] === "string" && normalizeTfdaSourceText(fields["許可證號"]) === normalizeTfdaSourceText(licenseNo);
         input.numPages = 1; input.pages = [{ page: 1, text, embeddedImages: independent?.nonTextImages?.length || 0, hasLargeUnverifiedImage: unverified }];
         input.htmlEvidence = { completeMainDocument: independent?.fullDomConserved === true && documentLicenseMatches, domConservationPassed: independent?.fullDomConserved === true && documentLicenseMatches, canonicalTextSha256: hash(text), sectionCount: independent?.sections?.length || 0, hasUnverifiedNonTextContent: unverified,
-          ...(htmlMode === "numbered-outline-v1" ? { tableSerializationVersion: HTML_OUTLINE_SERIALIZATION,
+          ...(outlineMode ? { tableSerializationVersion: rectangularOutline ? HTML_RECTANGULAR_OUTLINE_SERIALIZATION : HTML_OUTLINE_SERIALIZATION,
             numberedOutlineEvidenceSha256: hash(JSON.stringify(independent.numberedOutlineEvidence)) } : {}) };
         if (!documentLicenseMatches) preparationError = "html_current_license_field_missing_or_mismatch";
       }

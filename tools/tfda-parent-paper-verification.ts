@@ -1,8 +1,9 @@
 /** Local-only independent current-paper association and serial PDF verification. */
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { verifyCurrentPaperEquivalence, type EquivalentParentSource, type ParentPaperEquivalentVerification } from "./tfda-current-paper-equivalence.js";
 import { normalizeTfdaSourceText as norm, type TfdaSourceInput, type TfdaSourcePage, type TfdaOfficialAssociation } from "./tfda-source-core.js";
 import { assertFreshTimestamp, assertOfficialPatientCategory, publicationHash as hash, publicationRequire as must, sameDocument,
   type PublicationBatchItem, type PublicationDoc, type PublicationIndexSnapshot, type ParentPaperVerification, type RawCandidateVerification } from "./tfda-publication-core.js";
@@ -12,6 +13,7 @@ const parentHelper = fileURLToPath(new URL("./inspect-tfda-parent-paper.py", imp
 const fetchHelper = fileURLToPath(new URL("./fetch-tfda-sources.py", import.meta.url));
 const canonicalHelper = fileURLToPath(new URL("./prepare-tfda-sources.ts", import.meta.url));
 const adapter = fileURLToPath(import.meta.url);
+const equivalenceHelper = fileURLToPath(new URL("./tfda-current-paper-equivalence.ts", import.meta.url));
 const options = { maxBuffer: 8_000_000, windowsHide: true, encoding: "utf8" as const };
 const official = (value: string) => { try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password &&
   (!url.port || url.port === "443") && (url.hostname === "fda.gov.tw" || url.hostname.endsWith(".fda.gov.tw")) && !/^\/insert\/pdfcase\/?$/iu.test(url.pathname); } catch { return false; } };
@@ -95,6 +97,75 @@ export async function verifyParentPaperSource(parent: NonNullable<PublicationBat
     officialCatalogSha256: catalogSnapshot.sha256, officialIndexSha256: indexSnapshot.sha256,
     parentIdentitySha256: hash(JSON.stringify(report.identityFieldOccurrences)), parentDomInspectionSha256: hash(JSON.stringify(report)),
     parserHelperSha256: hash(parserBytes), fetchDependencySha256: hash(dependencyBytes), adapterSha256: hash(adapterBytes) };
+  assertParentProofSize(proof); return { association, proof };
+}
+
+/** Explicit v3 path: every current paper alias is independently receipt/raw-bound. */
+export async function verifyParentPaperEquivalentSources(parent: EquivalentParentSource, input: TfdaSourceInput,
+  rawPath: string, raw: Buffer, catalogRows: PublicationDoc[], indexRows: PublicationDoc[], snapshots: PublicationIndexSnapshot[],
+  { python = "python", now = Date.now() }: { python?: string; now?: number } = {}): Promise<{ association: TfdaOfficialAssociation; proof: ParentPaperEquivalentVerification }> {
+  must(parent && raw.length > 0 && raw.length <= 15_000_000 && hash(raw) === parent.rawSourceSha256 &&
+    parent.fetched?.sha256 === hash(raw) && parent.fetched.bytes === raw.length && parent.fetched.contentSignature === "html" &&
+    /^(?:text\/html|application\/xhtml\+xml)(?:;|$)/iu.test(parent.fetched.mediaType) && /<html[\s>]|<!doctype html/iu.test(raw.toString("utf8", 0, Math.min(raw.length, 1000))),
+    "parent_raw_bytes_hash_or_html_signature_mismatch");
+  assertFreshTimestamp(parent.fetched.retrievedAt, now, "parent_source_not_fresh");
+  const requested = canonicalUrl(parent.fetched.requestedUrl), final = canonicalUrl(parent.fetched.finalUrl);
+  const hops = parent.fetched.redirectChain || [parent.fetched.requestedUrl];
+  must(hops.length > 0 && hops.every(official) && canonicalUrl(hops[0]) === requested && canonicalUrl(hops.at(-1)!) === final &&
+    (requested === final || hops.length > 1), "parent_redirect_history_incomplete_or_unsafe");
+  const selectedCatalog = catalogRows.filter((row) => row["許可證字號"] === input.licenseNo);
+  const selectedIndex = indexRows.filter((row) => row["許可證字號"] === input.licenseNo);
+  assertOfficialPatientCategory(catalogRows, input.licenseNo, input.officialCategory);
+  must(selectedCatalog.length > 0 && selectedCatalog.every((row) => !String(row["註銷狀態"] || "").trim() && validExpiry(row["有效日期"], localDay(now))), "parent_current_license_revoked_expired_or_missing");
+  const identity = (row: PublicationDoc) => ["許可證字號", "中文品名", "英文品名", "劑型", "製造商名稱", "有效日期"].map((key) => norm(row[key] || ""));
+  must(new Set(selectedCatalog.map((row) => JSON.stringify(identity(row)))).size === 1, "parent_current_catalog_identity_ambiguous");
+  const indexed = [...new Set(selectedIndex.flatMap((row) => sourceUrls(row["仿單圖檔連結"])).map(canonicalUrl))];
+  must(indexed.length === 1 && indexed[0] === requested, "parent_must_be_unique_actual_Info39_url");
+  const catalog = selectedCatalog[0];
+  must(selectedIndex.length > 0 && selectedIndex.every((row) => norm(row["中文品名"] || "") === norm(catalog["中文品名"] || "") &&
+    norm(row["英文品名"] || "") === norm(catalog["英文品名"] || "")), "parent_official_index_title_mismatch");
+  let report: any;
+  try { const result = await run(python, ["-X", "utf8", parentHelper, "--raw", rawPath, "--source-url", parent.fetched.finalUrl],
+    { ...options, timeout: 45_000, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1", OMP_NUM_THREADS: "1" } }); report = JSON.parse(result.stdout.trim()); }
+  catch { throw Error("parent_raw_reparse_unavailable_or_failed"); }
+  const [parserBytes, dependencyBytes, adapterBytes, equivalenceBytes] = await Promise.all([readFile(parentHelper), readFile(fetchHelper), readFile(adapter), readFile(equivalenceHelper)]);
+  must(report.schema === "tfda-parent-paper-association/v2" && report.parserVersion === "tfda-parent-paper-strict-v2" && report.schemaVersion === 2 &&
+    report.rawSha256 === hash(raw) && report.rawBytes === raw.length && canonicalUrl(report.sourceUrl) === final &&
+    report.parserHelperSha256 === hash(parserBytes) && report.fetchDependencySha256 === hash(dependencyBytes), "parent_raw_reparse_binding_invalid");
+  must(Array.isArray(parent.currentEquivalentSources) && parent.currentEquivalentSources.length >= 2 && parent.currentEquivalentSources.length <= 50,
+    "parent_equivalent_complete_manifest_alias_inventory_required");
+  // Read aliases serially, with the same raw limit as the representative PDF.
+  const bindings = [];
+  for (const source of parent.currentEquivalentSources) {
+    must((await stat(source.rawSourcePath)).size <= 15_000_000 && (await stat(source.rawMetadataPath)).size <= 2_000_000,
+      "parent_equivalent_raw_or_receipt_exceeds_limit");
+    bindings.push({ source, rawBytes: await readFile(source.rawSourcePath), metadataBytes: await readFile(source.rawMetadataPath) });
+  }
+  const equivalence = verifyCurrentPaperEquivalence({ licenseNo: input.licenseNo, parentFetched: parent.fetched,
+    parentDomReport: report, sources: bindings, representativeFetched: input.fetched, now });
+  must(norm(report.identityFields?.["許可證號"]) === norm(input.licenseNo) &&
+    norm(report.identityFields?.["中文品名"]) === norm(catalog["中文品名"] || "") && norm(report.identityFields?.["英文品名"]) === norm(catalog["英文品名"] || "") &&
+    norm(report.identityFields?.["藥品類別"]) === norm(assertOfficialPatientCategory(catalogRows, input.licenseNo)), "parent_current_complete_identity_or_category_mismatch");
+  const childUrl = canonicalUrl(input.fetched.requestedUrl);
+  must(canonicalUrl(report.currentPaperUrls[0]) === childUrl &&
+    ![...report.excludedHistoricalPaperUrls, ...report.excludedHistoricalElectronicUrls].some((url: string) => canonicalUrl(url) === childUrl) &&
+    /^[a-f0-9]{64}$/u.test(input.fetched.sha256), "parent_current_child_url_not_exact_match");
+  const association: TfdaOfficialAssociation = { indexUrl: parent.fetched.requestedUrl, detailUrl: parent.fetched.finalUrl,
+    licenseNo: input.licenseNo, linkedSourceUrls: [...report.currentPaperUrls], retrievedAt: parent.fetched.retrievedAt, detailSha256: hash(raw) };
+  if (input.officialAssociation !== undefined) must(sameDocument(input.officialAssociation, association), "candidate_parent_claim_differs_from_raw_parent");
+  const catalogSnapshot = snapshots.find((entry) => entry.infoId === 36), indexSnapshot = snapshots.find((entry) => entry.infoId === 39);
+  must(catalogSnapshot && indexSnapshot, "parent_both_official_index_hashes_required");
+  const proof: ParentPaperEquivalentVerification = { schema: "tfda-current-parent-paper-verification/v3", method: "official_index_parent_raw_equivalent_current_papers_reparse_v1",
+    scope: "complete_byte_equivalent_current_papers_excluding_explicit_history",
+    licenseNo: input.licenseNo, indexUrl: parent.fetched.requestedUrl, parentFinalUrl: parent.fetched.finalUrl,
+    parentRawSha256: hash(raw), parentRawBytes: raw.length, parentStoragePath: parentBlobPath(hash(raw)), parentRetrievedAt: parent.fetched.retrievedAt,
+    parentRedirectChain: hops, currentPaperUrls: [...report.currentPaperUrls], historicalPaperUrls: report.historicalPaperUrls,
+    excludedHistoricalPaperUrls: report.excludedHistoricalPaperUrls, childUrl: input.fetched.requestedUrl, childRawSha256: input.fetched.sha256,
+    excludedHistoricalElectronicUrls: report.excludedHistoricalElectronicUrls, branchInventory: { popups: report.orderedPopups, anchors: report.orderedAnchors },
+    officialCatalogSha256: catalogSnapshot.sha256, officialIndexSha256: indexSnapshot.sha256,
+    parentIdentitySha256: hash(JSON.stringify(report.identityFieldOccurrences)), parentDomInspectionSha256: hash(JSON.stringify(report)),
+    parserHelperSha256: hash(parserBytes), fetchDependencySha256: hash(dependencyBytes), adapterSha256: hash(adapterBytes), parentDomInvalidReasons: ["current_paper_url_count_not_one"],
+    equivalenceVerifierSha256: hash(equivalenceBytes), currentPaperEquivalence: equivalence };
   assertParentProofSize(proof); return { association, proof };
 }
 

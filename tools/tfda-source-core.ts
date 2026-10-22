@@ -95,7 +95,7 @@ export interface TfdaHtmlEvidence {
   sectionCount: number;
   hasUnverifiedNonTextContent: boolean;
   /** Explicit capability for newly re-derived two-column numbered outlines only. */
-  tableSerializationVersion?: "tfda-numbered-outline-literal-v1";
+  tableSerializationVersion?: "tfda-numbered-outline-literal-v1" | "tfda-numbered-outline-literal-v2";
   numberedOutlineEvidenceSha256?: string;
 }
 export interface TfdaSourceInput {
@@ -261,14 +261,14 @@ function textQuality(text: string): boolean {
   if (!text.trim() || /\uFFFD|[\u0000-\u0008\u000b\u000e-\u001f]/u.test(text))
     return false;
   const meaningful = text.match(/[\p{Script=Han}\p{Letter}\p{Number}]/gu) || [];
-  // Ingredient names and amounts can be joined by printed dot/ellipsis leaders.
-  // Exempt only a dot run between letters/numbers on the same source line, in
-  // this repetition-check projection. Preserve the original text and density.
+  // Printed ingredient/quantity leaders also occur after a closing parenthesis
+  // or a numeric percentage. Inspect them only in this same-line repetition
+  // projection; preserve every source character, original hash and density.
   const repetitionCheckText = text
     .split(/[\r\n\u2028\u2029]/u)
     .map((line) =>
       normalizeTfdaSourceText(line).replace(
-        /([\p{Letter}\p{Number}])\.{20,}(?=[\p{Letter}\p{Number}])/gu,
+        /((?:[\p{Letter}\p{Number}]|\p{Number}%)[)\]]{0,3})[.\-·・]{20,}(?=[\p{Letter}\p{Number}])/gu,
         "$1.",
       ),
     )

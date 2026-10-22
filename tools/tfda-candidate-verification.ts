@@ -75,16 +75,19 @@ export async function derivePdfFromRaw(rawPath: string, raw: Buffer, options: { 
   } };
 }
 export const HTML_OUTLINE_SERIALIZATION = "tfda-numbered-outline-literal-v1" as const;
+export const HTML_RECTANGULAR_OUTLINE_SERIALIZATION = "tfda-numbered-outline-literal-v2" as const;
 const outlineNorm = (text: string) => text.normalize("NFKC").replace(/[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/gu, "");
 const outlineHash = (text: string) => publicationHash(outlineNorm(text));
 const outlineScope = /^[1-9]\d?(?:\.[1-9]\d?)*$/u;
 
 /** Validate the full new capability, then bind it to the actual raw-helper report. */
-export function validateHtmlNumberedOutlineReport(report: any): Record<string, unknown> {
+export function validateHtmlNumberedOutlineReport(report: any): Record<string, unknown> { return validateHtmlOutlineReport(report, false); }
+export function validateHtmlRectangularOutlineReport(report: any): Record<string, unknown> { return validateHtmlOutlineReport(report, true); }
+function validateHtmlOutlineReport(report: any, rectangular: boolean): Record<string, unknown> {
   const proof = report?.numberedOutlineEvidence;
-  must(report?.schemaVersion === 5 && report.parserVersion === "tfda-complete-dom-outline-v1" &&
-    report.tableSerializationVersion === HTML_OUTLINE_SERIALIZATION && report.sourceFormat === "html" &&
-    proof?.version === "tfda-numbered-outline-evidence-v1" && proof.policy === "two_column_section_number_hierarchy_v1" &&
+  must(report?.schemaVersion === (rectangular ? 6 : 5) && report.parserVersion === (rectangular ? "tfda-complete-dom-outline-v2" : "tfda-complete-dom-outline-v1") &&
+    report.tableSerializationVersion === (rectangular ? HTML_RECTANGULAR_OUTLINE_SERIALIZATION : HTML_OUTLINE_SERIALIZATION) && report.sourceFormat === "html" &&
+    proof?.version === (rectangular ? "tfda-numbered-outline-evidence-v2" : "tfda-numbered-outline-evidence-v1") && proof.policy === (rectangular ? "two_column_section_outline_with_literal_rectangular_subtables_v1" : "two_column_section_number_hierarchy_v1") &&
     proof.status === "verified" && Array.isArray(proof.rejections) && proof.rejections.length === 0 &&
     Array.isArray(proof.roots) && proof.roots.length > 0 && proof.roots.length <= 500 &&
     Number.isSafeInteger(proof.tableCount) && proof.tableCount > 0 && proof.tableCount <= 2000 &&
@@ -92,14 +95,81 @@ export function validateHtmlNumberedOutlineReport(report: any): Record<string, u
     Array.isArray(proof.tableIndices) && Array.isArray(report.sections) &&
     Buffer.byteLength(JSON.stringify(proof)) <= 100000,
     "raw_html_numbered_outline_capability_invalid");
-  const indices: number[] = [], labels = new Set<string>();
+  const indices: number[] = [], literalIndices: number[] = [], labels = new Set<string>();
   const keys = (value: any, expected: string[]) => value && typeof value === "object" && !Array.isArray(value) &&
     sameDocument(Object.keys(value).sort(), [...expected].sort());
   must(keys(proof, ["version", "policy", "status", "tableCount", "newlySupportedComplexTableCount", "roots", "tableIndices",
-    "rejections", "originalNormalizedDomSha256", "serializedNormalizedDomSha256"]) &&
+    "rejections", "originalNormalizedDomSha256", "serializedNormalizedDomSha256", ...(rectangular ? ["literalTableCount", "literalTableIndices"] : [])]) &&
     report.sections.every((section: any) => section && typeof section.title === "string" && Array.isArray(section.tables)),
     "raw_html_numbered_outline_evidence_shape_invalid");
   const tables: any[] = report.sections.flatMap((section: any) => section.tables);
+  const emptyTable = (table: any): string => {
+    must(rectangular && keys(table, ["version", "tableIndex", "rowCount", "columnCounts", "rows", "nodeTagInventory", "serializedText", "originalNormalizedTextSha256", "serializedNormalizedTextSha256"]) &&
+      table.version === "tfda-empty-layout-table-evidence-v1" && Number.isSafeInteger(table.tableIndex) && table.tableIndex >= 0 && table.tableIndex < tables.length &&
+      !indices.includes(table.tableIndex) && !literalIndices.includes(table.tableIndex) && Array.isArray(table.rows) && table.rows.length <= 500 &&
+      table.rowCount === table.rows.length && Array.isArray(table.columnCounts) && table.columnCounts.length === table.rowCount &&
+      new Set(table.columnCounts).size <= 1 && Array.isArray(table.nodeTagInventory) && table.nodeTagInventory[0] === "table" &&
+      table.nodeTagInventory.filter((tag: string) => tag === "table").length === 1 && table.nodeTagInventory.every((tag: string) =>
+        ["table", "thead", "tbody", "tfoot", "tr", "td", "th", "colgroup", "col", "p", "div", "span", "br", "b", "strong", "i", "em", "u", "s", "small", "sup", "sub", "font"].includes(tag)),
+      "raw_html_empty_layout_shape_invalid");
+    const serialized = table.rows.map((row: any, rowIndex: number) => {
+      must(Array.isArray(row) && row.length === table.columnCounts[rowIndex] && row.every((cell: any) =>
+        keys(cell, ["tag", "text", "serializedCellText", "rowspan", "colspan"]) && ["td", "th"].includes(cell.tag) &&
+        cell.rowspan === "1" && cell.colspan === "1" && typeof cell.text === "string" && !outlineNorm(cell.text) && cell.serializedCellText === ""),
+        "raw_html_empty_layout_cell_not_empty");
+      return row.map(() => "").join("\t");
+    }).join("\n");
+    const actual = tables[table.tableIndex];
+    must(actual.kind === "empty_layout_placeholder" && actual.simple === false && !outlineNorm(actual.text) &&
+      actual.rowCount === table.rowCount && sameDocument(actual.rows, table.rows) && sameDocument(actual.columnCounts, table.columnCounts) &&
+      actual.serializedText === serialized && table.serializedText === serialized && !outlineNorm(serialized) &&
+      table.originalNormalizedTextSha256 === outlineHash("") && table.serializedNormalizedTextSha256 === outlineHash("") &&
+      actual.originalNormalizedTextSha256 === outlineHash("") && actual.serializedNormalizedTextSha256 === outlineHash(""),
+      "raw_html_empty_layout_raw_inventory_mismatch");
+    literalIndices.push(table.tableIndex); return serialized;
+  };
+  const literalTable = (table: any): string => {
+    must(rectangular && keys(table, ["version", "tableIndex", "columnCount", "rowCount", "rows", "cellTagInventory", "serializedText",
+      "originalNormalizedTextSha256", "serializedNormalizedTextSha256", "wrapper"]) && table.version === "tfda-rectangular-subtable-evidence-v1" &&
+      Number.isSafeInteger(table.tableIndex) && table.tableIndex >= 0 && table.tableIndex < tables.length &&
+      !indices.includes(table.tableIndex) && !literalIndices.includes(table.tableIndex) &&
+      Number.isSafeInteger(table.columnCount) && table.columnCount > 0 && Array.isArray(table.rows) && table.rows.length > 0 &&
+      table.rows.length <= 500 && table.rowCount === table.rows.length && Array.isArray(table.cellTagInventory) && table.cellTagInventory.length === table.rowCount,
+      "raw_html_literal_subtable_shape_invalid");
+    literalIndices.push(table.tableIndex);
+    const inline = new Set(["p", "div", "span", "br", "b", "strong", "i", "em", "u", "s", "small", "sup", "sub", "font"]);
+    const space = (text: string) => text.replace(/[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+/gu, " ").trim();
+    const serialized = table.rows.map((row: any, rowIndex: number) => {
+      must(Array.isArray(row) && row.length === table.columnCount && Array.isArray(table.cellTagInventory[rowIndex]) &&
+        table.cellTagInventory[rowIndex].length === row.length, "raw_html_literal_subtable_column_count_invalid");
+      const cells = row.map((cell: any, column: number) => {
+        const tags = table.cellTagInventory[rowIndex][column];
+        must(keys(cell, ["tag", "text", "serializedCellText", "rowspan", "colspan"]) && ["td", "th"].includes(cell.tag) &&
+          cell.rowspan === "1" && cell.colspan === "1" && typeof cell.text === "string" && typeof cell.serializedCellText === "string" &&
+          cell.serializedCellText === space(cell.text) && Array.isArray(tags) && tags.length > 0 && tags[0] === cell.tag &&
+          tags.slice(1).every((tag: unknown) => typeof tag === "string" && inline.has(tag)), "raw_html_literal_subtable_cell_invalid");
+        return cell.serializedCellText;
+      });
+      must(!/^[1-9]\d?\.[1-9]\d?(?:\.[1-9]\d?)*$/u.test(outlineNorm(row[0].text)), "raw_html_literal_subtable_cannot_bypass_outline_scope");
+      return cells.join("\t");
+    }).join("\n");
+    if (table.wrapper !== null) {
+      const wrapper = table.wrapper;
+      must(keys(wrapper, ["tag", "attrs", "directTableCount", "otherContent"]) && wrapper.tag === "figure" && wrapper.directTableCount === 1 &&
+        wrapper.otherContent === false && wrapper.attrs && wrapper.attrs.class === "table" &&
+        Object.keys(wrapper.attrs).every((key) => ["class", "style"].includes(key)) &&
+        (wrapper.attrs.style === undefined || typeof wrapper.attrs.style === "string" && wrapper.attrs.style.split(";").filter((part: string) => part.trim()).every((part: string) => /^(?:float:(?:left|right|none)|width:\d+(?:\.\d+)?(?:%|pt|px|cm|em|in))$/u.test(part.trim()))),
+        "raw_html_literal_figure_wrapper_invalid");
+    }
+    const actual = tables[table.tableIndex];
+    must(actual.simple === true && actual.kind === "source_table" && actual.literalTextConserved === true && actual.rowCount === table.rowCount &&
+      Array.isArray(actual.columnCounts) && actual.columnCounts.length === table.rowCount && actual.columnCounts.every((n: number) => n === table.columnCount) &&
+      sameDocument(actual.rows, table.rows) && table.serializedText === serialized && actual.serializedText === serialized && !!outlineNorm(serialized) &&
+      table.originalNormalizedTextSha256 === outlineHash(serialized) && table.serializedNormalizedTextSha256 === outlineHash(serialized) &&
+      actual.originalNormalizedTextSha256 === table.originalNormalizedTextSha256 && actual.serializedNormalizedTextSha256 === table.serializedNormalizedTextSha256,
+      "raw_html_literal_subtable_raw_inventory_or_text_mismatch");
+    return serialized;
+  };
   const visit = (table: any, scope: string, depth: number): string => {
     must(depth <= 6 && keys(table, ["tableIndex", "scope", "depth", "inheritedScope", "columnCount", "rowCount", "rows",
       "originalNormalizedTextSha256", "serializedNormalizedTextSha256", "serializedText"]) &&
@@ -132,6 +202,8 @@ export function validateHtmlNumberedOutlineReport(report: any): Record<string, u
             "raw_html_numbered_outline_text_piece_invalid");
           return piece.text;
         }
+        if (rectangular && piece?.kind === "literal_empty_table") { must(keys(piece, ["kind", "table"]), "raw_html_empty_layout_piece_invalid"); return emptyTable(piece.table); }
+        if (rectangular && piece?.kind === "literal_table") { must(keys(piece, ["kind", "table"]), "raw_html_literal_subtable_piece_invalid"); return literalTable(piece.table); }
         must(piece?.kind === "table" && keys(piece, ["kind", "table"]), "raw_html_numbered_outline_piece_invalid");
         return visit(piece.table, lastLabel!, depth + 1);
       }).join("\n");
@@ -155,6 +227,9 @@ export function validateHtmlNumberedOutlineReport(report: any): Record<string, u
     must(scope, "raw_html_numbered_outline_section_scope_invalid");
     visit(root.table, scope, 0); previousSection = root.sectionIndex;
   }
+  if (rectangular) must(Number.isSafeInteger(proof.literalTableCount) && proof.literalTableCount === literalIndices.length &&
+    sameDocument(literalIndices, proof.literalTableIndices) && literalIndices.every((index, i) => i === 0 || index > literalIndices[i - 1]),
+    "raw_html_literal_subtable_inventory_invalid");
   must(indices.every((index, i) => i === 0 || index > indices[i - 1]) && indices.length === proof.tableCount &&
     sameDocument(indices, proof.tableIndices) && proof.newlySupportedComplexTableCount ===
       indices.filter((index) => tables[index].simple === false && tables[index].kind !== "empty_layout_placeholder").length &&
@@ -179,13 +254,14 @@ export async function verifyCandidateFromRaw(
   must(input.format === "html", "unsupported_candidate_raw_format");
   const hasOutlineMarker = Object.hasOwn(input.htmlEvidence || {}, "tableSerializationVersion") ||
     Object.hasOwn(input.htmlEvidence || {}, "numberedOutlineEvidenceSha256");
-  if (hasOutlineMarker) must(input.htmlEvidence?.tableSerializationVersion === HTML_OUTLINE_SERIALIZATION &&
-    /^[a-f0-9]{64}$/u.test(input.htmlEvidence.numberedOutlineEvidenceSha256 || ""), "candidate_html_outline_marker_invalid");
+  const rectangularOutline = input.htmlEvidence?.tableSerializationVersion === HTML_RECTANGULAR_OUTLINE_SERIALIZATION;
+  if (hasOutlineMarker) must((input.htmlEvidence?.tableSerializationVersion === HTML_OUTLINE_SERIALIZATION || rectangularOutline) &&
+    /^[a-f0-9]{64}$/u.test(input.htmlEvidence?.numberedOutlineEvidenceSha256 || ""), "candidate_html_outline_marker_invalid");
   const helperBytes = await readFile(pythonHelper), adapterBytes = await readFile(fileURLToPath(import.meta.url));
   let report: any;
   try {
     const result = await runFile(options.python || "python", ["-X", "utf8", pythonHelper,
-      hasOutlineMarker ? "--inspect-html-outline-internal" : "--inspect-html-internal", rawPath, input.fetched.finalUrl], {
+      rectangularOutline ? "--inspect-html-outline-rectangular-internal" : hasOutlineMarker ? "--inspect-html-outline-internal" : "--inspect-html-internal", rawPath, input.fetched.finalUrl], {
       timeout: 45_000, maxBuffer: 8_000_000, windowsHide: true, encoding: "utf8",
       env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" },
     });
@@ -196,7 +272,7 @@ export async function verifyCandidateFromRaw(
   }
   must(report?.rawSha256 === publicationHash(raw) && report.rawBytes === raw.length &&
     report.sourceUrl === input.fetched.finalUrl, "raw_html_inspection_bytes_binding_mismatch");
-  const outlineEvidence = hasOutlineMarker ? validateHtmlNumberedOutlineReport(report) : undefined;
+  const outlineEvidence = rectangularOutline ? validateHtmlRectangularOutlineReport(report) : hasOutlineMarker ? validateHtmlNumberedOutlineReport(report) : undefined;
   const correctParser = hasOutlineMarker || report.schemaVersion === 4 && report.parserVersion === "tfda-complete-dom-v4" &&
     report.tableSerializationVersion === "tfda-simple-table-literal-v1" && !Object.hasOwn(report, "numberedOutlineEvidence");
   must(correctParser && report.sourceFormat === "html" &&
@@ -224,7 +300,7 @@ export async function verifyCandidateFromRaw(
   const htmlEvidence = { completeMainDocument: report.fullDomConserved === true,
     domConservationPassed: report.fullDomConserved === true, canonicalTextSha256: publicationHash(text),
     sectionCount: report.sections.length, hasUnverifiedNonTextContent: unverified,
-    ...(outlineEvidence ? { tableSerializationVersion: HTML_OUTLINE_SERIALIZATION,
+    ...(outlineEvidence ? { tableSerializationVersion: rectangularOutline ? HTML_RECTANGULAR_OUTLINE_SERIALIZATION : HTML_OUTLINE_SERIALIZATION,
       numberedOutlineEvidenceSha256: publicationHash(JSON.stringify(outlineEvidence)) } : {}) };
   must(input.numPages === 1 && sameDocument(input.pages, pages), "candidate_html_pages_do_not_match_raw_source");
   must(sameDocument(input.htmlEvidence, htmlEvidence), "candidate_html_evidence_does_not_match_raw_source");
@@ -234,7 +310,7 @@ export async function verifyCandidateFromRaw(
   must(report.fullDomConserved === true && !unverified && (report.status === "independent_dom_extracted_draft" ||
     multiFactoryMetadata && report.status === "needs_review"),
     "raw_html_conservation_or_nontext_gate_failed");
-  return { schema: "tfda-candidate-raw-verification/v1", method: hasOutlineMarker ? "html_raw_numbered_outline_reparse_v1" : "html_raw_dom_reparse_v4",
+  return { schema: "tfda-candidate-raw-verification/v1", method: rectangularOutline ? "html_raw_rectangular_outline_reparse_v2" : hasOutlineMarker ? "html_raw_numbered_outline_reparse_v1" : "html_raw_dom_reparse_v4",
     rawSha256: publicationHash(raw), rawBytes: raw.length, canonicalTextSha256: publicationHash(text),
     derivedPagesSha256: publicationHash(JSON.stringify(pages)), derivedHtmlEvidenceSha256: publicationHash(JSON.stringify(htmlEvidence)),
     parserHelperSha256: publicationHash(helperBytes), adapterSha256: publicationHash(adapterBytes),

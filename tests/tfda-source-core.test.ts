@@ -588,6 +588,39 @@ describe("synthetic TFDA technical source gates", () => {
     },
   );
 
+  it.each([
+    `Synthetic ingredient (as salt)${".".repeat(24)}0.5mg`,
+    `Synthetic ingredient (10%)${"…".repeat(8)}4g`,
+    `Synthetic ingredient 35%${".".repeat(24)}30mg`,
+    `Synthetic ingredient${"- ".repeat(24)}400mg`,
+    `Synthetic ingredient (as salt)${"-".repeat(24)}1mg`,
+    `Synthetic ingredient${"·".repeat(24)}1mg`,
+    `Synthetic ingredient${"・".repeat(24)}1mg`,
+  ])("preserves complete text and exact hashes for bounded printed quantity leaders: %s", (line) => {
+    const input = candidate();
+    const text = `${firstText}\n${line}\n${secondText}`;
+    setPageText(input, [text]);
+    input.pages[0].additionalIndependentText = text;
+    const before = structuredClone(input);
+    const result = evaluateTfdaSource(input);
+    expect(result.status).toBe("technically_eligible");
+    expect(result.draftLeaflet!.chunks.map((chunk) => chunk.text)).toEqual([text]);
+    expect(result.canonicalTextSha256).toBe(tfdaSourceHash(text));
+    expect(input).toEqual(before);
+  });
+
+  it.each([
+    `)${".".repeat(24)}1mg`,
+    `Synthetic ingredient%${".".repeat(24)}1mg`,
+    `Synthetic ingredient${"-".repeat(24)}`,
+    `Synthetic ingredient\n${"·".repeat(24)}1mg`,
+    `Synthetic ingredient${"_".repeat(24)}1mg`,
+  ])("keeps unbounded or unsupported filler in review: %s", (line) => {
+    const input = candidate();
+    setPageText(input, [firstText, `${secondText}\n${line}`]);
+    expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+  });
+
   it.each(["\uFFFD", "\u0000", "\u0007", "\u000b", "\u001f"].map((character) => [character.codePointAt(0)!.toString(16).toUpperCase(), character]))(
     "still rejects replacement/control U+%s alongside a valid dot leader",
     (_codePoint, character) => {

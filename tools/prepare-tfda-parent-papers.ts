@@ -7,7 +7,8 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { evaluateTfdaSource, type TfdaFetchedArtifact, type TfdaSourceInput } from "./tfda-source-core.js";
 import { sameCandidateExceptEvaluation, storeImmutableCandidateInput } from "./prepare-tfda-sources.js";
-import { deriveSerialPaperPdf, verifyParentPaperSource } from "./tfda-parent-paper-verification.js";
+import { deriveSerialPaperPdf, verifyParentPaperSource, verifyParentPaperEquivalentSources } from "./tfda-parent-paper-verification.js";
+import { equivalentFetchedFromReceipt, type CurrentEquivalentSource } from "./tfda-current-paper-equivalence.js";
 import { TFDA_PROTECTED_LICENSES, TFDA_PUBLICATION_PROJECT, TFDA_PUBLICATION_BUCKET, TFDA_PUBLICATION_SCHEMA,
   assertFreshTimestamp, assertOfficialPatientCategory, assertTechnicalPublicationSize, prepareTechnicalSource, publicationHash as hash, publicationRequire as must, safePublicationFailure, sameDocument,
   type PublicationDoc, type PublicationBatchItem, type PublicationIndexSnapshot, type PublicationManifest } from "./tfda-publication-core.js";
@@ -79,10 +80,12 @@ async function acquiredPaperRows(archive: string, python: string) {
 export async function main(args = process.argv.slice(2)) {
   const options: Record<string, string> = {};
   for (let i = 0; i < args.length; i += 2) {
-    must(["--inventory", "--corpus", "--archive", "--output", "--protected", "--python", "--limit", "--license", "--license-list"].includes(args[i]) &&
+    must(["--inventory", "--corpus", "--archive", "--output", "--protected", "--python", "--limit", "--license", "--license-list", "--parent-paper-mode"].includes(args[i]) &&
       !!args[i + 1] && !options[args[i]], "parent_prepare_invalid_arguments"); options[args[i]] = args[i + 1];
   }
   must(["--inventory", "--corpus", "--archive", "--output", "--protected"].every((key) => options[key]), "parent_prepare_explicit_paths_required");
+  const parentPaperMode = options["--parent-paper-mode"] || "strict-v2";
+  must(["strict-v2", "byte-equivalent-v1"].includes(parentPaperMode), "parent_prepare_unknown_parent_paper_mode");
   must(!(options["--license"] && options["--license-list"]), "parent_prepare_license_and_list_mutually_exclusive");
   const licenseSelection = options["--license-list"] ? await readParentLicenseSelection(options["--license-list"]) : undefined;
   const selectedLicenses = licenseSelection ? new Set(licenseSelection.licenses) : undefined;
@@ -110,8 +113,11 @@ export async function main(args = process.argv.slice(2)) {
   const counts: Record<string, number> = {}, results: any[] = [], items: PublicationBatchItem[] = [], seen = new Set<string>();
   const increment = (key: string) => { counts[key] = (counts[key] || 0) + 1; };
   const rows = (await acquiredPaperRows(archive, python)).sort((left, right) => String(left.job.sourceUrl).localeCompare(String(right.job.sourceUrl)));
+  const archiveRowsByUrl = new Map<string, any[]>();
+  for (const row of rows) archiveRowsByUrl.set(row.job.sourceUrl, [...(archiveRowsByUrl.get(row.job.sourceUrl) || []), row]);
   let attempted = 0;
-  for (const { job, result } of rows) {
+  for (const row of rows) {
+    let { job, result } = row;
     const current = job.parents.filter((parent: any) => parent.discoveryType === "current_paper" && parent.licenseState === "active");
     const licenses = [...new Set<string>(current.map((parent: any) => parent.fullLicense))];
     if (options["--license"] && !licenses.includes(options["--license"])) continue;
@@ -120,8 +126,8 @@ export async function main(args = process.argv.slice(2)) {
       job.origin === "derived_known_official_license_route" || job.parents.some((parent: any) => parent.association === "no_Info39_association")) { increment("ambiguous_or_unindexed_parent_scope"); continue; }
     const licenseNo = licenses[0];
     if (protectedLicenses.has(licenseNo)) { increment("existing_publication_preserved"); continue; }
-    if ((result.archiveMediaKind || result.sourceType) !== "pdf" || result.rawVersions || !result.sourceBlobSha256 || result.bytes > 15_000_000) { increment("not_single_runtime_sized_pdf_raw"); continue; }
-    const key = licenseNo + "|" + result.sourceBlobSha256;
+    if (parentPaperMode === "strict-v2" && ((result.archiveMediaKind || result.sourceType) !== "pdf" || result.rawVersions || !result.sourceBlobSha256 || result.bytes > 15_000_000)) { increment("not_single_runtime_sized_pdf_raw"); continue; }
+    const key = parentPaperMode === "byte-equivalent-v1" ? licenseNo : licenseNo + "|" + result.sourceBlobSha256;
     if (seen.has(key)) { increment("duplicate_product_raw"); continue; } seen.add(key);
     if (attempted >= limit) { increment("deferred_by_limit"); continue; } attempted++;
     const record: any = { licenseNo, childUrl: job.sourceUrl, rawSha256: result.sourceBlobSha256, publicationEligible: false };
@@ -131,9 +137,37 @@ export async function main(args = process.argv.slice(2)) {
       const parentKeys = [...new Set(current.map((parent: any) => parent.parentUrlHash))];
       must(parentKeys.length === 1 && typeof parentKeys[0] === "string" && /^[a-f0-9]{64}$/u.test(parentKeys[0]), "parent_prepare_unique_parent_required");
       const parentRecord = await json(join(corpus, "records", parentKeys[0] + ".json"));
-      const parentRawPath = resolve(corpus, parentRecord.blobPath), rawPath = resolve(archive, result.blobPath);
-      must(inside(corpus, parentRawPath) && inside(archive, rawPath), "parent_prepare_raw_path_outside_source_corpus");
-      const parentRaw = await rawWithinLimit(parentRawPath), raw = await rawWithinLimit(rawPath);
+      const parentRawPath = resolve(corpus, parentRecord.blobPath);
+      must(inside(corpus, parentRawPath), "parent_prepare_raw_path_outside_source_corpus");
+      const parentRaw = await rawWithinLimit(parentRawPath);
+      const aliases: CurrentEquivalentSource[] = [];
+      if (parentPaperMode === "byte-equivalent-v1") {
+        const helper = fileURLToPath(new URL("./inspect-tfda-parent-paper.py", import.meta.url));
+        const inspection = JSON.parse((await run(python, ["-X", "utf8", helper, "--raw", parentRawPath, "--source-url", parentRecord.finalUrl], {
+          timeout: 45_000, maxBuffer: 8_000_000, windowsHide: true, encoding: "utf8", env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" },
+        })).stdout.trim());
+        must(inspection.rawSha256 === hash(parentRaw) && inspection.associationValid === false &&
+          sameDocument(inspection.invalidReasons, ["current_paper_url_count_not_one"]) && Array.isArray(inspection.currentPaperUrls) &&
+          inspection.currentPaperUrls.length >= 2 && inspection.currentPaperUrls.length <= 50, "parent_prepare_complete_equivalent_family_dom_required");
+        for (const url of inspection.currentPaperUrls) {
+          const matches = archiveRowsByUrl.get(url) || [];
+          must(matches.length === 1, "parent_prepare_every_current_alias_original_receipt_required");
+          const envelope = matches[0], aliasPath = resolve(archive, envelope.result.blobPath);
+          must(inside(archive, aliasPath), "parent_prepare_alias_raw_path_outside_archive");
+          const aliasRaw = await rawWithinLimit(aliasPath), fetched = equivalentFetchedFromReceipt(envelope.result);
+          must(hash(aliasRaw) === fetched.sha256 && aliasRaw.length === fetched.bytes, "parent_prepare_alias_original_raw_binding_mismatch");
+          const metadataPath = join(output, "receipts", hash(JSON.stringify(envelope)) + ".json");
+          await immutable(metadataPath, envelope);
+          aliases.push({ fullLicense: licenseNo, rawSourcePath: aliasPath, rawSourceSha256: hash(aliasRaw), rawMetadataPath: metadataPath,
+            rawMetadataSha256: hash(await readFile(metadataPath)), fetched, allArchiveRoles: envelope.job.parents });
+        }
+        // Only after the complete DOM family is present may its first literal alias represent the shared bytes.
+        ({ job, result } = archiveRowsByUrl.get(inspection.currentPaperUrls[0])![0]);
+        record.childUrl = job.sourceUrl; record.rawSha256 = result.sourceBlobSha256;
+      }
+      const rawPath = resolve(archive, result.blobPath);
+      must(inside(archive, rawPath), "parent_prepare_raw_path_outside_source_corpus");
+      const raw = await rawWithinLimit(rawPath);
       must(hash(raw) === result.sourceBlobSha256 && raw.length === result.bytes && hash(parentRaw) === parentRecord.sourceBlobSha256 &&
         current.every((parent: any) => parent.parentRawSha256 === hash(parentRaw)), "parent_prepare_acquired_raw_binding_mismatch");
       must((result.requestedUrl || result.sourceUrl) === job.sourceUrl, "parent_prepare_child_download_url_mismatch");
@@ -142,8 +176,11 @@ export async function main(args = process.argv.slice(2)) {
         catalogRows: catalogRows.map((row) => ({ licenseNo, nameZh: row["中文品名"] || "", nameEn: row["英文品名"] || "", form: row["劑型"] || "", manufacturer: row["製造商名稱"] || "", effectiveUntil: row["有效日期"] || "", revoked: !!String(row["註銷狀態"] || "").trim() })),
         indexRows: indexRows.map((row) => ({ licenseNo, nameZh: row["中文品名"] || "", nameEn: row["英文品名"] || "", urls: urls(row["仿單圖檔連結"]) })),
         fetched: fetchedFromSuccessfulReceipt(result, "pdf"), format: "pdf", numPages: 0, pages: [] };
-      const parentSource = { rawSourcePath: parentRawPath, rawSourceSha256: hash(parentRaw), fetched: fetchedFromSuccessfulReceipt(parentRecord, "html") };
-      const verified = await verifyParentPaperSource(parentSource, input, parentRawPath, parentRaw, catalogRows, indexRows, snapshots, { python });
+      const parentSource = { rawSourcePath: parentRawPath, rawSourceSha256: hash(parentRaw), fetched: fetchedFromSuccessfulReceipt(parentRecord, "html"),
+        ...(parentPaperMode === "byte-equivalent-v1" ? { currentEquivalentSources: aliases } : {}) };
+      const verified = parentPaperMode === "byte-equivalent-v1" ?
+        await verifyParentPaperEquivalentSources({ ...parentSource, currentEquivalentSources: aliases }, input, parentRawPath, parentRaw, catalogRows, indexRows, snapshots, { python }) :
+        await verifyParentPaperSource(parentSource, input, parentRawPath, parentRaw, catalogRows, indexRows, snapshots, { python });
       input.officialAssociation = verified.association;
       const pdf = await deriveSerialPaperPdf(rawPath, raw, { python }); input.numPages = pdf.numPages; input.pages = pdf.pages;
       const assessment = evaluateTfdaSource(input);
@@ -180,7 +217,7 @@ export async function main(args = process.argv.slice(2)) {
     evaluationCoverageStatus: counts.deferred_by_limit ? "partial_bounded_evaluation" : options["--license"] || licenseSelection ? "explicit_license_selection_evaluated" : "selected_existing_archive_candidates_evaluated",
     coverageNotice: "Only acquired current-paper candidates selected by these filters were evaluated; failures/drafts/archive-only items are not published source coverage.",
     netAdditionalCoverage: "Not established by offline preparation. Wait for main completion, then reprepare against fresh actual published pointers before any parent publication.",
-    requiredPublisherOption: "--parent-paper-mode strict-v2", humanReviewed: false, clinicalReviewed: false, aiCalls: 0, cloudWrites: 0, networkRequests: 0, maxConcurrentPdfChildProcesses: 1 };
+    requiredPublisherOption: "--parent-paper-mode " + parentPaperMode, humanReviewed: false, clinicalReviewed: false, aiCalls: 0, cloudWrites: 0, networkRequests: 0, maxConcurrentPdfChildProcesses: 1 };
   const summaryPath = join(output, "summaries", hash(JSON.stringify(summary)) + ".json"); await immutable(summaryPath, summary);
   console.log(JSON.stringify({ ...summary, summaryPath })); return summary;
 }

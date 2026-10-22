@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import type { TfdaSourceInput } from "./tfda-source-core.js";
 import { verifyCandidateFromRaw } from "./tfda-candidate-verification.js";
-import { deriveSerialPaperPdf, verifyParentPaperSource } from "./tfda-parent-paper-verification.js";
+import { deriveSerialPaperPdf, verifyParentPaperSource, verifyParentPaperEquivalentSources } from "./tfda-parent-paper-verification.js";
 import {
   TFDA_PROTECTED_LICENSES, TFDA_PUBLICATION_ACTOR, TFDA_PUBLICATION_BUCKET,
   TFDA_PUBLICATION_PROJECT, applyTechnicalPublication, ensureTechnicalSourceBlob, assertFreshTimestamp,
@@ -46,7 +46,7 @@ function indexRows(raw: PublicationDoc[], license: string) {
     urls: String(r["仿單圖檔連結"] || "").match(/https?:\/\/[^\s;<>"\u3000]+/gu) || [],
   }));
 }
-export async function loadPublicationBatch(manifestPath: string, now = Date.now(), verificationOptions: { python?: string; parentPaperMode?: "strict-v2" } = {}) {
+export async function loadPublicationBatch(manifestPath: string, now = Date.now(), verificationOptions: { python?: string; parentPaperMode?: "strict-v2" | "byte-equivalent-v1" } = {}) {
   const path = resolve(manifestPath), bytes = await boundedRead(path, 2_000_000);
   const manifest = json(bytes);
   validatePublicationManifest(manifest);
@@ -78,7 +78,7 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
     // Caller claims remain rejected by default. Only explicit strict parent mode
     // may derive association evidence by reparsing independently pinned raw bytes.
     const hasParentClaim = Object.hasOwn(input, "officialAssociation");
-    must(!hasParentClaim || verificationOptions.parentPaperMode === "strict-v2" && !!item.parentSource && !!input.officialAssociation,
+    must(!hasParentClaim || ["strict-v2", "byte-equivalent-v1"].includes(verificationOptions.parentPaperMode || "") && !!item.parentSource && !!input.officialAssociation,
       "unverified_parent_association_not_supported");
     must(!item.parentSource || hasParentClaim, "parent_source_requires_explicit_association");
     const catalog = indexes.get(36)!, index = indexes.get(39)!;
@@ -91,8 +91,18 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
       must(input.format === "pdf", "parent_paper_child_must_be_pdf");
       const parentPath = pathFromManifest(item.parentSource!.rawSourcePath);
       parentRaw = await boundedRead(parentPath, 15_000_000);
-      parentVerification = (await verifyParentPaperSource(item.parentSource!, input, parentPath, parentRaw, catalog.rows, index.rows,
-        manifest.indexSnapshots, { python: verificationOptions.python, now })).proof;
+      if (verificationOptions.parentPaperMode === "byte-equivalent-v1") {
+        must(item.parentSource!.currentEquivalentSources, "explicit_equivalent_current_sources_required");
+        const parent = { ...item.parentSource!, currentEquivalentSources: item.parentSource!.currentEquivalentSources.map((alias) => ({
+          ...alias, rawSourcePath: pathFromManifest(alias.rawSourcePath), rawMetadataPath: pathFromManifest(alias.rawMetadataPath),
+        })) };
+        parentVerification = (await verifyParentPaperEquivalentSources(parent, input, parentPath, parentRaw, catalog.rows, index.rows,
+          manifest.indexSnapshots, { python: verificationOptions.python, now })).proof;
+      } else {
+        must(!item.parentSource!.currentEquivalentSources, "equivalent_sources_require_explicit_new_parent_mode");
+        parentVerification = (await verifyParentPaperSource(item.parentSource!, input, parentPath, parentRaw, catalog.rows, index.rows,
+          manifest.indexSnapshots, { python: verificationOptions.python, now })).proof;
+      }
     }
     const raw = await boundedRead(pathFromManifest(item.rawSourcePath), 15_000_000);
     const source = prepareTechnicalSource(item, input, raw, now);
@@ -371,9 +381,9 @@ export async function main(args = process.argv.slice(2)) {
   }
   const mode = options["--mode"] || "validate";
   must(["validate", "inspect", "apply"].includes(mode) && !!options["--manifest"], "usage_requires_explicit_manifest_and_valid_mode");
-  must(!options["--parent-paper-mode"] || options["--parent-paper-mode"] === "strict-v2", "unsupported_parent_paper_mode");
+  must(!options["--parent-paper-mode"] || ["strict-v2", "byte-equivalent-v1"].includes(options["--parent-paper-mode"]), "unsupported_parent_paper_mode");
   const batch = await loadPublicationBatch(options["--manifest"], Date.now(), { python: options["--python"],
-    ...(options["--parent-paper-mode"] ? { parentPaperMode: "strict-v2" as const } : {}) });
+    ...(options["--parent-paper-mode"] ? { parentPaperMode: options["--parent-paper-mode"] as "strict-v2" | "byte-equivalent-v1" } : {}) });
   if (mode === "validate") {
     console.log(JSON.stringify({ status: "offline_technical_batch_validated", items: batch.loaded.length,
       manifestSha256: batch.manifestSha256, actor: TFDA_PUBLICATION_ACTOR, clinicalReviewed: false,

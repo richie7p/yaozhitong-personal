@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { Leaflet } from "../shared/schema.js";
+import type { CurrentEquivalentSource, ParentPaperEquivalentVerification } from "./tfda-current-paper-equivalence.js";
 import {
   evaluateTfdaSource,
   isRawMaterialOfficialCategory, normalizeTfdaSourceText,
@@ -83,7 +84,9 @@ export interface PublicationBatchItem {
   rawSourcePath: string;
   rawSourceSha256: string;
   /** Accepted only by the explicit strict parent-paper mode after independent reparse. */
-  parentSource?: { rawSourcePath: string; rawSourceSha256: string; fetched: TfdaFetchedArtifact };
+  parentSource?: { rawSourcePath: string; rawSourceSha256: string; fetched: TfdaFetchedArtifact;
+    /** Requires the explicit byte-equivalent mode and native reads of every raw/receipt. */
+    currentEquivalentSources?: CurrentEquivalentSource[] };
 }
 export interface PublicationIndexSnapshot {
   infoId: 36 | 39;
@@ -117,6 +120,16 @@ export function validatePublicationManifest(value: any): asserts value is Public
     if (item.parentSource !== undefined) must(item.parentSource && typeof item.parentSource.rawSourcePath === "string" &&
       !!item.parentSource.rawSourcePath && /^[a-f0-9]{64}$/.test(item.parentSource.rawSourceSha256 || "") &&
       item.parentSource.fetched && typeof item.parentSource.fetched === "object", "explicit_parent_source_path_hash_and_fetch_required");
+    if (item.parentSource?.currentEquivalentSources !== undefined) {
+      const aliases = item.parentSource.currentEquivalentSources;
+      must(Array.isArray(aliases) && aliases.length >= 2 && aliases.length <= 50 && aliases.every((alias: any) =>
+        alias && alias.fullLicense === item.fullLicense && typeof alias.rawSourcePath === "string" && !!alias.rawSourcePath &&
+        typeof alias.rawMetadataPath === "string" && !!alias.rawMetadataPath && /^[a-f0-9]{64}$/u.test(alias.rawSourceSha256 || "") &&
+        /^[a-f0-9]{64}$/u.test(alias.rawMetadataSha256 || "") && alias.fetched && typeof alias.fetched.requestedUrl === "string" &&
+        Array.isArray(alias.allArchiveRoles) && alias.allArchiveRoles.length > 0) &&
+        new Set(aliases.map((alias: any) => alias.fetched.requestedUrl)).size === aliases.length,
+        "complete_pinned_current_equivalent_sources_required");
+    }
   }
   for (const item of value.indexSnapshots) {
     must(typeof item.path === "string" && !!item.path && typeof item.evidencePath === "string" && !!item.evidencePath,
@@ -167,7 +180,8 @@ export interface PreparedTechnicalSource {
   parentVerification?: ParentPaperVerification;
 }
 /** Derived from actual indexed parent bytes; no local filesystem paths are persisted. */
-export interface ParentPaperVerification {
+export type ParentPaperVerification = StrictParentPaperVerification | ParentPaperEquivalentVerification;
+export interface StrictParentPaperVerification {
   schema: "tfda-current-parent-paper-verification/v2";
   method: "official_index_parent_raw_current_paper_reparse_v2";
   scope: "single_current_paper_excluding_explicit_history";
@@ -185,7 +199,7 @@ export interface ParentPaperVerification {
 }
 export interface RawCandidateVerification {
   schema: "tfda-candidate-raw-verification/v1";
-  method: "html_raw_dom_reparse_v4" | "html_raw_numbered_outline_reparse_v1" | "pdf_raw_three_engine_reparse_v1";
+  method: "html_raw_dom_reparse_v4" | "html_raw_numbered_outline_reparse_v1" | "html_raw_rectangular_outline_reparse_v2" | "pdf_raw_three_engine_reparse_v1";
   rawSha256: string;
   rawBytes: number;
   canonicalTextSha256: string;
@@ -338,13 +352,45 @@ export async function applyTechnicalPublication(
     const roleKey = (value: string) => { try { const url = new URL(value); return JSON.stringify([url.protocol, url.hostname,
       decodeURIComponent(url.pathname), [...url.searchParams.entries()].sort(([leftKey, leftValue], [rightKey, rightValue]) =>
         leftKey.localeCompare(rightKey) || leftValue.localeCompare(rightValue))]); } catch { return null; } };
-    must(proof?.schema === "tfda-current-parent-paper-verification/v2" &&
+    const strictSingle = proof?.schema === "tfda-current-parent-paper-verification/v2" &&
       proof.method === "official_index_parent_raw_current_paper_reparse_v2" && proof.scope === "single_current_paper_excluding_explicit_history" &&
+      proof.currentPaperUrls.length === 1 && proof.currentPaperUrls[0] === proof.childUrl && !source.item.parentSource?.currentEquivalentSources;
+    let completeEquivalent = false;
+    if (proof?.schema === "tfda-current-parent-paper-verification/v3") {
+      const eq = proof.currentPaperEquivalence;
+      const aliases = source.item.parentSource?.currentEquivalentSources;
+      completeEquivalent = proof.method === "official_index_parent_raw_equivalent_current_papers_reparse_v1" &&
+        proof.scope === "complete_byte_equivalent_current_papers_excluding_explicit_history" &&
+        sameDocument(proof.parentDomInvalidReasons, ["current_paper_url_count_not_one"]) &&
+        /^[a-f0-9]{64}$/u.test(proof.equivalenceVerifierSha256) &&
+        !!eq && eq.schema === "tfda-current-paper-byte-equivalence/v1" &&
+        eq.licenseNo === draft.licenseNo && eq.parentRawSha256 === proof.parentRawSha256 &&
+        eq.parentDomInspectionSha256 === proof.parentDomInspectionSha256 &&
+        eq.sharedRawSha256 === draft.sha256 && eq.sharedRawBytes === source.input.fetched.bytes &&
+        eq.representativeUrl === proof.childUrl && proof.currentPaperUrls[0] === proof.childUrl &&
+        Array.isArray(proof.currentPaperUrls) && proof.currentPaperUrls.length >= 2 && proof.currentPaperUrls.length <= 50 &&
+        new Set(proof.currentPaperUrls).size === proof.currentPaperUrls.length &&
+        sameDocument(eq.orderedCurrentUrls, proof.currentPaperUrls) &&
+        sameDocument(source.input.officialAssociation.linkedSourceUrls, proof.currentPaperUrls) &&
+        Array.isArray(aliases) && aliases.length === proof.currentPaperUrls.length &&
+        Array.isArray(eq.artifacts) && eq.artifacts.length === aliases.length &&
+        eq.artifacts.every((artifact, index) => {
+          const alias = aliases[index];
+          return artifact.fullLicense === draft.licenseNo && artifact.rawSha256 === draft.sha256 &&
+            artifact.rawBytes === eq.sharedRawBytes && artifact.fetched.requestedUrl === proof.currentPaperUrls[index] &&
+            artifact.fetched.sha256 === draft.sha256 && artifact.fetched.bytes === eq.sharedRawBytes &&
+            /^[a-f0-9]{64}$/u.test(artifact.rawMetadataSha256) && alias.fullLicense === draft.licenseNo &&
+            alias.rawSourceSha256 === artifact.rawSha256 && alias.rawMetadataSha256 === artifact.rawMetadataSha256 &&
+            sameDocument(alias.fetched, artifact.fetched) && sameDocument(alias.allArchiveRoles, artifact.allArchiveRoles) &&
+            artifact.allArchiveRoles.length > 0;
+        });
+    }
+    must(proof && (strictSingle || completeEquivalent) &&
       proof.licenseNo === draft.licenseNo && proof.childRawSha256 === draft.sha256 &&
       proof.childUrl === source.input.fetched.requestedUrl && proof.parentRawSha256 === source.input.officialAssociation.detailSha256 &&
-      proof.currentPaperUrls.length === 1 && proof.currentPaperUrls[0] === proof.childUrl &&
       sameDocument(proof.historicalPaperUrls, proof.excludedHistoricalPaperUrls) && roleKey(proof.childUrl) !== null &&
-      [...proof.excludedHistoricalPaperUrls, ...proof.excludedHistoricalElectronicUrls].every((url) => roleKey(url) !== null && roleKey(url) !== roleKey(proof.childUrl)),
+      proof.currentPaperUrls.every((current) => roleKey(current) !== null &&
+        [...proof.excludedHistoricalPaperUrls, ...proof.excludedHistoricalElectronicUrls].every((url) => roleKey(url) !== null && roleKey(url) !== roleKey(current))),
       "publication_requires_independently_verified_parent_association");
   } else must(!source.parentVerification, "unexpected_parent_verification_without_association");
   must(source.rawVerification?.schema === "tfda-candidate-raw-verification/v1" &&

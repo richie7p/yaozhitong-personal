@@ -225,13 +225,67 @@ def html_account_main_blocks(mains, selected_main, sections):
 HTML_OUTLINE_PARSER_VERSION='tfda-complete-dom-outline-v1'
 HTML_OUTLINE_SERIALIZATION_VERSION='tfda-numbered-outline-literal-v1'
 HTML_OUTLINE_EVIDENCE_VERSION='tfda-numbered-outline-evidence-v1'
+HTML_RECTANGULAR_OUTLINE_PARSER_VERSION='tfda-complete-dom-outline-v2'
+HTML_RECTANGULAR_OUTLINE_SERIALIZATION_VERSION='tfda-numbered-outline-literal-v2'
+HTML_RECTANGULAR_OUTLINE_EVIDENCE_VERSION='tfda-numbered-outline-evidence-v2'
 HTML_OUTLINE_ALLOWED_INLINE={'p','div','span','br','b','strong','i','em','u','s','small','sup','sub','font'}
 
 def html_outline_clean(text):
     # Only whitespace is serialized; source words, punctuation and numbers stay literal.
     return '\n'.join(re.sub(r'\s+',' ',line).strip() for line in text.splitlines() if line.strip())
 
-def html_numbered_outline_table(table,scope,table_indices,seen_labels,depth=0):
+def html_rectangular_subtable(table,table_indices,wrapper=None):
+    """A literal row/cell grid, never interpreted as section numbers or doses."""
+    evidence=html_table_evidence(table)
+    if not evidence['simple'] or evidence['rowCount']>500 or any(n.tag=='table' and n is not table for n in table.walk()):
+        raise ValueError('outline_literal_subtable_not_rectangular')
+    if any(n.tag not in HTML_OUTLINE_ALLOWED_INLINE and n.tag not in ('table','thead','tbody','tfoot','tr','td','th','colgroup','col') for n in table.walk()):
+        raise ValueError('outline_literal_subtable_content_unknown')
+    row_nodes=[]
+    def collect(node):
+        for child in node.children:
+            if isinstance(child,HtmlNode):
+                if child.tag=='tr':row_nodes.append(child)
+                elif child.tag in ('thead','tbody','tfoot'):collect(child)
+    collect(table)
+    inventory=[]
+    for row in row_nodes:
+        cells=[n for n in row.children if isinstance(n,HtmlNode)]
+        if any(n.tag not in ('td','th') for n in cells):raise ValueError('outline_literal_subtable_row_unknown')
+        if cells and re.fullmatch(r'[1-9]\d?\.[1-9]\d?(?:\.[1-9]\d?)*',norm(cells[0].text())):
+            raise ValueError('outline_literal_subtable_looks_numbered')
+        inventory.append([[n.tag for n in cell.walk()] for cell in cells])
+    return {'version':'tfda-rectangular-subtable-evidence-v1','tableIndex':table_indices[id(table)],
+            'columnCount':evidence['columnCounts'][0],'rowCount':evidence['rowCount'],'rows':evidence['rows'],
+            'cellTagInventory':inventory,'serializedText':evidence['serializedText'],
+            'originalNormalizedTextSha256':evidence['originalNormalizedTextSha256'],
+            'serializedNormalizedTextSha256':evidence['serializedNormalizedTextSha256'],'wrapper':wrapper}
+
+def html_empty_layout_subtable(table,table_indices):
+    evidence=html_table_evidence(table)
+    allowed=HTML_OUTLINE_ALLOWED_INLINE|{'table','thead','tbody','tfoot','tr','td','th','colgroup','col'}
+    nodes=list(table.walk())
+    if evidence['kind']!='empty_layout_placeholder' or norm(table.text()) or any(n.tag not in allowed for n in nodes) or sum(n.tag=='table' for n in nodes)!=1:
+        raise ValueError('outline_empty_layout_contains_unverified_content')
+    if evidence['rowCount']>500 or len(set(evidence['columnCounts']))>1 or any(c['rowspan']!='1' or c['colspan']!='1' or norm(c['text']) or c['serializedCellText'] for row in evidence['rows'] for c in row):
+        raise ValueError('outline_empty_layout_inventory_invalid')
+    return {'version':'tfda-empty-layout-table-evidence-v1','tableIndex':table_indices[id(table)],
+            'rowCount':evidence['rowCount'],'columnCounts':evidence['columnCounts'],'rows':evidence['rows'],
+            'nodeTagInventory':[n.tag for n in nodes],'serializedText':evidence['serializedText'],
+            'originalNormalizedTextSha256':evidence['originalNormalizedTextSha256'],
+            'serializedNormalizedTextSha256':evidence['serializedNormalizedTextSha256']}
+
+def html_literal_figure_table(figure,table_indices):
+    children=[n for n in figure.children if isinstance(n,HtmlNode)]
+    if figure.attrs.get('class')!='table' or set(figure.attrs)-{'class','style'} or len(children)!=1 or children[0].tag!='table' or any(isinstance(n,str) and n.strip() for n in figure.children):
+        raise ValueError('outline_literal_figure_shape_unknown')
+    style=figure.attrs.get('style','')
+    if any(not re.fullmatch(r'(?:float:(?:left|right|none)|width:\d+(?:\.\d+)?(?:%|pt|px|cm|em|in))',part.strip()) for part in style.split(';') if part.strip()):
+        raise ValueError('outline_literal_figure_style_unknown')
+    wrapper={'tag':'figure','attrs':figure.attrs,'directTableCount':1,'otherContent':False}
+    return html_rectangular_subtable(children[0],table_indices,wrapper)
+
+def html_numbered_outline_table(table,scope,table_indices,seen_labels,depth=0,rectangular_subtables=False):
     """A closed two-column section outline grammar, never a generic nested grid."""
     if depth>6 or not re.fullmatch(r'[1-9]\d?(?:\.[1-9]\d?)*',scope):
         raise ValueError('outline_scope_or_depth_invalid')
@@ -267,7 +321,18 @@ def html_numbered_outline_table(table,scope,table_indices,seen_labels,depth=0):
             for child in node.children:
                 if isinstance(child,str):buffer.append(child);continue
                 if child.tag=='table':
-                    flush();parts.append({'kind':'table','table':html_numbered_outline_table(child,child_scope,table_indices,seen_labels,depth+1)})
+                    flush()
+                    if rectangular_subtables:
+                        if html_table_evidence(child)['kind']=='empty_layout_placeholder':
+                            parts.append({'kind':'literal_empty_table','table':html_empty_layout_subtable(child,table_indices)})
+                        else:
+                            trial=set(seen_labels)
+                            try:proof=html_numbered_outline_table(child,child_scope,table_indices,trial,depth+1,True)
+                            except ValueError:parts.append({'kind':'literal_table','table':html_rectangular_subtable(child,table_indices)})
+                            else:seen_labels.update(trial);parts.append({'kind':'table','table':proof})
+                    else:parts.append({'kind':'table','table':html_numbered_outline_table(child,child_scope,table_indices,seen_labels,depth+1)})
+                elif rectangular_subtables and child.tag=='figure':
+                    flush();parts.append({'kind':'literal_table','table':html_literal_figure_table(child,table_indices)})
                 elif child.tag in HTML_OUTLINE_ALLOWED_INLINE:
                     walk(child)
                     if child.tag in ('p','div','br'):buffer.append('\n')
@@ -298,7 +363,7 @@ def html_numbered_outline_table(table,scope,table_indices,seen_labels,depth=0):
         right='\n'.join(part['text'] if part['kind']=='text' else part['table']['serializedText'] for part in pieces)
         original_right=cells[1].text()
         if norm(right)!=norm(original_right):raise ValueError('outline_right_text_not_conserved')
-        right_lines=right.splitlines()
+        right_lines=right.splitlines() or ['']
         serialized=left+'\t'+right_lines[0]+''.join('\n\t'+line for line in right_lines[1:])
         rows.append({'rowIndex':row_number,'leftText':left,'label':label or None,'continuation':continuation,'scope':row_scope,
                      'rightPieces':pieces,'originalRightNormalizedSha256':sha_bytes(norm(original_right).encode()),
@@ -443,7 +508,7 @@ def select_pdf_content_flow_text(page, spatial_text, pypdf_text, unverified_stru
     evidence.update(used=True,normalizedTextSha256=sha_bytes(ordered.encode()),originalSpatialNormalizedTextSha256=sha_bytes(norm(spatial_text).encode()))
     return flow,evidence
 
-def inspect_html_outline(raw,url):
+def inspect_html_outline(raw,url,rectangular_subtables=False):
     """Explicit opt-in. The legacy v4 parser and its reports remain untouched."""
     base=inspect_html(raw,url)
     parser=HtmlParser();parser.feed(raw.decode('utf-8-sig',errors='replace'))
@@ -475,7 +540,7 @@ def inspect_html_outline(raw,url):
                 if not match:errors.append({'tableIndex':table_indices[id(table)],'reason':'outline_section_scope_missing'});continue
                 trial_seen=set(seen)
                 try:
-                    proof=html_numbered_outline_table(table,match.group(1),table_indices,trial_seen)
+                    proof=html_numbered_outline_table(table,match.group(1),table_indices,trial_seen,rectangular_subtables=rectangular_subtables)
                     def register(node):
                         outline_lookup[id(all_tables[node['tableIndex']])]=node
                         for row in node['rows']:
@@ -513,17 +578,26 @@ def inspect_html_outline(raw,url):
     else:
         complete=base['normalizedSectionText'];main_text=base['completeDomText'];source_text=''
         conserved=False;complex_count=base['complexTableCount'];simple_conserved=False
-    evidence={'version':HTML_OUTLINE_EVIDENCE_VERSION,'policy':'two_column_section_number_hierarchy_v1',
+    evidence={'version':HTML_RECTANGULAR_OUTLINE_EVIDENCE_VERSION if rectangular_subtables else HTML_OUTLINE_EVIDENCE_VERSION,'policy':'two_column_section_outline_with_literal_rectangular_subtables_v1' if rectangular_subtables else 'two_column_section_number_hierarchy_v1',
               'status':'verified' if roots and new_count and not errors and conserved and complex_count==0 else 'review_required',
               'tableCount':len(outline_lookup),'newlySupportedComplexTableCount':new_count,'roots':roots,
               'tableIndices':sorted(node['tableIndex'] for node in outline_lookup.values()),'rejections':errors,
               'originalNormalizedDomSha256':sha_bytes(norm(source_text).encode()),
               'serializedNormalizedDomSha256':sha_bytes(norm(complete).encode())}
     unverified=bool(base['nonTextImages'] or base['nonTextElements']) or complex_count>0 or not simple_conserved or evidence['status']!='verified'
-    result={**base,'schemaVersion':5,'parserVersion':HTML_OUTLINE_PARSER_VERSION,
+    if rectangular_subtables:
+        literal_indices=[]
+        def collect_literals(table):
+            for row in table['rows']:
+                for piece in row['rightPieces']:
+                    if piece['kind'] in ('literal_table','literal_empty_table'):literal_indices.append(piece['table']['tableIndex'])
+                    elif piece['kind']=='table':collect_literals(piece['table'])
+        for root in roots:collect_literals(root['table'])
+        evidence.update(literalTableCount=len(literal_indices),literalTableIndices=literal_indices)
+    result={**base,'schemaVersion':6 if rectangular_subtables else 5,'parserVersion':HTML_RECTANGULAR_OUTLINE_PARSER_VERSION if rectangular_subtables else HTML_OUTLINE_PARSER_VERSION,
             'sections':sections,'completeDomText':main_text,'normalizedSectionText':complete,'fullDomConserved':conserved,
             'originalNormalizedDomSha256':sha_bytes(norm(source_text).encode()),'serializedNormalizedDomSha256':sha_bytes(norm(complete).encode()),
-            'tableSerializationVersion':HTML_OUTLINE_SERIALIZATION_VERSION,'simpleTablesConserved':simple_conserved,
+            'tableSerializationVersion':HTML_RECTANGULAR_OUTLINE_SERIALIZATION_VERSION if rectangular_subtables else HTML_OUTLINE_SERIALIZATION_VERSION,'simpleTablesConserved':simple_conserved,
             'complexTableCount':complex_count,'numberedOutlineEvidence':evidence,
             'hasUnverifiedNonTextContent':unverified,
             'status':'independent_dom_extracted_draft' if conserved and not unverified and not base['ambiguousIdentityFields'] else 'needs_review'}
@@ -841,6 +915,7 @@ def main(argv=None):
     parser.add_argument('--inspect-pdf-internal',type=pathlib.Path,help=argparse.SUPPRESS)
     parser.add_argument('--inspect-html-internal',nargs=2,metavar=('FILE','URL'),help=argparse.SUPPRESS)
     parser.add_argument('--inspect-html-outline-internal',nargs=2,metavar=('FILE','URL'),help=argparse.SUPPRESS)
+    parser.add_argument('--inspect-html-outline-rectangular-internal',nargs=2,metavar=('FILE','URL'),help=argparse.SUPPRESS)
     parser.add_argument('--limit',type=int,default=50,help='Maximum unique URLs attempted during this invocation (default 50).')
     parser.add_argument('--workers',type=int,default=4)
     parser.add_argument('--all',action='store_true',help='Explicitly process all remaining URLs in the frozen inventory.')
@@ -849,6 +924,12 @@ def main(argv=None):
     parser.add_argument('--reextract-format',choices=('html','pdf','all'),default='all',help='Source format to re-extract; valid only with --reextract-cached.')
     parser.add_argument('--extract-active-from',type=pathlib.Path,help='Bind this active inventory SHA; other URLs are acquired as archive raw only without PDF/HTML inspection.')
     args=parser.parse_args(argv)
+    if args.inspect_html_outline_rectangular_internal:
+        filename,url=args.inspect_html_outline_rectangular_internal
+        raw=pathlib.Path(filename).read_bytes()
+        report=inspect_html_outline(raw,url,True)
+        report.update(rawSha256=sha_bytes(raw),rawBytes=len(raw),sourceUrl=url)
+        print(json.dumps(report,ensure_ascii=False));return 0
     if args.inspect_html_outline_internal:
         filename,url=args.inspect_html_outline_internal
         raw=pathlib.Path(filename).read_bytes()
