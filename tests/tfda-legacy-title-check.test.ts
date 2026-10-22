@@ -81,6 +81,10 @@ describe("preserved legacy title layout diagnosis", () => {
   it("does not borrow matching names from clinical text or accept an old title followed by a new one", () => {
     const body = fixture(); body.firstPhysicalPage.text = "主 成 份：\n" + body.firstPhysicalPage.text;
     expect(reconcileLegacyTitle(body).ok).toBe(false);
+    const englishBody = fixture(); englishBody.firstPhysicalPage.text = 'G.F. TABLETS 200MG "STANDARD" (GUAIFENESIN)\n"生達"咳服\nWARNINGS:\n錠200毫克(呱芬那辛)';
+    expect(reconcileLegacyTitle(englishBody).ok).toBe(false);
+    englishBody.firstPhysicalPage.text = englishBody.firstPhysicalPage.text.replace("WARNINGS:", "OTHERBODYTEXT");
+    expect(reconcileLegacyTitle(englishBody).ok).toBe(false);
     const oldThenNew = fixture(); oldThenNew.firstPhysicalPage.text = '"舊商標"舊品名\nOLD PRODUCT\n' + oldThenNew.firstPhysicalPage.text;
     expect(reconcileLegacyTitle(oldThenNew).ok).toBe(false);
   });

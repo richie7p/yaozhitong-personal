@@ -20,7 +20,11 @@ export interface LegacyTitleInput {
 export const LEGACY_TITLE_BOUNDS = Object.freeze({ physicalLines: 24, nonemptyLines: 12, characters: 1200, freshnessMs: 86_400_000 });
 const sha = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const normalize = (text: string) => text.normalize("NFKC").replace(/[“”„‟〝〞]/gu, '"').replace(/\s+/gu, "").toLowerCase();
-const clinicalStart = (text: string) => /^(?:主成[分份]|有效成[分份]|適應症|用法(?:及)?用量|用法|用量|藥理作用|藥理特性|警語|注意事項|副作用|不良反應|禁忌|成分|賦形劑|過量|包裝|儲存|性狀|說明|本品(?:之|為)|本劑(?:之|為)|本藥(?:之|為)|每(?:錠|粒|毫升))/u.test(normalize(text).replace(/^[\d一二三四五六七八九十.、()【】:：-]+/u, ""));
+const clinicalStart = (text: string) => {
+  const heading = normalize(text).replace(/^[\d一二三四五六七八九十.、()【】:：-]+/u, "");
+  return /^(?:主成[分份]|有效成[分份]|適應症|用法(?:及)?用量|用法|用量|藥理作用|藥理特性|警語|注意事項|副作用|不良反應|禁忌|成分|賦形劑|過量|包裝|儲存|性狀|說明|本品(?:之|為)|本劑(?:之|為)|本藥(?:之|為)|每(?:錠|粒|毫升))/u.test(heading) ||
+    /^(?:warnings?|precautions?|indications?|dosage|administration|contraindications?|adversereactions?|adverseevents?|sideeffects?|interactions?|activeingredients?|ingredients?|composition|description|pharmacology|overdosage|overdose|storage)/u.test(heading);
+};
 const iso = (value: string) => typeof value === "string" && /(?:Z|[+-]\d{2}:\d{2})$/u.test(value) ? Date.parse(value) : NaN;
 const baseDiagnostic = { scope: "preserved_legacy_title_layout_diagnostic_only", clinicalReviewed: false, sourceEligibilityEstablished: false, sourceWrites: 0 } as const;
 
@@ -68,7 +72,8 @@ export function reconcileLegacyTitle(input: LegacyTitleInput) {
     if (han === latin) { projectionStop = han ? "mixed_script_line_barrier" : "neutral_line_barrier"; break; }
     if (han) { chinese.push(line); zh += line.normalized; }
     else { english.push(line); en += line.normalized; }
-    if (zh.startsWith(nameZh) && en.startsWith(nameEn)) { projectionStop = "both_complete_titles_matched"; break; }
+    if (!nameZh.startsWith(zh) || !nameEn.startsWith(en)) { projectionStop = "line_not_literal_prefix_of_current_title"; break; }
+    if (zh === nameZh && en === nameEn) { projectionStop = "both_complete_titles_matched"; break; }
   }
   const evidence = {
     bindings: { fullLicense: input.fullLicense, baselineSourceUrl: sourceUrl, exactCurrentIndexUrls: [...index.sourceUrls], actualRawSha256, baselineRawSha256: input.baseline.rawSha256, currentReceiptRawSha256: input.currentReceipt.rawSha256, actualRawBytes: input.currentRawBytes.length, now: input.now, timestamps: { ...timestamps }, catalogRows: 1, indexRows: 1, firstPhysicalPage: 1, firstPageTextSha256: sha(input.firstPhysicalPage.text) },
