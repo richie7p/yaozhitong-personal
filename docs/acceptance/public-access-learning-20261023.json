@@ -1,15 +1,15 @@
 {
   "schema": "yzt-public-access-learning-candidate-acceptance/v1",
   "date": "2026-10-23",
-  "recordedAtUtc": "2026-10-22T21:14:06.062198+00:00",
-  "overallStatus": "candidate_verified_pending_ci_and_cloud_acceptance",
-  "scope": "Sanitized candidate record. Earlier successful checks retain their own version labels; pending checks are not counted as passes.",
+  "recordedAtUtc": "2026-10-22T22:06:36.028506+00:00",
+  "overallStatus": "deployed_ci_and_bounded_cloud_acceptance_passed",
+  "scope": "Sanitized deployed release record. Program regressions, real cloud behavior, source-content review, and remaining operational limits retain separate scopes.",
   "candidate": {
     "id": "public-access-learning-v18-v10.3-20261023",
     "groundingVersion": "grounded-v18-whole-field-plain-language",
     "baseCommit": "13c89f33f76f9a8d4745a70d9617465387a2b94d",
-    "finalCommit": null,
-    "commitStatus": "pending",
+    "finalCommit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+    "commitStatus": "pushed_to_master",
     "preparedReleaseFileCountBeforeThisReport": 52,
     "finalReleaseFileCount": 56,
     "coreFilePinsSha256": {
@@ -35,7 +35,7 @@
     },
     "coreFileSetSha256": "ad1c36b192b828cc2c2fc14272529ca89e5102a1703b29657a14e1e367ad0337",
     "coreFileSetHashMethod": "SHA256 of LF-normalized committed text bytes; set SHA256 uses sorted compact UTF-8 JSON map and excludes this report.",
-    "deploymentStatus": "not_deployed_existing_cloud_application_unchanged"
+    "deploymentStatus": "both_exact_revisions_ready_serving_100_percent"
   },
   "intendedPublicPolicy": {
     "access": "all_verified_ordinary_accounts",
@@ -102,9 +102,9 @@
       "candidate": "v10.3_with_preserved_unpublished_working_changes"
     },
     "browserRegression": {
-      "status": "targeted_fix_passed_full_final_ci_pending",
+      "status": "passed_final_full_ci",
       "testedCandidate": "v10.3_with_schedule_completion_refresh",
-      "exactFinalCandidateStatus": "pending_final_full_ci",
+      "exactFinalCandidateStatus": "passed_202_final_ci",
       "priorFullBeforeFix": {
         "passed": 199,
         "failed": 1,
@@ -133,7 +133,9 @@
       "correction": "Schedule completion emits a payload-free invalidation event; the currently mounted home view reloads its own session agenda. The ordinary save flow waits for actual form closure.",
       "fixReceiptSha256": "abf797505eb0848ed445a1da052099b584acd0fdc70e3a6c0d8e2bd7528a4c02",
       "provider": "isolated_synthetic_upstream",
-      "realModelAcceptance": false
+      "realModelAcceptance": false,
+      "testsPassed": 202,
+      "ciRunId": 39857376379
     },
     "localLifecycle": {
       "status": "passed",
@@ -247,9 +249,25 @@
       "forceExistingPasswordUpgradeOnSignin": false
     }
   },
-  "pendingFinalChecks": {
+  "limitations": [
+    "The exact code and image passed CI and bounded real cloud acceptance. Three preconfirmed official-source flows and one real-photo pending-identity flow were exercised separately; the incomplete photo was not matched to a leaflet.",
+    "Unit tests and synthetic browser fixtures validate program behavior; they do not establish medical content accuracy or population-wide model performance.",
+    "Some safety fields remain partial, held or original-reading-only. A complete citation or successful job does not prove correct medical scope or full teaching coverage.",
+    "The deployed 3,521-source parser pass classified 2,764 accepted and 757 needing source review. Scanned pages, complex layout and unresolved provenance remain coverage gaps; parser acceptance alone does not establish medical accuracy.",
+    "Firestore restore does not restore Firebase Authentication or Cloud Storage. Relationship recovery was not exercised because the restored snapshot had zero relationship documents.",
+    "Monitoring rules have no delivery channels by user choice; no live fault was injected to exercise an incident transition.",
+    "Large public-traffic load, full cross-service disaster recovery and clinical decision suitability have not been established.",
+    "Queue delay or a crashed worker can outlast initial frontend polling; persisted job identifiers and history recovery remain necessary."
+  ],
+  "reportPreparation": {
+    "source": "pinned_deployed_receipt_actual_cloud_records_and_independent_bounded_review",
+    "providerCalls": 0,
+    "cloudCalls": 0,
+    "cloudMutations": 0
+  },
+  "finalChecks": {
     "freshCandidateSemantic": {
-      "status": "reviewed_bounded_go_for_next_cloud_acceptance",
+      "status": "passed_bounded_content_review",
       "candidate": "v18-v10.3",
       "freshLogicalCases": 12,
       "providerHttp": 36,
@@ -480,57 +498,234 @@
       "clinicalOrUniversalAccuracyProven": false
     },
     "gitHubCi": {
-      "status": "pending",
-      "commit": null,
-      "runId": null,
-      "conclusion": null
+      "status": "passed",
+      "commit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+      "runId": 39857376379,
+      "conclusion": "success",
+      "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39857376379",
+      "unitTests": 1581,
+      "unitFiles": 80,
+      "browserTests": 202,
+      "pythonTests": 173,
+      "deploymentMocks": 79,
+      "hostingMocks": 17,
+      "lifecycle": "passed"
     },
     "cloudDeployment": {
-      "status": "pending",
-      "commit": null,
-      "imageDigest": null,
-      "webRevision": null,
-      "workerRevision": null,
-      "runtimeSettingsVerified": false,
-      "otherCapacitySettingsPreserved": null
+      "status": "verified",
+      "commit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+      "imageDigest": "sha256:cfdad9fb21d517d88b6183f7d257fe74756eb26465f3b24c66acf0e18b8eb3ef",
+      "receiptSha256": "804efc8f406720f8ce74c29d066cd2eee461e9f238aec7db2c10913a7873fbe4",
+      "buildId": "349f7075-7591-4821-a910-290977c3470d",
+      "webRevision": "yzt-test-web-00022-82z",
+      "workerRevision": "yzt-test-worker-00022-brq",
+      "runtimeSettingsVerified": true,
+      "otherCapacitySettingsPreserved": true,
+      "secretReferencesPreserved": true,
+      "legacySeatRegistryUnchanged": true,
+      "quotaResets": 0,
+      "newAccounts": 0,
+      "webAndWorkerServingNewExactRevisionsPercent": 100,
+      "authorizedEnvironmentChanges": [
+        "DAILY_GLOBAL_LIMIT=1000",
+        "PUBLIC_ACCESS_MODE=verified",
+        "AI_TEXT_REASONING_EFFORT=medium",
+        "AI_TEXT_MAX_TOKENS=12000",
+        "AI_TEXT_REQUEST_TIMEOUT_MS=90000",
+        "AI_JOB_TIMEOUT_MS=240000"
+      ]
     },
     "cloudUserFlow": {
-      "status": "pending",
-      "receiptSha256": null,
-      "independentContentReviewSha256": null,
-      "steps": {
-        "photoUploadRecognition": "pending",
-        "identityReviewAndSave": "pending",
-        "leafletExplanation": "pending",
-        "comprehensionQuizAndSavedProgress": "pending",
-        "medicationQuestions": "pending",
-        "privateSupport": "pending",
-        "offlineReloadAndDuplicateRecovery": "pending"
+      "status": "passed_bounded_user_and_content_acceptance",
+      "receiptSha256": "df32bc574db196b8a5023167e4ad2fe05a5c54813cd29de300371a2206fdc61e",
+      "readOnlyHistorySourceMetricsReceiptSha256": "dc28b36b2b2eef06d5b67f8833d3a10617104dbaba539f42bfcd3159757f6b4c",
+      "independentContentReviewSha256": "260813d517dcc76386c6b2d329a66cf86d5fcf13fc5983ae96a3ac0300aa84d7",
+      "pendingPhotoSaveReceiptSha256": "c90141381ffca439648bd73bff22985ecba705b710ab83d19e2b590e12ad3dea",
+      "originalPlanSha256": "5fa0d7879c475f1dc4d53fc1cfdd8b7bed7d15641a294f3b3620a20168e7a1a7",
+      "finalContinuationPlanSha256": "bc08fda3afca494000c10e9bdf024e99243a0999f427e4ed67db83008cda285e",
+      "freshLogicalJobs": 8,
+      "providerHttp": 19,
+      "actualTokensIncludingReasoning": 149262,
+      "automaticRetries": 0,
+      "jobErrors": 0,
+      "browserPageErrors": 0,
+      "existingOrdinaryAccountsUsed": 1,
+      "newAccounts": 0,
+      "quotaResets": 0,
+      "quotaBeforeAndAfter": {
+        "timezone": "Asia/Taipei",
+        "perPersonLimit": 20,
+        "siteWideLimit": 1000,
+        "ownerBefore": 11,
+        "ownerAfter": 19,
+        "siteBefore": 11,
+        "siteAfter": 19
       },
-      "quotaBeforeAndAfter": null,
-      "finalFindings": null
+      "textContentLatencyMs": {
+        "cases": 6,
+        "minimum": 36239,
+        "median": 45294,
+        "maximum": 52356
+      },
+      "steps": {
+        "photoUploadRecognition": "passed_one_public_masked_real_photo_independently_compared_to_original_pixels",
+        "identityReviewAndSave": "passed_one_pending_identity_save_unknown_fields_retained_reload_same_record",
+        "leafletExplanation": "passed_three_preconfirmed_official_source_records",
+        "comprehensionQuizAndSavedProgress": "passed_all_fourteen_actual_questions_wrong_then_correct_and_reload",
+        "medicationQuestions": "passed_three_source_grounded_responses_with_explicit_partial_status",
+        "sourceReviewPending": "passed_one_hold_without_provider_call",
+        "privateSupport": "passed_one_owner_report_submission_and_readback_without_email",
+        "offlineAndReloadRecovery": "passed_no_new_ai_jobs_offline_or_when_reopening_saved_results",
+        "mobile375": "passed"
+      },
+      "contentReview": {
+        "medicalLogicalOperations": 7,
+        "contentGenerationJobs": 6,
+        "sourcePendingJobs": 1,
+        "publishedClaims": 127,
+        "aiPurposeClaims": 6,
+        "plainSafetyClaims": 115,
+        "fullCanonicalSafetyClaims": 6,
+        "quizQuestions": 14,
+        "quizOptions": 28,
+        "warningObjectiveQuizQuestions": 11,
+        "medicalSafetyPointQuestions": 10,
+        "storageConditionQuestions": 1,
+        "claimAndQuizLiteralCitations": 204,
+        "readerLiteralCitations": 6,
+        "citationErrors": 0,
+        "confirmedPublishedMaterialContradictions": 0,
+        "medicalProviderHttp": 18,
+        "medicalActualTokens": 147592,
+        "contentLatencyMedianMs": 45294.0,
+        "contentLatencyMinMs": 36239,
+        "contentLatencyMaxMs": 52356
+      },
+      "quizInteraction": {
+        "questions": 14,
+        "optionsReviewed": 28,
+        "answerPosts": 28,
+        "allQuestionsWrongThenCorrect": true,
+        "explanationsAndCitationsChecked": true,
+        "answersPersistedAfterReload": true
+      },
+      "photo": {
+        "name": "Kentamin",
+        "publicRealPhoto": true,
+        "privacyMaskedWithoutDrugTextRedraw": true,
+        "latencyMs": 4710,
+        "ocrMatchedVisibleMedicationAndInstructions": true,
+        "licenseNoInferred": false,
+        "strengthInferred": false,
+        "identityAfterSave": "needs_information",
+        "savePosts": 1,
+        "additionalAiJobsForSave": 0,
+        "sameRecordAfterReload": true,
+        "leafletDisabledUntilIdentityReview": true,
+        "completeAiFlowFromThisPhotoClaimed": false
+      },
+      "sourceCoverage": {
+        "preconfirmedOfficialSourcesExercised": [
+          "051528",
+          "010332",
+          "018498"
+        ],
+        "sourceReviewHoldExercised": "060225",
+        "allCatalogOrPopulationAccuracyClaimed": false
+      },
+      "statePreservation": {
+        "existingMedicalJobResultsUnchanged": true,
+        "legacySeatRegistryUnchanged": true,
+        "officialSourceVersionsUnchanged": true,
+        "runtimeSettingsUnchangedDuringAcceptance": true
+      },
+      "harnessCorrections": "Archived continuations corrected jobId-only enqueue responses, native fetch response access, and support selectors. Read-only collection follows intentional post-success input clearing and validates canonical payload hashes plus persisted history. Original jobs were resumed without resubmitting AI operations.",
+      "cases": [
+        {
+          "operation": "html-source-review-hold:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "f556181c7d4afab8d7bce4e7dafc6590046ae1a9c8794fc81aee49f76336e6ff",
+          "latencyMs": 177,
+          "tokens": 0,
+          "providerHttp": 0,
+          "attempts": 1
+        },
+        {
+          "operation": "kentamin:recognition",
+          "kind": "recognition",
+          "actualRecordSha256": "64e0657379bbbd656238b304bbadfbe83b395b240975124c5b2726b48e3ed9a8",
+          "latencyMs": 4710,
+          "tokens": 1670,
+          "providerHttp": 1,
+          "attempts": 1
+        },
+        {
+          "operation": "html-literal-rectangular-subtable:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "ca4c9e1485cf1870f97e7bc36aeaabcc7f6a52dac22de59c96c19cc29d04919c",
+          "latencyMs": 52356,
+          "tokens": 26667,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "html-literal-rectangular-subtable:chat",
+          "kind": "chat",
+          "actualRecordSha256": "6c73910db3e758e8144ea4bfebbd0e8d38684153f7ebc48c7ef8e08e14e6bb48",
+          "latencyMs": 40047,
+          "tokens": 24367,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-propranolol-three-pages:chat",
+          "kind": "chat",
+          "actualRecordSha256": "181989b1d433a418d049aea793546a0a0dbabcab9d8209fb4eb4a91c65311b2d",
+          "latencyMs": 45748,
+          "tokens": 26961,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-acetaminophen-two-pages:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "8d9df533e87a97802c23efa18ece7afe90e85dccc673a3184a5ad9f3773bc9b5",
+          "latencyMs": 44840,
+          "tokens": 20428,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-propranolol-three-pages:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "a6caa13160b7fd39d6a04aaf8f82fc50d04f437f58bc708193705dfab677b999",
+          "latencyMs": 47730,
+          "tokens": 28786,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-acetaminophen-two-pages:chat",
+          "kind": "chat",
+          "actualRecordSha256": "f4e640f158dabb92ce5871b2006fe7b6ae9d52561c77e3122f9481baaa7149e5",
+          "latencyMs": 36239,
+          "tokens": 20383,
+          "providerHttp": 3,
+          "attempts": 1
+        }
+      ],
+      "finalFindings": {
+        "newConfirmedMaterialSourceContradictionsInReviewedPublishedSubset": 0,
+        "allSafetyFieldsFullySimplified": false,
+        "clinicalApprovalOrUniversalAccuracyClaimed": false
+      }
     },
     "finalGitHubSynchronization": {
-      "status": "pending",
-      "commit": null
+      "status": "included_in_this_master_documentation_commit",
+      "codeCommit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+      "documentationCommitReference": "the_commit_containing_this_record",
+      "codeCiRunId": 39857376379,
+      "documentationOnlyCiSkipped": true
     }
-  },
-  "limitations": [
-    "Final CI and real cloud deployment/workflows remain pending at candidate freeze; later release receipts must identify the deployed code commit and image.",
-    "Unit tests and synthetic browser fixtures validate program behavior; they do not establish medical content accuracy or population-wide model performance.",
-    "Some safety fields remain partial, held or original-reading-only. A complete citation or successful job does not prove correct medical scope or full teaching coverage.",
-    "The official searchable catalog and published complete leaflet content have different coverage. Scanned pages, complex layout and unresolved provenance remain data gaps.",
-    "Firestore restore does not restore Firebase Authentication or Cloud Storage. Relationship recovery was not exercised because the restored snapshot had zero relationship documents.",
-    "Monitoring rules have no delivery channels by user choice; no live fault was injected to exercise an incident transition.",
-    "Large public-traffic load, full cross-service disaster recovery and clinical decision suitability have not been established.",
-    "Queue delay or a crashed worker can outlast initial frontend polling; persisted job identifiers and history recovery remain necessary."
-  ],
-  "reportPreparation": {
-    "source": "root_reported_validation_facts_plus_independent_bounded_review",
-    "filesCreated": 1,
-    "otherFilesEdited": 0,
-    "providerCalls": 0,
-    "cloudCalls": 0,
-    "cloudMutations": 0
   }
 }
