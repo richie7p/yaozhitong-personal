@@ -21,6 +21,14 @@ async function atomic(path: string, value: unknown) {
 }
 const day = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const urls = (value: unknown): string[] => typeof value === "string" ? value.match(/https?:\/\/[^\s;<>"\u3000]+/gu) || [] : [];
+export function parseSourceFormat(value: string | undefined): "all" | "html" | "pdf" {
+  if (value === undefined) return "all";
+  if (value === "all" || value === "html" || value === "pdf") return value;
+  throw Error("invalid_source_format");
+}
+export function sourceFormatSelected(format: "all" | "html" | "pdf", sourceType: unknown): boolean {
+  return format === "all" || format === sourceType;
+}
 export function officialCategoryDisposition(product: any): "patient_candidate" | "archive_only_raw_material" | "archive_only_unconfirmed_category" {
   const categories = (product.catalogRows || []).map((row: any) => String(row.record?.["藥品類別"] || "").trim());
   if (categories.some(isRawMaterialOfficialCategory)) return "archive_only_raw_material";
@@ -109,10 +117,11 @@ async function main() {
   }
   const options: Record<string, string> = {};
   for (let i = 0; i < args.length; i += 2) {
-    if (!["--inventory", "--corpus", "--output", "--protected", "--limit"].includes(args[i]) || !args[i + 1] || options[args[i]]) throw Error("invalid_arguments");
+    if (!["--inventory", "--corpus", "--output", "--protected", "--limit", "--source-format"].includes(args[i]) || !args[i + 1] || options[args[i]]) throw Error("invalid_arguments");
     options[args[i]] = args[i + 1];
   }
   if (!["--inventory", "--corpus", "--output"].every((key) => options[key])) throw Error("requires_inventory_corpus_output");
+  const sourceFormat = parseSourceFormat(options["--source-format"]);
   const inventory = resolve(options["--inventory"]), corpus = resolve(options["--corpus"]), output = resolve(options["--output"]);
   const limit = Number(options["--limit"] || "100000");
   if (!Number.isSafeInteger(limit) || limit < 1) throw Error("invalid_limit");
@@ -128,6 +137,7 @@ async function main() {
   const protectedData = options["--protected"] ? await json(resolve(options["--protected"])) : { leaflets: [] };
   const protectedLicenses = new Set((protectedData.leaflets || []).filter((item: any) => item.status === "published").map((item: any) => item.licenseNo));
   const counts: Record<string, number> = {}, reasons: Record<string, number> = {};
+  const selectedSourceCounts: Record<string, number> = {}, deferredSourceCounts: Record<string, number> = {};
   const eligible: any[] = [];
   let processed = 0, reused = 0;
   for (const product of products) {
@@ -147,8 +157,15 @@ async function main() {
       records.push(record);
     }
     if (!records.length) { counts.awaiting_download = (counts.awaiting_download || 0) + 1; continue; }
-    if (processed >= limit) { counts.deferred_by_limit = (counts.deferred_by_limit || 0) + 1; continue; }
     const record = records[0];
+    const sourceType = String(record.sourceType || "unknown");
+    if (!sourceFormatSelected(sourceFormat, record.sourceType)) {
+      deferredSourceCounts[sourceType] = (deferredSourceCounts[sourceType] || 0) + 1;
+      counts.deferred_by_source_format = (counts.deferred_by_source_format || 0) + 1;
+      continue;
+    }
+    selectedSourceCounts[sourceType] = (selectedSourceCounts[sourceType] || 0) + 1;
+    if (processed >= limit) { counts.deferred_by_limit = (counts.deferred_by_limit || 0) + 1; continue; }
     const rawPath = resolve(corpus, record.blobPath);
     if (!rawPath.startsWith(corpus + "/") && !rawPath.startsWith(corpus + "\\")) throw Error("raw_path_outside_corpus");
     const raw = await readFile(rawPath);
@@ -239,7 +256,7 @@ async function main() {
     const manifest = { schema: "tfda-source-publication-batch/v1", batchId, project: "project-b6fe4904-e687-4365-b2f", bucket: "project-b6fe4904-e687-4365-b2f-yzt-test-data", indexSnapshots, items };
     await atomic(manifestPath, manifest); manifestPaths.push(manifestPath);
   }
-  const summary = { schema: "tfda-source-preparation-summary/v1", at: new Date().toISOString(), corpus, inventory, products: products.length, assessed: processed, reused, counts, reasons, eligible: eligible.length, manifests: manifestPaths, aiCalls: 0, cloudWrites: 0, humanReviewed: false, clinicalReviewed: false };
+  const summary = { schema: "tfda-source-preparation-summary/v1", at: new Date().toISOString(), corpus, inventory, sourceFormat, selectedSourceCounts, deferredSourceCounts, products: products.length, assessed: processed, reused, counts, reasons, eligible: eligible.length, manifests: manifestPaths, aiCalls: 0, cloudWrites: 0, humanReviewed: false, clinicalReviewed: false };
   await atomic(join(output, "summary.json"), summary);
   console.log(JSON.stringify(summary));
 }
