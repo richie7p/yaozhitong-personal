@@ -307,6 +307,30 @@ describe("bounded source and index binding", () => {
     await writeFile(fixture.manifestPath, JSON.stringify(fixture.manifest));
     await expect(loadPublicationBatch(fixture.manifestPath, now)).rejects.toThrow("candidate_current_official_index_binding_mismatch");
   });
+  it("rejects a plausible forged parent association even with consistent official indexes and valid child source bytes", async () => {
+    const fixture = await batchFixture();
+    const parentUrl = "https://mcp.fda.gov.tw/synthetic/current-parent", childUrl = "https://mcp.fda.gov.tw/fileshow/synthetic-child";
+    fixture.input.indexRows[0].urls = [parentUrl];
+    fixture.input.fetched.requestedUrl = childUrl; fixture.input.fetched.finalUrl = childUrl;
+    fixture.input.officialAssociation = { indexUrl: parentUrl, detailUrl: parentUrl, licenseNo: license,
+      linkedSourceUrls: [childUrl], retrievedAt: when, detailSha256: "f".repeat(64) };
+    const rows = JSON.parse(await readFile(join(fixture.path, "info39.json"), "utf8"));
+    rows[0]["仿單圖檔連結"] = parentUrl;
+    const indexBytes = Buffer.from(JSON.stringify(rows)), evidence = JSON.parse(await readFile(join(fixture.path, "evidence39.json"), "utf8"));
+    evidence.jsonSha256 = publicationHash(indexBytes); evidence.jsonBytes = indexBytes.length;
+    const evidenceBytes = Buffer.from(JSON.stringify(evidence));
+    await writeFile(join(fixture.path, "info39.json"), indexBytes); await writeFile(join(fixture.path, "evidence39.json"), evidenceBytes);
+    const indexBinding = fixture.manifest.indexSnapshots.find((index) => index.infoId === 39)!;
+    indexBinding.sha256 = publicationHash(indexBytes); indexBinding.evidenceSha256 = publicationHash(evidenceBytes);
+    const candidateBytes = Buffer.from(JSON.stringify(fixture.input)); await writeFile(join(fixture.path, "candidate.json"), candidateBytes);
+    fixture.manifest.items[0].candidateInputSha256 = publicationHash(candidateBytes);
+    await writeFile(fixture.manifestPath, JSON.stringify(fixture.manifest));
+    // The generic evidence API alone accepts these internally consistent claims.
+    expect(prepareTechnicalSource(fixture.manifest.items[0], fixture.input, fixture.sourceRaw, now).assessment.eligibleTechnical).toBe(true);
+    // The publication boundary must reject before any parser or cloud operation.
+    await expect(loadPublicationBatch(fixture.manifestPath, now, { python: join(fixture.path, "missing-python-must-not-run") }))
+      .rejects.toThrow("unverified_parent_association_not_supported");
+  });
   it.each(["原料藥", "製劑原料", "自用製劑原料"])("rejects official raw category %s even when source text and candidate claim a patient category", async (category) => {
     const fixture = await batchFixture();
     fixture.input.officialCategory = "合成處方藥";

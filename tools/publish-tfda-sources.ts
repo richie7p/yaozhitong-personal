@@ -74,6 +74,9 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
     const inputBytes = await boundedRead(pathFromManifest(item.candidateInputPath), 2_000_000);
     must(publicationHash(inputBytes) === item.candidateInputSha256, "candidate_input_hash_mismatch");
     const input = json(inputBytes) as TfdaSourceInput;
+    // The generic offline core can evaluate supplied association evidence. This
+    // CLI has no independent parent-raw verifier, so it cannot trust that claim.
+    must(!Object.hasOwn(input, "officialAssociation"), "unverified_parent_association_not_supported");
     const catalog = indexes.get(36)!, index = indexes.get(39)!;
     must(input.catalogCheckedAt === catalog.evidence.retrievedAt && input.indexCheckedAt === index.evidence.retrievedAt &&
       sameDocument(input.catalogRows, catalogRows(catalog.rows, item.fullLicense)) &&
