@@ -555,6 +555,92 @@ describe("synthetic TFDA technical source gates", () => {
     expect(evaluateTfdaSource(input).eligibleTechnical).toBe(false);
   });
 
+  it.each([
+    ["ASCII dots", ".".repeat(20)],
+    ["ellipsis glyphs", "…".repeat(7)],
+    ["mixed printed leaders", "………………….……….."],
+    ["fullwidth dots", "．".repeat(20)],
+  ])("accepts same-line ingredient %s without changing complete source text", (_label, leader) => {
+    const input = candidate();
+    const text = `${firstText}\nSynthetic ingredient${leader}1mg\n${secondText}`;
+    setPageText(input, [text]);
+    input.pages[0].additionalIndependentText = text;
+    const before = structuredClone(input);
+    expect(/(.)\1{19}/u.test(normalizeTfdaSourceText(text))).toBe(true);
+
+    const result = evaluateTfdaSource(input);
+
+    expect(result.status).toBe("technically_eligible");
+    expect(result.runtimeCompatible).toBe(true);
+    expect(result.reasons).not.toContain("source_text_quality_failed");
+    expect(result.draftLeaflet!.chunks.map((chunk) => chunk.text)).toEqual([text]);
+    expect(result.canonicalTextSha256).toBe(tfdaSourceHash(text));
+    expect(input).toEqual(before);
+  });
+
+  it.each(["A", "藥", "7", "Ａ", "７", "-", "•", "_"])(
+    "still rejects twenty repeated %s surrounded by otherwise complete source text",
+    (character) => {
+      const input = candidate();
+      setPageText(input, [firstText, `${secondText}\n${character.repeat(20)}`]);
+      expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+      expect(evaluateTfdaSource(input).eligibleTechnical).toBe(false);
+    },
+  );
+
+  it.each(["\uFFFD", "\u0000", "\u0007", "\u000b", "\u001f"].map((character) => [character.codePointAt(0)!.toString(16).toUpperCase(), character]))(
+    "still rejects replacement/control U+%s alongside a valid dot leader",
+    (_codePoint, character) => {
+      const input = candidate();
+      setPageText(input, [firstText, `${secondText}\nSynthetic ingredient${".".repeat(20)}1mg${character}`]);
+      expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+    },
+  );
+
+  it.each([
+    ".".repeat(20),
+    `${".".repeat(20)}1mg`,
+    `Synthetic ingredient${".".repeat(20)}`,
+    `Synthetic ingredient\n${".".repeat(20)}\n1mg`,
+    `Synthetic ingredient${".".repeat(10)}\n${".".repeat(10)}1mg`,
+  ])("does not exempt standalone, one-sided or cross-line dot runs: %s", (dots) => {
+    const input = candidate();
+    setPageText(input, [firstText, `${secondText}\n${dots}`]);
+    expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+  });
+
+  it("keeps dot-only and mostly-dot pages below the unchanged meaningful-text density gate", () => {
+    const input = candidate();
+    setPageText(input, [firstText, ".".repeat(100)]);
+    expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+
+    const mostlyDots = `Synthetic ingredient quantity${".".repeat(1000)}1mg`;
+    expect((mostlyDots.match(/[\p{Script=Han}\p{Letter}\p{Number}]/gu) || []).length).toBeGreaterThanOrEqual(24);
+    setPageText(input, [firstText, mostlyDots]);
+    expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+    expect(evaluateTfdaSource(input).eligibleTechnical).toBe(false);
+  });
+
+  it("retains the twenty-character repetition boundary for letters", () => {
+    const input = candidate();
+    setPageText(input, [firstText, `${secondText}\n${"A".repeat(19)}`]);
+    expect(evaluateTfdaSource(input).status).toBe("technically_eligible");
+    setPageText(input, [firstText, `${secondText}\n${"A".repeat(20)}`]);
+    expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+  });
+
+  it("retains the minimum 24 meaningful characters and exact 25-percent density boundary", () => {
+    const input = candidate();
+    const meaningful = "abcdefghijklmnopqrstuvwx";
+    expect(meaningful).toHaveLength(24);
+    setPageText(input, [firstText, meaningful + "!?".repeat(36)]);
+    expect(evaluateTfdaSource(input).status).toBe("technically_eligible");
+    setPageText(input, [firstText, meaningful + "!?".repeat(36) + "!"]);
+    expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+    setPageText(input, [firstText, meaningful.slice(1)]);
+    expect(evaluateTfdaSource(input).reasons).toContain("source_text_quality_failed");
+  });
+
   it("accepts the whole-page character boundary and rejects its next character without clipping", () => {
     const input = candidate();
     setPageText(input, [longPage(TFDA_SOURCE_LIMITS.pageCharacters)]);
