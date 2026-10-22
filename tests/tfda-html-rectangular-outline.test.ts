@@ -5,8 +5,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { randomUUID } from "node:crypto";
-import { HTML_RECTANGULAR_OUTLINE_SERIALIZATION, validateHtmlNumberedOutlineReport, validateHtmlRectangularOutlineReport, verifyCandidateFromRaw } from "../tools/tfda-candidate-verification.js";
-import { publicationHash } from "../tools/tfda-publication-core.js";
+import { HTML_RECTANGULAR_OUTLINE_SERIALIZATION, validateHtmlNumberedOutlineReport, validateHtmlRectangularOutlineReport, verifyCandidateFromRaw, decodeHtmlOutlineJsonEvidence } from "../tools/tfda-candidate-verification.js";
+import { publicationHash, prepareTechnicalSource, applyTechnicalPublication, type PublicationStore } from "../tools/tfda-publication-core.js";
 import { evaluateTfdaSource, type TfdaSourceInput } from "../tools/tfda-source-core.js";
 const runFile = promisify(execFile), python = process.env.TFDA_TEST_PYTHON || "python";
 const license="衛署藥製字第012345號", nameZh="合成矩形表測試錠", nameEn="SYNTHETIC RECTANGULAR TABLE TEST", url="https://mcp.fda.gov.tw/exportpdf/"+license;
@@ -29,8 +29,29 @@ afterAll(async()=>{if(folder){expect(resolve(folder).startsWith(resolve(tmpdir()
 describe("explicit literal rectangular subtable raw evidence",()=>{
  it("reparses real bytes and retains every literal row/cell/header without numbered interpretation",async()=>{
   expect(evaluateTfdaSource(input).eligibleTechnical).toBe(true);expect(validateHtmlRectangularOutlineReport(report)).toEqual(report.numberedOutlineEvidence);
-  const proof=await verifyCandidateFromRaw(rawPath,raw,input,{python});expect(proof.method).toBe("html_raw_rectangular_outline_reparse_v2");expect(proof.htmlNumberedOutlineEvidence).toEqual(report.numberedOutlineEvidence);
+  const proof=await verifyCandidateFromRaw(rawPath,raw,input,{python});expect(proof.method).toBe("html_raw_rectangular_outline_reparse_v2");expect(decodeHtmlOutlineJsonEvidence(proof.htmlNumberedOutlineEvidence)).toEqual(report.numberedOutlineEvidence);
   expect(literal(report).rows[0].map((x:any)=>x.tag)).toEqual(["th","th","th"]);expect(input.pages[0].text).toContain("成人\t10 mg\t每日一次");
+ });
+ it("stores the complete proof losslessly and keeps all publication writes free of directly nested arrays",async()=>{
+  const rawProof=await verifyCandidateFromRaw(rawPath,raw,input,{python}), encoded=rawProof.htmlNumberedOutlineEvidence as any;
+  expect(encoded.encoding).toBe("tfda-outline-json-v1");expect(encoded.sha256).toBe(publicationHash(JSON.stringify(report.numberedOutlineEvidence)));
+  expect(encoded.json).toBe(JSON.stringify(report.numberedOutlineEvidence));const decoded=decodeHtmlOutlineJsonEvidence(encoded);
+  expect(decoded).toEqual(report.numberedOutlineEvidence);expect(literal({numberedOutlineEvidence:decoded}).rows[1][1].text).toBe("10 mg");
+  expect(literal({numberedOutlineEvidence:decoded}).tableIndex).toBe(literal(report).tableIndex);expect(empty({numberedOutlineEvidence:decoded}).nodeTagInventory).toEqual(["table","tbody"]);
+  const hasNestedArray=(v:any):boolean=>Array.isArray(v)?v.some(x=>Array.isArray(x)||hasNestedArray(x)):!!v&&typeof v==="object"&&Object.values(v).some(hasNestedArray);
+  expect(hasNestedArray(report.numberedOutlineEvidence)).toBe(true);expect(hasNestedArray(rawProof)).toBe(false);
+  const item={fullLicense:license,candidateInputPath:rawPath+".json",candidateInputSha256:publicationHash(JSON.stringify(input)),rawSourcePath:rawPath,rawSourceSha256:publicationHash(raw)};
+  const source=prepareTechnicalSource(item,input,raw);source.rawVerification=rawProof;const writes:any[]=[];
+  const store:PublicationStore={transaction:async(operation)=>operation({get:async()=>null,create:(collection,id,data)=>writes.push({collection,id,data})})};
+  await expect(applyTechnicalPublication(store,source,{pointer:null,leaflet:null,audit:null},{runId:"v2-firestore-regression",batchId:"tfda-regression",manifestSha256:"a".repeat(64),snapshotSha256:"b".repeat(64)})).resolves.toBe("published_technical_source");
+  expect(writes).toHaveLength(3);expect(hasNestedArray(writes)).toBe(false);expect(writes.find(x=>x.collection==="leaflets").data.sourceVerification.rawVerification.htmlNumberedOutlineEvidence).toEqual(encoded);
+ });
+ it("rejects altered wrapper digests, corrupt JSON and noncanonical encodings",async()=>{
+  const proof=await verifyCandidateFromRaw(rawPath,raw,input,{python}), encoded=proof.htmlNumberedOutlineEvidence as any;
+  expect(()=>decodeHtmlOutlineJsonEvidence({...encoded,sha256:"f".repeat(64)})).toThrow("html_outline_json_evidence_integrity_invalid");
+  expect(()=>decodeHtmlOutlineJsonEvidence({...encoded,json:encoded.json+" "})).toThrow("html_outline_json_evidence_integrity_invalid");
+  const bad="{";expect(()=>decodeHtmlOutlineJsonEvidence({...encoded,json:bad,sha256:publicationHash(bad)})).toThrow("html_outline_json_evidence_invalid_json");
+  const spaced=encoded.json+" ";expect(()=>decodeHtmlOutlineJsonEvidence({...encoded,json:spaced,sha256:publicationHash(spaced)})).toThrow("html_outline_json_evidence_not_canonical_v2_proof");
  });
  it("cannot use v1 marker or validator to authorize v2 grids",async()=>{
   expect(()=>validateHtmlNumberedOutlineReport(report)).toThrow();const changed=structuredClone(input);changed.htmlEvidence!.tableSerializationVersion="tfda-numbered-outline-literal-v1";

@@ -338,8 +338,15 @@ function technicalVerification(source: PreparedTechnicalSource) {
 export function assertTechnicalPublicationSize(source: PreparedTechnicalSource, marker = {
   runId: "x".repeat(100), batchId: "x".repeat(100), manifestSha256: "a".repeat(64), snapshotSha256: "b".repeat(64), at: "2099-12-31T23:59:59.999Z",
 }) {
-  must(Buffer.byteLength(JSON.stringify({ ...source.draft, status: "published", checkedBy: TFDA_PUBLICATION_ACTOR,
-    checkedAt: marker.at, sourceImport: marker, sourceVerification: technicalVerification(source) }), "utf8") <= 800_000,
+  const document = { ...source.draft, status: "published", checkedBy: TFDA_PUBLICATION_ACTOR,
+    checkedAt: marker.at, sourceImport: marker, sourceVerification: technicalVerification(source) };
+  // Firestore Standard cannot store an array directly inside another array.
+  // Detect this before any source blob or transaction is created.
+  const arraysSupported = (value: unknown): boolean => Array.isArray(value)
+    ? value.every((child) => !Array.isArray(child) && arraysSupported(child))
+    : !value || typeof value !== "object" || Object.values(value).every(arraysSupported);
+  must(arraysSupported(document), "verified_source_document_contains_nested_array");
+  must(Buffer.byteLength(JSON.stringify(document), "utf8") <= 800_000,
     "verified_source_document_exceeds_800000_bytes");
 }
 export async function applyTechnicalPublication(

@@ -10,7 +10,7 @@ import {
   TFDA_PUBLICATION_SCHEMA, TFDA_PROTECTED_LICENSES, applyTechnicalPublication,
   ensureTechnicalSourceBlob,
   catalogCacheFilename, verifyCachedCatalog,
-  assertPublicationBlob, assertPublicationWrite, inspectTechnicalPublication,
+  assertPublicationBlob, assertPublicationWrite, assertTechnicalPublicationSize, inspectTechnicalPublication,
   prepareTechnicalSource, publicationHash, technicalAuditId, validatePublicationManifest,
   type PublicationBefore, type PublicationDoc, type PublicationManifest,
   type PublicationRun, type PublicationStore, type TechnicalBlobState, type TechnicalBlobStore,
@@ -109,6 +109,14 @@ async function batchFixture(extraHeaders = "") {
 }
 
 describe("technical publication no-overwrite and crash recovery", () => {
+  it("rejects Firestore-incompatible nested evidence before starting a transaction", async () => {
+    const db = new MemoryPublicationStore(), prepared = source();
+    prepared.rawVerification!.htmlNumberedOutlineEvidence = { rows: [[{ text: "synthetic 0.5mg" }]] };
+    expect(() => assertTechnicalPublicationSize(prepared)).toThrow("verified_source_document_contains_nested_array");
+    await expect(applyTechnicalPublication(db, prepared, empty, run, when)).rejects.toThrow("verified_source_document_contains_nested_array");
+    expect(db.writes).toEqual([]);
+    expect(db.data).toEqual({});
+  });
   it("creates only the three allowed documents with complete multipage text and explicit nonclinical evidence", async () => {
     const db = new MemoryPublicationStore(), prepared = source();
     expect(await applyTechnicalPublication(db, prepared, empty, run, when)).toBe("published_technical_source");

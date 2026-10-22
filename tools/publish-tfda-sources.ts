@@ -112,6 +112,7 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
       source.rawVerification = derived.rawVerification; source.parentVerification = parentVerification;
       assertTechnicalPublicationSize(source);
     } else source.rawVerification = await verifyCandidateFromRaw(pathFromManifest(item.rawSourcePath), raw, input, verificationOptions);
+    assertTechnicalPublicationSize(source);
     loaded.push({ source, raw, ...(parentRaw ? { parentRaw } : {}) });
   }
   return { path, manifest: manifest as PublicationManifest, manifestSha256: publicationHash(bytes), indexes, loaded };

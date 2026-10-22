@@ -243,6 +243,24 @@ function validateHtmlOutlineReport(report: any, rectangular: boolean): Record<st
   return proof;
 }
 
+/** Firestore cannot store an array directly inside another array. Keep the entire validated v2 proof losslessly. */
+function encodeHtmlOutlineJsonEvidence(proof: Record<string, unknown>) {
+  const json = JSON.stringify(proof);
+  return { encoding: "tfda-outline-json-v1", sha256: publicationHash(json), json };
+}
+/** Integrity decoding only; callers still compare the whole proof with a native raw reparse. */
+export function decodeHtmlOutlineJsonEvidence(value: any): Record<string, unknown> {
+  must(value && typeof value === "object" && !Array.isArray(value) &&
+    sameDocument(Object.keys(value).sort(), ["encoding", "json", "sha256"]) && value.encoding === "tfda-outline-json-v1" &&
+    typeof value.json === "string" && /^[a-f0-9]{64}$/u.test(value.sha256) && publicationHash(value.json) === value.sha256,
+    "html_outline_json_evidence_integrity_invalid");
+  let proof: any;
+  try { proof = JSON.parse(value.json); } catch { throw Error("html_outline_json_evidence_invalid_json"); }
+  must(proof && typeof proof === "object" && !Array.isArray(proof) && proof.version === "tfda-numbered-outline-evidence-v2" &&
+    JSON.stringify(proof) === value.json, "html_outline_json_evidence_not_canonical_v2_proof");
+  return proof;
+}
+
 export async function verifyCandidateFromRaw(
   rawPath: string, raw: Buffer, input: TfdaSourceInput, options: { python?: string } = {},
 ): Promise<RawCandidateVerification> {
@@ -318,5 +336,5 @@ export async function verifyCandidateFromRaw(
     // Several factories/processes may be listed for one product. Preserve every value;
     // this does not establish a unique manufacturer or relax product identity checks.
     ...(multiFactoryMetadata ? { htmlMultiFactoryMetadata: report.ambiguousIdentityFields } : {}),
-    ...(outlineEvidence ? { htmlNumberedOutlineEvidence: outlineEvidence } : {}) };
+    ...(outlineEvidence ? { htmlNumberedOutlineEvidence: rectangularOutline ? encodeHtmlOutlineJsonEvidence(outlineEvidence) : outlineEvidence } : {}) };
 }
