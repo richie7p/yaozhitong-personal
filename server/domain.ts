@@ -1271,7 +1271,7 @@ export class Domain {
       error: {
         code: "stale_content",
         message:
-          "這份舊內容的藥品身分或資料已無法核對。請補齊包裝資料後重新產生。",
+          "這份舊內容已過期，或藥品資料尚未完成核對。請確認藥品資料後重新產生。",
       },
       identityReviewRequired: true,
     };

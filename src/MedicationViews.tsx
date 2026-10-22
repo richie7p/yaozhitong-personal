@@ -1642,9 +1642,9 @@ export function Chat() {
       {(history.data?.identityReviewRequired ||
         history.data?.hiddenUnsafeCount > 0) && (
         <Notice>
-          部分舊問答涉及尚未核對的產品，已隱藏回答。請先補齊產品資料，完成核對後重新提問。
+          部分舊問答已過期，或藥品資料尚未完成核對，已隱藏回答。請確認藥品資料後重新提問。
           <a className="btn secondary" href="#medications">
-            補齊產品資料
+            確認藥品資料
           </a>
         </Notice>
       )}
@@ -1718,9 +1718,9 @@ export function Chat() {
               </div>
               {c.identityReviewRequired ? (
                 <Notice>
-                  這筆問答的產品尚未完成核對，已隱藏回答。
+                  這筆問答已過期，或產品尚未完成核對，已隱藏回答。
                   <a className="btn secondary" href="#medications">
-                    補齊產品資料後重新提問
+                    確認藥品資料後重新提問
                   </a>
                 </Notice>
               ) : (
