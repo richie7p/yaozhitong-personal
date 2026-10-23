@@ -65,12 +65,14 @@ export async function completeTeachingPlan(
       llm, selectedPlan, progressive.prior, drafts, previous, question, kind, facts,
     );
     if (repaired.refused || !repaired.coverage) return original;
-    // A new safe partial improvement is useful too. It must retain every old
-    // approved statement/question and explained range; a new count or a quoted
-    // source alone never proves progress or completeness.
+    // A source-safety denial or invalid changed-field review is authoritative
+    // even when it removes a question or makes no progress. Only ordinary
+    // improvements require non-regression; those checks cannot restore content
+    // that this repair has just failed closed.
     const replacements = new Set(
       repaired.coverage.fields
         .filter((field) => {
+          if (field.reason === "reverification_failed") return true;
           const old=original.coverage!.fields.find((old) => old.fieldId===field.fieldId)!;
           const retained=old.claimIndices.every((index) => field.claimIndices.some((fresh) => repaired.claims[fresh].text===original.claims[index].text));
           const rangesRetained=(old.explainedSpanIds || []).every((id) => field.explainedSpanIds?.includes(id));
@@ -107,6 +109,11 @@ export async function completeTeachingPlan(
       refused: false,
       claims,
       quiz,
+      reviewProtocolComplete: original.reviewProtocolComplete && repaired.reviewProtocolComplete,
+      repairHints: original.repairHints.filter((hint) => !replacements.has(hint.fieldId))
+        .concat(repaired.repairHints.filter((hint) => replacements.has(hint.fieldId))),
+      denialEvidence: original.denialEvidence.filter((denial) => !replacements.has(denial.fieldId))
+        .concat(repaired.denialEvidence.filter((denial) => replacements.has(denial.fieldId))),
       completeFields: plan.filter((item) => fields.some(
         (field) => field.fieldId === item.fieldId && field.status === "complete",
       )).map((item) => item.field),

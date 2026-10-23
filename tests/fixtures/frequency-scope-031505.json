@@ -1,0 +1,15 @@
+{
+  "schema": "observed-source-frequency-scope-fixture/v1",
+  "rawResultSha256": "32bd7784945f04b1b64bc9fca47951a872adf279669f5a6718176b5195744946",
+  "claimIndex": 39,
+  "generatedText": "有時會出現肝障害、巴金森氏症候群或眼睛調節障害；仿單沒有在這些項目後列出特定處理方式。",
+  "citations": [
+    {
+      "chunkId": "d03ae3afd93a4117-1-0-whole-page-v1-44f892e39ae9972c",
+      "quote": "副作用： 循環系：有時出現血壓降低，頻脈，因此須充分觀察來慎重投與。另有時出現心電圖之變化，若有異狀，要減量或停用。 肝臟：有時出現肝障害。 外錐體症狀：巴金森氏症候群。 眼：有時出現眼的調節障害。 過敏者：對於光線過敏宜停藥。 血液：有時出現貧血、白血球減少。 消化器：有時發生腸麻痹。又若發生噁心、嘔吐，因本劑有制吐作用，所以會呈不顯性化，要注意。 內分泌：有時出現女樣男乳，乳汁分泌，月經異常，體重增加等。 精神、神經系：有時會失眠、焦慮、眩暈、頭重，頭痛、不安。\n8.1\t臨床重要副作用/不良反應\n\t目前尚無資料。\n\t\n"
+    }
+  ],
+  "sourceKind": "public_official_leaflet",
+  "clinicalReview": false,
+  "humanReview": false
+}

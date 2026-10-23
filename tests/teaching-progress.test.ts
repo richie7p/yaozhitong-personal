@@ -15,15 +15,23 @@ const chunks: Chunk[]=[{id:"SYNTHETIC-PROGRESS-1",licenseNo:"SYNTHETIC-PROGRESS"
 const explanation="這份合成資料只用於軟體流程的測試，不能拿來當作實際醫療資訊。";
 function provider(options:{failRepair?:boolean; rejectFirstScope?:boolean}={}) {
   const payloads:any[]=[];
+  const scopeDenials:{rangeId:string;lessonIndex:number}[]=[];
   const llm:Llm={json:async (_system,input:any) => {
     payloads.push(structuredClone(input));
     if(input.expectedIds) {
       const ranges=input.checks?.filter((c:any) => c.checkType==="coverage_range") || [];
       return {verdicts:input.expectedIds.map((id:string) => {
         const check=input.checks?.find((c:any)=>c.id===id);
+        const rejectedScope=options.rejectFirstScope && check?.checkType==="source_scope" &&
+          input.checks.some((lesson:any)=>lesson.checkType==="lesson" &&
+            lesson.fieldId===check.fieldId && lesson.index===check.lessonIndex && lesson.spanIds.includes("r0"));
+        if(rejectedScope)scopeDenials.push({rangeId:"r0",lessonIndex:check.lessonIndex});
         const supported=check?.checkType==="coverage_range" ? check.lessonIndices.length>0 :
           check?.checkType==="coverage" ? ranges.filter((r:any)=>r.fieldId===check.fieldId).every((r:any)=>r.lessonIndices.length>0) :
-          !(options.rejectFirstScope && check?.checkType==="source_scope" && check.lessonIndex===0);
+          // Lesson indices are remapped after the first wave rejects a row.
+          // Keep denying the same source range in both reviews, rather than
+          // accidentally approving r0 when it is regenerated at another index.
+          !rejectedScope;
         return {id,supported};
       })};
     }
@@ -34,7 +42,7 @@ function provider(options:{failRepair?:boolean; rejectFirstScope?:boolean}={}) {
     }));
     return input.sources ? {status:"supported",claims:[],quiz:[],followups:[],fieldTeaching} : {fieldTeaching};
   }};
-  return {llm,payloads};
+  return {llm,payloads,scopeDenials};
 }
 const versions={"SYNTHETIC-PROGRESS":"frozen-v1"};
 
@@ -126,10 +134,13 @@ describe("bounded source-bound teaching progress",()=>{
   });
   it("does not let old complete flags override a fresh failed source-scope review",async()=>{
     const first=await grounded(provider().llm,"警語",chunks,{},"bundle");
-    const {llm}=provider({rejectFirstScope:true});
+    const {llm,scopeDenials}=provider({rejectFirstScope:true});
     const result=await grounded(llm,"警語",chunks,{previousTeaching:first},"bundle");
     expect(result.plainLanguageCoverage!.fields[0].status).toBe("partial");
     expect(result.plainLanguageCoverage!.fields[0].explainedSpanIds).not.toContain("r0");
+    expect(scopeDenials).toHaveLength(2);
+    expect(scopeDenials.map((denial)=>denial.rangeId)).toEqual(["r0","r0"]);
+    expect(scopeDenials[0].lessonIndex).not.toBe(scopeDenials[1].lessonIndex);
   });
   it("does not offer a futile paid continuation for source/context holds or exhausted capacity",async()=>{
     const first=await grounded(provider().llm,"警語",chunks,{},"bundle");

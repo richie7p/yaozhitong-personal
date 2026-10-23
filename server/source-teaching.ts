@@ -156,6 +156,78 @@ export function sourceBilingualConditionsPreserved(text:string,quotes:string[]) 
     !condition.triggers.some((trigger)=>value.includes(key(trigger))) || value.includes(key(condition.qualifier))));
 }
 
+/** Literal frequency bindings for labelled source lists. Prefix qualifiers can
+ * govern the following list; a parenthetical suffix governs only its own item.
+ * This is not a parser for arbitrary clinical prose or frequency equivalence. */
+export function sourceFrequencyScopePreserved(text:string,quotes:string[]) {
+  const frequency=/(?:非常罕見|極罕見|不常見|常見|罕見|有時|偶爾|偶發|經常|頻繁)/gu;
+  const words=(value:string)=>[...value.matchAll(frequency)].map(match=>match[0]);
+  const exactFrequency=(value:string)=>words(value).find(word=>word===value);
+  const split=(value:string,separators:string)=>{
+    const result:string[]=[];let depth=0,start=0;
+    for(let index=0;index<value.length;index++){
+      const char=value[index];
+      if(char==="("||char==="（")depth++;
+      else if(char===")"||char==="）")depth=Math.max(0,depth-1);
+      else if(!depth&&separators.includes(char)){result.push(value.slice(start,index));start=index+1;}
+    }
+    result.push(value.slice(start));return result;
+  };
+  const withoutAnnotations=(value:string)=>{
+    for(let index=0;index<4;index++)value=value.replace(/[（(][^()（）]*[)）]/gu,"");
+    return value;
+  };
+  const nominal=(value:string)=>/^[\p{Script=Han}A-Za-z0-9'’\-]{2,40}$/u.test(value) &&
+    !/^(?:若|如|當|因為|因此|應|須|請|宜|依|目前|對於|於|在)/u.test(value) &&
+    !/(?:建議|監測|減量|停用|停藥|處理|報告|研究|資料|資訊|原文)/u.test(value);
+  const bindings=new Map<string,Set<string>>();
+  for(const quote of quotes)for(const clause of split(quote,"。；;！？!?\r\n")){
+    let labelled=false,inherited:string[]=[];
+    for(const raw of split(clause,"、，,或及與")){
+      const colons=split(compactSource(raw),":：");let item=colons.at(-1)!;
+      if(colons.length>1){
+        const labels=colons.slice(0,-1).map(label=>label.replace(/【[^】]*】/gu,""));
+        labelled=labels.every(label=>/^[\p{Script=Han}A-Za-z0-9()（）.\-/]{1,40}$/u.test(label) &&
+          !/(?:可能|包括|包含|出現|發生|如同|例如|建議)/u.test(withoutAnnotations(label)));
+        inherited=labels.flatMap(label=>{
+          const bare=withoutAnnotations(label),prefix=words(bare).find(word=>bare.startsWith(word));
+          const suffixes=[...label.matchAll(/[（(]([^()（）]*)[)）]/gu)].flatMap(match=>exactFrequency(match[1])?[match[1]]:[]);
+          return [...(prefix?[prefix]:[]),...suffixes];
+        });
+      }
+      if(!labelled)continue;
+      const prefix=words(item).find(word=>item.startsWith(word));
+      if(prefix){inherited=[prefix];item=item.slice(prefix.length);}
+      const postfix=[...item.matchAll(/[（(]([^()（）]*)[)）]/gu)].flatMap(match=>exactFrequency(match[1])?[match[1]]:[]);
+      const name=withoutAnnotations(item).replace(/^(?:會|可|可能)?(?:出現|發生|產生|觀察到)?/u,"");
+      if(!nominal(name)||words(name).length)continue;
+      const allowed=bindings.get(name)||new Set<string>();
+      for(const word of postfix.length?postfix:inherited)allowed.add(word);
+      bindings.set(name,allowed);
+    }
+  }
+  const value=compactSource(text);
+  if(quotes.some(quote=>compactSource(quote)===value)||compactSource(quotes.join(""))===value)return true;
+  for(const clause of split(text,"。；;！？!?\r\n")){
+    let inherited:string[]=[];
+    for(const raw of split(clause,"、，,或及與")){
+      const part=compactSource(raw),colons=split(part,":：");
+      if(colons.length>1||/^(?:但|而|若|如|對|至於|也可能|另外|其他|原文|未列)/u.test(part))inherited=[];
+      const explicit=words(withoutAnnotations(part));if(explicit.length)inherited=explicit;
+      const postfix=[...part.matchAll(/[（(]([^()（）]*)[)）]/gu)].flatMap(match=>exactFrequency(match[1])?[match[1]]:[]);
+      const current=postfix.length?postfix:inherited;
+      if(!current.length)continue;
+      const matches=[...bindings].flatMap(([name,allowed])=>{
+        const at=part.indexOf(name);return at<0?[]:[{name,allowed,start:at,end:at+name.length}];
+      });
+      // An explicit narrower item is not evidence for its shorter substring.
+      const subjects=matches.filter(match=>!matches.some(other=>other!==match&&other.start<=match.start&&other.end>=match.end&&other.name.length>match.name.length));
+      if(subjects.some(subject=>current.some(word=>!subject.allowed.has(word))))return false;
+    }
+  }
+  return true;
+}
+
 /** Attention hints, not independently scoped evidence. Keep repeated parent
  * phrases at their actual positions: the same 除非 can govern different lists.
  * Every review still receives the complete immutable source field. */
@@ -358,6 +430,9 @@ export function sourceActionResultOutdated(
         ) || !sourceQuantitativeRatesPreserved(
           claim.text,
           claim.citations.map((citation) => citation.quote),
+        ) || !sourceFrequencyScopePreserved(
+          claim.text,
+          claim.citations.map((citation) => citation.quote),
         ) || !sourceBilingualConditionsPreserved(
           claim.text,
           claim.citations.map((citation) => citation.quote),
@@ -382,6 +457,9 @@ export function sourceActionResultOutdated(
           question.citations.map((citation) => citation.quote),
         ) || !sourceQuantitativeRatesPreserved(
           question.q + " " + question.options[question.answer],
+          question.citations.map((citation) => citation.quote),
+        ) || !sourceFrequencyScopePreserved(
+          question.q.replace(/[?？]\s*$/u,"") + " " + question.options[question.answer],
           question.citations.map((citation) => citation.quote),
         ) || !sourceBilingualConditionsPreserved(
           question.q + " " + question.options[question.answer],
@@ -848,6 +926,7 @@ export function sourceQuizInterpretationExplicit(
 ) {
   const combined = question + "。" + correct;
   return (
+    sourceFrequencyScopePreserved(question.replace(/[?？]\s*$/u,"") + " " + correct,quotes) &&
     sourceBilingualConditionsPreserved(combined,quotes) &&
     sourceAbsenceExplicit(combined, quotes) &&
     sourceSituationExplicit(combined, quotes) &&
@@ -861,6 +940,7 @@ export function sourceQuizInterpretationExplicit(
 
 export function sourceInterpretationExplicit(text: string, quotes: string[]) {
   return (
+    sourceFrequencyScopePreserved(text,quotes) &&
     sourceBilingualConditionsPreserved(text,quotes) &&
     sourceAbsenceExplicit(text, quotes) &&
     sourceSituationExplicit(text, quotes) &&
@@ -1141,6 +1221,7 @@ export async function reviewTeachingPlan(
       .filter((lesson) => {
         if (
           !aligned(lesson.spanIds) ||
+          !sourceFrequencyScopePreserved(lesson.text,[field.quote]) ||
           !sourceBilingualConditionsPreserved(lesson.text,[field.quote]) ||
           !sourceAbsenceExplicit(lesson.text, [field.quote]) ||
           !sourceSituationExplicit(lesson.text, [field.quote]) ||

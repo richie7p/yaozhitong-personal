@@ -58,13 +58,11 @@ describe("bounded whole-field teaching completion", () => {
     expect(completed.claims).toHaveLength(2);
     expect(completed.quiz).toHaveLength(1);
   });
-  it.each(["network", "malformed", "duplicate", "changed-bound", "review-rejected"])("keeps safe prior content and answers recoverable after %s", async (failure) => {
+  it.each(["network", "malformed", "duplicate", "changed-bound"])("keeps safe prior content and answers recoverable after %s", async (failure) => {
     const before = await original();
     const after = await completeTeachingPlan({json: async (system, input: any) => {
       if (failure === "network") throw new Error("offline");
-      if (input.expectedIds) return failure === "review-rejected"
-        ? {verdicts: input.expectedIds.map((id: string) => ({id, supported: false}))}
-        : approve.json(system, input);
+      if (input.expectedIds) return approve.json(system, input);
       const replacement = draft(true);
       if (failure === "changed-bound") replacement.lessons[1].text = "洗眼不要超過30秒，這是操作的時間限制。";
       return {fieldTeaching: failure === "malformed" ? [{...replacement, status: "complete"}] : failure === "duplicate" ? [replacement, replacement] : [replacement]};
@@ -73,6 +71,49 @@ describe("bounded whole-field teaching completion", () => {
     expect(after.claims).toEqual(before.claims);
     expect(after.quiz).toEqual(before.quiz);
     expect(after.coverage!.status).toBe("partial");
+  });
+  it.each(["unsupported", "scope", "unknown", "ambiguous_quiz", "invalid-protocol", "malformed-sibling"])("propagates an optional repair's %s denial without restoring its old answer or mutating the prior result", async (failure) => {
+    const before = await original(), frozen = JSON.stringify(before);
+    const after = await completeTeachingPlan({json: async (_system, input: any) => {
+      if (!input.expectedIds) return {fieldTeaching: [draft(true)]};
+      if (failure === "invalid-protocol") return {verdicts: []};
+      const verdicts = input.checks.map((check: any) => {
+        const denied = failure === "ambiguous_quiz" ? check.checkType === "quiz"
+          : failure === "scope" ? check.checkType === "source_scope" && check.lessonIndex === 0
+          : check.checkType === "lesson" && check.text === draft().lessons[0].text;
+        return {id: check.id, supported: !denied,
+          ...(denied && failure !== "unknown" ? {reason: failure === "scope" ? "scope" : failure === "ambiguous_quiz" ? "ambiguous_quiz" : "unsupported"} : {})};
+      });
+      if (failure === "malformed-sibling") verdicts.push({id: "malformed-sibling", supported: "invalid"});
+      return {verdicts};
+    }}, plan, before, "警語", "bundle");
+    expect(after).not.toBe(before);
+    expect(after.quiz).toEqual([]);
+    expect(after.coverage!.fields[0]).toMatchObject({reason: "reverification_failed", continuationAvailable: false});
+    expect(after.coverage!.fields[0].retainedAfterRecheck).not.toBe(true);
+    if (failure !== "ambiguous_quiz") expect(after.claims.some((claim) => claim.text === draft().lessons[0].text)).toBe(false);
+    else expect(after.claims.some((claim) => claim.text === draft().lessons[0].text)).toBe(true);
+    if (["invalid-protocol", "malformed-sibling"].includes(failure)) expect(after.reviewProtocolComplete).toBe(false);
+    expect(JSON.stringify(before)).toBe(frozen);
+    expect(before.quiz).toHaveLength(1);
+    expect(after.completeFields).toEqual([]);
+  });
+  it("keeps an unrelated prior field and remaps its indices when an optional safety denial removes another field's old statements", async () => {
+    const combined = prepareTeachingPlan(sourcePassages([page(source + "\n【注意事項】請勿洗眼30秒以上。洗眼杯不可與他人共用。") ]));
+    expect(combined).toHaveLength(2);
+    const drafts = combined.map((item) => ({...draft(), fieldId: item.fieldId}));
+    const before = await reviewTeachingPlan({json: async (_system, input: any) => ({verdicts: input.checks.map((check: any) => ({id: check.id, supported: !["coverage", "coverage_range"].includes(check.checkType)}))})}, combined, drafts, "警語", "bundle");
+    const frozen = JSON.stringify(before), deniedField = combined[0].fieldId;
+    const after = await completeTeachingPlan({json: async (_system, input: any) => input.expectedIds
+      ? {verdicts: input.checks.map((check: any) => ({id: check.id, supported: check.fieldId !== deniedField || !["lesson", "source_scope", "quiz"].includes(check.checkType), reason: "unsupported"}))}
+      : {fieldTeaching: []}}, combined, before, "警語", "bundle");
+    expect(after.coverage!.fields[0]).toMatchObject({reason: "reverification_failed", claimIndices: [], quizIds: []});
+    expect(after.coverage!.fields[1].claimIndices).toEqual([0]);
+    expect(after.coverage!.fields[1].quizIds).toEqual(before.coverage!.fields[1].quizIds);
+    expect(after.claims).toEqual([before.claims[1]]);
+    expect(after.quiz).toEqual(before.quiz.filter((question) => before.coverage!.fields[1].quizIds.includes(question.id)));
+    expect(after.coverage!.fields[1].lessonSpans![0].claimIndex).toBe(0);
+    expect(JSON.stringify(before)).toBe(frozen);
   });
   it("does not spend another model call on complete teaching or a chat answer", async () => {
     const complete = await reviewTeachingPlan(approve, plan, [draft(true)], "警語", "bundle");
