@@ -1696,6 +1696,14 @@ export function Chat() {
                       const medication = meds.data?.items.find(
                         (m) => m.id === id,
                       );
+                      if (!medication && (loadingMeds || meds.error))
+                        return (
+                          <p className="muted" key={id}>
+                            {loadingMeds
+                              ? "正在讀取藥品資料…"
+                              : "藥品資料暫時無法讀取"}
+                          </p>
+                        );
                       return (
                         <div key={id}>
                           <strong>

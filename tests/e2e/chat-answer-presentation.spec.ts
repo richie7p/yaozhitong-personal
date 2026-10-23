@@ -372,6 +372,72 @@ test("dated history keeps exact same-name record identities and expands the late
   expect(unexpected).toEqual([]);
 });
 
+test("saved medication identity stays loading or unavailable until its list is read successfully", async ({
+  page,
+}) => {
+  const existing: ChatPresentationRecord = {
+    id: "synthetic-existing-medication-history",
+    question: "已有藥品的合成保存問題",
+    createdAt: "2026-10-21T05:00:00.000Z",
+    medicationIds: [medication.id],
+    result: storageResult,
+  };
+  const removed: ChatPresentationRecord = {
+    ...existing,
+    id: "synthetic-removed-medication-history",
+    createdAt: "2026-10-20T05:00:00.000Z",
+    medicationIds: ["synthetic-truly-absent-medication"],
+  };
+  const unexpected = await mockHistory(page, [existing, removed]);
+  let releaseFirst!: () => void;
+  let releaseRetry!: () => void;
+  const first = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  const retry = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  let reads = 0;
+  await page.route("**/api/v1/medications", async (route) => {
+    if (++reads === 1) {
+      await first;
+      await route.fulfill({
+        status: 503,
+        json: { code: "synthetic_failure", message: "合成藥品讀取失敗。" },
+      });
+    } else {
+      await retry;
+      await route.fulfill({ json: { items: [medication] } });
+    }
+  });
+  await page.goto("/#chat");
+  const current = page.locator(
+    `.chat-exchange[data-chat-id="${existing.id}"] .chat-record-medications`,
+  );
+  await expect(current).toContainText("正在讀取藥品資料…");
+  await expect(current).not.toContainText("原藥品已不在目前清單");
+  await expect(current.locator(".medication-identity")).toHaveCount(0);
+  releaseFirst();
+  await expect(current).toContainText("藥品資料暫時無法讀取");
+  await expect(current).not.toContainText("原藥品已不在目前清單");
+  await page.getByRole("button", { name: "重新讀取藥品", exact: true }).click();
+  await expect(current).toContainText("正在讀取藥品資料…");
+  releaseRetry();
+  await expect(current).toContainText(medication.name);
+  await expect(current.locator(".medication-identity")).toHaveAttribute(
+    "title",
+    `完整編號：${medication.id}`,
+  );
+  await expect(current).not.toContainText("原藥品已不在目前清單");
+  const absent = page.locator(`.chat-exchange[data-chat-id="${removed.id}"]`);
+  await absent.locator(":scope > summary").click();
+  await expect(absent.locator(".chat-record-medications")).toContainText(
+    "原藥品已不在目前清單",
+  );
+  expect(reads).toBe(2);
+  expect(unexpected).toEqual([]);
+});
+
 test("a newly completed answer is focused and revealed above long retained history after the refreshed record arrives", async ({
   page,
 }) => {
