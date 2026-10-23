@@ -92,7 +92,7 @@ describe("bounded API transport recovery", () => {
     });
     await vi.advanceTimersByTimeAsync(45000);
     await rejected;
-    expect(fetchMock.mock.calls).toHaveLength(1);
+    expect(fetchMock.mock.calls).toHaveLength(2);
     expect(
       (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].signal
         ?.aborted,
@@ -101,6 +101,116 @@ describe("bounded API transport recovery", () => {
     // already-failed request or leave an unhandled rejection.
     stalled.resolve(Response.json({ status: "succeeded" }));
     await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("recovers a silent first header attempt within the original budget and cancels an ignored late response", async () => {
+    const first = deferred<Response>();
+    const cancelled = vi.fn();
+    const late = new Response(new ReadableStream({ cancel: cancelled }));
+    const request = vi
+      .fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockResolvedValueOnce(Response.json({ items: ["recovered"] }));
+    vi.stubGlobal("fetch", request);
+    const pending = api("/notifications");
+    await vi.advanceTimersByTimeAsync(14999);
+    expect(request).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(pending).resolves.toEqual({ items: ["recovered"] });
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(request.mock.calls[0][1].signal.aborted).toBe(true);
+    expect(request.mock.calls[1][1].signal.aborted).toBe(false);
+    first.resolve(late);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cancelled).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("includes token-refresh time in the shared total deadline while reserving only a header retry", async () => {
+    const token = deferred<string>();
+    setTokenProvider(() => token.promise);
+    const request = vi.fn(
+      (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Promise<Response>(() => {}),
+    );
+    vi.stubGlobal("fetch", request);
+    const pending = api("/notifications");
+    const rejected = expect(pending).rejects.toMatchObject({
+      code: "request_timeout",
+      phase: "headers",
+      attempts: 2,
+    });
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(request).not.toHaveBeenCalled();
+    token.resolve("synthetic-token");
+    await vi.advanceTimersByTimeAsync(14999);
+    expect(request).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(request).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(10000);
+    await rejected;
+    expect(request.mock.calls.every((call) => call[1]?.signal?.aborted)).toBe(
+      true,
+    );
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("does not cut off a healthy slow body after its headers have arrived", async () => {
+    const body = deferred<unknown>();
+    const request = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => ({
+        json: () => body.promise,
+        ok: true,
+      }),
+    );
+    vi.stubGlobal("fetch", request);
+    const pending = api("/notifications");
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls[0][1]?.signal?.aborted).toBe(false);
+    body.resolve({ items: ["complete"] });
+    await expect(pending).resolves.toEqual({ items: ["complete"] });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("clears a header timer extending past the shared deadline and cancels the obsolete late body", async () => {
+    const token = deferred<string>();
+    const headers = deferred<Response>();
+    const cancelled = vi.fn();
+    setTokenProvider(() => token.promise);
+    const request = vi.fn(() => headers.promise);
+    vi.stubGlobal("fetch", request);
+    const pending = api("/notifications");
+    const rejected = expect(pending).rejects.toMatchObject({
+      code: "request_timeout",
+      phase: "headers",
+      attempts: 1,
+    });
+    await vi.advanceTimersByTimeAsync(40000);
+    token.resolve("synthetic-token");
+    await vi.advanceTimersByTimeAsync(5000);
+    await rejected;
+    expect(request).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+    headers.resolve(new Response(new ReadableStream({ cancel: cancelled })));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cancelled).toHaveBeenCalledOnce();
+    expect(request).toHaveBeenCalledOnce();
+  });
+
+  it("does not start the timed header retry for a previous account", async () => {
+    const request = vi.fn(() => new Promise<Response>(() => {}));
+    vi.stubGlobal("fetch", request);
+    const pending = api("/notifications");
+    const rejected = expect(pending).rejects.toMatchObject({
+      code: "identity_changed",
+    });
+    await vi.advanceTimersByTimeAsync(14999);
+    setJobIdentity("another-synthetic-owner-after-stall");
+    await vi.advanceTimersByTimeAsync(1);
+    await rejected;
+    expect(request).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
 

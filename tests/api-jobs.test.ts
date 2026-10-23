@@ -230,6 +230,7 @@ describe("recovering an AI operation without creating another job", () => {
       response({ jobId: "stalled-poll-job" }, 202),
     );
     fetchMock.mockImplementationOnce(() => poll.promise);
+    fetchMock.mockImplementationOnce(() => poll.promise);
     const body = { medicationIds: ["synthetic-poll-med"] };
     await expect(
       settle(client.submitJob("/bundles", body)),

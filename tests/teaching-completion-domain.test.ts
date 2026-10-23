@@ -125,6 +125,9 @@ it("forks a partial cache, charges once on repeated same-key submission and pres
   });
   await d.processJob(jobs[0].id);
   expect(generate).toHaveBeenCalledTimes(2);
+  expect(generate.mock.calls[0][3]).not.toHaveProperty("previousTeaching");
+  expect(generate.mock.calls[1][3].previousTeaching).toEqual(before!.result);
+  expect(generate.mock.calls[1][3]).not.toHaveProperty("answers");
   expect(await store.get("learning", previous.id)).toEqual(before);
   expect(await store.get("learning", jobs[0].id)).toMatchObject({
     answers: {},
@@ -148,6 +151,71 @@ it("forks a partial cache, charges once on repeated same-key submission and pres
     result: { plainLanguageCoverage: { status: "partial" } },
   });
 });
+it("uses only the current server result as incremental context and clones it independently of saved answers", async () => {
+  const { d, store, previous, before, completion } = await fixture();
+  const job = await d.enqueueJob(
+    uid,
+    true,
+    "bundle",
+    {
+      ...completion,
+      previousTeaching: { status: "supported", untrusted: true },
+    },
+    "completion-server-context",
+  );
+  generate.mockImplementationOnce(async (_llm, _question, _chunks, context) => {
+    expect(context.previousTeaching).toEqual(before!.result);
+    expect(context.previousTeaching).not.toHaveProperty("untrusted");
+    expect(context.previousTeaching).not.toHaveProperty("answers");
+    context.previousTeaching.followups.push(
+      "Synthetic mutation only inside model context",
+    );
+    return structuredClone(partial);
+  });
+  await d.processJob(job.id);
+  expect(await store.get("learning", previous.id)).toEqual(before);
+  expect(await store.get<Job>("jobs", job.id)).toMatchObject({
+    status: "succeeded",
+  });
+});
+it.each(["owner", "profile", "source", "removed"])(
+  "does not pass %s-stale incremental context to generation after enqueue",
+  async (scenario) => {
+    const { d, store, previous, completion } = await fixture();
+    const job = await d.enqueueJob(
+      uid,
+      true,
+      "bundle",
+      completion,
+      "completion-worker-recheck",
+    );
+    if (scenario === "owner")
+      await store.set("learning", previous.id, {
+        ...previous,
+        ownerId: "synthetic-other",
+      });
+    if (scenario === "profile")
+      await store.set("users", uid, {
+        ...(await store.get("users", uid)),
+        profileVersion: 99,
+      });
+    if (scenario === "source")
+      await store.set("leaflets", "synthetic-leaflet", {
+        ...(await store.get("leaflets", "synthetic-leaflet")),
+        status: "draft",
+      });
+    if (scenario === "removed") await store.delete("learning", previous.id);
+    await d.processJob(job.id);
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(await store.get<Job>("jobs", job.id)).toMatchObject({
+      status: "failed",
+    });
+    expect(await store.get("learning", job.id)).toBeNull();
+    expect((await store.list("usage")).every((row) => row.count === 2)).toBe(
+      true,
+    );
+  },
+);
 it("regenerates selectively rejected cached wording without modifying historical learning or answers", async () => {
   const { d, store, input, previous, before } = await fixture();
   const cached = (await store.list("generated"))[0];
@@ -178,6 +246,56 @@ it("regenerates selectively rejected cached wording without modifying historical
     result: { claims: [] },
   });
   expect(await store.get("learning", previous.id)).toEqual(before);
+});
+it("regenerates a warning misclassified from an inline reference while leaving normal cached content reusable", async () => {
+  const { d, store, input, previous, before } = await fixture();
+  const cached = (await store.list("generated"))[0];
+  const quote = "【警語】)所記載。本段仍為藥理說明。";
+  const result = {
+    ...structuredClone(partial),
+    chunks: [
+      {
+        id: "source",
+        licenseNo: drug.licenseNo,
+        version: "v1",
+        page: 1,
+        start: 0,
+        text: "【藥理作用】合成機轉(請參見" + quote,
+      },
+    ],
+    claims: [
+      {
+        text: "本段仍為藥理說明。",
+        category: "warning",
+        kind: "source_exact_safety",
+        citations: [{ chunkId: "source", quote }],
+      },
+    ],
+  };
+  await store.set("generated", cached.id, { ...cached, result });
+  const job = await d.enqueueJob(
+    uid,
+    true,
+    "bundle",
+    input,
+    "completion-inline-reference-cache",
+  );
+  await d.processJob(job.id);
+  expect(generate).toHaveBeenCalledTimes(2);
+  expect(await store.get<Job>("jobs", job.id)).toMatchObject({
+    status: "succeeded",
+    result: { claims: [] },
+  });
+  expect(await store.get("learning", previous.id)).toEqual(before);
+  const normal = await d.enqueueJob(
+    uid,
+    true,
+    "bundle",
+    input,
+    "completion-valid-refreshed-cache",
+  );
+  await d.processJob(normal.id);
+  expect(generate).toHaveBeenCalledTimes(2);
 });
 it.each([
   "other-owner",

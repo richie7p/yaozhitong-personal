@@ -13,8 +13,7 @@ export function TeachingCompletionAction({ record, onCompleted }: {
   const active = useRef(false);
   const generation = useRef(0);
   useEffect(() => () => { generation.current++; }, []);
-  if (!needsTeachingCompletion(record.result)) return record.result.plainLanguageCoverage?.status === "partial" &&
-    record.result.plainLanguageCoverage.fields.some((field) => field.reason === "job_budget" || field.reason === "source_not_interpretable")
+  if (!needsTeachingCompletion(record.result)) return record.result.plainLanguageCoverage?.status === "partial"
     ? <p className="muted">剩餘欄位需要進一步整理來源或分段處理，請先對照仿單原文；目前不會重複扣額度要求補齊。</p> : null;
   return <div className="teaching-completion-action">
     <p className="muted">這份說明仍有待補齊的內容。可保留目前閱讀與作答紀錄，再產生一份補充說明；會使用 1 次 AI 額度。</p>

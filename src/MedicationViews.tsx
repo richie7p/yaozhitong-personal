@@ -45,6 +45,8 @@ import {
 import { ScheduleForm } from "./ScheduleForm";
 import { ChatAnswer } from "./ChatAnswer";
 import { TeachingCompletionAction } from "./TeachingCompletionAction";
+import { OfficialSourceLinks } from "./OfficialSourceLinks";
+import type { MedicationSourceInfo } from "../shared/source-availability";
 import {
   ProductIdentityReview,
   identityGuidance,
@@ -839,6 +841,10 @@ export function Medications() {
     [result, setResult] = useState<LearningRecord | null>(null);
   const editHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
+  const [sourceInfo, setSourceInfo] = useState<MedicationSourceInfo | null>(
+    null,
+  );
+  const sourceHeading = useRef<HTMLHeadingElement>(null);
   const prnOperations = useRef(
     new Map<string, { operationId: string; pending: boolean }>(),
   );
@@ -853,6 +859,7 @@ export function Medications() {
   const invalidateExplanation = () => {
     explanationVersion.current++;
     setResult(null);
+    setSourceInfo(null);
     setBusy("");
   };
   useEffect(() => {
@@ -865,6 +872,11 @@ export function Medications() {
     resultHeading.current?.focus({ preventScroll: true });
     resultHeading.current?.scrollIntoView({ block: "start" });
   }, [result?.id]);
+  useEffect(() => {
+    if (!sourceInfo) return;
+    sourceHeading.current?.focus({ preventScroll: true });
+    sourceHeading.current?.scrollIntoView({ block: "start" });
+  }, [sourceInfo]);
   useEffect(() => {
     if (!focusMedicationId || loading) return;
     const frame = requestAnimationFrame(() => {
@@ -893,6 +905,7 @@ export function Medications() {
     setBusy("正在讀取已保存的仿單說明…");
     setMessage("");
     setResult(null);
+    setSourceInfo(null);
     try {
       const saved = await api<{ items: LearningRecord[] }>("/learning");
       if (!isCurrent()) return;
@@ -925,9 +938,62 @@ export function Medications() {
       if (!row) throw new Error("內容已更新，請重新產生仿單說明。");
       setResult(row);
     } catch (e: any) {
-      if (isCurrent()) setMessage(e.message);
+      if (isCurrent()) {
+        setMessage(e.message);
+        if (
+          [
+            "source_requires_review",
+            "source_unavailable",
+            "quota_exceeded",
+          ].includes(e.code)
+        ) {
+          setBusy("正在讀取官方來源…");
+          try {
+            const info = await api<MedicationSourceInfo>(
+              "/medications/" + encodeURIComponent(m.id) + "/source",
+            );
+            if (isCurrent() && sourceInfoMatches(info, m)) setSourceInfo(info);
+          } catch {
+            /* Keep the original action error; the free source button can retry. */
+          }
+        }
+      }
     } finally {
       if (isCurrent()) setBusy("");
+    }
+  }
+  function sourceInfoMatches(
+    info: MedicationSourceInfo,
+    medication: Medication,
+  ) {
+    return (
+      info.medicationId === medication.id &&
+      info.medicationRevision === medication.revision &&
+      info.sources.every((source) => source.licenseNo === medication.licenseNo)
+    );
+  }
+  async function inspectSource(m: Medication) {
+    const version = ++explanationVersion.current;
+    setBusy("正在讀取官方來源…");
+    setMessage("");
+    setResult(null);
+    setSourceInfo(null);
+    try {
+      const info = await api<MedicationSourceInfo>(
+        "/medications/" + encodeURIComponent(m.id) + "/source",
+      );
+      if (explanationVersion.current === version) {
+        if (!sourceInfoMatches(info, m))
+          throw new Error("藥品資料已更新，請重新整理清單後再查看官方來源。");
+        setSourceInfo(info);
+      }
+    } catch (caught) {
+      if (explanationVersion.current === version)
+        setMessage(
+          caught instanceof Error ? caught.message : "暫時無法讀取官方來源。",
+        );
+    } finally {
+      if (explanationVersion.current === version) setBusy("");
     }
   }
   return (
@@ -1111,6 +1177,13 @@ export function Medications() {
                 </Button>
                 <Button
                   className="ghost"
+                  disabled={m.identityReview?.status !== "confirmed" || !!busy}
+                  onClick={() => inspectSource(m)}
+                >
+                  官方仿單原文
+                </Button>
+                <Button
+                  className="ghost"
                   onClick={() => {
                     invalidateExplanation();
                     setRetakeEdit(false);
@@ -1156,7 +1229,10 @@ export function Medications() {
                       let operation = prnOperations.current.get(m.id);
                       if (operation?.pending) return;
                       if (!operation) {
-                        operation = { operationId: crypto.randomUUID(), pending: false };
+                        operation = {
+                          operationId: crypto.randomUUID(),
+                          pending: false,
+                        };
                         prnOperations.current.set(m.id, operation);
                       }
                       operation.pending = true;
@@ -1177,7 +1253,10 @@ export function Medications() {
                         setMessage(e.message);
                       } finally {
                         operation.pending = false;
-                        setPrnSaving((current) => ({ ...current, [m.id]: false }));
+                        setPrnSaving((current) => ({
+                          ...current,
+                          [m.id]: false,
+                        }));
                       }
                     }}
                   >
@@ -1291,6 +1370,26 @@ export function Medications() {
           }
         />
       )}{" "}
+      {sourceInfo && (
+        <section className="card medication-detail" aria-label="官方仿單來源">
+          <h2 ref={sourceHeading} tabIndex={-1}>
+            {data?.items.find(
+              (medication: Medication) =>
+                medication.id === sourceInfo.medicationId,
+            )?.name || "藥品"}
+            ｜官方來源
+          </h2>
+          <p>查閱來源不使用 AI 額度，也不會建立學習或作答紀錄。</p>
+          <p>
+            {sourceInfo.state === "missing"
+              ? "目前尚未收錄這款藥可確認的官方仿單；請先核對產品資料。"
+              : sourceInfo.state === "needs_review"
+                ? "官方仿單仍待整理，可先開啟原文閱讀。"
+                : "可開啟官方仿單原文；產生白話說明及理解測驗會使用 AI 額度。"}
+          </p>
+          <OfficialSourceLinks sources={sourceInfo.sources} />
+        </section>
+      )}
       {result && (
         <section className="card medication-detail">
           <h2 ref={resultHeading} tabIndex={-1}>
@@ -1347,7 +1446,9 @@ export function Learning() {
   const learningActive = useRef(true);
   useEffect(() => {
     learningActive.current = true;
-    return () => { learningActive.current = false; };
+    return () => {
+      learningActive.current = false;
+    };
   }, []);
   const { data, loading, error, refresh } = useData<{
       items: LearningRecord[];
@@ -1632,6 +1733,7 @@ export function Learning() {
             className="secondary"
             disabled={selectedIds.length !== 2 || !!busy}
             onClick={async () => {
+              const requestedHash = location.hash;
               setBusy("正在核對仿單…");
               try {
                 const job = await submitJob(
@@ -1639,8 +1741,11 @@ export function Learning() {
                   { medicationIds: selectedIds },
                   setBusy,
                 );
+                if (!learningActive.current || location.hash !== requestedHash)
+                  return;
                 await refresh();
-                location.hash = recordHref(job.id).slice(1);
+                if (learningActive.current && location.hash === requestedHash)
+                  location.hash = recordHref(job.id).slice(1);
               } catch (e: any) {
                 setMessage(e.message);
               } finally {

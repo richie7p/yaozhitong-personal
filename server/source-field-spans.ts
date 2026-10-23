@@ -52,18 +52,95 @@ const invalid = () =>
 const complete = (text: string) => {
   // Typography is a classification projection only. Quotes/citations stay exact.
   const projected = text.normalize("NFKC");
-  return /[。！？.!?；;][」』”"')）]*\s*$/u.test(projected) &&
-    !/(?:^|\n)\s*(?:\d+|[一二三四五六七八九十]+)\s*[.、]\s*$/u.test(projected);
+  return (
+    /[。！？.!?；;][」』”"')）]*\s*$/u.test(projected) &&
+    !/(?:^|\n)\s*(?:\d+|[一二三四五六七八九十]+)\s*[.、]\s*$/u.test(projected)
+  );
 };
-function literalUnavailable(text: string) {
-  if (/^(?:無|N\/?A|尚無資訊|目前尚無資訊)[。.!?；;]?$/iu.test(text)) return true;
+function literalUnavailable(text: string, extended = false) {
+  if (/^(?:無|N\/?A|尚無資訊|目前尚無資訊)[。.!?；;]?$/iu.test(text))
+    return true;
   // Exact whole-field absence markers may have an explicit literature label or
   // balanced quotation marks. Never remove other prose, conditions, or tables.
-  const absence = "(?:尚無資訊|目前尚無資訊)[。.!?；;]?";
+  const absence = extended
+    ? "(?:無|N\\/?A|尚無資訊|目前尚無資訊)[。.!?；;]?"
+    : "(?:尚無資訊|目前尚無資訊)[。.!?；;]?";
+  const literature = extended
+    ? "(?:\\(依文獻記載\\)|【依文獻記載】|《依文獻記載》)"
+    : "(?:\\(依文獻記載\\)|【依文獻記載】)";
+  const bracketed = extended ? `|【\\s*${absence}\\s*】` : "";
   return new RegExp(
-    `^(?:(?:\\(依文獻記載\\)|【依文獻記載】)\\s*)?(?:${absence}|「\\s*${absence}\\s*」|『\\s*${absence}\\s*』|“\\s*${absence}\\s*”|"\\s*${absence}\\s*")[。.!?；;]?$`,
-    "u",
+    `^(?:${literature}\\s*)?(?:${absence}|「\\s*${absence}\\s*」|『\\s*${absence}\\s*』|“\\s*${absence}\\s*”|"\\s*${absence}\\s*"${bracketed})[。.!?；;]?$`,
+    extended ? "iu" : "u",
   ).test(text);
+}
+function parentheticalReference(text: string, index: number) {
+  // A balanced, explicit cross-reference is part of its containing field, not
+  // another heading. Keep every original character; do not repair unmatched
+  // parentheses or treat an ordinary bracketed heading as a reference.
+  const prefix = text
+    .slice(0, index)
+    .match(/([（(])\s*(?:請)?(?:參見|參閱|參考|詳見)\s*$/u);
+  if (!prefix) return false;
+  const suffix = text.slice(index).match(/^【[^【】\r\n]{1,40}】\s*([)）])/u);
+  return (
+    !!suffix &&
+    ((prefix[1] === "(" && suffix[1] === ")") ||
+      (prefix[1] === "（" && suffix[1] === "）"))
+  );
+}
+export function withoutParentheticalReferences<
+  T extends { index: number; section: string },
+>(text: string, marks: T[]): T[] {
+  return marks.filter((mark) => !parentheticalReference(text, mark.index));
+}
+function nestedStructuralHeading(quote: string, body: string, section: string) {
+  // The official numbered warning container can contain its synonymous child
+  // heading before a separately marked warning. No prose or child body may be
+  // dropped, and the child must belong to this exact numbered parent.
+  if (section !== "警語及注意事項") return false;
+  const parent = quote
+    .normalize("NFKC")
+    .match(/^\s*(\d+)\s+警語及注意事項\s*\n/u);
+  if (!parent) return false;
+  const projected = compactSource(body).replace(/^\(依文獻記載\)/u, "");
+  return projected === `${parent[1]}.1警語/注意事項`;
+}
+function numberedUnavailable(quote: string, body: string, section: string) {
+  // A numbered tree is unavailable only when every recognized child explicitly
+  // says so. Never apply this evidence kind to a field containing medical prose.
+  const children =
+    section === "副作用/不良反應"
+      ? ["臨床重要副作用/不良反應", "臨床試驗經驗", "上市後經驗"]
+      : section === "警語及注意事項"
+        ? ["警語/注意事項"]
+        : undefined;
+  if (!children) return false;
+  const parent = quote.normalize("NFKC").match(/^\s*(\d+)\s+[^\n]+\n/u);
+  if (!parent) return false;
+  const projected = body
+    .normalize("NFKC")
+    .replace(/^(?:\(依文獻記載\)|【依文獻記載】|《依文獻記載》)\s*/u, "");
+  const marks = [
+    ...projected.matchAll(
+      /(?:^|\n)[^\S\r\n]*(\d+)\.(\d+)[^\S\r\n]+([^\r\n]+)\r?\n/gu,
+    ),
+  ];
+  if (!marks.length || marks.length > children.length) return false;
+  const prefix = projected.slice(0, marks[0].index).trim();
+  if (prefix && !literalUnavailable(prefix, true)) return false;
+  return marks.every((mark, index) => {
+    const end = marks[index + 1]?.index ?? projected.length;
+    return (
+      mark[1] === parent[1] &&
+      Number(mark[2]) === index + 1 &&
+      compactSource(mark[3]) === children[index] &&
+      literalUnavailable(
+        projected.slice(mark.index! + mark[0].length, end).trim(),
+        true,
+      )
+    );
+  });
 }
 const visibleLength = (text: string) =>
   text.replace(/\s+/gu, " ").trim().length;
@@ -116,7 +193,7 @@ export function canonicalSourceFields(
       text += chunk.text;
       return { chunk, start, end: text.length };
     });
-    const marks = headings(text);
+    const marks = withoutParentheticalReferences(text, headings(text));
     const boundaries = [
       ...new Set([0, ...marks.map((mark) => mark.index), text.length]),
     ];
@@ -164,10 +241,16 @@ export function canonicalSourceFields(
         .normalize("NFKC")
         .replace(shortHeading, "")
         .trim();
-      if (literalUnavailable(shortBody))
+      if (
+        literalUnavailable(shortBody) ||
+        (!complete(quote) &&
+          (literalUnavailable(shortBody, true) ||
+            numberedUnavailable(quote, shortBody, sourceSection!)))
+      )
         evidenceKind = "literal_unavailable";
       else if (
-        !shortBody &&
+        (!shortBody ||
+          nestedStructuralHeading(quote, shortBody, sourceSection!)) &&
         safetySections.has(
           marks.find((mark) => mark.index === end)?.section || "",
         )

@@ -108,7 +108,11 @@ export class LoadMetrics {
     const recent = this.samples.slice(-100);
     if (recent.length >= 10) {
       const errors = recent.filter(
-        (x) => x.status >= 500 || x.status === 0,
+        (x) =>
+          x.status >= 500 ||
+          x.status === 0 ||
+          x.error === "network_error" ||
+          x.error === "request_timeout",
       ).length;
       if (errors / recent.length > this.plan.stopServerErrorRate)
         this.stopReason ||= "server_or_transport_error_rate_exceeded";
@@ -145,7 +149,12 @@ export class LoadMetrics {
       maximumMs: round(Math.max(0, ...rows.map((x) => x.milliseconds))),
       unexpectedResponses: rows.filter((x) => !x.expected).length,
       serverErrors: rows.filter((x) => x.status >= 500).length,
-      transportErrors: rows.filter((x) => x.status === 0 || x.error === "network_error" || x.error === "request_timeout").length,
+      transportErrors: rows.filter(
+        (x) =>
+          x.status === 0 ||
+          x.error === "network_error" ||
+          x.error === "request_timeout",
+      ).length,
       invariantFailures: rows.filter((x) => x.error === "invariant_failed")
         .length,
       expectedRejections: rows.filter((x) => x.expected && x.status >= 400)
@@ -159,7 +168,9 @@ export class LoadMetrics {
     });
     return {
       ...summarize(this.samples),
-      failures: this.samples.filter((row) => !row.expected).map((row) => ({ ...row })),
+      failures: this.samples
+        .filter((row) => !row.expected)
+        .map((row) => ({ ...row })),
       stopReason: this.stopReason,
       byOperation: Object.fromEntries(
         [...new Set(this.samples.map((x) => x.label))]
@@ -282,7 +293,8 @@ export async function measuredRequest(
   } catch (e) {
     expected = false;
     error =
-      (e as Error).name === "TimeoutError" || (signal.aborted && signal.reason?.name === "TimeoutError")
+      (e as Error).name === "TimeoutError" ||
+      (signal.aborted && signal.reason?.name === "TimeoutError")
         ? "request_timeout"
         : "network_error";
   }
@@ -292,7 +304,9 @@ export async function measuredRequest(
     status,
     expected,
     bytes,
-    requestId, traceId, phase,
+    requestId,
+    traceId,
+    phase,
     ...(serverRequestId ? { serverRequestId } : {}),
     ...(headersMs === undefined ? {} : { headersMs }),
     ...(error ? { error } : {}),

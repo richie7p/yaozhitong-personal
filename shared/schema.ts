@@ -220,6 +220,7 @@ export interface GroundedResult {
   plainLanguageCoverage?: {
     scope: "recognized_source_fields";
     status: "complete" | "partial" | "no_fields";
+    progressFromPrevious?: { additionalExplainedSpans: number; additionalQuiz: number; lostExplainedSpans: number; legacyReorganized?: boolean };
     fields: {
       fieldId: string;
       licenseNo: string;
@@ -229,11 +230,20 @@ export interface GroundedResult {
       status: "complete" | "partial" | "unavailable";
       claimIndices: number[];
       quizIds: string[];
+      /** Optional server-authored continuation evidence. Historical rows remain
+       * readable; counts alone never establish which ranges were explained. */
+      sourceSha256?: string;
+      explainedSpanIds?: string[];
+      lessonSpans?: { claimIndex: number; spanIds: string[] }[];
+      continuationAvailable?: boolean;
+      verificationMode?: "current_model_review" | "source_bound_carry";
+      retainedAfterRecheck?: boolean;
       reason?:
         | "job_budget"
         | "source_not_interpretable"
         | "generation_unusable"
         | "generation_overflow"
+        | "reverification_failed"
         | "verification_incomplete";
     }[];
   };

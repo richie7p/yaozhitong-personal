@@ -80,64 +80,107 @@ async function request<T = any>(
       attempts++;
       if (attempts > 1) clientRequestId = crypto.randomUUID();
       phase = "headers";
-      let response: Response;
+      const attemptController = new AbortController();
+      let headersActive = true;
+      let headerTimer: ReturnType<typeof setTimeout> | undefined;
+      const cancelAttempt = () => {
+        headersActive = false;
+        clearTimeout(headerTimer);
+        attemptController.abort();
+      };
+      controller.signal.addEventListener("abort", cancelAttempt, {
+        once: true,
+      });
       try {
-        response = await fetch("/api/v1" + path, {
-          method,
-          headers: {
-            ...(token ? { Authorization: "Bearer " + token } : {}),
-            ...(body ? { "Content-Type": "application/json" } : {}),
-            ...(key ? { "Idempotency-Key": key } : {}),
-            "X-Client-Request-Id": clientRequestId,
-          },
-          body: body ? JSON.stringify(body) : undefined,
-          cache: "no-store",
-          signal: controller.signal,
-        });
-      } catch {
+        let response: Response;
+        try {
+          // A silent first connection must leave time for the one safe read
+          // retry. This header-only sub-budget starts after token refresh;
+          // the original 45-second total deadline still covers both attempts
+          // and the full body. Mutations never receive a second attempt.
+          const headerDeadline =
+            method === "GET" && attempts === 1
+              ? new Promise<never>((_resolve, reject) => {
+                  headerTimer = setTimeout(() => {
+                    headersActive = false;
+                    reject(new Error("read_header_timeout"));
+                    attemptController.abort();
+                  }, 15000);
+                })
+              : undefined;
+          const fetching = fetch("/api/v1" + path, {
+            method,
+            headers: {
+              ...(token ? { Authorization: "Bearer " + token } : {}),
+              ...(body ? { "Content-Type": "application/json" } : {}),
+              ...(key ? { "Idempotency-Key": key } : {}),
+              "X-Client-Request-Id": clientRequestId,
+            },
+            body: body ? JSON.stringify(body) : undefined,
+            cache: "no-store",
+            signal: attemptController.signal,
+          }).then((next) => {
+            if (!headersActive) {
+              // A transport can ignore cancellation. Release its late body,
+              // and never let the obsolete response win against recovery.
+              void next.body?.cancel().catch(() => {});
+              throw new Error("obsolete_read_attempt");
+            }
+            return next;
+          });
+          response = headerDeadline
+            ? await Promise.race([fetching, headerDeadline])
+            : await fetching;
+        } catch {
+          assertActive();
+          // Only a failed transport for a read can retry. The original total
+          // deadline includes both attempts and token refresh; mutations never retry.
+          if (method === "GET" && attempts === 1 && navigator.onLine) continue;
+          throw Object.assign(
+            new ApiError(
+              "network_error",
+              "無法連線到服務，請確認連線與藥智通服務已啟動後再試。",
+              clientRequestId,
+            ),
+            { phase, attempts },
+          );
+        }
+        clearTimeout(headerTimer);
         assertActive();
-        // Only a failed transport for a read can retry. The original total
-        // deadline includes both attempts and token refresh; mutations never retry.
-        if (method === "GET" && attempts === 1 && navigator.onLine) continue;
-        throw Object.assign(
-          new ApiError(
-            "network_error",
-            "無法連線到服務，請確認連線與藥智通服務已啟動後再試。",
-            clientRequestId,
-          ),
-          { phase, attempts },
-        );
-      }
-      assertActive();
-      phase = "body";
-      let data: any;
-      try {
-        data = await response.json();
-      } catch (error) {
+        phase = "body";
+        let data: any;
+        try {
+          data = await response.json();
+        } catch (error) {
+          assertActive();
+          if (
+            error instanceof TypeError &&
+            method === "GET" &&
+            attempts === 1 &&
+            navigator.onLine
+          )
+            continue;
+          throw new ApiError(
+            "invalid_response",
+            "服務暫時無法回應，請稍後重試。",
+            response.headers.get("X-Request-Id") || "",
+            response.status,
+          );
+        }
         assertActive();
-        if (
-          error instanceof TypeError &&
-          method === "GET" &&
-          attempts === 1 &&
-          navigator.onLine
-        )
-          continue;
-        throw new ApiError(
-          "invalid_response",
-          "服務暫時無法回應，請稍後重試。",
-          response.headers.get("X-Request-Id") || "",
-          response.status,
-        );
+        if (!response.ok)
+          throw new ApiError(
+            data?.code || "service_error",
+            data?.message || "服務暫時無法回應，請稍後重試。",
+            data?.requestId || "",
+            response.status,
+          );
+        return data as T;
+      } finally {
+        headersActive = false;
+        clearTimeout(headerTimer);
+        controller.signal.removeEventListener("abort", cancelAttempt);
       }
-      assertActive();
-      if (!response.ok)
-        throw new ApiError(
-          data?.code || "service_error",
-          data?.message || "服務暫時無法回應，請稍後重試。",
-          data?.requestId || "",
-          response.status,
-        );
-      return data as T;
     }
   })();
   try {

@@ -131,7 +131,8 @@ describe("bounded whole-field teaching completion", () => {
     expect(needsTeachingCompletion({...partial, sourceReview: {reason: "safety_sections_pending", sources: []}})).toBe(false);
     expect(needsTeachingCompletion({...partial, plainLanguageCoverage: {...partial.plainLanguageCoverage, status: "complete"}})).toBe(false);
     const unavailable = {fieldId: "synthetic-budget", licenseNo: "SYNTHETIC", sourceSection: "警語", sourceSpanCount: 4, explainedSpanCount: 0, status: "unavailable" as const, claimIndices: [], quizIds: [], reason: "job_budget" as const};
-    expect(needsTeachingCompletion({...partial, plainLanguageCoverage: {...partial.plainLanguageCoverage, fields: [unavailable]}})).toBe(false);
+    expect(needsTeachingCompletion({...partial, plainLanguageCoverage: {...partial.plainLanguageCoverage, fields: [unavailable]}})).toBe(true);
+    expect(needsTeachingCompletion({...partial, plainLanguageCoverage: {...partial.plainLanguageCoverage, fields: [{...unavailable,continuationAvailable:false}]}})).toBe(false);
     expect(needsTeachingCompletion({...partial, plainLanguageCoverage: {...partial.plainLanguageCoverage, fields: [{...unavailable, reason: "source_not_interpretable"}]}})).toBe(false);
     expect(needsTeachingCompletion({...partial, plainLanguageCoverage: {...partial.plainLanguageCoverage, fields: [{...unavailable, status: "partial", reason: "verification_incomplete"}]}})).toBe(true);
     expect(needsTeachingCompletion({...partial,

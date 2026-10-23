@@ -1,0 +1,325 @@
+{
+  "supersedesPreFinalReportSha256": "745a0b6bc197f1d85e76ee9bb9f82b7fd14c0783c7559a622e4a621ab6255c22",
+  "preservedPriorReportSha256s": [
+    "c45dabfd1f88c39eca3e821035c8cc941881c8be2eb50ba2b555fd60241fb75b",
+    "24a2e7e57576b9d383fe317fe81c3729d7cc99fe278f199ed5965aadad28d944",
+    "2d4bc39eb66a659d2ba161621d8c8380ffb1cfed915ddb3977c1bca6a7cffb5f",
+    "745a0b6bc197f1d85e76ee9bb9f82b7fd14c0783c7559a622e4a621ab6255c22"
+  ],
+  "evidenceRevision": "reader-replay-after-AI-v4-closed-freeze",
+  "schema": "tfda-night-coverage-source-reader/v1",
+  "at": "2026-10-23T14:33:02.123379+00:00",
+  "officialSnapshotDate": "2026-10-23",
+  "scope": "Technical official-source preservation and literal source-field reading. Generated teaching and clinical quality are evaluated separately.",
+  "cloud": {
+    "publishedBefore": 3661,
+    "publishedAfter": 3710,
+    "knownSourceDocumentsAfter": 3713,
+    "sourcePrefix": "leaflets/",
+    "sourcePrefixObjectsAfter": 3720,
+    "newSources": 49,
+    "oldPublishedPointerMetadataExact": 3661,
+    "oldSourceDocumentMetadataExact": 3664,
+    "oldSourcePrefixMetadataAndGenerationExact": 3671,
+    "newRawBytesCanonicalChunksPointersAndProofReadbackExact": 49,
+    "readbackSha256": "6dae8dbf98f32d42dd2906638abb02d71c9962f7bab82c6a06e524df14012a8d",
+    "publicConfigExact": true,
+    "dailyUserQuota": 20,
+    "dailyGlobalQuota": 1000,
+    "accountsChanged": false,
+    "quotaSettingsChanged": false,
+    "sourceWritesQuiet": true
+  },
+  "reader": {
+    "total": 3710,
+    "readable": 3157,
+    "held": 553,
+    "previousReadable": 2899,
+    "previousHeld": 762,
+    "existingHeldRecovered": 214,
+    "newSourceReadable": 44,
+    "newSourceHeld": 5,
+    "oldReadableRegressions": 0,
+    "oldReadableUnchangedFullPassageHashes": 2896,
+    "correctedReferenceBoundaryLicenses": [
+      "衛部藥製字第058084號",
+      "衛署藥製字第045282號",
+      "衛署藥製字第048872號"
+    ],
+    "eachCorrectedLicenseRetainsFiveOriginalCanonicalSafetyFields": true,
+    "normal026558SourcePassagesUnchanged": true,
+    "normalSavedLearningSourceLicense": "衛部藥輸字第026558號",
+    "allReturnedCitationsLiteral": true,
+    "readerVersion": "source-reader-v3-structural-references",
+    "generatedSourceCacheVersion": "source-reader-v2-literal-typography",
+    "cacheMigration": "Only older sourceReview held states are reevaluated. Healthy generated cache keys remain unchanged.",
+    "exactReaderPins": {
+      "server/ai.ts": "b8d2d4fd97d1c656fb1792a1e6dc16d473a064d09d8ab137b14a7be2d27dd6fe",
+      "server/source-field-spans.ts": "fd7fba9856c61a1d303bc338d2aa9cf53cb9c07823c57599bd774aced325e821",
+      "server/source-teaching.ts": "c66ff2cb7fe8590e3c4a23df618af755e28c474d5447a8b0e7456024a398c9af",
+      "server/safety-learning.ts": "5b7768c78045240b5b80f5805c05f24deb95aa37e16e08b8b2edf220e1be1376",
+      "shared/source.ts": "bad43d5716bb1a24df0f620770dd6c3b2cf4cb479654b8f2ff43a88a0b7cfa63",
+      "server/teaching-completion.ts": "a714286d81bda931ccd0131ff09e32f072c0c79be2846fb7ea4fd122fe3ab70c",
+      "server/source-review-result.ts": "289e6a488b5362982e16a1333e55f2206d14bfe4e3aa54704877d457c22f52b0",
+      "server/teaching-progress.ts": "ecf0013a5039abc56f46bdde89bd9160763711bad36041c38327cc33e7902788",
+      "server/source-boundary.ts": "00696c59899f25061655e80f072535adde8dba43e62d6b6d9bf1fbcbd9ab8dd1",
+      "server/chat-source-coverage.ts": "f4509484d2343584cc3a0070ca27e09a65c37d25fbc564d4c7e22e432154f4c6",
+      "server/purpose-conditions.ts": "cfc41bfed5ff939ff1fb751d79506e08ac9581575a38c7fe6b4df9fa1caac772",
+      "shared/learning.ts": "04e537c908a3e51e8f7744cd8b0f8fff26616053444fd28fd10bc8b101eed634",
+      "shared/schema.ts": "2b31c96bf8b75b4c4a3d7afa38ce83f4521e21f015f0f56af25296695b09f475"
+    },
+    "compiledReaderBundleSha256": "6ab1027cafdd0af8411a50b38611622cd7537a900c3fbf7c52dd01d85572cd86",
+    "replaySha256": "e98b2a8a173fb67bc05fde1973cc13ec8f5c3d9a7f5f4c4ac422b29e41893a84",
+    "frozenCorpusSha256": "abe30508884145a43dd135059ef78a8f947defc0abc7a2e1f656c1f33dee98c5",
+    "checkedNonContainerSafetyFields": 13626,
+    "structuralContainersExcludedFromTeaching": 93,
+    "citationGateFailures": 0,
+    "citationGateReceiptSha256": "37f708bd14bb6726e48d660cf48158e4af967a491ed02db8f570b1f791cea1aa",
+    "generatedTeachingQualityEvaluation": {
+      "licensesEvaluatedByThisSourceReplay": 0,
+      "allReadableLicensesHaveValidatedAiTeaching": false,
+      "populationQualityEstimate": null,
+      "scope": "Source-field readability and literal citations only. Per-drug generated content and quiz coverage are reported by the separate native/cloud evaluation."
+    },
+    "nativeRuntimePlanSha256": "7e4ea6c87c31de855c67c68b5c5b29594ee780b50d38c7308583f13a300ae45f",
+    "nativeRuntimePlanCodePins": [
+      {
+        "path": "server/ai.ts",
+        "sha256": "b8d2d4fd97d1c656fb1792a1e6dc16d473a064d09d8ab137b14a7be2d27dd6fe"
+      },
+      {
+        "path": "server/source-teaching.ts",
+        "sha256": "c66ff2cb7fe8590e3c4a23df618af755e28c474d5447a8b0e7456024a398c9af"
+      },
+      {
+        "path": "server/teaching-progress.ts",
+        "sha256": "ecf0013a5039abc56f46bdde89bd9160763711bad36041c38327cc33e7902788"
+      },
+      {
+        "path": "server/teaching-completion.ts",
+        "sha256": "a714286d81bda931ccd0131ff09e32f072c0c79be2846fb7ea4fd122fe3ab70c"
+      },
+      {
+        "path": "server/purpose-conditions.ts",
+        "sha256": "cfc41bfed5ff939ff1fb751d79506e08ac9581575a38c7fe6b4df9fa1caac772"
+      },
+      {
+        "path": "server/llm.ts",
+        "sha256": "1473b91351d5336d9a0695107d7a87b24d0a8966bf7268af1c0fb06cd5496159"
+      },
+      {
+        "path": "server/config.ts",
+        "sha256": "4d412bd17273387cfcc183d4d6fa857b1bdbbdb201c66b2e2fcf065fad0c7fc9"
+      },
+      {
+        "path": "server/source-field-spans.ts",
+        "sha256": "fd7fba9856c61a1d303bc338d2aa9cf53cb9c07823c57599bd774aced325e821"
+      },
+      {
+        "path": "server/safety-learning.ts",
+        "sha256": "5b7768c78045240b5b80f5805c05f24deb95aa37e16e08b8b2edf220e1be1376"
+      },
+      {
+        "path": "shared/learning.ts",
+        "sha256": "04e537c908a3e51e8f7744cd8b0f8fff26616053444fd28fd10bc8b101eed634"
+      },
+      {
+        "path": "shared/schema.ts",
+        "sha256": "2b31c96bf8b75b4c4a3d7afa38ce83f4521e21f015f0f56af25296695b09f475"
+      },
+      {
+        "path": "shared/teaching-completion.ts",
+        "sha256": "ce150df8aa7bf2bbeebabd8586e5d858a149d14e15e44855fb71e9f1eda2e5d2"
+      },
+      {
+        "path": "src/PlainLanguageStatus.tsx",
+        "sha256": "b037d2bc1bc3f0d199c23b8eb20d650ed52db90c9f7ed0864e70bd1e4a0cd864"
+      }
+    ]
+  },
+  "bulk": {
+    "currentGrammarHtmlReplays": 6703,
+    "structuralCandidates": 58,
+    "freshOfficialReacquisitions": 58,
+    "newPublished": 49,
+    "freshHeld": [
+      {
+        "licenseNo": "衛署藥製字第042172號",
+        "status": "needs_review",
+        "reasons": [
+          "large_unverified_image",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      },
+      {
+        "licenseNo": "衛署藥製字第028805號",
+        "status": "needs_review",
+        "reasons": [
+          "large_unverified_image",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      },
+      {
+        "licenseNo": "衛署藥製字第045201號",
+        "status": "needs_review",
+        "reasons": [
+          "large_unverified_image",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      },
+      {
+        "licenseNo": "衛署藥製字第019167號",
+        "status": "needs_review",
+        "reasons": [
+          "large_unverified_image",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      },
+      {
+        "licenseNo": "衛署藥製字第047718號",
+        "status": "raw_only",
+        "reasons": [
+          "source_page_text_missing",
+          "source_text_quality_failed",
+          "large_unverified_image",
+          "medical_document_heading_missing",
+          "current_complete_product_name_missing",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      },
+      {
+        "licenseNo": "衛部菌疫輸字第000981號",
+        "status": "needs_review",
+        "reasons": [
+          "large_unverified_image",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      },
+      {
+        "licenseNo": "衛署藥製字第043983號",
+        "status": "needs_review",
+        "reasons": ["source_text_quality_failed"]
+      },
+      {
+        "licenseNo": "衛部藥製字第061518號",
+        "status": "needs_review",
+        "reasons": [
+          "large_unverified_image",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      },
+      {
+        "licenseNo": "衛部藥輸字第026759號",
+        "status": "needs_review",
+        "reasons": [
+          "large_unverified_image",
+          "html_conservation_evidence_missing_or_failed"
+        ]
+      }
+    ],
+    "freshHeldCount": 9,
+    "historicalSavedAssessmentReadyToPublishBeforeReparse": 0,
+    "historicalSavedAssessmentAuditSha256": "8846dac9560cd61edde2be3ba4d9413ceb8e56fc87167551bbbd9d58f8472a33",
+    "currentHtmlReplaySha256": "4b2bf6df8946e587f5875d70f0efc0ff28d5826b8ac8cb895734848552dbe822",
+    "remainingCurrentHtmlComplex": 6654,
+    "remainingPdfComplex": 6473,
+    "remainingWithOfficialSourceLinks": 14478,
+    "remainingCategories": {
+      "unverified_complex_layout": 13127,
+      "independent_text_disagreement": 217,
+      "text_quality_or_other_evidence_review": 167,
+      "raw_material_not_patient_leaflet": 529,
+      "missing_or_empty_current_raw_branch": 98,
+      "independent_pdf_or_canonical_extraction_failed": 168,
+      "current_identity_or_source_provenance_review": 143,
+      "image_or_scan_evidence_unverified": 27,
+      "source_size_or_runtime_budget_review": 1,
+      "official_endpoint_without_verifiable_body": 1
+    },
+    "activeLicenses": 21245,
+    "licensesWithSourceLinks": 18188,
+    "licensesWithoutSourceLinks": 3057,
+    "knownNoSuccessfulRawArchiveLicensesBeforeBatch": 32,
+    "recordedErrorsForThose44SourceBranches": {
+      "source_exceeds_15mb": 41,
+      "empty_response": 2,
+      "URLError": 1
+    },
+    "historicalPartialOrMissingSourceBranchLicenses": 98,
+    "rawMaterialLicensesExcludedFromPatientPublication": 529,
+    "currentHtmlRejectedOverlappingCounts": {
+      "outline_continuation_without_scope": 5107,
+      "outline_literal_subtable_not_rectangular": 4313,
+      "outline_right_content_unknown": 1064,
+      "outline_literal_subtable_looks_numbered": 127,
+      "outline_literal_subtable_content_unknown": 668,
+      "outline_section_scope_missing": 410,
+      "outline_literal_figure_style_unknown": 205,
+      "outline_label_outside_section_scope": 74,
+      "outline_empty_right_cell": 1,
+      "outline_label_duplicate_or_unordered": 2,
+      "outline_literal_figure_shape_unknown": 8
+    },
+    "unverifiedImagesAndUnknownLayoutRemainHeld": true
+  },
+  "validation": {
+    "targetedTestsPassed": 134,
+    "targetedTestsFailed": 0,
+    "targetedTestReceiptSha256": "3ed50d29d23ceab27e9d79ffa807dc115497214bf7d4f62614379f235c21e087",
+    "typecheckPassed": true,
+    "providerCalls": 0,
+    "websiteAiJobs": 0,
+    "newAccounts": 0,
+    "humanReviewed": false,
+    "clinicalReviewed": false,
+    "pharmacistReviewed": false,
+    "reviewType": "coding_agent_source_fidelity_review",
+    "targetedTestsScope": "134 source-boundary and source-reader tests from the unchanged fd7fba9856c61a1d303bc338d2aa9cf53cb9c07823c57599bd774aced325e821 parser revision; retained receipt, not rerun or counted as AI-v4-closed teaching validation.",
+    "targetedTestsRuntimeProof": "reader-final-v4"
+  },
+  "batches": [
+    {
+      "batch": "batch01",
+      "count": 18,
+      "freezeSha256": "9c1311859639de3a9a51528bc2163def486e0225359d317bc9d60f419c1366f3",
+      "inspectReceiptSha256": "752ed58a881ac6b4a91bb4ebb5deef51bc775ffb51f414ed2250f8b4ebd3dd17",
+      "applyReceiptSha256": "328852dae74b00182684ffaf1b0abb2ffb45018ab07df247d6bcf24a0dabb257",
+      "manifests": [
+        {
+          "sha256": "c371a7d1b8b06e0ffa270762cbbdb9b2fcc27a4376a40a83111642a4be5c1dd3",
+          "count": 18
+        }
+      ]
+    },
+    {
+      "batch": "batch02",
+      "count": 31,
+      "freezeSha256": "89a272de90ef0e0204900ec13aabad8a5780c8c24d28da38ce78fe28626a3e71",
+      "inspectReceiptSha256": "0776c2bb747e167f54f6ed7bf73d880ba5b57658ff3f4110a3c5695457acd8d2",
+      "applyReceiptSha256": "0c9c2693053a7ac9ab1b0ffd7890be36f7e6a68a35a2b7c69ca5f94b817f163c",
+      "manifests": [
+        {
+          "sha256": "f6f67165395100f638e8cb11bb1550f65b3bc5005e2f715b79a5c1158206c824",
+          "count": 31
+        }
+      ]
+    }
+  ],
+  "backupCoverage": {
+    "previousVerifiedFileSnapshotObjects": 3605,
+    "newOfficialSourcesAwaitingNextSuccessfulBackup": 117,
+    "priorBatchNewSources": 68,
+    "nightBatchNewSources": 49,
+    "pendingComponents": [
+      "117 official raw source objects",
+      "corresponding source documents",
+      "published pointers",
+      "technical publication audit records"
+    ],
+    "newBackupTriggeredByThisWork": false,
+    "newRestoreTriggeredByThisWork": false,
+    "completionRequirement": "Verify the next successful encrypted manifest and exact source object bytes/generations; check Firestore snapshot timing independently.",
+    "previousVerifiedBackupReceipt": "docs/acceptance/complete-recovery-20261023.json",
+    "previousVerifiedBackupReceiptSha256": "2d657c53302a691dd51e4019bac7b3c963bef6cd9da1a48c956b7e57f3179133"
+  }
+}

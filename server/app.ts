@@ -433,8 +433,13 @@ export function createApp(d: Domain, auth = authenticate) {
         (b.medicationIds.length !== 2 || new Set(b.medicationIds).size !== 2)
       )
         return fail("invalid_request", "請選擇兩款不同藥品。");
-      for (const id of b.medicationIds)
-        await d.owned("medications", id, uid(c));
+      await d.preflightTextSources(
+        uid(c),
+        c.get("identity").verified,
+        kind,
+        b,
+        c.req.header("Idempotency-Key") || "",
+      );
       const j = await d.enqueueJob(
         uid(c),
         c.get("identity").verified,
@@ -463,6 +468,9 @@ export function createApp(d: Domain, auth = authenticate) {
     return c.json(await d.retryJob(uid(c), c.req.param("id")), 202);
   });
   app.get("/api/v1/chat", async (c) => c.json(await d.chatHistory(uid(c))));
+  app.get("/api/v1/medications/:id/source", async (c) =>
+    c.json(await d.medicationSourceInfo(uid(c), c.req.param("id"))),
+  );
   app.get("/api/v1/learning", async (c) => {
     const items = await d.store.list("learning", ["ownerId", uid(c)]);
     const reader = d.historyReader();

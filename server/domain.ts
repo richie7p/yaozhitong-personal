@@ -20,6 +20,8 @@ import {
 import { learningProgress, validAnswers } from "../shared/learning.js";
 import { doseLabel } from "../shared/medication.js";
 import { needsTeachingCompletion } from "../shared/teaching-completion.js";
+import { officialLeafletUrl } from "../shared/official-leaflet-url.js";
+import type { MedicationSourceInfo } from "../shared/source-availability.js";
 import type { ProductIdentityIndex } from "../shared/product-identity.js";
 import {
   aiConnection,
@@ -36,7 +38,7 @@ import { nextTime, initialFamilyTime } from "./schedule-time.js";
 import { requestReminderRefresh } from "./reminder-state.js";
 import {
   withSourceReviewResult,
-  SOURCE_READER_VERSION,
+  SOURCE_CACHE_VERSION,
   sourceReviewOutdated,
 } from "./source-review-result.js";
 import {
@@ -51,6 +53,8 @@ import {
   recognize,
   Nvidia,
   GROUNDING_VERSION,
+  sourceFieldClassificationOutdated,
+  sourcePassages,
   type Llm,
 } from "./ai.js";
 export const hash = (s: string | Buffer) =>
@@ -68,7 +72,9 @@ type HistoryReader = Pick<Store, "get"> & {
   identityCatalog?: Promise<ProductIdentityIndex>;
 };
 const contentUpdateRequired = (result: GroundedResult | null | undefined) =>
-  sourceReviewOutdated(result) || sourceActionResultOutdated(result);
+  sourceReviewOutdated(result) ||
+  sourceActionResultOutdated(result) ||
+  sourceFieldClassificationOutdated(result);
 export class Domain {
   catalog: Catalog;
   // Each of the two bounded web instances admits one quota transaction at a
@@ -847,6 +853,115 @@ export class Domain {
         503,
       );
   }
+  private async inspectMedicationSource(
+    medication: Medication,
+  ): Promise<MedicationSourceInfo> {
+    const leaflet = medication.licenseNo
+      ? await this.published(medication.licenseNo)
+      : null;
+    if (
+      !leaflet ||
+      leaflet.status !== "published" ||
+      leaflet.licenseNo !== medication.licenseNo
+    )
+      return {
+        medicationId: medication.id,
+        medicationRevision: medication.revision,
+        state: "missing",
+        sources: [],
+      };
+    const url = officialLeafletUrl(leaflet.sourceUrl);
+    const sources = [
+      {
+        licenseNo: leaflet.licenseNo,
+        version: leaflet.version,
+        ...(url ? { sourceUrl: url } : {}),
+      },
+    ];
+    try {
+      sourcePassages(leaflet.chunks);
+      return {
+        medicationId: medication.id,
+        medicationRevision: medication.revision,
+        state: "available",
+        sources,
+      };
+    } catch (error) {
+      if (
+        !(error instanceof AppError) ||
+        error.code !== "source_requires_review"
+      )
+        throw error;
+      return {
+        medicationId: medication.id,
+        medicationRevision: medication.revision,
+        state: "needs_review",
+        sources,
+      };
+    }
+  }
+  async medicationSourceInfo(
+    uid: string,
+    id: string,
+  ): Promise<MedicationSourceInfo> {
+    await this.active(uid);
+    const medication = await this.owned<Medication>("medications", id, uid);
+    if (medication.archived) return fail("not_found", "找不到藥品。", 404);
+    const reviewed = await this.reviewedMedication(
+      medication,
+      await this.catalog.identitySnapshot(),
+    );
+    if (reviewed.identityReview.status !== "confirmed")
+      return fail(
+        "identity_unconfirmed",
+        "請先補齊產品資料並確認藥品身分，再查看對應仿單。",
+        409,
+      );
+    return this.inspectMedicationSource(reviewed);
+  }
+  /** Known source gaps are information, not an AI job. Keep this before quota
+   * reservation at the public text-job boundary; the worker still rechecks
+   * source changes after admission. Same-key recovery keeps its original job. */
+  async preflightTextSources(
+    uid: string,
+    verified: boolean,
+    kind: "bundle" | "chat" | "interaction",
+    input: Doc,
+    key: string,
+  ) {
+    const medications = await this.jobMedications(uid, kind, input);
+    await this.authorizeJob(uid, verified, key);
+    const existing = await this.store.get<Job & { payloadHash: string }>(
+      "jobs",
+      hash(uid + "|" + kind + "|" + key),
+    );
+    if (existing) {
+      if (existing.payloadHash !== jobPayloadHash(kind, input))
+        return fail(
+          "idempotency_conflict",
+          "相同操作識別碼不能用於不同輸入。",
+          409,
+        );
+      return;
+    }
+    for (const medication of [
+      ...new Map(
+        medications.map((medication) => [medication.licenseNo, medication]),
+      ).values(),
+    ]) {
+      const info = await this.inspectMedicationSource(medication);
+      if (info.state !== "available")
+        return fail(
+          info.state === "missing"
+            ? "source_unavailable"
+            : "source_requires_review",
+          info.state === "missing"
+            ? "這款藥尚未收錄可供 AI 使用的官方仿單，未建立任務或使用額度。可查看官方來源狀態。"
+            : "這款藥的官方仿單仍待整理，未建立任務或使用額度。可先開啟官方仿單原文。",
+          422,
+        );
+    }
+  }
   /** Read-only admission check before expensive photo decode or blob writes.
    * enqueueJob still repeats access/quota checks in its final transaction.
    */
@@ -1096,6 +1211,27 @@ export class Domain {
         );
         const ingredientAliases =
           (await this.store.get("settings", "ingredientAliases")) || {};
+        // Only a current, owned server record may seed a completion. Request
+        // fields never supply generated content or previously answered quizzes.
+        const previousLearning =
+          j.kind === "bundle" && j.input.previousLearningId
+            ? await this.store.get<LearningRecord>(
+                "learning",
+                String(j.input.previousLearningId),
+              )
+            : null;
+        if (
+          j.kind === "bundle" &&
+          j.input.previousLearningId &&
+          (!previousLearning ||
+            previousLearning.ownerId !== j.ownerId ||
+            !(await this.learningCurrent(j.ownerId, previousLearning)))
+        )
+          return fail(
+            "stale_content",
+            "原學習內容已更新，請重新開啟目前的仿單說明。",
+            409,
+          );
         const context = {
           medications: meds.map((m, i) => ({
             licenseNo: m.licenseNo,
@@ -1137,6 +1273,9 @@ export class Domain {
                 notes: profile.notes,
               }
             : null,
+          ...(previousLearning
+            ? { previousTeaching: structuredClone(previousLearning.result) }
+            : {}),
         };
         const ck = hash(
           JSON.stringify({
@@ -1152,12 +1291,17 @@ export class Domain {
             model: config.textModel,
             routing: aiRoutingIdentity(),
             prompt: GROUNDING_VERSION,
-            sourceReader: SOURCE_READER_VERSION,
+            sourceReader: SOURCE_CACHE_VERSION,
             sourceTeaching: SOURCE_TEACHING_VERSION,
             // Explicit completion is a new, normally charged operation; keep
             // historic cache keys and saved answers unchanged.
             ...(j.kind === "bundle" && j.input.previousLearningId
-              ? { previousLearningId: j.input.previousLearningId }
+              ? {
+                  previousLearningId: j.input.previousLearningId,
+                  previousTeachingHash: hash(
+                    JSON.stringify(previousLearning!.result),
+                  ),
+                }
               : {}),
           }),
         );

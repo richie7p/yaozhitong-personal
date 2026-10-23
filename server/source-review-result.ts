@@ -2,7 +2,11 @@ import type { GroundedResult, Leaflet } from "../shared/schema.js";
 import { officialLeafletUrl } from "../shared/official-leaflet-url.js";
 import { AppError } from "./config.js";
 
-export const SOURCE_READER_VERSION = "source-reader-v2-literal-typography";
+export const SOURCE_READER_VERSION = "source-reader-v3-structural-references";
+// Parser capability changes age saved source holds only. Keep the previous
+// identity for healthy generated caches; contentUpdateRequired rejects old
+// holds selectively before reuse.
+export const SOURCE_CACHE_VERSION = "source-reader-v2-literal-typography";
 /** Only saved parser holds age with reader capability; normal model output stays current. */
 export function sourceReviewOutdated(
   result: Pick<GroundedResult, "sourceReview"> | null | undefined,

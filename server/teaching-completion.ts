@@ -1,12 +1,12 @@
 import type { Llm } from "./ai.js";
 import type { ProfileReference, Claim, GroundedResult } from "../shared/schema.js";
 import {
-  MAX_TEACHING_SOURCE_CHARS,
   reviewTeachingPlan,
   teachingGenerationPrompt,
   teachingPlanInput,
   type TeachingPlan,
 } from "./source-teaching.js";
+import { prepareProgressiveTeaching, reviewProgressiveTeaching, teachingResultAsPrevious, MAX_TOTAL_TEACHING_LESSONS } from "./teaching-progress.js";
 
 type ReviewedTeaching = Awaited<ReturnType<typeof reviewTeachingPlan>>;
 const MAX_REPAIR_FIELDS = 2;
@@ -22,29 +22,19 @@ export async function completeTeachingPlan(
   question: string,
   kind: "bundle" | "chat",
   facts: ProfileReference[] = [],
+  sourceVersions: Record<string,string> = {},
 ): Promise<ReviewedTeaching> {
   if (original.refused || !original.coverage || kind !== "bundle")
     return original;
-  let chars = 0;
-  const targets = plan.filter((item) => {
-    const field = original.coverage!.fields.find(
-      (candidate) => candidate.fieldId === item.fieldId,
-    );
-    if (
-      item.reason ||
-      !field ||
-      (field.status === "complete" && field.quizIds.length > 0) ||
-      chars + item.field.quote.length > MAX_TEACHING_SOURCE_CHARS
-    )
-      return false;
-    chars += item.field.quote.length;
-    return true;
-  }).slice(0, MAX_REPAIR_FIELDS);
+  const versions = Object.fromEntries(plan.map((item) => [item.field.licenseNo,sourceVersions[item.field.licenseNo] || "same-current-job"]));
+  const previous = teachingResultAsPrevious(original,versions);
+  const progressive = prepareProgressiveTeaching(plan.map((item) => item.field),previous,versions);
+  const targets = progressive.generationPlan.slice(0, MAX_REPAIR_FIELDS);
   if (!targets.length) return original;
   try {
     const generated = await llm.json(
       teachingGenerationPrompt +
-        "\n這是一次補漏工作。只輸出 {fieldTeaching:[...]}。逐欄重新閱讀完整 fullSourceField，把先前可能略過的全部項目、括號、成因、後果、操作限制與原文條件補齊。previousVerifiedLessons 是先前已核對的內容，只供查漏，不是新的醫療來源；可以重寫但不得刪掉其有據資訊。repairHints 的 rejectedLessons 是不可信且已被拒絕的舊稿，不能當作來源，必須回完整原欄修正其錯誤的條件分組/及或關係。unexplainedSpanIds 指出需仔細補齊的原文範圍，但範圍不是獨立來源。必須完整整理整欄，而不是只補一條或直接抄原文。以每欄最多16條lesson完整涵蓋，全欄過長或不能可靠處理時維持insufficient_data。兩題應對應不同的實質重點，不能用來源有無題充數。不要自稱完整，後端仍會獨立核對。",
+        "\n這是同一job唯一一次有限分段補漏。只輸出 {fieldTeaching:[...]}。讀完整 fullSourceField保留父層條件，但這次只整理targetSpanIds原文範圍的全部實質內容；已核對解說會由後端另外合併重審，不重覆輸出或改寫它們。previousVerifiedLessons只供查漏，不是新的醫療來源。repairHints 的 rejectedLessons是不可信且被拒絕的舊稿，不能當作來源，必須回完整原欄修正其條件/及或關係。每欄本次最多16條，不夠可靠時保留有據部分並維持insufficient_data。題目對應本次新增內容的不同實質重點，不以來源有無題充數。整欄是否完整由後端對所有已教內容再做獨立核對。",
       {
         question,
         kind,
@@ -58,7 +48,7 @@ export async function completeTeachingPlan(
             fieldId: item.fieldId,
             explainedSpanCount: field.explainedSpanCount,
             sourceSpanCount: field.sourceSpanCount,
-            lessons: field.claimIndices.map((index) => original.claims[index].text),
+            lessons: field.claimIndices.slice(0,16).map((index) => original.claims[index].text),
             quizCount: field.quizIds.length,
           };
         }),
@@ -70,16 +60,24 @@ export async function completeTeachingPlan(
       Array.isArray((generated as { fieldTeaching?: unknown }).fieldTeaching)
         ? (generated as { fieldTeaching: unknown[] }).fieldTeaching
         : [];
-    const repaired = await reviewTeachingPlan(
-      llm, targets, drafts, question, kind, facts,
+    const selectedPlan=progressive.plan.map((item)=>({...item,targetSpanIds:targets.some((target)=>target.fieldId===item.fieldId)?item.targetSpanIds:[]}));
+    const repaired = await reviewProgressiveTeaching(
+      llm, selectedPlan, progressive.prior, drafts, previous, question, kind, facts,
     );
     if (repaired.refused || !repaired.coverage) return original;
-    // A replacement is published only after the entire field has passed all
-    // original evidence/condition/ledger gates and has a useful reviewed quiz.
+    // A new safe partial improvement is useful too. It must retain every old
+    // approved statement/question and explained range; a new count or a quoted
+    // source alone never proves progress or completeness.
     const replacements = new Set(
       repaired.coverage.fields
-        .filter((field) => field.status === "complete" && field.quizIds.length > 0 && field.quizIds.length >=
-          (original.coverage!.fields.find((previous) => previous.fieldId === field.fieldId)?.quizIds.length || 0))
+        .filter((field) => {
+          const old=original.coverage!.fields.find((old) => old.fieldId===field.fieldId)!;
+          const retained=old.claimIndices.every((index) => field.claimIndices.some((fresh) => repaired.claims[fresh].text===original.claims[index].text));
+          const rangesRetained=(old.explainedSpanIds || []).every((id) => field.explainedSpanIds?.includes(id));
+          return retained && rangesRetained && field.quizIds.length >= old.quizIds.length &&
+            (field.explainedSpanCount>old.explainedSpanCount || field.quizIds.length>old.quizIds.length ||
+              (field.status==="complete" && old.status!=="complete"));
+        })
         .map((field) => field.fieldId),
     );
     if (!replacements.size) return original;
@@ -90,13 +88,20 @@ export async function completeTeachingPlan(
       const selected = result.coverage!.fields.find(
         (candidate) => candidate.fieldId === field.fieldId,
       )!;
+      const indexMap = new Map<number,number>();
       const claimIndices = selected.claimIndices.map((index) => {
         claims.push(result.claims[index]);
+        indexMap.set(index,claims.length-1);
         return claims.length - 1;
       });
       quiz.push(...result.quiz.filter((item) => selected.quizIds.includes(item.id)));
-      return { ...selected, claimIndices };
+      return { ...selected, claimIndices,
+        ...(selected.lessonSpans ? {lessonSpans:selected.lessonSpans.map((lesson) => ({...lesson,claimIndex:indexMap.get(lesson.claimIndex)!}))} : {}),
+        continuationAvailable:selected.continuationAvailable && claims.length<MAX_TOTAL_TEACHING_LESSONS,
+      };
     });
+    const exhausted = claims.length >= MAX_TOTAL_TEACHING_LESSONS;
+    if (exhausted) fields.forEach((field) => {field.continuationAvailable=false;});
     return {
       ...original,
       refused: false,

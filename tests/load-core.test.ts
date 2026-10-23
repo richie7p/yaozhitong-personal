@@ -144,6 +144,33 @@ describe("bounded load accounting", () => {
       "server_or_transport_error_rate_exceeded",
     );
   });
+  it("stops on body transport failures even when successful HTTP headers already arrived", () => {
+    const m = new LoadMetrics({ stopP95Ms: 1000, stopServerErrorRate: 0.05 });
+    for (let i = 0; i < 9; i++)
+      m.record({
+        label: "read",
+        milliseconds: 3,
+        status: 200,
+        expected: true,
+        bytes: 12,
+      });
+    m.record({
+      label: "read",
+      milliseconds: 3,
+      status: 200,
+      expected: false,
+      bytes: 0,
+      phase: "body",
+      error: "request_timeout",
+    });
+    expect(m.summary()).toMatchObject({
+      requests: 10,
+      transportErrors: 1,
+      serverErrors: 0,
+      unexpectedResponses: 1,
+      stopReason: "server_or_transport_error_rate_exceeded",
+    });
+  });
   it("cloud mode rejects mutations in configuration, extra capacity and alternate origins", () => {
     expect(LoadPlanSchema.parse(cloud).profiles[0].requests).toBe(60);
     for (const change of [

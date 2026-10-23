@@ -477,9 +477,11 @@ describe("GIS credential login without the Firebase iframe resolver", () => {
 
   it("includes /me in the credential deadline and never returns its late response", async () => {
     const me = deferred<Response>();
-    fetchMock
-      .mockResolvedValueOnce(Response.json({ updated: true }))
-      .mockReturnValueOnce(me.promise);
+    fetchMock.mockImplementation((url) =>
+      url === "/api/v1/me"
+        ? me.promise
+        : Promise.resolve(Response.json({ updated: true })),
+    );
     const login = signInGoogleCredential(auth, "synthetic-gis-id-token");
     const rejected = expect(login).rejects.toMatchObject({
       code: "google_return_timeout",
@@ -492,6 +494,39 @@ describe("GIS credential login without the Firebase iframe resolver", () => {
     await expect(login).rejects.toMatchObject({
       code: "google_return_timeout",
     });
+  });
+
+  it("recovers a silent first /me read inside the credential deadline without accepting its late identity", async () => {
+    const firstMe = deferred<Response>();
+    const verifiedMe = { account: { id: "synthetic-user" } };
+    let meReads = 0;
+    fetchMock.mockImplementation((url) => {
+      if (url !== "/api/v1/me")
+        return Promise.resolve(Response.json({ updated: true }));
+      meReads += 1;
+      return meReads === 1
+        ? firstMe.promise
+        : Promise.resolve(Response.json(verifiedMe));
+    });
+    const login = signInGoogleCredential(auth, "synthetic-gis-id-token");
+    await vi.advanceTimersByTimeAsync(14_999);
+    expect(meReads).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    const result = await login;
+    expect(result).toEqual(verifiedMe);
+    expect(meReads).toBe(2);
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url]) => url === "/api/v1/auth/google-profile",
+      ),
+    ).toHaveLength(1);
+    firstMe.resolve(Response.json({ account: { id: "late-other-user" } }));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(await login).toEqual(verifiedMe);
+    expect(auth.currentUser).toBe(user);
+    expect(firebaseSessionNeedsReload(auth)).toBe(false);
+    expect(signOut).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("shares duplicate credential callbacks instead of starting two sessions", async () => {
