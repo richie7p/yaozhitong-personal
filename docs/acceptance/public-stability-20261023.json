@@ -1,24 +1,24 @@
 {
   "schema": "yzt-public-stability-acceptance/v1",
   "date": "2026-10-23",
-  "recordedAtUtc": "2026-10-23T07:17:03.689642+00:00",
+  "recordedAtUtc": "2026-10-23T11:16:25.580801+00:00",
   "overallStatus": "bounded_release_verified_with_known_transport_gap",
   "scope": "Deployed runtime, bounded real cloud reads, one new cloud bundle, offline provider samples, official emulators and isolated recovery. These scopes remain distinct.",
   "deployment": {
-    "commit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
-    "buildId": "29db68b5-1d55-4ed9-9bc2-45d3cb9c10b7",
-    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:6681e58ae3ffcdda6a0863a83f6373eed90df13d99b22738a60dbae264c5676f",
+    "commit": "63ff843edec7ccf050475ad5363245b38986b1e5",
+    "buildId": "278a0e29-b141-48e7-8b3f-7eb4d0f2a543",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:8d2e9a1e9f93fd5dd4256ba396fe8579ad0eaad87be3c88e24b8747fdb680725",
     "services": [
       {
         "service": "yzt-test-web",
-        "revision": "yzt-test-web-00024-6ll",
+        "revision": "yzt-test-web-00026-pmb",
         "ready": true,
         "traffic": 100,
         "controlsUnchanged": true
       },
       {
         "service": "yzt-test-worker",
-        "revision": "yzt-test-worker-00024-sgc",
+        "revision": "yzt-test-worker-00026-48l",
         "ready": true,
         "traffic": 100,
         "controlsUnchanged": true
@@ -31,22 +31,37 @@
     },
     "model": "gpt-6-luna",
     "secretAndCapacityControlsUnchanged": true,
-    "receiptSha256": "d878c0367ad9eb64b964c778bc9a2da50e8833a3958e7ff2daba31274e0231ce"
+    "receiptSha256": "d44296d5c705d187b84a2bb0c2c7faf2a8f53b3f2259e36915230ad94c6adac1"
   },
   "codeCi": {
-    "runId": 39915391612,
-    "headSha": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
+    "runId": 39942829811,
+    "headSha": "63ff843edec7ccf050475ad5363245b38986b1e5",
     "conclusion": "success",
-    "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39915391612",
+    "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39942829811",
     "runtimeMatchesDeployedApplicationCommit": true,
-    "onlyChangesAfterApplicationCommit": [],
+    "runtimeChangesAfterApplicationCommit": [],
+    "documentationDelivery": "This report is published in a documentation-only follow-up to the verified application commit.",
     "previousVerifiedRun": {
-      "runId": 39903321179,
-      "headSha": "8e66a03e7f2d9667fdd3d5a7b97a868be860d35a",
+      "runId": 39917187443,
+      "headSha": "0eda0fae5e91bf8a558bd26fd0b9b1717511ea3a",
       "conclusion": "success"
     },
     "runtimeDeltaFromPreviousApplication": [
-      "server/source-teaching.ts"
+      "server/app.ts",
+      "server/domain.ts",
+      "src/MedicationViews.tsx",
+      "src/auth.tsx",
+      "src/push-session.ts",
+      "src/web-push.ts"
+    ],
+    "runtimeDeltaFromOriginalStageApplication": [
+      "server/app.ts",
+      "server/domain.ts",
+      "server/source-teaching.ts",
+      "src/MedicationViews.tsx",
+      "src/auth.tsx",
+      "src/push-session.ts",
+      "src/web-push.ts"
     ],
     "earlierRun": {
       "runId": 39902464519,
@@ -55,10 +70,10 @@
     }
   },
   "programVerification": {
-    "unitTests": 1723,
-    "unitTestFiles": 93,
+    "unitTests": 1743,
+    "unitTestFiles": 96,
     "pythonTests": 173,
-    "browserTestsDesktopAnd375px": 206,
+    "browserTestsDesktopAnd375px": 238,
     "deploymentConfigMocks": 81,
     "hostingConfigChecks": 17,
     "typescriptNoEmitPassed": true,
@@ -74,9 +89,169 @@
     "Generated lessons and indexed correct quiz options cannot add recognized new conditions to original unconditional prohibitions; known unsafe stored results require regeneration.",
     "Auth restore excludes the password pseudo-provider while retaining original password hashes.",
     "Recovery jobs import a library without the CLI entry side effect.",
-    "Restore excludes expired uploads and owners lacking a current profile.",
-    "Valid saved chat treatment context such as bare 使用時 is retained; earlier nested symptom thresholds remain checked instead of being hidden by the treatment phrase."
+    "Restore excludes expired uploads and owners lacking current Auth/account deletion-guard evidence.",
+    "Valid saved chat treatment context such as bare 使用時 is retained; earlier nested symptom thresholds remain checked instead of being hidden by the treatment phrase.",
+    "Saved chat medication identity distinguishes loading and read failures from a successfully read list with a genuinely absent medication.",
+    "Manual/search creation retries reuse an owner-scoped operation and immutable canonical input fingerprint; they neither duplicate nor overwrite edited/archived records or invalidate later learning/reminders.",
+    "A delayed explanation read, background progress, error or completion cannot replace content after medication editing/removal or clear a newer request state.",
+    "Device registration, removal and deleted-account cleanup transactionally recheck current account state and device ownership.",
+    "Origin-wide push coordination spans actual provider and owner HTTP operations; an outgoing session cannot revoke another page token, pending committed registrations remain addressable, and failed unlink has a tested recovery path."
   ],
+  "objectiveReview": {
+    "status": "reviewed_no_open_confirmed_findings",
+    "scope": "Independent adversarial source review and targeted actual-component local browser tests, followed by root combined local regression. Exact-commit CI/deployment are recorded separately.",
+    "originalIndependentReviewStatus": "passed_targeted_code_review_pending_root_full_regression_and_deployment",
+    "baselineCommit": "0eda0fae5e91bf8a558bd26fd0b9b1717511ea3a",
+    "confirmedBugs": [
+      {
+        "id": "manual-create-lost-response",
+        "severity": "P2",
+        "baseline": "A committed manual/search POST followed by a lost response could create another medication on retry.",
+        "fix": "Owner-scoped deterministic creation key plus immutable schema-canonical payload hash on the original medication; matching receipt returns unchanged revision, changed payload or edited/archived record conflicts.",
+        "reviewStatus": "static_and_test_evidence_passed",
+        "extraAdversarialCase": "Retake-and-resume originally remounted the form with a different key. The key is now retained with the paused review."
+      },
+      {
+        "id": "late-explanation-after-mutation",
+        "severity": "P2",
+        "baseline": "A delayed saved-learning read could render old content after the medication had been edited or removed.",
+        "fix": "Request generation invalidates on edit/remove/save/unmount. All async reads, progress, errors and final busy cleanup are guarded by the current generation.",
+        "reviewStatus": "static_and_test_evidence_passed"
+      },
+      {
+        "id": "device-account-deletion-race",
+        "severity": "P2",
+        "baseline": "Registration authorized before account deletion could write a device after cleanup; stale deletion could also remove a transferred device.",
+        "fix": "Registration and removal recheck account state and ownership in Firestore transactions. Account cleanup rechecks the current device owner before deletion.",
+        "reviewStatus": "static_and_test_evidence_passed",
+        "transactionOrdering": "All added transaction reads occur before writes; registration reads the account document and therefore conflicts with deletion state changes."
+      },
+      {
+        "id": "late-logout-provider-revocation",
+        "severity": "P2",
+        "baseline": "An old logout could revoke browser-wide FCM after a new session enabled push. An actual two-page same-origin AuthProvider probe also reproduced another still-signed-in page losing FCM after the old owner unlink returned 404.",
+        "fix": "Origin-wide Web Locks span actual provider and native HTTP completion, independently of shorter UI deadlines. Owner mismatch 404 never revokes the shared provider token. Pending device SHA-256 is retained before POST, intentional signOut null callbacks do not invalidate cleanup, and late or unsupported coordination is explicitly rejected while ordinary login/logout remains available.",
+        "reviewStatus": "static_and_single_page_and_cross_tab_test_evidence_passed"
+      }
+    ],
+    "reviewDetectedPatchCorrections": [
+      {
+        "issue": "retake_remount_changed_creation_key",
+        "status": "fixed_and_browser_regression_passed"
+      },
+      {
+        "issue": "late_progress_and_variable_shadowing",
+        "status": "fixed_and_targeted_regressions_passed"
+      },
+      {
+        "issue": "cross_tab_shared_fcm_revoked_after_owner_mismatch",
+        "status": "baseline_reproduced_then_fixed_and_browser_regression_passed"
+      },
+      {
+        "issue": "registration_committed_before_response_could_escape_logout_cleanup",
+        "status": "pending_address_added_and_browser_regression_passed"
+      },
+      {
+        "issue": "real_signOut_null_observer_invalidated_own_cleanup_epoch",
+        "status": "intentional_logout_transition_added_and_observer_aware_regressions_passed"
+      },
+      {
+        "issue": "unlink_failure_recovery_instruction_lacked_addressable_operation",
+        "status": "working_reenable_then_logout_sequence_verified"
+      }
+    ],
+    "sourceFileSha256Lf": {
+      "server/app.ts": "54edbd597c72042115957a61bc3f844975d5a8cc9e034e075a454895410db4d7",
+      "server/domain.ts": "748ad82734087723764870c44f371edfd1ed1a8bc8715aa78b483e530ddaab12",
+      "src/MedicationViews.tsx": "af3f4384e3b824a638c4d7d0f47764d71015d20ec22dabeea36353ef8fb9577f",
+      "src/auth.tsx": "293899527ae1d6dad4768bdf2227ae873d2bc8ec98b4d94c82ffe8f027cbe7a3",
+      "src/push-session.ts": "fd1d8de08ae999226c2bd86a38ddf6582e39a149a6327f479ed90caf1e11926c",
+      "src/web-push.ts": "facd130a8e55491957eba1c8ca1a11efd1b3b36164915ab225d932142d7cc152"
+    },
+    "independentPrivateReceiptSha256": "623c5894679714bd2c9baca422d62a141253c5f0f1636523315dfc6d6ecfdd50",
+    "targetedTests": {
+      "writesByReviewer": "Only this private review document; no tracked source edits.",
+      "cloudWrites": 0,
+      "paidAiCalls": 0,
+      "newAccounts": 0,
+      "emailSends": 0,
+      "authTargetedTestsReportedByAuthor": 186,
+      "authTargetedTestsIndependentlyInspected": [
+        "device registration versus account deletion and cleanup versus owner transfer",
+        "same-page pending provider revocation and actual promise timeout controls",
+        "two-page same-origin shared-provider ownership transfer and 404 protection",
+        "provider cleanup outlives UI timeout before another page may create a token",
+        "late setup token cannot POST after timeout; queued lock deadline cannot run late",
+        "unsupported Web Locks disables new push without blocking login/logout",
+        "committed POST response held during logout is still unlinked using pending SHA-256 address",
+        "failed unlink retains a visible warning and a tested re-enable-then-logout recovery path",
+        "synthetic signOut and signIn invoke AuthProvider null/new-user observers"
+      ],
+      "realProviderBoundary": "AuthProvider probes run real application components with local synthetic Firebase/FCM boundaries. They do not prove actual FCM delivery or Android background notifications.",
+      "coreNewUnitTests": 6,
+      "coreRelatedUnitTestsReportedByAuthor": 78,
+      "coreDesktopMobileBrowserTests": {
+        "passed": 16,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "authTargetedResultIndependentlyRead": {
+        "passed": 186,
+        "failed": 0,
+        "success": true
+      },
+      "authDesktopMobileBrowserTests": {
+        "passed": 34,
+        "newPushCases": 14,
+        "existingAuthCases": 20,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "coreExistingBrowserTests": {
+        "passed": 54,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "additionalLimits": [
+      "Synthetic provider and HTTP boundaries cannot establish actual FCM delivery, Android background delivery or real Google signOut timing beyond the reproduced observer contract.",
+      "Abrupt browser/process termination while an external provider operation is in flight has not been exercised.",
+      "The original one-off transport timeout remains unlocated; bounded errors and recovery were tested separately.",
+      "No new paid AI, mobile camera, or large-scale live-provider capacity test was performed by this review."
+    ],
+    "rootFullLocalRegression": {
+      "unitTests": 1743,
+      "unitTestFiles": 96,
+      "browserTestsDesktopAnd375px": 238,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0,
+      "sourceManifestUnchanged": true,
+      "privateReceiptSha256": "cf55e820739cbb8f6037d3174494dcc6cd1e2969e3cb11fc30ca5927ffcc01e8"
+    },
+    "finalPatchAndroidReceiptStatus": "deferred_by_user_until_after_automatic_acceptance",
+    "openConfirmedFindingsInReviewedScope": 0
+  },
+  "manualCreationCloudRecovery": {
+    "at": "2026-10-23T11:10:47.762Z",
+    "commit": "63ff843edec7ccf050475ad5363245b38986b1e5",
+    "status": "passed",
+    "firstActualSave201ResponseIntentionallyLost": true,
+    "changedPayloadRejected409": true,
+    "sameOperationReturnedOriginal201": true,
+    "actualRowsCreated": 1,
+    "knownInitialRowsCreated": 1,
+    "upstreamOutcomeAmbiguous": false,
+    "sameMedicationAfterReload": true,
+    "desktopAnd375pxNoOverflow": true,
+    "testMedicationCleaned": true,
+    "originalSourceAndOwnerSnapshotUnchanged": true,
+    "quotaUnchanged": true,
+    "newAiJobs": 0,
+    "newAccounts": 0,
+    "ordinaryAccountUsed": true,
+    "privateReceiptSha256": "c460e8c77b1ec0d91d7990c4b84b84d246da75108e7bcf28f1fb23ed212f7d39"
+  },
   "sourcePublication": {
     "before": 3521,
     "added": 72,
@@ -89,7 +264,7 @@
     "newRawReadbacksExact": 72,
     "offlineReadabilityIsGeneratedAnswerAccuracy": false,
     "receipt": "tfda-manufacturing-reader-20261023.json",
-    "receiptSha256": "5e391469626386b8b43c751d50b6c70e1fb530c2627e58448064634331f4d5dc"
+    "receiptSha256": "80e714d5a615418ed5b395435de3d96ae8eb16a0097bd56ae0786a61950508c9"
   },
   "nativeOfflineProviderSamples": {
     "cases": 2,
@@ -348,7 +523,7 @@
   },
   "savedChatClosure": {
     "schema": "readonly-history-reconciliation/v1",
-    "at": "2026-10-23T07:15:49.100Z",
+    "at": "2026-10-23T11:11:55.751Z",
     "status": "read_only_reconciled",
     "rawChats": 20,
     "visibleChats": 3,
@@ -358,11 +533,14 @@
     "selectedHiddenReasons": [],
     "selectedJobError": null,
     "paginationCause": false,
-    "applicationCommit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
-    "deployedRevision": "yzt-test-web-00024-6ll",
+    "applicationCommit": "63ff843edec7ccf050475ad5363245b38986b1e5",
+    "deployedRevision": "yzt-test-web-00026-pmb",
     "actualUnsafeRecordsStillWithheld": 2,
     "selectedResultExactlyPreserved": true,
     "wholeSourceAndOwnerSnapshotUnchanged": true,
+    "medicationReadSettledBeforeScreenshots": true,
+    "currentMedicationIdentityDisplayed": true,
+    "restoredClaimTextRendered": true,
     "quotas": {
       "personDaily": 20,
       "siteDaily": 1000,
@@ -391,7 +569,7 @@
         "horizontalOverflow": false
       }
     ],
-    "privateReceiptSha256": "70932050775c5c3f2dc275da1ff864f038d08f398a59a09b8c42f31963e6ea8b",
+    "privateReceiptSha256": "9ac786737a0655fd6fd8598a8e808814e0b6ed523c989135332b44ea64923a77",
     "dedicatedBrowserClosed": true,
     "userTabsTouched": false,
     "frozenBundleResultUnchangedAfterFinalFix": true,
@@ -581,7 +759,7 @@
     },
     "emulatorSyntheticJpegUploads": 35,
     "emulatorAndInitialCloudLoadRuntime": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
-    "fullCapacityRunRepeatedAfterTheSavedChatOnlyValidationFix": false,
+    "fullCapacityRunRepeatedAfterObjectiveReviewFixes": false,
     "cloudReadRequests": 180,
     "cloudReadHttp200": 179,
     "cloudReadTransportTimeouts": 1,
@@ -642,6 +820,7 @@
     "Backup key and bucket share the source project; whole-project/access loss requires independent custody.",
     "MFA/tenant restore, fresh-project human Google OAuth, retained real patient-photo recovery and live caregiver relationship recovery remain unverified.",
     "Alert notification channels are intentionally absent; only rule configuration and error-filter matching were verified.",
+    "The new push lifecycle was exercised with actual app components and local Firebase/FCM boundaries; real Android delivery was not repeated for this final patch. Browsers without safe cross-tab lock coordination retain in-app reminders but cannot newly enable browser push.",
     "No clinical outcome or statistically designed user-comprehension validation was performed."
   ]
 }

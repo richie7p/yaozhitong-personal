@@ -57,7 +57,7 @@
     "new72ClassificationSha256": "6b6cf9628fc7750bde4b9ccec4983e0190c67498f673e973249604d1bcd76acb",
     "applicationDeploymentVerified": true,
     "deployedApplicationCommit": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
-    "currentApplicationCommit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c"
+    "currentApplicationCommit": "63ff843edec7ccf050475ad5363245b38986b1e5"
   },
   "nativeEvaluation": {
     "scope": "offline candidate production grounded pipeline; not website/cloud jobs",
@@ -206,7 +206,7 @@
     "clinicalReview": false,
     "originalGenerationApplicationCommit": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
     "unchangedResultAndFiveAnswersVerifiedAfterFinalFix": true,
-    "finalReadbackApplicationCommit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
-    "finalReadbackSha256": "0e31f3e889d03316c0820de464a895f68537015437b726135f29503cb194820e"
+    "finalReadbackApplicationCommit": "63ff843edec7ccf050475ad5363245b38986b1e5",
+    "finalReadbackSha256": "5022593fd16debbf05f583f54c39de080aaad52b75135feb6cc7f92d58667650"
   }
 }
