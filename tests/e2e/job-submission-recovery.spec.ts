@@ -135,7 +135,8 @@ test("interrupted polling resumes the known job after reload and never posts a d
   const question = "合成回應中斷測試 " + info.project.name + " " + Date.now();
   let posts = 0;
   let jobId = "";
-  let dropPoll = true;
+  // Exhaust the one bounded read recovery before exercising reload recovery.
+  let dropPoll = 2;
   await page.route("**/api/v1/chat", async (route) => {
     if (route.request().method() !== "POST") return route.continue();
     posts++;
@@ -146,14 +147,14 @@ test("interrupted polling resumes the known job after reload and never posts a d
   });
   await page.route("**/api/v1/jobs/*", async (route) => {
     if (
-      dropPoll &&
+      dropPoll > 0 &&
       route.request().method() === "GET" &&
       route
         .request()
         .url()
         .endsWith("/" + jobId)
     ) {
-      dropPoll = false;
+      dropPoll--;
       await route.abort("connectionreset");
     } else await route.continue();
   });
@@ -166,6 +167,7 @@ test("interrupted polling resumes the known job after reload and never posts a d
     page.getByRole("alert").filter({ hasText: "無法連線到服務" }),
   ).toBeVisible();
   expect(jobId).toBeTruthy();
+  expect(dropPoll).toBe(0);
 
   await page.reload();
   await page.getByLabel(name, { exact: true }).check();

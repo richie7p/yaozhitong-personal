@@ -21,6 +21,52 @@ const cloud = {
   stopServerErrorRate: 0.05,
 };
 describe("bounded load accounting", () => {
+  it("distinguishes a pre-header disconnect from a response-body failure with exact opaque request IDs", async () => {
+    const request = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("synthetic headers disconnect"))
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: new Headers({ "X-Request-Id": "server-correlation" }),
+        text: async () => {
+          throw new TypeError("synthetic body disconnect");
+        },
+      });
+    vi.stubGlobal("fetch", request);
+    const metrics = new LoadMetrics({
+      stopP95Ms: 1000,
+      stopServerErrorRate: 0.05,
+    });
+    for (let i = 0; i < 2; i++)
+      await measuredRequest(metrics, "http://127.0.0.1:18095", {
+        label: "GET /notifications",
+        path: "/notifications",
+        timeoutMs: 1000,
+      });
+    expect(metrics.summary().failures).toMatchObject([
+      {
+        status: 0,
+        phase: "headers",
+        error: "network_error",
+        requestId: expect.any(String),
+        traceId: expect.any(String),
+      },
+      {
+        status: 200,
+        phase: "body",
+        error: "network_error",
+        serverRequestId: "server-correlation",
+        headersMs: expect.any(Number),
+      },
+    ]);
+    const first = request.mock.calls[0][1] as RequestInit;
+    const headers = first.headers as Record<string, string>;
+    expect(headers["X-Cloud-Trace-Context"]).toBe(
+      metrics.samples[0].traceId + "/1;o=1",
+    );
+    expect(headers["X-Client-Request-Id"]).toBe(metrics.samples[0].requestId);
+    expect(metrics.summary().transportErrors).toBe(2);
+  });
   it("uses nearest rank percentiles without mutating samples", () => {
     const values = [9, 1, 2, 5];
     expect(percentile(values, 0.5)).toBe(2);

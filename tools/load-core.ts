@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 
 export const CLOUD_READ_PATHS = [
   "/me",
@@ -81,6 +82,11 @@ export function percentile(values: number[], quantile: number) {
 }
 
 export type Sample = {
+  requestId?: string;
+  serverRequestId?: string;
+  traceId?: string;
+  phase?: "headers" | "body" | "json" | "invariant" | "complete";
+  headersMs?: number;
   label: string;
   milliseconds: number;
   status: number;
@@ -139,7 +145,7 @@ export class LoadMetrics {
       maximumMs: round(Math.max(0, ...rows.map((x) => x.milliseconds))),
       unexpectedResponses: rows.filter((x) => !x.expected).length,
       serverErrors: rows.filter((x) => x.status >= 500).length,
-      transportErrors: rows.filter((x) => x.status === 0).length,
+      transportErrors: rows.filter((x) => x.status === 0 || x.error === "network_error" || x.error === "request_timeout").length,
       invariantFailures: rows.filter((x) => x.error === "invariant_failed")
         .length,
       expectedRejections: rows.filter((x) => x.expected && x.status >= 400)
@@ -153,6 +159,7 @@ export class LoadMetrics {
     });
     return {
       ...summarize(this.samples),
+      failures: this.samples.filter((row) => !row.expected).map((row) => ({ ...row })),
       stopReason: this.stopReason,
       byOperation: Object.fromEntries(
         [...new Set(this.samples.map((x) => x.label))]
@@ -217,36 +224,49 @@ export async function measuredRequest(
   },
 ) {
   const started = performance.now();
+  const requestId = randomUUID();
+  const traceId = requestId.replaceAll("-", "");
+  let serverRequestId: string | undefined;
+  let phase: Sample["phase"] = "headers";
+  let headersMs: number | undefined;
   let status = 0,
     bytes = 0,
     expected = false;
   let error: Sample["error"];
   let data: any = null;
+  const signal = AbortSignal.timeout(options.timeoutMs);
   try {
     const response = await fetch(origin + "/api/v1" + options.path, {
       method: options.method || "GET",
       headers: {
         ...(options.token ? { authorization: "Bearer " + options.token } : {}),
         "content-type": "application/json",
+        "X-Client-Request-Id": requestId,
+        "X-Cloud-Trace-Context": traceId + "/1;o=1",
         ...(options.idempotencyKey
           ? { "Idempotency-Key": options.idempotencyKey }
           : {}),
       },
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
-      signal: AbortSignal.timeout(options.timeoutMs),
+      signal,
       redirect: "error",
     });
     status = response.status;
+    headersMs = performance.now() - started;
+    serverRequestId = response.headers.get("X-Request-Id") || undefined;
+    phase = "body";
     const text = await response.text();
     bytes = Buffer.byteLength(text);
     try {
+      phase = "json";
       data = JSON.parse(text);
     } catch {
       error = "invalid_json";
     }
     expected = (options.expected || [200]).includes(status) && !error;
     if (expected && options.invariant) {
+      phase = "invariant";
       let valid = false;
       try {
         valid = options.invariant(data);
@@ -258,10 +278,11 @@ export async function measuredRequest(
         error = "invariant_failed";
       }
     }
+    if (expected) phase = "complete";
   } catch (e) {
     expected = false;
     error =
-      (e as Error).name === "TimeoutError"
+      (e as Error).name === "TimeoutError" || (signal.aborted && signal.reason?.name === "TimeoutError")
         ? "request_timeout"
         : "network_error";
   }
@@ -271,6 +292,9 @@ export async function measuredRequest(
     status,
     expected,
     bytes,
+    requestId, traceId, phase,
+    ...(serverRequestId ? { serverRequestId } : {}),
+    ...(headersMs === undefined ? {} : { headersMs }),
     ...(error ? { error } : {}),
   });
   return { status, data, expected };

@@ -23,6 +23,7 @@ async function run(
   let prompt = "";
   const llm: Llm = {
     json: async (system, input: any) => {
+      if (input.teachingFields && !input.sources) return {fieldTeaching: []};
       if (system.includes("審核器")) {
         reviewInput = input;
         return {

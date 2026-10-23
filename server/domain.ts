@@ -19,6 +19,7 @@ import {
 } from "../shared/schema.js";
 import { learningProgress, validAnswers } from "../shared/learning.js";
 import { doseLabel } from "../shared/medication.js";
+import { needsTeachingCompletion } from "../shared/teaching-completion.js";
 import type { ProductIdentityIndex } from "../shared/product-identity.js";
 import {
   aiConnection,
@@ -245,7 +246,10 @@ export class Domain {
       if (id && (!old || old.ownerId !== uid || old.archived))
         return fail("not_found", "找不到藥品。", 404);
       if (!id && operationKey && old) {
-        if (old.ownerId !== uid || old.creationPayloadHash !== creationPayloadHash)
+        if (
+          old.ownerId !== uid ||
+          old.creationPayloadHash !== creationPayloadHash
+        )
           return fail(
             "medication_saved_conflict",
             "這筆建檔已儲存，與目前編輯內容不同。請到我的藥品確認已儲存的資料。",
@@ -267,8 +271,11 @@ export class Domain {
       }
       const result: Medication = {
         ...m,
-        ...((creationPayloadHash || old?.creationPayloadHash)
-          ? { creationPayloadHash: creationPayloadHash || old!.creationPayloadHash }
+        ...(creationPayloadHash || old?.creationPayloadHash
+          ? {
+              creationPayloadHash:
+                creationPayloadHash || old!.creationPayloadHash,
+            }
           : {}),
         id: key,
         ownerId: uid,
@@ -521,13 +528,63 @@ export class Domain {
       return r;
     });
   }
-  async saveCabinet(uid: string, data: unknown, id?: string) {
+  async saveCabinet(
+    uid: string,
+    data: unknown,
+    id?: string,
+    operationKey?: string,
+  ) {
     const b = CabinetSchema.parse(data);
-    if (id) await this.owned("cabinet", id, uid);
-    if (b.medicationId) await this.owned("medications", b.medicationId, uid);
-    const r = { ...b, id: id || randomUUID(), ownerId: uid, updatedAt: now() };
-    await this.writePrivate(uid, "cabinet", r.id, r);
-    return r;
+    if (!id && operationKey && !/^[a-zA-Z0-9-]{8,100}$/.test(operationKey))
+      return fail("invalid_request", "缺少有效的 Idempotency-Key。");
+    const creationPayloadHash =
+      !id && operationKey ? hash(JSON.stringify(b)) : undefined;
+    const key =
+      id ||
+      (operationKey
+        ? hash(uid + "|cabinet-create|" + operationKey)
+        : randomUUID());
+    return this.store.transaction(async (tx) => {
+      const user = await tx.get<Account>("users", uid);
+      if (!user || user.disabled || user.deleting)
+        return fail("account_disabled", "帳號已停用。", 403);
+      const old = await tx.get("cabinet", key);
+      if (id && (!old || old.ownerId !== uid))
+        return fail("not_found", "找不到資料。", 404);
+      if (b.medicationId) {
+        const med = await tx.get<Medication>("medications", b.medicationId);
+        if (!med || med.ownerId !== uid)
+          return fail("not_found", "找不到資料。", 404);
+      }
+      if (!id && operationKey && old) {
+        if (
+          old.ownerId !== uid ||
+          old.creationPayloadHash !== creationPayloadHash ||
+          old.revision !== 1
+        )
+          return fail(
+            "cabinet_saved_conflict",
+            "這筆藥箱項目已儲存，內容已變更。請取消新增並到清單核對或編輯已儲存項目。",
+            409,
+          );
+        return old;
+      }
+      const result = {
+        ...b,
+        ...(creationPayloadHash || old?.creationPayloadHash
+          ? {
+              creationPayloadHash:
+                creationPayloadHash || old!.creationPayloadHash,
+            }
+          : {}),
+        id: key,
+        ownerId: uid,
+        revision: (old?.revision || 0) + 1,
+        updatedAt: now(),
+      };
+      tx.set("cabinet", key, result);
+      return result;
+    });
   }
   async duplicates(uid: string) {
     const meds = await this.medications(uid);
@@ -741,6 +798,38 @@ export class Domain {
       )
         return fail("unconfirmed_usage", "請先核對藥袋的用量與頻次。");
       medications.push(reviewed);
+    }
+    if (input.previousLearningId !== undefined) {
+      if (kind !== "bundle")
+        return fail("invalid_request", "只有仿單說明可以補齊既有內容。");
+      const previousId = z
+        .string()
+        .min(1)
+        .max(80)
+        .parse(input.previousLearningId);
+      const previous = await reader.get<LearningRecord>("learning", previousId);
+      if (!previous || previous.ownerId !== uid)
+        return fail("not_found", "找不到學習內容。", 404);
+      const expected = [...new Set(ids)].sort();
+      if (
+        expected.length !== ids.length ||
+        previous.medicationIds.length !== expected.length ||
+        [...previous.medicationIds]
+          .sort()
+          .some((id, index) => id !== expected[index]) ||
+        !(await this.learningCurrent(uid, previous, reader))
+      )
+        return fail(
+          "stale_content",
+          "藥品、個人資料或仿單已更新，請重新產生說明。",
+          409,
+        );
+      if (!needsTeachingCompletion(previous.result))
+        return fail(
+          "completion_unavailable",
+          "這份內容目前沒有可補齊的說明，請先閱讀既有內容。",
+          409,
+        );
     }
     return medications;
   }
@@ -1065,6 +1154,11 @@ export class Domain {
             prompt: GROUNDING_VERSION,
             sourceReader: SOURCE_READER_VERSION,
             sourceTeaching: SOURCE_TEACHING_VERSION,
+            // Explicit completion is a new, normally charged operation; keep
+            // historic cache keys and saved answers unchanged.
+            ...(j.kind === "bundle" && j.input.previousLearningId
+              ? { previousLearningId: j.input.previousLearningId }
+              : {}),
           }),
         );
         const cached = await this.store.get("generated", ck);
@@ -1086,7 +1180,10 @@ export class Domain {
             "藥品資料已更新，請重試產生新內容。",
             409,
           );
-        result = cached?.result;
+        result =
+          cached?.result && !contentUpdateRequired(cached.result)
+            ? cached.result
+            : undefined;
         if (!result) {
           result = leaflets.some((l) => !l)
             ? {

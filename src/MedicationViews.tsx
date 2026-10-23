@@ -44,6 +44,7 @@ import {
 } from "./medication-presentation";
 import { ScheduleForm } from "./ScheduleForm";
 import { ChatAnswer } from "./ChatAnswer";
+import { TeachingCompletionAction } from "./TeachingCompletionAction";
 import {
   ProductIdentityReview,
   identityGuidance,
@@ -838,6 +839,10 @@ export function Medications() {
     [result, setResult] = useState<LearningRecord | null>(null);
   const editHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
+  const prnOperations = useRef(
+    new Map<string, { operationId: string; pending: boolean }>(),
+  );
+  const [prnSaving, setPrnSaving] = useState<Record<string, boolean>>({});
   const explanationVersion = useRef(0);
   useEffect(
     () => () => {
@@ -1146,21 +1151,37 @@ export function Medications() {
                 )}
                 {m.confirmed && m.prn && (
                   <Button
+                    disabled={!!prnSaving[m.id]}
                     onClick={async () => {
+                      let operation = prnOperations.current.get(m.id);
+                      if (operation?.pending) return;
+                      if (!operation) {
+                        operation = { operationId: crypto.randomUUID(), pending: false };
+                        prnOperations.current.set(m.id, operation);
+                      }
+                      operation.pending = true;
+                      setPrnSaving((current) => ({ ...current, [m.id]: true }));
+                      setMessage("");
                       try {
                         await api("/dose-logs", "POST", {
                           medicationId: m.id,
                           dueAt: null,
                           status: "taken",
-                          operationId: crypto.randomUUID(),
+                          operationId: operation.operationId,
                         });
+                        // An ambiguous failure may already have committed. Keep
+                        // its key until success, so retry records the same dose.
+                        prnOperations.current.delete(m.id);
                         setMessage("已記錄這次服用。");
                       } catch (e: any) {
                         setMessage(e.message);
+                      } finally {
+                        operation.pending = false;
+                        setPrnSaving((current) => ({ ...current, [m.id]: false }));
                       }
                     }}
                   >
-                    記錄服用
+                    {prnSaving[m.id] ? "記錄中…" : "記錄服用"}
                   </Button>
                 )}
                 <button
@@ -1295,6 +1316,11 @@ export function Medications() {
               繼續理解測驗
             </a>
           )}
+          <TeachingCompletionAction
+            key={"completion-" + result.id}
+            record={result}
+            onCompleted={setResult}
+          />
           <Evidence
             key={result.id}
             result={result.result}
@@ -1318,6 +1344,11 @@ export function Medications() {
   );
 }
 export function Learning() {
+  const learningActive = useRef(true);
+  useEffect(() => {
+    learningActive.current = true;
+    return () => { learningActive.current = false; };
+  }, []);
   const { data, loading, error, refresh } = useData<{
       items: LearningRecord[];
     }>("/learning"),
@@ -1468,6 +1499,16 @@ export function Learning() {
               <MedicationIdentity medication={medication} />
             </div>
           ))}
+          <TeachingCompletionAction
+            key={"completion-" + activeRecord.id}
+            record={activeRecord}
+            onCompleted={async (completed) => {
+              const requestedHash = location.hash;
+              await refresh();
+              if (learningActive.current && location.hash === requestedHash)
+                location.hash = recordHref(completed.id).slice(1);
+            }}
+          />
           <Evidence
             result={activeRecord.result}
             learningId={activeRecord.id}

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { api, setTokenProvider } from "../src/api";
+import { api, setJobIdentity, setTokenProvider } from "../src/api";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -20,6 +20,67 @@ afterEach(() => {
 });
 
 describe("bounded API transport recovery", () => {
+  it("recovers one disconnected read with distinct opaque correlation and no extra total budget", async () => {
+    const request = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("synthetic disconnect"))
+      .mockResolvedValueOnce(Response.json({ items: ["recovered"] }));
+    vi.stubGlobal("fetch", request);
+    await expect(api("/notifications")).resolves.toEqual({
+      items: ["recovered"],
+    });
+    expect(request).toHaveBeenCalledTimes(2);
+    const ids = request.mock.calls
+      .map((call) => (call[1] as RequestInit).headers as Record<string, string>)
+      .map((headers) => headers["X-Client-Request-Id"]);
+    expect(ids[0]).toMatch(/^[a-f0-9-]{36}$/);
+    expect(ids[1]).not.toBe(ids[0]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it("stops after two read transport failures and exposes the failed request correlation", async () => {
+    const request = vi
+      .fn()
+      .mockRejectedValue(new TypeError("synthetic disconnect"));
+    vi.stubGlobal("fetch", request);
+    await expect(api("/notifications")).rejects.toMatchObject({
+      code: "network_error",
+      phase: "headers",
+      attempts: 2,
+      requestId: expect.stringMatching(/^[a-f0-9-]{36}$/),
+    });
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+  it("does not replay a mutation or retry a server refusal", async () => {
+    const request = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("synthetic disconnect"))
+      .mockResolvedValueOnce(
+        Response.json(
+          { code: "quota_exceeded", message: "quota" },
+          { status: 429 },
+        ),
+      );
+    vi.stubGlobal("fetch", request);
+    await expect(
+      api("/cabinet", "POST", { name: "synthetic" }),
+    ).rejects.toMatchObject({ code: "network_error", attempts: 1 });
+    await expect(api("/notifications")).rejects.toMatchObject({
+      code: "quota_exceeded",
+      status: 429,
+    });
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+  it("does not retry or return old account data after an identity switch", async () => {
+    const first = deferred<Response>();
+    const request = vi.fn(() => first.promise);
+    vi.stubGlobal("fetch", request);
+    const pending = api("/notifications");
+    await vi.advanceTimersByTimeAsync(0);
+    setJobIdentity("synthetic-switched-owner");
+    first.resolve(Response.json({ items: ["previous-account"] }));
+    await expect(pending).rejects.toMatchObject({ code: "identity_changed" });
+    expect(request).toHaveBeenCalledTimes(1);
+  });
   it("returns control and aborts a silent fetch instead of waiting indefinitely", async () => {
     const stalled = deferred<Response>();
     const fetchMock = vi.fn(() => stalled.promise);

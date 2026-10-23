@@ -14,6 +14,8 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
+  phase?: "token" | "headers" | "body";
+  attempts?: number;
 }
 export async function api<T = any>(
   path: string,
@@ -31,6 +33,7 @@ async function request<T = any>(
   key?: string,
   assertIdentity?: () => void,
 ): Promise<T> {
+  const epoch = identityEpoch;
   assertIdentity?.();
   if (!navigator.onLine)
     throw new ApiError("offline", "目前離線，請連線後再操作。");
@@ -40,18 +43,29 @@ async function request<T = any>(
     path === "/recognitions" && method === "POST" ? 90000 : 45000;
   const controller = new AbortController();
   let timedOut = false;
+  let phase: "token" | "headers" | "body" = "token";
+  let attempts = 0;
+  let clientRequestId = crypto.randomUUID();
   const timeoutError = new ApiError(
     "request_timeout",
     "連線等待過久，請確認網路後重試；已送出的操作可先到相關紀錄確認。",
   );
   const assertActive = () => {
     assertIdentity?.();
+    if (epoch !== identityEpoch)
+      throw new ApiError(
+        "identity_changed",
+        "登入帳號已變更，請重新開啟頁面。",
+      );
     if (timedOut) throw timeoutError;
   };
   let timer: ReturnType<typeof setTimeout>;
   const deadline = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => {
       timedOut = true;
+      timeoutError.requestId = clientRequestId;
+      timeoutError.phase = phase;
+      timeoutError.attempts = attempts;
       reject(timeoutError);
       controller.abort();
     }, timeoutMs);
@@ -61,48 +75,70 @@ async function request<T = any>(
     // A token refresh may finish after the caller has timed out. Never send
     // that late request, especially when it contains a photo or other input.
     assertActive();
-    let response: Response;
-    try {
-      response = await fetch("/api/v1" + path, {
-        method,
-        headers: {
-          ...(token ? { Authorization: "Bearer " + token } : {}),
-          ...(body ? { "Content-Type": "application/json" } : {}),
-          ...(key ? { "Idempotency-Key": key } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        cache: "no-store",
-        signal: controller.signal,
-      });
-    } catch {
+    for (;;) {
       assertActive();
-      throw new ApiError(
-        "network_error",
-        "無法連線到服務，請確認連線與藥智通服務已啟動後再試。",
-      );
-    }
-    assertActive();
-    let data: any;
-    try {
-      data = await response.json();
-    } catch {
+      attempts++;
+      if (attempts > 1) clientRequestId = crypto.randomUUID();
+      phase = "headers";
+      let response: Response;
+      try {
+        response = await fetch("/api/v1" + path, {
+          method,
+          headers: {
+            ...(token ? { Authorization: "Bearer " + token } : {}),
+            ...(body ? { "Content-Type": "application/json" } : {}),
+            ...(key ? { "Idempotency-Key": key } : {}),
+            "X-Client-Request-Id": clientRequestId,
+          },
+          body: body ? JSON.stringify(body) : undefined,
+          cache: "no-store",
+          signal: controller.signal,
+        });
+      } catch {
+        assertActive();
+        // Only a failed transport for a read can retry. The original total
+        // deadline includes both attempts and token refresh; mutations never retry.
+        if (method === "GET" && attempts === 1 && navigator.onLine) continue;
+        throw Object.assign(
+          new ApiError(
+            "network_error",
+            "無法連線到服務，請確認連線與藥智通服務已啟動後再試。",
+            clientRequestId,
+          ),
+          { phase, attempts },
+        );
+      }
       assertActive();
-      throw new ApiError(
-        "invalid_response",
-        "服務暫時無法回應，請稍後重試。",
-        response.headers.get("X-Request-Id") || "",
-        response.status,
-      );
+      phase = "body";
+      let data: any;
+      try {
+        data = await response.json();
+      } catch (error) {
+        assertActive();
+        if (
+          error instanceof TypeError &&
+          method === "GET" &&
+          attempts === 1 &&
+          navigator.onLine
+        )
+          continue;
+        throw new ApiError(
+          "invalid_response",
+          "服務暫時無法回應，請稍後重試。",
+          response.headers.get("X-Request-Id") || "",
+          response.status,
+        );
+      }
+      assertActive();
+      if (!response.ok)
+        throw new ApiError(
+          data?.code || "service_error",
+          data?.message || "服務暫時無法回應，請稍後重試。",
+          data?.requestId || "",
+          response.status,
+        );
+      return data as T;
     }
-    assertActive();
-    if (!response.ok)
-      throw new ApiError(
-        data?.code || "service_error",
-        data?.message || "服務暫時無法回應，請稍後重試。",
-        data?.requestId || "",
-        response.status,
-      );
-    return data as T;
   })();
   try {
     return await Promise.race([operation, deadline]);

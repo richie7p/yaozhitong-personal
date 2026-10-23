@@ -21,6 +21,10 @@ import { completeGoogleProfile } from "./google-profile.js";
 import { Support } from "./support.js";
 import { validateRecognitionPhoto } from "./photo-validation.js";
 import { AdmissionGate } from "./admission.js";
+import {
+  clientRequestCorrelation,
+  requestCompletionEvent,
+} from "./request-telemetry.js";
 type Env = {
   Variables: { identity: Identity; account: Account; requestId: string };
 };
@@ -45,10 +49,31 @@ export function createApp(d: Domain, auth = authenticate) {
     }),
   );
   app.use("*", async (c, next) => {
+    const started = performance.now();
+    const clientRequestId = clientRequestCorrelation(
+      c.req.header("X-Client-Request-Id"),
+    );
     c.set("requestId", randomUUID());
     c.header("X-Request-Id", c.get("requestId"));
     c.header("Cache-Control", "no-store");
-    await next();
+    try {
+      await next();
+    } finally {
+      const latencyMs = performance.now() - started;
+      if (clientRequestId || c.res.status >= 500 || latencyMs >= 5000)
+        console.info(
+          JSON.stringify(
+            requestCompletionEvent({
+              requestId: c.get("requestId"),
+              clientRequestId,
+              method: c.req.method,
+              route: c.req.routePath,
+              status: c.res.status,
+              latencyMs,
+            }),
+          ),
+        );
+    }
   });
   // Authenticate before admission so an anonymous unfinished body cannot hold
   // the upload slot. Acquire before bodyLimit can buffer chunked bodies.
@@ -291,7 +316,15 @@ export function createApp(d: Domain, auth = authenticate) {
     c.json({ items: await d.store.list("cabinet", ["ownerId", uid(c)]) }),
   );
   app.post("/api/v1/cabinet", async (c) =>
-    c.json(await d.saveCabinet(uid(c), await c.req.json()), 201),
+    c.json(
+      await d.saveCabinet(
+        uid(c),
+        await c.req.json(),
+        undefined,
+        c.req.header("Idempotency-Key") || undefined,
+      ),
+      201,
+    ),
   );
   app.put("/api/v1/cabinet/:id", async (c) =>
     c.json(await d.saveCabinet(uid(c), await c.req.json(), c.req.param("id"))),
@@ -380,6 +413,7 @@ export function createApp(d: Domain, auth = authenticate) {
             .array(z.string().min(1).max(80))
             .min(1)
             .max(kind === "interaction" ? 2 : 8),
+          previousLearningId: z.string().min(1).max(80).optional(),
           question: z
             .string()
             .trim()
@@ -392,6 +426,8 @@ export function createApp(d: Domain, auth = authenticate) {
             ),
         })
         .parse(await c.req.json());
+      if (kind !== "bundle" && b.previousLearningId !== undefined)
+        return fail("invalid_request", "只有仿單說明可以補齊既有內容。");
       if (
         kind === "interaction" &&
         (b.medicationIds.length !== 2 || new Set(b.medicationIds).size !== 2)

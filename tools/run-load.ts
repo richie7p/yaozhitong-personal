@@ -96,6 +96,7 @@ async function cloudReads(plan: LoadPlan, credentialsPath: string) {
       requestsPerSecond:
         Math.round((metrics.samples.length / elapsedMs) * 100000) / 100,
       ...metrics.summary(),
+      requestDiagnostics: metrics.samples,
     };
     profiles.push(result);
     if (result.stopReason || result.unexpectedResponses) break;

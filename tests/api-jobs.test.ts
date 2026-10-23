@@ -193,6 +193,9 @@ describe("recovering an AI operation without creating another job", () => {
       response({ jobId: "known-poll-job" }, 202),
     );
     fetchMock.mockRejectedValueOnce(new TypeError("Poll disconnected"));
+    fetchMock.mockRejectedValueOnce(
+      new TypeError("Read recovery disconnected"),
+    );
     const body = { medicationIds: ["a"] };
     await expect(
       settle(client.submitJob("/bundles", body)),
@@ -348,6 +351,9 @@ describe("recovering an AI operation without creating another job", () => {
     const body = { medicationIds: ["a"] };
     fetchMock.mockResolvedValueOnce(response({ jobId: "durable-job" }, 202));
     fetchMock.mockRejectedValueOnce(new TypeError("Poll disconnected"));
+    fetchMock.mockRejectedValueOnce(
+      new TypeError("Read recovery disconnected"),
+    );
     await expect(
       settle(client.submitJob("/bundles", body)),
     ).rejects.toMatchObject({ jobId: "durable-job" });

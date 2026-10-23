@@ -475,7 +475,10 @@ export function Evidence({
     >
       <div className="claim-number">{String(index + 1).padStart(2, "0")}</div>
       <div>
-        {c.category === "use" && <span className="tag">仿單一般用法</span>}
+        {c.category === "use" && <>
+          <span className="tag">仿單一般用法</span>
+          <p className="fine">以下為仿單的一般標示與操作；你的用量與頻次請對照已核對的藥袋用法。</p>
+        </>}
         {c.kind === "source_plain_language" && (
           <span className="tag">AI 白話說明</span>
         )}

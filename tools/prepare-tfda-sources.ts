@@ -31,6 +31,20 @@ export function parseSourceFormat(value: string | undefined): "all" | "html" | "
 export function sourceFormatSelected(format: "all" | "html" | "pdf", sourceType: unknown): boolean {
   return format === "all" || format === sourceType;
 }
+export type HtmlMode = "auto" | "legacy" | "numbered-outline-v1" | "numbered-outline-rectangular-v1";
+export function parseHtmlMode(value: string | undefined): HtmlMode {
+  if (value === undefined) return "auto";
+  if (["auto", "legacy", "numbered-outline-v1", "numbered-outline-rectangular-v1"].includes(value)) return value as HtmlMode;
+  throw Error("invalid_html_mode");
+}
+/** Auto chooses between existing proofs; it never treats an unsupported structure as plain text. */
+export function needsHtmlOutlineInspection(report: any): boolean {
+  return !(report?.parserVersion === "tfda-complete-dom-v4" &&
+    report.tableSerializationVersion === "tfda-simple-table-literal-v1" &&
+    report.fullDomConserved === true && report.hasUnverifiedNonTextContent === false &&
+    report.simpleTablesConserved === true && report.complexTableCount === 0 &&
+    report.unaccountedMainBlockCount === 0 && report.allMainBlocksAccounted === true);
+}
 export function officialCategoryDisposition(product: any): "patient_candidate" | "archive_only_raw_material" | "archive_only_unconfirmed_category" {
   const categories = (product.catalogRows || []).map((row: any) => String(row.record?.["藥品類別"] || "").trim());
   if (categories.some(isRawMaterialOfficialCategory)) return "archive_only_raw_material";
@@ -124,10 +138,8 @@ async function main() {
   }
   if (!["--inventory", "--corpus", "--output"].every((key) => options[key])) throw Error("requires_inventory_corpus_output");
   const sourceFormat = parseSourceFormat(options["--source-format"]);
-  const htmlMode = options["--html-mode"] || "legacy";
-  const outlineMode = htmlMode !== "legacy", rectangularOutline = htmlMode === "numbered-outline-rectangular-v1";
-  if (!["legacy", "numbered-outline-v1", "numbered-outline-rectangular-v1"].includes(htmlMode)) throw Error("invalid_html_mode");
-  if (htmlMode !== "legacy" && sourceFormat !== "html") throw Error("numbered_outline_requires_html_source_format");
+  const requestedHtmlMode = parseHtmlMode(options["--html-mode"]);
+  if (!["auto", "legacy"].includes(requestedHtmlMode) && sourceFormat !== "html") throw Error("numbered_outline_requires_html_source_format");
   const inventory = resolve(options["--inventory"]), corpus = resolve(options["--corpus"]), output = resolve(options["--output"]);
   const limit = Number(options["--limit"] || "100000");
   if (!Number.isSafeInteger(limit) || limit < 1) throw Error("invalid_limit");
@@ -144,6 +156,7 @@ async function main() {
   const protectedLicenses = new Set((protectedData.leaflets || []).filter((item: any) => item.status === "published").map((item: any) => item.licenseNo));
   const counts: Record<string, number> = {}, reasons: Record<string, number> = {};
   const selectedSourceCounts: Record<string, number> = {}, deferredSourceCounts: Record<string, number> = {};
+  const selectedHtmlModes: Record<string, number> = {};
   const eligible: any[] = [];
   let processed = 0, reused = 0;
   for (const product of products) {
@@ -179,6 +192,18 @@ async function main() {
     const extractionPath = record.extractionPath && resolve(corpus, record.extractionPath);
     const extraction = extractionPath ? await optional(extractionPath) : null;
     let independent = extraction?.sourceBlobSha256 === record.sourceBlobSha256 && extraction?.urlHash === record.urlHash ? extraction : null;
+    // A format choice cannot repair a missing or differently bound cache entry.
+    // Keep the original resumable acquisition state instead of aborting later
+    // while hashing a missing extraction, or trusting another source's report.
+    if (record.sourceType === "html" && requestedHtmlMode === "auto" && !independent) {
+      counts.awaiting_current_extraction = (counts.awaiting_current_extraction || 0) + 1;
+      continue;
+    }
+    const htmlMode = requestedHtmlMode === "auto"
+      ? needsHtmlOutlineInspection(independent) ? "numbered-outline-rectangular-v1" : "legacy"
+      : requestedHtmlMode;
+    const outlineMode = htmlMode !== "legacy", rectangularOutline = htmlMode === "numbered-outline-rectangular-v1";
+    if (record.sourceType === "html") selectedHtmlModes[htmlMode] = (selectedHtmlModes[htmlMode] || 0) + 1;
     if (record.sourceType === "html" && outlineMode) {
       const result = await runFile(options["--python"] || "python", ["-X", "utf8", fileURLToPath(new URL("./fetch-tfda-sources.py", import.meta.url)),
         rectangularOutline ? "--inspect-html-outline-rectangular-internal" : "--inspect-html-outline-internal", rawPath, record.finalUrl], {
@@ -287,7 +312,7 @@ async function main() {
     await atomic(manifestPath, manifest); manifestPaths.push(manifestPath);
   }
   const summary = { schema: "tfda-source-preparation-summary/v1", at: new Date().toISOString(), corpus, inventory, sourceFormat,
-    ...(htmlMode !== "legacy" ? { htmlMode } : {}), selectedSourceCounts, deferredSourceCounts, products: products.length, assessed: processed, reused, counts, reasons, eligible: eligible.length, manifests: manifestPaths, aiCalls: 0, cloudWrites: 0, humanReviewed: false, clinicalReviewed: false };
+    htmlMode: requestedHtmlMode, selectedHtmlModes, selectedSourceCounts, deferredSourceCounts, products: products.length, assessed: processed, reused, counts, reasons, eligible: eligible.length, manifests: manifestPaths, aiCalls: 0, cloudWrites: 0, humanReviewed: false, clinicalReviewed: false };
   await atomic(join(output, "summary.json"), summary);
   console.log(JSON.stringify(summary));
 }

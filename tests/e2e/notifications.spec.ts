@@ -36,6 +36,40 @@ test.describe("notification history route fixtures", () => {
   // These synthetic notifications exist only in the route fixtures.
   test.use({ serviceWorkers: "block" });
 
+  test("one disconnected notification read recovers automatically without a write or stuck spinner", async ({
+    page,
+  }) => {
+    let reads = 0;
+    const writes: string[] = [];
+    const correlations: string[] = [];
+    page.on("request", (request) => {
+      const path = new URL(request.url()).pathname;
+      if (
+        path.startsWith("/api/v1/") &&
+        request.method() !== "GET" &&
+        path !== "/api/v1/auth/local"
+      )
+        writes.push(path);
+    });
+    await page.route("**/api/v1/notifications", async (route) => {
+      correlations.push(route.request().headers()["x-client-request-id"]);
+      if (++reads === 1) await route.abort("connectionreset");
+      else await route.fulfill({ json: { items: [sent] } });
+    });
+    await login(page);
+    await page
+      .locator(".topbar")
+      .getByRole("link", { name: "通知紀錄", exact: true })
+      .click();
+    await expect(page.getByText(sent.message, { exact: true })).toBeVisible();
+    await expect(page.getByRole("status")).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    expect(reads).toBe(2);
+    expect(correlations[0]).toMatch(/^[a-f0-9-]{36}$/);
+    expect(correlations[1]).not.toBe(correlations[0]);
+    expect(writes).toEqual([]);
+  });
+
   test("the delayed sign-in title focus preserves a keyboard user's notification link", async ({
     page,
   }) => {

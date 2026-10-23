@@ -1,5 +1,5 @@
 import { SupportInbox } from "./Support";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Users,
   Copy,
@@ -240,6 +240,9 @@ export function Care() {
 export function Cabinet() {
   const { data, refresh, error } = useData("/cabinet");
   const today = useTaipeiDay();
+  const submitting = useRef(false);
+  const creationKey = useRef("");
+  const [saving, setSaving] = useState(false);
   const [edit, setEdit] = useState<any>(null),
     [message, setMessage] = useState("");
   return (
@@ -250,15 +253,18 @@ export function Cabinet() {
         action={
           <Button
             className="primary"
-            onClick={() =>
+            disabled={saving}
+            onClick={() => {
+              creationKey.current = crypto.randomUUID();
+              setMessage("");
               setEdit({
                 name: "",
                 quantity: 0,
                 unit: "",
                 expiresAt: "",
                 disposed: false,
-              })
-            }
+              });
+            }}
           >
             <Plus size={18} />
             新增藥箱項目
@@ -274,22 +280,33 @@ export function Cabinet() {
             className="form-grid"
             onSubmit={async (e) => {
               e.preventDefault();
+              if (submitting.current) return;
+              submitting.current = true;
+              setSaving(true);
+              setMessage("");
               try {
                 await api(
                   "/cabinet" + (edit.id ? "/" + edit.id : ""),
                   edit.id ? "PUT" : "POST",
                   { ...edit, expiresAt: edit.expiresAt || null },
+                  edit.id ? undefined : creationKey.current,
                 );
+                creationKey.current = "";
                 setEdit(null);
                 refresh();
               } catch (e: any) {
                 setMessage(e.message);
+                if (e.code === "cabinet_saved_conflict") refresh();
+              } finally {
+                submitting.current = false;
+                setSaving(false);
               }
             }}
           >
             <Field label="名稱">
               <input
                 required
+                disabled={saving}
                 value={edit.name}
                 onChange={(e) => setEdit({ ...edit, name: e.target.value })}
               />
@@ -297,6 +314,7 @@ export function Cabinet() {
             <Field label="剩餘數量">
               <input
                 required
+                disabled={saving}
                 type="number"
                 min="0"
                 step="any"
@@ -309,12 +327,14 @@ export function Cabinet() {
             <Field label="單位">
               <input
                 required
+                disabled={saving}
                 value={edit.unit}
                 onChange={(e) => setEdit({ ...edit, unit: e.target.value })}
               />
             </Field>
             <Field label="有效日期">
               <input
+                disabled={saving}
                 type="date"
                 value={edit.expiresAt || ""}
                 onChange={(e) =>
@@ -323,10 +343,10 @@ export function Cabinet() {
               />
             </Field>
             <div className="full-grid">
-              <Button type="submit" className="primary">
-                儲存
+              <Button type="submit" className="primary" disabled={saving}>
+                {saving ? "儲存中…" : "儲存"}
               </Button>{" "}
-              <Button onClick={() => setEdit(null)}>取消</Button>
+              <Button disabled={saving} onClick={() => setEdit(null)}>取消</Button>
             </div>
           </form>
         </section>
@@ -357,7 +377,7 @@ export function Cabinet() {
                       ? "已過期"
                       : "保存中"}
                 </span>
-                <Button onClick={() => setEdit(r)}>編輯</Button>
+                <Button disabled={saving} onClick={() => setEdit(r)}>編輯</Button>
                 {!r.disposed && (
                   <Button
                     onClick={async () => {
