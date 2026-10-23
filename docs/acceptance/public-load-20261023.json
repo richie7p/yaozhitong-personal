@@ -1,7 +1,7 @@
 {
   "schema": "yzt-public-load-acceptance/v1",
   "date": "2026-10-23",
-  "status": "bounded_emulator_and_predeployment_cloud_read_checks_passed",
+  "status": "bounded_emulator_and_cloud_reads_completed_with_one_known_transport_timeout",
   "codeContext": {
     "baseCommit": "a458cb11e9b0329b9c034b4b530d98945d5982da",
     "candidate": "public-stability-v7",
@@ -2514,8 +2514,571 @@
     "authMetadata": "Ordinary sign-in can update last-login metadata. No accounts or privileges are created or changed by the load runner."
   },
   "cloudReadAfterDeployment": {
-    "status": "pending_exact_final_revision",
-    "requestsPerformed": 0
+    "status": "bounded_check_completed_with_one_known_transport_timeout",
+    "runtimeCodeCommit": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
+    "runtimeEquivalentCiRunId": "39903321179",
+    "webRevision": "yzt-test-web-00023-r5s",
+    "workerRevision": "yzt-test-worker-00023-hwp",
+    "imageSha256": "7a12dbcffa9d2d9bfec748986ec02541ef0e6620c38a9004892f4b7455a526b6",
+    "deploymentReceiptSha256": "21752ba34e6510bd23f8433de16176661f1f31b1cbedd466c1bde3a218e59af2",
+    "originalCompletePlanSha256": "94b20da627e9366b8119306cac3d50606e4b6721f8406585351d3df50e37f5a3",
+    "startedAtUtc": "2026-10-23T05:11:13.453Z",
+    "completedAtUtc": "2026-10-23T05:16:39.990Z",
+    "firstAttempt": {
+      "status": "failed_load_checks",
+      "receiptSha256": "a8e0c23e84d21b9e8be1b326c1f2637b3a555a45596aea91373b7106768d5f1d",
+      "completedLoadRequests": 120,
+      "nextProfileStopped": true,
+      "precedingProfilesWereNotRetried": true
+    },
+    "remainingProfile": {
+      "status": "passed_bounded_load",
+      "receiptSha256": "c4a153a0ea4f2378c18c8021e66b6aa5cf5880071941f1f063fc36cb284d34c2",
+      "planSha256": "4f452c0ae2aa2d460ab67557697ebe9f8723b82fb1e274cdf9a38ab9b2ace490",
+      "authorizedRemainingLoadRequests": 60,
+      "opaqueTraceMapSha256": "6454d0ce1fbfed41b740ed395fcb63a564586f3da037bd47f3036f1667938dbf"
+    },
+    "scope": "Same existing ordinary synthetic owner; 1/4/8 virtual read clients, 60 load GET requests per profile; no independent-user cloud write/AI capacity claim.",
+    "genuineIndependentCloudUsers": 1,
+    "ordinarySignIns": 2,
+    "configurationPreflightGetRequests": 2,
+    "requestsPerformed": 180,
+    "http200Observed": 179,
+    "transportTimeouts": 1,
+    "http5xxObserved": 0,
+    "invariantFailures": 0,
+    "applicationMutationRequests": 0,
+    "aiJobsCreated": 0,
+    "newAccounts": 0,
+    "providerCalls": 0,
+    "quotaResets": 0,
+    "expectedQuota": {
+      "dailyPerPerson": 20,
+      "dailySiteWide": 1000
+    },
+    "profiles": [
+      {
+        "virtualUsers": 1,
+        "durationMs": 40418,
+        "requestsPerSecond": 1.48,
+        "requests": 60,
+        "p50Ms": 504.16,
+        "p95Ms": 810.77,
+        "p99Ms": 3428.44,
+        "maximumMs": 3428.44,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 0,
+        "responseBytes": 3160414,
+        "statusCounts": {
+          "200": 60
+        },
+        "stopReason": null,
+        "byOperation": {
+          "GET /chat": {
+            "requests": 6,
+            "p50Ms": 577,
+            "p95Ms": 865.09,
+            "p99Ms": 865.09,
+            "maximumMs": 865.09,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 923040,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /jobs": {
+            "requests": 7,
+            "p50Ms": 535.2,
+            "p95Ms": 685.45,
+            "p99Ms": 685.45,
+            "maximumMs": 685.45,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 521416,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /learning": {
+            "requests": 7,
+            "p50Ms": 659.47,
+            "p95Ms": 679.58,
+            "p99Ms": 679.58,
+            "maximumMs": 679.58,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1430688,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /me": {
+            "requests": 7,
+            "p50Ms": 407.6,
+            "p95Ms": 864.5,
+            "p99Ms": 864.5,
+            "maximumMs": 864.5,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2331,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /medications": {
+            "requests": 7,
+            "p50Ms": 513.02,
+            "p95Ms": 3428.44,
+            "p99Ms": 3428.44,
+            "maximumMs": 3428.44,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 279699,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /notifications": {
+            "requests": 6,
+            "p50Ms": 393.29,
+            "p95Ms": 419.25,
+            "p99Ms": 419.25,
+            "maximumMs": 419.25,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 72,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /schedules": {
+            "requests": 7,
+            "p50Ms": 409.73,
+            "p95Ms": 619.79,
+            "p99Ms": 619.79,
+            "maximumMs": 619.79,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /support": {
+            "requests": 6,
+            "p50Ms": 411.28,
+            "p95Ms": 605.99,
+            "p99Ms": 605.99,
+            "maximumMs": 605.99,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 3000,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /today": {
+            "requests": 7,
+            "p50Ms": 467.83,
+            "p95Ms": 670.65,
+            "p99Ms": 670.65,
+            "maximumMs": 670.65,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 4,
+        "durationMs": 23426,
+        "requestsPerSecond": 2.56,
+        "requests": 60,
+        "p50Ms": 491.68,
+        "p95Ms": 724.35,
+        "p99Ms": 15014.78,
+        "maximumMs": 15014.78,
+        "unexpectedResponses": 1,
+        "serverErrors": 0,
+        "transportErrors": 1,
+        "invariantFailures": 0,
+        "expectedRejections": 0,
+        "responseBytes": 3160402,
+        "statusCounts": {
+          "0": 1,
+          "200": 59
+        },
+        "stopReason": null,
+        "byOperation": {
+          "GET /chat": {
+            "requests": 6,
+            "p50Ms": 628.3,
+            "p95Ms": 755.66,
+            "p99Ms": 755.66,
+            "maximumMs": 755.66,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 923040,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /jobs": {
+            "requests": 7,
+            "p50Ms": 567.17,
+            "p95Ms": 701.11,
+            "p99Ms": 701.11,
+            "maximumMs": 701.11,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 521416,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /learning": {
+            "requests": 7,
+            "p50Ms": 624.59,
+            "p95Ms": 724.35,
+            "p99Ms": 724.35,
+            "maximumMs": 724.35,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1430688,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /me": {
+            "requests": 7,
+            "p50Ms": 394.42,
+            "p95Ms": 679.89,
+            "p99Ms": 679.89,
+            "maximumMs": 679.89,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2331,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /medications": {
+            "requests": 7,
+            "p50Ms": 501.98,
+            "p95Ms": 876.71,
+            "p99Ms": 876.71,
+            "maximumMs": 876.71,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 279699,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /notifications": {
+            "requests": 6,
+            "p50Ms": 431.01,
+            "p95Ms": 15014.78,
+            "p99Ms": 15014.78,
+            "maximumMs": 15014.78,
+            "unexpectedResponses": 1,
+            "serverErrors": 0,
+            "transportErrors": 1,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 60,
+            "statusCounts": {
+              "0": 1,
+              "200": 5
+            }
+          },
+          "GET /schedules": {
+            "requests": 7,
+            "p50Ms": 408.36,
+            "p95Ms": 480.36,
+            "p99Ms": 480.36,
+            "maximumMs": 480.36,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /support": {
+            "requests": 6,
+            "p50Ms": 403.36,
+            "p95Ms": 429.98,
+            "p99Ms": 429.98,
+            "maximumMs": 429.98,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 3000,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /today": {
+            "requests": 7,
+            "p50Ms": 441.84,
+            "p95Ms": 506.22,
+            "p99Ms": 506.22,
+            "maximumMs": 506.22,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 8,
+        "durationMs": 6366,
+        "requestsPerSecond": 9.42,
+        "requests": 60,
+        "p50Ms": 589.64,
+        "p95Ms": 1293.43,
+        "p99Ms": 1458.25,
+        "maximumMs": 1458.25,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 0,
+        "responseBytes": 3160414,
+        "statusCounts": {
+          "200": 60
+        },
+        "stopReason": null,
+        "byOperation": {
+          "GET /chat": {
+            "requests": 6,
+            "p50Ms": 762.68,
+            "p95Ms": 1420.25,
+            "p99Ms": 1420.25,
+            "maximumMs": 1420.25,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 923040,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /jobs": {
+            "requests": 7,
+            "p50Ms": 692.06,
+            "p95Ms": 1333.49,
+            "p99Ms": 1333.49,
+            "maximumMs": 1333.49,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 521416,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /learning": {
+            "requests": 7,
+            "p50Ms": 784.15,
+            "p95Ms": 1458.25,
+            "p99Ms": 1458.25,
+            "maximumMs": 1458.25,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1430688,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /me": {
+            "requests": 7,
+            "p50Ms": 455.2,
+            "p95Ms": 855.79,
+            "p99Ms": 855.79,
+            "maximumMs": 855.79,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2331,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /medications": {
+            "requests": 7,
+            "p50Ms": 662.61,
+            "p95Ms": 1098.09,
+            "p99Ms": 1098.09,
+            "maximumMs": 1098.09,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 279699,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /notifications": {
+            "requests": 6,
+            "p50Ms": 426.37,
+            "p95Ms": 681.22,
+            "p99Ms": 681.22,
+            "maximumMs": 681.22,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 72,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /schedules": {
+            "requests": 7,
+            "p50Ms": 494.87,
+            "p95Ms": 707.1,
+            "p99Ms": 707.1,
+            "maximumMs": 707.1,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /support": {
+            "requests": 6,
+            "p50Ms": 470.93,
+            "p95Ms": 693.85,
+            "p99Ms": 693.85,
+            "maximumMs": 693.85,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 3000,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /today": {
+            "requests": 7,
+            "p50Ms": 460.3,
+            "p95Ms": 858.37,
+            "p99Ms": 858.37,
+            "maximumMs": 858.37,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          }
+        }
+      }
+    ],
+    "knownTransportTimeout": {
+      "operation": "GET /notifications",
+      "clientElapsedMs": 15014.78,
+      "deadlineMs": 15000,
+      "clientStatus": 0,
+      "originalResponseBodyLogged": false,
+      "firstPassHadPerRequestTraceIds": false
+    },
+    "backendLogReconciliation": {
+      "receiptSha256": "d9789e67a81517c1819fa14f4c0156646ca8bd5301d147cd3252475f1b1f4c72",
+      "auditWindowUtc": "2026-10-23T05:11:00Z/2026-10-23T05:13:00Z",
+      "operation": "GET /notifications",
+      "revision": "yzt-test-web-00023-r5s",
+      "loggedRequests": 12,
+      "loggedStatus200": 12,
+      "minimumBackendLatencyMs": 228.859,
+      "maximumBackendLatencyMs": 319.491,
+      "hasNextPage": false,
+      "interpretation": "Within the audit window the backend logged 12 notification requests, all HTTP 200. The first pass has no per-request trace, so these aggregate entries cannot uniquely identify the timed-out client request or distinguish Hosting, network and local-client causes. One client transport failure remains disclosed; no backend 15-second database delay was observed in these logs."
+    },
+    "authMetadata": "Two ordinary sign-ins can update last-login metadata. The runner changed no application data, accounts, privileges or quota limits."
   },
   "diagnosticHistory": {
     "beforeFixSameKey": {
@@ -2538,12 +3101,20 @@
       "receiptSha256": "6cf5738dc8fc4feb5834c60f44f3ad4dfff4d643d044e047621530bd439a9d15",
       "uncached20SearchP95Ms": 4330.41,
       "uncached50SearchP95Ms": 9963.3,
-      "photoInitialImageBusyResponses": [4, 9, 18]
+      "photoInitialImageBusyResponses": [
+        4,
+        9,
+        18
+      ]
     },
     "controlledSingleVariablePerformanceStudy": false,
     "previousCompleteV4": {
       "receiptSha256": "68860737e9aa78a5ba0161111e501befb52d69a307cf4472d4b9402d320f415f",
-      "mixedP95Ms": [239.68, 437, 820.66],
+      "mixedP95Ms": [
+        239.68,
+        437,
+        820.66
+      ],
       "boundaryP95Ms": 16317.27
     },
     "beforeOneReservationPermitPerDomain": {
@@ -2605,7 +3176,7 @@
     "Emulators do not reproduce all production latency, index, transaction contention, quota or autoscaling behavior.",
     "Resource measurements include the load driver and fixture data in the HTTP server process; they are not standalone Cloud Run memory capacity measurements.",
     "Native model throughput, long AI queues and full public traffic have not been stress tested. Daily quota limits are budget bounds, not response-time guarantees.",
-    "The final deployed revision still requires the bounded cloud read rerun recorded in cloudReadAfterDeployment."
+    "The deployed read check observed one client transport timeout among 180 load GET requests. Aggregate backend notification logs were HTTP 200, but the first pass lacked per-request traces; the failing network layer is unresolved. The failed receipt remains retained."
   ],
   "photoPostReview": {
     "receiptSha256": "5d419f4ddeab8553365310251b3f4ac698ccb04cf7e7638497d9268ea83a6555",
@@ -2956,5 +3527,82 @@
       "RSS includes the load driver and test fixtures in the same process; it is not a standalone production server memory measurement."
     ],
     "historicalSupplement": "Photo-only v5 supplement. The final photo profiles and current source pins are recorded in photoUploads and codeContext."
+  },
+  "timeoutFollowupAfterResume": {
+    "status": "bounded_cloud_recheck_and_user_recovery_verified_historic_cause_unlocated",
+    "originalResultPreserved": {
+      "cloudReads": 180,
+      "http200": 179,
+      "clientPreHeaderTimeouts": 1,
+      "deadlineMs": 15000,
+      "cause": "unlocated",
+      "originalNotificationBackendLogRows": 12,
+      "originalBackendStatuses": {
+        "200": 12
+      },
+      "originalBackendLatencySeconds": [
+        0.22885853,
+        0.319491162
+      ],
+      "cannotAssociateSingleHistoricFailureWithOneTrace": true
+    },
+    "freshBoundedDiagnostic": {
+      "receipt": "load/timeout-followup-29-v1.json",
+      "sha256": "17785b702408bf8bb94ad1f4ea83c9bca1ab626527f70ad101a6368a1fc97941",
+      "websiteGets": 29,
+      "configurationGets": 1,
+      "authenticatedGets": 28,
+      "endpointCounts": {
+        "notifications": 16,
+        "me": 4,
+        "learning": 4,
+        "chat": 4
+      },
+      "http200AndBodyComplete": 29,
+      "clientConcurrency": 4,
+      "ordinaryExistingOwnerAccounts": 1,
+      "normalPasswordSignIns": 1,
+      "authenticatedP95Ms": 1319.51,
+      "authenticatedMaximumMs": 1364.9,
+      "deadlineMsIncludingBody": 15000,
+      "automaticRetries": 0,
+      "googleLoggingLookups": 1,
+      "authenticatedRequestsMatchedToExactTrace": 28,
+      "matchedAuthenticatedStatuses": {
+        "200": 28
+      },
+      "revision": "yzt-test-web-00023-r5s",
+      "configurationRequestCloudRunTraceNotFound": 1,
+      "configurationMissingTraceCause": "unlocated"
+    },
+    "zeroCloudRecoveryValidation": {
+      "unitTests": 37,
+      "unitFiles": [
+        "tests/api-timeout.test.ts",
+        "tests/api-jobs.test.ts",
+        "tests/load-core.test.ts"
+      ],
+      "passed": true,
+      "e2eTests": 10,
+      "e2eScope": "All notification tests on desktop and 375px mobile; one newly added scenario on each viewport.",
+      "e2eLog": "verification/notifications-timeout-recovery-v1.log",
+      "newScenario": [
+        "Intentionally hold first notification GET silently.",
+        "Advance browser clock past the unchanged 45-second product deadline.",
+        "Verify spinner ends, timeout error is visible and manual retry is enabled.",
+        "Verify no automatic retry is sent.",
+        "Retry the same GET manually and recover records.",
+        "Release the first late aborted response and verify it cannot overwrite recovered records.",
+        "Verify exactly two GETs and no application write or AI request."
+      ],
+      "buildAndTypecheckPassedInE2eSetup": true,
+      "postRunFormattingOnly": true
+    },
+    "newAiJobs": 0,
+    "newAccounts": 0,
+    "applicationWrites": 0,
+    "quotaChanges": 0,
+    "historicCauseLocated": false,
+    "receiptSha256": "d8572f2eec3eed9ecc17c816a8819c90b1fde8b55b05f250760c54c2971155e8"
   }
 }

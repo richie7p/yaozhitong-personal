@@ -1,0 +1,647 @@
+{
+  "schema": "yzt-public-stability-acceptance/v1",
+  "date": "2026-10-23",
+  "recordedAtUtc": "2026-10-23T07:17:03.689642+00:00",
+  "overallStatus": "bounded_release_verified_with_known_transport_gap",
+  "scope": "Deployed runtime, bounded real cloud reads, one new cloud bundle, offline provider samples, official emulators and isolated recovery. These scopes remain distinct.",
+  "deployment": {
+    "commit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
+    "buildId": "29db68b5-1d55-4ed9-9bc2-45d3cb9c10b7",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:6681e58ae3ffcdda6a0863a83f6373eed90df13d99b22738a60dbae264c5676f",
+    "services": [
+      {
+        "service": "yzt-test-web",
+        "revision": "yzt-test-web-00024-6ll",
+        "ready": true,
+        "traffic": 100,
+        "controlsUnchanged": true
+      },
+      {
+        "service": "yzt-test-worker",
+        "revision": "yzt-test-worker-00024-sgc",
+        "ready": true,
+        "traffic": 100,
+        "controlsUnchanged": true
+      }
+    ],
+    "queueUnchanged": true,
+    "quotas": {
+      "person": 20,
+      "site": 1000
+    },
+    "model": "gpt-6-luna",
+    "secretAndCapacityControlsUnchanged": true,
+    "receiptSha256": "d878c0367ad9eb64b964c778bc9a2da50e8833a3958e7ff2daba31274e0231ce"
+  },
+  "codeCi": {
+    "runId": 39915391612,
+    "headSha": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
+    "conclusion": "success",
+    "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39915391612",
+    "runtimeMatchesDeployedApplicationCommit": true,
+    "onlyChangesAfterApplicationCommit": [],
+    "previousVerifiedRun": {
+      "runId": 39903321179,
+      "headSha": "8e66a03e7f2d9667fdd3d5a7b97a868be860d35a",
+      "conclusion": "success"
+    },
+    "runtimeDeltaFromPreviousApplication": [
+      "server/source-teaching.ts"
+    ],
+    "earlierRun": {
+      "runId": 39902464519,
+      "conclusion": "failure",
+      "cause": "New source-preview tests asserted before their real GET/toggle completed; both tests corrected and repeated before full green CI."
+    }
+  },
+  "programVerification": {
+    "unitTests": 1723,
+    "unitTestFiles": 93,
+    "pythonTests": 173,
+    "browserTestsDesktopAnd375px": 206,
+    "deploymentConfigMocks": 81,
+    "hostingConfigChecks": 17,
+    "typescriptNoEmitPassed": true,
+    "lifecyclePassed": true,
+    "independentSourcePreviewRepetitions": 6
+  },
+  "resolvedIssues": [
+    "Cloud Tasks named dispatch deduplication and confirmed tombstone recovery preserve one job and charge.",
+    "One per-Domain quota-reservation transaction avoids counter contention at current two-instance bound.",
+    "Verified account admission precedes queued image body reads, including unfinished chunked bodies.",
+    "Version-pinned single-flight catalog loading and bounded query cache preserve product identity checks.",
+    "Literal source typography handling recovers sources without rewriting original chunks or citations.",
+    "Generated lessons and indexed correct quiz options cannot add recognized new conditions to original unconditional prohibitions; known unsafe stored results require regeneration.",
+    "Auth restore excludes the password pseudo-provider while retaining original password hashes.",
+    "Recovery jobs import a library without the CLI entry side effect.",
+    "Restore excludes expired uploads and owners lacking a current profile.",
+    "Valid saved chat treatment context such as bare 使用時 is retained; earlier nested symptom thresholds remain checked instead of being hidden by the treatment phrase."
+  ],
+  "sourcePublication": {
+    "before": 3521,
+    "added": 72,
+    "published": 3593,
+    "offlineReadable": 2847,
+    "offlineHeld": 746,
+    "linkedUnpublished": 14595,
+    "withoutIndexOrLinks": 3059,
+    "existingSourcesReplaced": 0,
+    "newRawReadbacksExact": 72,
+    "offlineReadabilityIsGeneratedAnswerAccuracy": false,
+    "receipt": "tfda-manufacturing-reader-20261023.json",
+    "receiptSha256": "5e391469626386b8b43c751d50b6c70e1fb530c2627e58448064634331f4d5dc"
+  },
+  "nativeOfflineProviderSamples": {
+    "cases": 2,
+    "licenses": [
+      "023513",
+      "028248"
+    ],
+    "model": "gpt-6-luna",
+    "reasoningEffort": "medium",
+    "providerHttpRequests": 5,
+    "tokens": 40652,
+    "timeouts": 0,
+    "providerErrors": 0,
+    "websiteQuotaCharges": 0,
+    "claimsReviewed": 39,
+    "originalQuizQuestions": 9,
+    "finalQuizQuestions": 8,
+    "allOtherResultContentPreservedOnReplay": true,
+    "bothPlainLanguageSafetyCoverage": "partial"
+  },
+  "postDeploymentSingleBundle": {
+    "schema": "yzt-sanitized-frozen-cloud-case/v1",
+    "reviewedAtUtc": "2026-10-23T06:53:34.435058+00:00",
+    "status": "actual_outputs_source_fidelity_review_passed_coverage_partial",
+    "clinicalReviewed": false,
+    "product": {
+      "name": "安瞳 維生素洗眼液",
+      "licenseNo": "衛部藥輸字第026558號",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026558號",
+      "sourceVersion": "c2c0fca1fde0a3c2",
+      "rawSourceSha256": "c2c0fca1fde0a3c27f2be9190aaedd732c23fca0182784f4396af713ef981a3b",
+      "canonicalTextSha256": "c29bab62ed719e4273a1e097f5a1a1a2991ae23a14b474849aa488b27c8dea00"
+    },
+    "deployment": {
+      "applicationCommit": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
+      "webRevision": "yzt-test-web-00023-r5s",
+      "workerRevision": "yzt-test-worker-00023-hwp"
+    },
+    "execution": {
+      "status": "succeeded",
+      "attempts": 1,
+      "providerHttp": 3,
+      "tokens": 16446,
+      "latencyMs": 44888,
+      "allProviderStatuses200": true,
+      "reasoning": "medium",
+      "model": "gpt-6-luna",
+      "claims": 17,
+      "quizQuestions": 5,
+      "answerPostsWrongThenCorrect": 10,
+      "existingBundleReopenWithoutAiOrQuotaCharge": true,
+      "reloadPersistenceChecked": true,
+      "viewport375Checked": true,
+      "evidenceOrigin": "frozen_execution_and_pause_receipts_not_new_actions"
+    },
+    "sourceFidelity": {
+      "claimsReviewed": 17,
+      "claimsSupported": 17,
+      "quizQuestionsReviewed": 5,
+      "optionsReviewed": 10,
+      "correctAnswersSupported": 5,
+      "distractorsReviewedAsIntentionallyIncorrect": 5,
+      "explanationsReviewed": 5,
+      "literalCitationsVerified": 22,
+      "parentConditionsPresentInCitations": true,
+      "newAdviceOrWeakenedConditionObserved": false,
+      "claimReviewNotes": [
+        {
+          "claimIndex": 0,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "用途只述沖洗眼部，未擴充成治療青光眼或其他疾病。"
+        },
+        {
+          "claimIndex": 1,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "完整保留第3欄原文，包括禁用、診治、先諮詢、保存、停用、污染、兒童與隱形眼鏡等待條件；與citation去前後空白後逐字相同。"
+        },
+        {
+          "claimIndex": 2,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "完整保留第5欄原文，三天/72小時、眼部症狀與任何不適之立即停用並接受醫師診治均完整；與citation去前後空白後逐字相同。"
+        },
+        {
+          "claimIndex": 3,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "保留對本藥成分過敏的禁用，沒有降為詢問後即可使用；對比其他先詢問情境屬正確區分。"
+        },
+        {
+          "claimIndex": 4,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "青光眼與醫師治療/其他眼藥使用均保留使用前洽醫師診治。後句事前詢問為解釋性措辭，前句明確診治要求仍在。"
+        },
+        {
+          "claimIndex": 5,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "藥物過敏史、經診斷乾眼症、強烈眼痛三種條件及使用前諮詢對象均保留。"
+        },
+        {
+          "claimIndex": 6,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "為防兒童誤食而妥善保管，未新增替代措施；後句只陳述此處沒有替代規則。"
+        },
+        {
+          "claimIndex": 7,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "蓋緊、入盒、25℃以下、避免直曬/極乾燥及避免變質/蒸發均與來源相同。"
+        },
+        {
+          "claimIndex": 8,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "使用前洗手及按標示使用均在原文，不是新增用量。"
+        },
+        {
+          "claimIndex": 9,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "超期、開瓶28天後、混濁/變色/異物是任一項即不得繼續使用，未改為多條件須同時成立。"
+        },
+        {
+          "claimIndex": 10,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "不碰瓶口、不共用藥品、不換容器，以及洗眼杯不可共用均保留，未擴充適應症。"
+        },
+        {
+          "claimIndex": 11,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "兒童使用時成人在旁協助指導保留；不是只在事前說明為原要求的合理釋義。"
+        },
+        {
+          "claimIndex": 12,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "不戴隱形眼鏡使用及沖洗後至少10–15分鐘左右再戴，原數值與前後順序均保留。"
+        },
+        {
+          "claimIndex": 13,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "維生素B12造成顏色及沾衣盡快洗淨均與來源一致。"
+        },
+        {
+          "claimIndex": 14,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "連續三天或72小時無改善時立即停用並醫師診治，未增加必須合併痛/紅腫等門檻。"
+        },
+        {
+          "claimIndex": 15,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "劇痛、持續視糊、持續發紅/腫/熱/刺激等症狀及立即停用/診治保持，未要求全部症狀同時出現。"
+        },
+        {
+          "claimIndex": 16,
+          "verdict": "supported_by_provided_source",
+          "reviewNote": "任何不適均立即停用並醫師診治，不限特定症狀的解釋忠於任何一詞。"
+        }
+      ],
+      "quizReviewNotes": [
+        {
+          "quizIndex": 0,
+          "verdict": "question_options_and_explanation_consistent",
+          "correctAnswerReview": "沖洗眼部與核准用途逐字對應。",
+          "distractorReview": "治療青光眼不在用途且青光眼另列使用前洽醫師診治；此為明確錯誤誘答，不當作醫療建議。",
+          "explanationReview": "解釋引用用途原文，未添加療效。"
+        },
+        {
+          "quizIndex": 1,
+          "verdict": "question_options_and_explanation_consistent",
+          "correctAnswerReview": "明確區分成分過敏禁用及乾眼症先諮詢，未讓禁用者單憑諮詢即可使用。",
+          "distractorReview": "原文要求禁用/先諮詢，故只照標示不需處理為錯誤。",
+          "explanationReview": "分別重述禁用及三種先諮詢條件，來源均包含。"
+        },
+        {
+          "quizIndex": 2,
+          "verdict": "question_options_and_explanation_consistent",
+          "correctAnswerReview": "開瓶已達28天的情境適用開瓶28天後不得繼續用；外觀正常不構成例外。",
+          "distractorReview": "用外觀正常取代開瓶期限與原文任一條件即停用相違。",
+          "explanationReview": "完整列超期/開瓶28天/外觀異常任一成立，正確。"
+        },
+        {
+          "quizIndex": 3,
+          "verdict": "question_options_and_explanation_consistent",
+          "correctAnswerReview": "三天/72小時無改善須立即停用並醫師診治，無額外症狀門檻。",
+          "distractorReview": "原文並不以有眼痛為必要條件，沒有劇痛不能忽略無改善。",
+          "explanationReview": "保留三天/72小時及立即停用並診治，正確。"
+        },
+        {
+          "quizIndex": 4,
+          "verdict": "question_options_and_explanation_consistent",
+          "correctAnswerReview": "持續視力模糊本身即觸發立即停用與診治。",
+          "distractorReview": "要求同時紅腫為新增門檻，與原文不符，因此是清楚錯誤選項。",
+          "explanationReview": "列出各症狀均適用同一處置，不把紅腫與視糊作AND，正確。"
+        }
+      ]
+    },
+    "plainLanguageCoverage": {
+      "scope": "recognized_source_fields",
+      "status": "partial",
+      "fields": [
+        {
+          "sourceSection": "使用上注意事項",
+          "status": "partial",
+          "reason": "verification_incomplete",
+          "sourceSpanCount": 3,
+          "explainedSpanCount": 0,
+          "plainLanguageClaimCount": 11,
+          "quizCount": 2
+        },
+        {
+          "sourceSection": "警語",
+          "status": "partial",
+          "reason": "verification_incomplete",
+          "sourceSpanCount": 1,
+          "explainedSpanCount": 0,
+          "plainLanguageClaimCount": 3,
+          "quizCount": 2
+        }
+      ]
+    },
+    "limitations": [
+      "只核對既有一次雲端生成的實際內容，沒有重新呼叫模型；不能外推為所有3593份仿單或所有問答正確。",
+      "技術來源忠實度核對，不是藥師/臨床審查，也不是用藥建議的臨床效用驗證。",
+      "兩個白話欄均維持partial/verification_incomplete；sourceSpanCount 3/1的explainedSpanCount均0不能因本次人工技術核對改寫為完全涵蓋。",
+      "第3及第5 recognized safety source欄原文完整保留，測驗只抽查要點，並未逐條考完。",
+      "第9使用方法中的一眼使用過的液體不得再用於另一眼、不可洗眼30秒以上，存在原始全文，未納入這次生成白話claims或測驗；不能宣稱完整病人使用教學。",
+      "第4用法用量及第9完整操作步驟不屬此次已生成教學的完整涵蓋範圍；仍須查看原始仿單。",
+      "儲存歷史問答綁定讀回及獨立壓測傳輸逾時由其他收尾流程處理，本檔不宣稱該兩項已修好。"
+    ],
+    "evidencePins": {
+      "actualJobSha256": "af4631dc531e18ef6defcbae783147baaed794ac208aa0d5a62737814617f72a",
+      "continuationStateSha256": "97178699ebbd9a943995f2f6f2b34182a57a512f52af20aaeca48b869a73f8a1",
+      "privateTechnicalReviewSha256": "dd66de86405fd0724d33a2883009cffe63e88371b09d165b279f1aa0d00a8332",
+      "screenshots": [
+        {
+          "name": "desktop-reading-exact-source",
+          "sha256": "1d524cb7b7b70b5a0f58aadc2cb319d2c7dab2e2033cb7ce4ae3b1f9cbae678d"
+        },
+        {
+          "name": "desktop-quiz-reloaded-complete",
+          "sha256": "2ca23b61479d22eec9ecd55d1893a3a43b2ca136836351b15d12fb6e87746f53"
+        },
+        {
+          "name": "mobile375-reading-and-quiz",
+          "sha256": "d189d3974e66b117bf98f9358022c88c0827adf2240e076df0f32f1099eb0279"
+        }
+      ]
+    },
+    "newWorkAfterResume": {
+      "offlineTechnicalReviewOnly": true,
+      "apiCalls": 0,
+      "aiJobs": 0,
+      "medicationCreates": 0,
+      "quotaChanges": 0
+    },
+    "quotaPolicy": {
+      "perUserDaily": 20,
+      "siteDaily": 1000,
+      "changed": false
+    }
+  },
+  "savedChatClosure": {
+    "schema": "readonly-history-reconciliation/v1",
+    "at": "2026-10-23T07:15:49.100Z",
+    "status": "read_only_reconciled",
+    "rawChats": 20,
+    "visibleChats": 3,
+    "hiddenChats": 17,
+    "selectedHistoricalRawRecordExists": true,
+    "selectedHistoricalReturned": true,
+    "selectedHiddenReasons": [],
+    "selectedJobError": null,
+    "paginationCause": false,
+    "applicationCommit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
+    "deployedRevision": "yzt-test-web-00024-6ll",
+    "actualUnsafeRecordsStillWithheld": 2,
+    "selectedResultExactlyPreserved": true,
+    "wholeSourceAndOwnerSnapshotUnchanged": true,
+    "quotas": {
+      "personDaily": 20,
+      "siteDaily": 1000,
+      "ownerBefore": 20,
+      "ownerAfter": 20,
+      "globalBefore": 20,
+      "globalAfter": 20,
+      "unchanged": true
+    },
+    "appWrites": 0,
+    "newAiJobs": 0,
+    "newAccounts": 0,
+    "reopened": [
+      {
+        "viewportWidth": 1440,
+        "questionSha256": "4f151d392b972c81953aad0ef00345cb02ffb4b9933453647a6535d3e08d247f",
+        "resultSha256": "f1fadf1400c50f28c3602a2bce491e43f9d319661a58356a270229b4b9dbeb64",
+        "reloadSameResult": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewportWidth": 375,
+        "questionSha256": "4f151d392b972c81953aad0ef00345cb02ffb4b9933453647a6535d3e08d247f",
+        "resultSha256": "f1fadf1400c50f28c3602a2bce491e43f9d319661a58356a270229b4b9dbeb64",
+        "reloadSameResult": true,
+        "horizontalOverflow": false
+      }
+    ],
+    "privateReceiptSha256": "70932050775c5c3f2dc275da1ff864f038d08f398a59a09b8c42f31963e6ea8b",
+    "dedicatedBrowserClosed": true,
+    "userTabsTouched": false,
+    "frozenBundleResultUnchangedAfterFinalFix": true,
+    "frozenBundleAllFiveCorrectAnswersStillSaved": true,
+    "postDeploymentReadbackComplete": true,
+    "sourceFidelityReviewScope": "Technical source consistency; partial teaching coverage remains unchanged."
+  },
+  "savedChatOfflineReplay": {
+    "schema": "saved-chat-action-check-replay/v1",
+    "at": "2026-10-23T07:01:20.528Z",
+    "offline": true,
+    "providerCalls": 0,
+    "appWrites": 0,
+    "newAiJobs": 0,
+    "storedRecordCount": 20,
+    "selectedOriginalFalsePositive": true,
+    "selectedFixedCurrent": true,
+    "allStoredPayloadsExactlyPreserved": true,
+    "changedOnlyClassification": 1,
+    "stillRejectedActualRecords": 2,
+    "noNewlyRejected": true,
+    "privateReceiptSha256": "09620c2ff643a472cb733be6d65951562e2a570e5e92a92e9c3d5b3dac490b7d"
+  },
+  "finalSingleBundleReadback": {
+    "schema": "final-single-cloud-source-readonly-reconciliation/v1",
+    "at": "2026-10-23T06:58:55.884Z",
+    "status": "exact_frozen_bundle_and_source_reconciled",
+    "newMedicationsSinceOriginalPlan": 1,
+    "newJobsSinceOriginalPlan": 1,
+    "expectedBundleSucceeded": true,
+    "attempts": 1,
+    "providerHttp": 3,
+    "tokens": 16446,
+    "claims": 17,
+    "quizQuestions": 5,
+    "allFinalQuizAnswersSavedCorrect": true,
+    "sourceExactlyUnchanged": true,
+    "sourceAndGeneratedResultExact": true,
+    "preexistingMedicationsJobsChatsHashPreserved": true,
+    "preexistingLearningResultsMatchPreservedJobs": true,
+    "prePauseHistoricalLearningAnswersBaselineAvailable": false,
+    "resumeReadableLearningAnswersUnchanged": true,
+    "quota": {
+      "personDaily": 20,
+      "siteDaily": 1000,
+      "ownerBeforeOriginalPlan": 19,
+      "ownerNow": 20,
+      "siteBeforeOriginalPlan": 19,
+      "siteNow": 20
+    },
+    "appWritesInReconciliation": 0,
+    "newAiJobsInReconciliation": 0,
+    "newAccounts": 0,
+    "quotaResets": 0,
+    "sourceSha256": "25dd4f1ca231d8cdfc79eff35057d9ae36698fb13d8a6713c5c81b2a981768e4",
+    "privateReceiptSha256": "994716289f872b5dcee1dfb0bb8bf84add96c6a830b66c1ceb68709c3601d727"
+  },
+  "timeoutFollowup": {
+    "schema": "yzt-timeout-resumption-handoff/v1",
+    "dateTaipei": "2026-10-23",
+    "status": "bounded_cloud_recheck_and_user_recovery_verified_historic_cause_unlocated",
+    "runtimeChanges": 0,
+    "candidateChanges": [
+      "tests/e2e/notifications.spec.ts"
+    ],
+    "candidateTestSha256": "fea69d7672358f3dc209ed91f328a57425e36dd034e00c2db88225eb6af05740",
+    "originalResultPreserved": {
+      "cloudReads": 180,
+      "http200": 179,
+      "clientPreHeaderTimeouts": 1,
+      "deadlineMs": 15000,
+      "cause": "unlocated",
+      "originalNotificationBackendLogRows": 12,
+      "originalBackendStatuses": {
+        "200": 12
+      },
+      "originalBackendLatencySeconds": [
+        0.22885853,
+        0.319491162
+      ],
+      "cannotAssociateSingleHistoricFailureWithOneTrace": true
+    },
+    "freshBoundedDiagnostic": {
+      "receipt": "load/timeout-followup-29-v1.json",
+      "sha256": "17785b702408bf8bb94ad1f4ea83c9bca1ab626527f70ad101a6368a1fc97941",
+      "websiteGets": 29,
+      "configurationGets": 1,
+      "authenticatedGets": 28,
+      "endpointCounts": {
+        "notifications": 16,
+        "me": 4,
+        "learning": 4,
+        "chat": 4
+      },
+      "http200AndBodyComplete": 29,
+      "clientConcurrency": 4,
+      "ordinaryExistingOwnerAccounts": 1,
+      "normalPasswordSignIns": 1,
+      "authenticatedP95Ms": 1319.51,
+      "authenticatedMaximumMs": 1364.9,
+      "deadlineMsIncludingBody": 15000,
+      "automaticRetries": 0,
+      "googleLoggingLookups": 1,
+      "authenticatedRequestsMatchedToExactTrace": 28,
+      "matchedAuthenticatedStatuses": {
+        "200": 28
+      },
+      "revision": "yzt-test-web-00023-r5s",
+      "configurationRequestCloudRunTraceNotFound": 1,
+      "configurationMissingTraceCause": "unlocated"
+    },
+    "zeroCloudRecoveryValidation": {
+      "unitTests": 37,
+      "unitFiles": [
+        "tests/api-timeout.test.ts",
+        "tests/api-jobs.test.ts",
+        "tests/load-core.test.ts"
+      ],
+      "passed": true,
+      "e2eTests": 10,
+      "e2eScope": "All notification tests on desktop and 375px mobile; one newly added scenario on each viewport.",
+      "e2eLog": "verification/notifications-timeout-recovery-v1.log",
+      "newScenario": [
+        "Intentionally hold first notification GET silently.",
+        "Advance browser clock past the unchanged 45-second product deadline.",
+        "Verify spinner ends, timeout error is visible and manual retry is enabled.",
+        "Verify no automatic retry is sent.",
+        "Retry the same GET manually and recover records.",
+        "Release the first late aborted response and verify it cannot overwrite recovered records.",
+        "Verify exactly two GETs and no application write or AI request."
+      ],
+      "buildAndTypecheckPassedInE2eSetup": true,
+      "postRunFormattingOnly": true
+    },
+    "nonConflation": "The private Playwright save-driver response-body stall was a separate harness problem; no evidence connects it to the original load-controller pre-header GET timeout.",
+    "quota": {
+      "perUserDaily": 20,
+      "siteDaily": 1000,
+      "changes": 0,
+      "resets": 0
+    },
+    "newAiJobs": 0,
+    "newAccounts": 0,
+    "applicationWrites": 0,
+    "limitations": [
+      "A later passing sample cannot establish or repair the historic cause.",
+      "The 28 authenticated read diagnostics share one owner and do not establish independent-user cloud capacity or native AI throughput.",
+      "No product timeout setting was relaxed and no speculative network or database fix was applied."
+    ]
+  },
+  "acceptanceHarnessCorrection": {
+    "scope": "Private Playwright test driver, not an application runtime change.",
+    "observedSave": {
+      "httpStatus": 201,
+      "serverLatencySeconds": 0.422228414,
+      "responseBytes": 1920,
+      "medicationsCreated": 1,
+      "aiJobsCreatedBySave": 0
+    },
+    "cause": "A browser-evaluated fetch returned only response status and left the body unread; the separate CDP response.json call could wait without a deadline.",
+    "localReproduction": {
+      "routeModes": 2,
+      "bodyConsumptionFixedRuns": 10,
+      "fixedRangeMilliseconds": [
+        6,
+        11
+      ],
+      "cloudWrites": 0,
+      "aiCalls": 0
+    },
+    "correction": "Consume response JSON inside the browser action and bound the complete action/response/body wait; resume only the already-saved medication.",
+    "productClientAlreadyConsumesBodyWithin45SecondDeadline": true,
+    "cloudSaveLogReceiptSha256": "2646823cb5e0b0dba2746d9dde01abb553fdf3c71f5e3264d2fa91eaad633759",
+    "localProbeReceiptSha256": "0fbdfcaaa1bf4b6365704d327628fb9c2cc9884a1cbeca3602ae8ec3232a7955",
+    "doesNotExplainSeparateCloudLoadTimeout": true
+  },
+  "load": {
+    "receipt": "public-load-20261023.json",
+    "receiptSha256": "e892d0e9d9138fe9da5719172b72fbb4c32ac9e59048bc97a9cdb6e2d1c25399",
+    "emulatorDistinctSyntheticIdentities": 101,
+    "emulatorMaximumConcurrentIdentities": 100,
+    "emulatorMixedRequests": 3400,
+    "emulatorMixedUnexpectedErrors": 0,
+    "emulatorTwoDomainsDifferentJobs": {
+      "requests": 100,
+      "accepted": 100
+    },
+    "emulatorSyntheticJpegUploads": 35,
+    "emulatorAndInitialCloudLoadRuntime": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
+    "fullCapacityRunRepeatedAfterTheSavedChatOnlyValidationFix": false,
+    "cloudReadRequests": 180,
+    "cloudReadHttp200": 179,
+    "cloudReadTransportTimeouts": 1,
+    "cloudReadHttp5xx": 0,
+    "cloudReadIsolationFailures": 0,
+    "cloudReadPaidAiJobs": 0,
+    "knownTransportGap": "One /notifications request exceeded the unchanged 15-second test deadline. The corresponding window contains 12 server HTTP 200 responses at 0.228858530-0.319491162 seconds, but the first segment lacks a per-request trace map; exact failure layer remains unknown.",
+    "failedFirst120RequestsRepeated": false,
+    "remaining60Http200": 60,
+    "notMeasured": [
+      "100 real cloud identities",
+      "concurrent paid-model throughput",
+      "standalone Cloud Run memory under load"
+    ]
+  },
+  "recovery": {
+    "receipt": "complete-recovery-20261023.json",
+    "receiptSha256": "2d657c53302a691dd51e4019bac7b3c963bef6cd9da1a48c956b7e57f3179133",
+    "accountsActuallyRestored": 8,
+    "passwordHashUsers": 6,
+    "originalSyntheticPasswordLoginVerified": true,
+    "filesActuallyRestoredAndCleaned": 3533,
+    "latestSuccessfulScheduledBackupFiles": 3605,
+    "latestSuccessfulScheduledBackupBytes": 472924686,
+    "latestSuccessfulScheduledBackupAccounts": 8,
+    "schedule": "03:30 Asia/Taipei daily",
+    "retentionDays": 7,
+    "actualRetainedUserPhotosAtBackup": 0,
+    "syntheticFileRecoveryControls": 6,
+    "originalAuthWrites": 0,
+    "originalDataBucketContentWrites": 0,
+    "temporaryRestoredUsersRemaining": 0,
+    "plaintextDrillObjectsRemaining": 0,
+    "alertRules": 4,
+    "notificationChannels": 0,
+    "emailsSent": 0
+  },
+  "policyPreserved": {
+    "perUserDailyAiJobs": 20,
+    "siteDailyAiJobs": 1000,
+    "timezone": "Asia/Taipei",
+    "quotaResets": 0,
+    "newCloudAiAccounts": 0,
+    "model": "gpt-6-luna",
+    "textReasoningEffort": "medium",
+    "imageReasoningEffort": "none",
+    "existingSecretAndCapacityControlsUnchanged": true
+  },
+  "remainingGaps": [
+    "One real cloud read transport timeout remains unlocated; the run is not marked zero-error.",
+    "14,595 linked licenses remain unpublished, including non-patient raw materials; 3,059 lack index or links.",
+    "746 published sources remain held by the deterministic reader; generated explanations and quizzes are not evaluated for every readable source.",
+    "Native sample bundles still have partial plain-language safety coverage; complete official source sections remain available.",
+    "The 026558 source sections 4 and 9 are not fully covered by generated teaching; cross-eye liquid reuse and the 30-second washing limit remain only in the original source.",
+    "The single new post-deployment bundle does not constitute fresh photo recognition or a new generated chat result; saved chat reopening is recorded separately.",
+    "Large-scale production paid AI concurrency and capacity were not measured.",
+    "Service backups are not atomic; current source deletion state is required, and mass Auth loss requires a manually approved UID recovery plan.",
+    "Backup key and bucket share the source project; whole-project/access loss requires independent custody.",
+    "MFA/tenant restore, fresh-project human Google OAuth, retained real patient-photo recovery and live caregiver relationship recovery remain unverified.",
+    "Alert notification channels are intentionally absent; only rule configuration and error-filter matching were verified.",
+    "No clinical outcome or statistically designed user-comprehension validation was performed."
+  ]
+}

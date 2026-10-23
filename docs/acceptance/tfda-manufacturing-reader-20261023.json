@@ -1,6 +1,6 @@
 {
   "schema": "tfda-manufacturing-reader-recovery-20261023/v1",
-  "status": "source_publication_readback_passed_application_changes_pending_root_deployment",
+  "status": "source_publication_and_application_deployment_verified_bounded_content_review_coverage_partial",
   "officialSnapshotDate": "2026-10-22",
   "publication": {
     "before": 3521,
@@ -55,7 +55,9 @@
     "allReturnedCitationsLiteral": true,
     "fullCounterfactualSha256": "0fc258345377de5d788f086cc2848db3f6472f10d483c5b48e09fe26622c1321",
     "new72ClassificationSha256": "6b6cf9628fc7750bde4b9ccec4983e0190c67498f673e973249604d1bcd76acb",
-    "applicationDeploymentVerified": false
+    "applicationDeploymentVerified": true,
+    "deployedApplicationCommit": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
+    "currentApplicationCommit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c"
   },
   "nativeEvaluation": {
     "scope": "offline candidate production grounded pipeline; not website/cloud jobs",
@@ -128,10 +130,83 @@
   },
   "remainingGaps": [
     "14,595 linked licenses remain unpublished for the documented primary gates; 3,059 have no official source link in the frozen snapshot.",
-    "746 published sources remain held by the candidate deterministic reader.",
-    "The two native sample bundles retain partial plain-language teaching coverage; source availability is not complete generated explanation.",
-    "Production deployment and the one post-deployment 026558 website bundle are coordinated by the parent task.",
+    "746 published sources remain held by the deterministic reader.",
+    "Both offline provider samples and the new 026558 website bundle retain partial plain-language teaching coverage; source availability is not complete generated explanation.",
+    "The 026558 source-fidelity review covers the actual 17 claims and five quiz questions. Full dosage and operating instructions in source sections 4 and 9 are not covered by generated teaching.",
     "No statistical user-comprehension or clinical assessment was performed."
   ],
-  "humanClinicalReview": false
+  "humanClinicalReview": false,
+  "postDeploymentWebsiteCase": {
+    "product": {
+      "name": "安瞳 維生素洗眼液",
+      "licenseNo": "衛部藥輸字第026558號",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026558號",
+      "sourceVersion": "c2c0fca1fde0a3c2",
+      "rawSourceSha256": "c2c0fca1fde0a3c27f2be9190aaedd732c23fca0182784f4396af713ef981a3b",
+      "canonicalTextSha256": "c29bab62ed719e4273a1e097f5a1a1a2991ae23a14b474849aa488b27c8dea00"
+    },
+    "execution": {
+      "status": "succeeded",
+      "attempts": 1,
+      "providerHttp": 3,
+      "tokens": 16446,
+      "latencyMs": 44888,
+      "allProviderStatuses200": true,
+      "reasoning": "medium",
+      "model": "gpt-6-luna",
+      "claims": 17,
+      "quizQuestions": 5,
+      "answerPostsWrongThenCorrect": 10,
+      "existingBundleReopenWithoutAiOrQuotaCharge": true,
+      "reloadPersistenceChecked": true,
+      "viewport375Checked": true,
+      "evidenceOrigin": "frozen_execution_and_pause_receipts_not_new_actions"
+    },
+    "sourceFidelity": {
+      "claimsReviewed": 17,
+      "claimsSupported": 17,
+      "quizQuestionsReviewed": 5,
+      "optionsReviewed": 10,
+      "correctAnswersSupported": 5,
+      "distractorsReviewedAsIntentionallyIncorrect": 5,
+      "explanationsReviewed": 5,
+      "literalCitationsVerified": 22,
+      "parentConditionsPresentInCitations": true,
+      "newAdviceOrWeakenedConditionObserved": false
+    },
+    "plainLanguageCoverage": {
+      "scope": "recognized_source_fields",
+      "status": "partial",
+      "fields": [
+        {
+          "sourceSection": "使用上注意事項",
+          "status": "partial",
+          "reason": "verification_incomplete",
+          "sourceSpanCount": 3,
+          "explainedSpanCount": 0,
+          "plainLanguageClaimCount": 11,
+          "quizCount": 2
+        },
+        {
+          "sourceSection": "警語",
+          "status": "partial",
+          "reason": "verification_incomplete",
+          "sourceSpanCount": 1,
+          "explainedSpanCount": 0,
+          "plainLanguageClaimCount": 3,
+          "quizCount": 2
+        }
+      ]
+    },
+    "frozenPublicCaseSha256": "2641dd409795f140845e4904fc2d89131348583065d5d2194d6752e0b7816d8e",
+    "remainingScope": [
+      "Stored chat and the independent cloud read timeout are recorded by the overall public-stability acceptance.",
+      "Sections 4 and 9 are not fully covered by generated teaching; cross-eye liquid reuse and the 30-second washing limit remain only in the full original source."
+    ],
+    "clinicalReview": false,
+    "originalGenerationApplicationCommit": "b6dd821013d8d9a0bbf68ed6cd966661460d5be3",
+    "unchangedResultAndFiveAnswersVerifiedAfterFinalFix": true,
+    "finalReadbackApplicationCommit": "3a22a2ff3f2bd86d6b3df52b2edfe327aa23214c",
+    "finalReadbackSha256": "0e31f3e889d03316c0820de464a895f68537015437b726135f29503cb194820e"
+  }
 }

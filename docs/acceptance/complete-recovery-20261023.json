@@ -1,0 +1,177 @@
+{
+  "schema": "complete-recovery-acceptance/v1",
+  "at": "2026-10-23T05:01:21.774Z",
+  "environment": "real_google_cloud_isolated_recovery",
+  "result": "completed",
+  "latestScheduledBackup": {
+    "trigger": "Cloud Scheduler jobs.run",
+    "schedule": "30 3 * * *",
+    "timeZone": "Asia/Taipei",
+    "execution": "yzt-recovery-backup-dncrt",
+    "startTime": "2026-10-23T04:49:37.983501Z",
+    "completionTime": "2026-10-23T04:57:34.968011Z",
+    "succeededTasks": 1,
+    "failedTasks": 0,
+    "imageDigest": "sha256:cd0ce179645b2c17e3b60821b673536b2383bcb4efe63a2c22ba94f90b81f67a",
+    "objects": 3605,
+    "bytes": 472924686,
+    "authUsers": 8,
+    "passwordHashUsers": 6,
+    "fullScryptConfig": true,
+    "googleProviderConfigEncrypted": true,
+    "original3533GenerationMetadataShaUnchanged": true,
+    "new72OfficialRawGenerationShaPresent": true,
+    "encryptedObjects": 3607,
+    "plaintextDrillObjectsRemaining": 0,
+    "actualUserUploadsAtSnapshot": 0,
+    "snapshotPin": {
+      "snapshotId": "2026-10-23T04-49-45-724Z-02c54e8c",
+      "manifestObject": "snapshots/2026-10-23T04-49-45-724Z-02c54e8c/manifest.enc",
+      "manifestGeneration": "1792731451455883",
+      "manifestCiphertextSha256": "1798eb7629816b781bae98b0cb049f99ae2d82a7c62145f3a216a110a3a9ab9d"
+    }
+  },
+  "realCloudAuthRestore": {
+    "users": 8,
+    "verifiedFields": {
+      "uid": 8,
+      "email": 8,
+      "emailVerified": 8,
+      "passwordHash": 6,
+      "salt": 6,
+      "claims": 4,
+      "providers": 8,
+      "disabled": 8
+    },
+    "allImportedDisabled": true,
+    "overwriteAllowed": false,
+    "oneExistingOrdinarySyntheticPasswordLogin": true,
+    "wrongPasswordRejected": true,
+    "disabledLoginBeforeAndAfterRejected": true,
+    "targetAudienceAndPasswordProviderVerified": true,
+    "passwordResetCalls": 0,
+    "customTokenCalls": 0,
+    "emailsSent": 0,
+    "sourceAuthCriticalFingerprintUnchanged": true,
+    "targetUsersRemoved": 8,
+    "targetUsersAfter": 0,
+    "freshTargetProjectLifecycleAfter": "DELETE_REQUESTED"
+  },
+  "realCloudFileRestore": {
+    "originalSnapshotObjects": 3533,
+    "bytes": 463228315,
+    "everyGenerationBytesShaAndSafeMetadataVerified": true,
+    "exactCreatedGenerationsDeleted": 3533,
+    "remainingPlaintextDrillObjects": 0,
+    "new72VerificationScope": "encrypted_backup_readback_not_additional_isolated_restore"
+  },
+  "syntheticStorageControls": {
+    "objects": 6,
+    "restoredObjects": 2,
+    "excludedObjects": 4,
+    "restored": [
+      "active_unexpired_owner_png",
+      "durable_gzip_original_stored_bytes"
+    ],
+    "excluded": [
+      "disabled_owner",
+      "deleted_owner",
+      "unknown_owner",
+      "expired_upload"
+    ],
+    "sourceUserPhotosUsed": false,
+    "downloadTokenQuarantined": true,
+    "privateCacheForced": true,
+    "originalUploadCustomTimeRetained": true,
+    "expiredPhotoBytesNotCopied": true,
+    "corruptedAeadRejected": true,
+    "wrongSnapshotContextRejected": true,
+    "wrongManifestChecksumRejected": true,
+    "duplicateCreateRejected": true,
+    "controlSourceBucketDeleted": true,
+    "controlRestorePrefixEmpty": true,
+    "missingCurrentProfileRule": "unit_test_and_readonly_selection_recheck"
+  },
+  "scheduledResourceBounds": {
+    "taskCount": 1,
+    "parallelism": 1,
+    "cpu": 1,
+    "memory": "1Gi",
+    "timeoutSeconds": 3600,
+    "maxRetries": 0,
+    "concurrentObjects": 2,
+    "maxAuthUsers": 10000,
+    "maxObjects": 25000,
+    "maxBytes": 2147483648,
+    "maxObjectBytes": 33554432,
+    "normalRetentionDays": 7,
+    "uploadDaysSinceOriginalCustomTime": 1,
+    "immutableSecretVersionPinned": true,
+    "keyDeletedAfterSevenDays": false
+  },
+  "privacyAndAccess": {
+    "privateUblaAndPublicAccessPrevention": true,
+    "anonymousProbeStatuses": [
+      {
+        "asset": "manifest",
+        "status": 403
+      },
+      {
+        "asset": "auth",
+        "status": 403
+      },
+      {
+        "asset": "oneFile",
+        "status": 403
+      }
+    ],
+    "plaintextAuthOrKeyExported": false,
+    "backupSecretValueInEnvironment": false,
+    "sourceAccountWrites": 0,
+    "originalDataBucketContentWrites": 0,
+    "originalDataBucketLifecycleChanges": 0,
+    "defaultFirestoreWrites": 0,
+    "applicationRuntimeChanges": 0,
+    "aiQuotaChanges": 0,
+    "sourceBucketReadonlyIamBindingAdded": true,
+    "projectWideBroadAdminRoleAdded": false,
+    "backupDestinationDeletePermissionGranted": false
+  },
+  "backupFailureAlert": {
+    "enabled": true,
+    "notificationChannels": 0,
+    "existingRulesUnchanged": true,
+    "previousRules": 3,
+    "totalRules": 4,
+    "actualErrorLogFilterMatched": 1,
+    "notificationDeliveryTested": false,
+    "incidentStateVerified": false
+  },
+  "resolvedIssues": [
+    "auth_import_excludes_password_pseudo_provider_but_preserves_original_hash",
+    "cloud_run_create_request_omits_resource_name",
+    "bundled_job_imports_library_without_cli_side_effect",
+    "restored_upload_retains_original_expiry",
+    "missing_current_profile_cannot_restore_old_upload"
+  ],
+  "regression": {
+    "targetedTests": 16,
+    "testFiles": 4,
+    "typecheck": "passed",
+    "actualOldBundleProducesTwoEntryErrors": true,
+    "newBundledInvalidPlanProducesOneJobError": true,
+    "noCredentialsInBundleRegression": true,
+    "cloudCallsInBundleRegression": 0,
+    "oldSnapshotCompleteButFirstScheduledExecutionFailed": true,
+    "firstScheduledFailureFixedAndSubsequentExecutionSucceeded": true
+  },
+  "boundaries": [
+    "Firestore native restore evidence is separate; service snapshots are not atomic",
+    "Source had no retained user upload photos; photo recovery controls were synthetic",
+    "Real Google OAuth on the fresh restore project was not exercised; provider UIDs and encrypted config were verified",
+    "MFA and tenant restore are rejected, not silently omitted",
+    "Caregiver relationship data was empty in the earlier Firestore restore",
+    "Backup and encryption key remain in the same project; whole-project or access loss needs independent custody",
+    "Current Auth and Firestore deletion state is required; mass Auth loss needs a manually approved UID recovery plan"
+  ]
+}
