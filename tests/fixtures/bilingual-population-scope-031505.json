@@ -1,0 +1,10 @@
+{
+  "schema": "observed-bilingual-population-scope-fixture/v1",
+  "firstRecordSha256": "a5f12f1b1c22298eb945d2a114e8ad4790144c8d5d749e61dc5b2b18aa77651f",
+  "resumeRecordSha256": "ccc3031d7d5cf484afd47f5b4c168bae6636d4a64b382f7da5da8cb80932651e",
+  "sourceQuote": "\n5 警語及注意事項\n5.1\t警語/注意事項\n\t對心血管的影響 曾有使用haloperidol治療的患者發生猝死、QTc間期延長丶torsades de pointes之案例報告。任何劑型之haloperidol以高於建議劑量使用及以靜脈注射投予，皆顯示與增加QTc間期延長、torsades de pointes風險相關。同時，QTc間期超過500毫秒亦與增加torsades de pointes風險相關。雖然部分案例未具有相關誘發因子，然在具有QTc間期延長條件之病人(包含電解質不平衡(尤其於低血鉀及低血鎂)、已知會延長QTc的藥物、潛在心臟異常、甲狀腺機能低下及QTc延長的家族病史)仍建議應特別謹慎使用。若haloperidol以靜脈注射方式給予，應持續監測心電圖以避免QTc間期延長和嚴重的心律不整發生。在偶發病人中也曾有發生心跳過快和低血壓(包括直立性低血壓)的報告。 依行政院衛生署97.08.18. 衛署藥字第0970329829號公告刊載 依據隨機分派，有對照組的臨床試驗(Randomized controlled trial，RCT) 臨床試驗及回溯性世代研究(Retrospective cohort study)發現，抗精神病藥品，包括傳統(Conventional)與非典型(Atypical)之抗精神病藥品用於治療老年失智症病患(dementia-related psychosis)的死亡率與安慰劑組比較，其死亡之相對危險性較高。 抗精神病藥物惡性症候群(Neuroleptic Malignant Syndrome，NMS)：如同其他的抗精神病藥物，本藥與NMS有關。NMS是一種罕見的特異體質反應，其症狀可能包括：發高燒、全身肌肉僵直、自主神經不穩定、神智改變等。高燒通常是此症狀的早期徵兆。此時應立即中止抗精神病藥物治療，給予適當支持療法並小心監測。\n\t\n5.5\t其他注意事項\n\t有制吐作用，因此其他藥劑之中毒、腸閉塞、腦腫瘍等引起之嘔吐症狀，會變為不明顯。 會引起思睡、注意力、集中力、反射運動能力降低，因此本劑之投與者不宜駕車或操作危險性機械。\n\t\n\n6 特殊族群注意事項\n6.1\t懷孕\n\t對妊娠婦之投與：於動物試驗中，對胎兒有毒性報告，故不宜投與。\n\t\n6.2\t哺乳\n\t對授乳婦之投與：於動物試驗中，對胎兒有毒性報告，故不宜投與。\n\t\n",
+  "firstText": "臨床試驗及回溯性世代研究發現，抗精神病藥品（包括傳統與非典型藥品）用於治療老年失智症病患的死亡率，與安慰劑組比較，其死亡之相對危險性較高。",
+  "chineseOnlyResumeText": "研究發現，抗精神病藥品（包括傳統與非典型藥品）用於治療老年失智症病患的精神病狀態時，與安慰劑組相比，死亡的相對危險性較高；資料來自隨機分派有對照組的臨床試驗及回溯性世代研究。",
+  "originalEnglishQualifier": "dementia-related psychosis",
+  "unrelatedText": "本藥有制吐作用，因此其他藥劑中毒、腸閉塞或腦腫瘤所引起的嘔吐症狀可能變得不明顯。仿單也指出，本藥會引起思睡，並降低注意力、集中力及反射運動能力，因此投與本劑者不宜駕車或操作危險性機械。"
+}
