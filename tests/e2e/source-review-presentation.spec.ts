@@ -555,8 +555,16 @@ test("updated source reader directs old parser holds to regenerate without reque
   await expect(
     card.getByRole("link", { name: "回到我的藥品", exact: true }),
   ).toHaveAttribute("href", "#medications");
-  await card.locator("summary").first().click();
-  await expect(card).toContainText(
+  const preview = card.locator("details").first();
+  const checkedResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/v1/jobs/" + recordId &&
+      response.request().method() === "GET" &&
+      response.status() === 200,
+  );
+  await preview.locator("summary").click();
+  await checkedResponse;
+  await expect(preview).toContainText(
     "仿單整理規則已更新，請重新產生說明與測驗。",
   );
   await expect(
