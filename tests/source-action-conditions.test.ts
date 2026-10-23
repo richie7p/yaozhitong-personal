@@ -52,6 +52,15 @@ describe("recorded prohibitions do not acquire new symptom thresholds", () => {
     "嗜睡才不要駕車。",
     "頭暈時避免駕車。",
     "不得併服含酒精飲料，且可能嗜睡時勿駕車或操作危險性機械。",
+    "使用時若嗜睡則勿駕車。",
+    "服用時如果感到嗜睡，請勿駕車。",
+    "使用時，出現嗜睡時勿駕車。",
+    "只有出現嗜睡時，使用本藥才不要駕車。",
+    "使用高劑量時勿駕車。",
+    "嗜睡時，使用時勿駕車。",
+    "頭暈時，服用時勿駕車。",
+    "嗜睡時，正在使用本藥時請勿駕車。",
+    "嗜睡時，使用時，服用時勿駕車。",
   ])("rejects a new gate in a lesson and correct answer: %s", (text) => {
     expect(sourceActionConditionsExplicit(text, [source])).toBe(false);
     expect(sourceInterpretationExplicit(text, [source])).toBe(false);
@@ -65,6 +74,10 @@ describe("recorded prohibitions do not acquire new symptom thresholds", () => {
     "服用本藥時勿駕車。",
     "正在使用本藥時請勿駕車。",
     "用藥期間請勿駕車或操作危險性機械。",
+    "使用時勿駕車。",
+    "服用時勿駕車。",
+    "使用時，服用時勿駕車。",
+    "本藥可能引起嗜睡，使用時勿駕車。",
   ])("retains risk explanations and ordinary treatment context: %s", (text) => {
     expect(sourceActionConditionsExplicit(text, [source])).toBe(true);
   });
@@ -81,6 +94,14 @@ describe("recorded prohibitions do not acquire new symptom thresholds", () => {
   it("does not infer a source action from a different action or missing evidence", () => {
     expect(sourceActionConditionsExplicit("發燒時請勿飲酒。", [source])).toBe(true);
     expect(sourceActionConditionsExplicit("發燒時請勿駕車。", [])).toBe(true);
+  });
+
+  it("retains the actual saved chat's bare treatment context without changing its source or text", () => {
+    const fixture = JSON.parse(readFileSync(new URL("./fixtures/source-action-context-saved-chat.json", import.meta.url), "utf8"));
+    expect(fixture.text).toContain("使用時避免陽光直射");
+    expect(sourceActionConditionsExplicit(fixture.text, fixture.citations.map((c: {quote: string}) => c.quote))).toBe(true);
+    expect(sourceInterpretationExplicit(fixture.text, fixture.citations.map((c: {quote: string}) => c.quote))).toBe(true);
+    expect(sourceActionResultOutdated({ claims: [fixture], quiz: [] } as unknown as GroundedResult)).toBe(false);
   });
 
   it("filters a newly gated lesson before a permissive model reviewer", async () => {

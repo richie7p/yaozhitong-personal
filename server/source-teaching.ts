@@ -213,18 +213,19 @@ export function sourceActionConditionsExplicit(text: string, quotes: string[]) {
       const parts = match[1].split(/或|以及|及|、/u).map(compactSource);
       return { prefix, parts };
     });
-  const gate = (prefix: string) => {
+  const gate = (prefix: string): string | undefined => {
     const value = compactSource(prefix).replace(
       /(?:[，,]|請|應|須|則|就|也|再)+$/u,
       "",
     );
     const explicit = value.match(
       /(?:如果|一旦|只有|僅在|若|當|如)([^。！？；;]{1,60})$/u,
-    )?.[1];
+    );
     const timed = value.match(
       /(?:^|[，,])([^，,]{1,40}?)(?:(?:時|後)(?:才)?|才)$/u,
-    )?.[1];
-    const found = explicit || timed;
+    );
+    const matched = explicit || timed;
+    const found = matched?.[1];
     if (!found) return undefined;
     const condition = found
       .replace(
@@ -234,11 +235,13 @@ export function sourceActionConditionsExplicit(text: string, quotes: string[]) {
       .replace(/(?:[，,]|時|後|才|則|就|應|須|請|也|再)+$/u, "");
     // Ordinary treatment context does not add a symptom threshold.
     if (
-      /^(?:(?:正在)?(?:服用|使用|服|用)(?:本|此|該)?(?:藥品|藥物|藥|本品)|(?:服藥|用藥|治療)(?:期間)?|服用本品|使用本品)$/u.test(
+      /^(?:(?:正在)?(?:服用|使用|服|用)(?:本|此|該)?(?:藥品|藥物|藥|本品)|(?:服藥|用藥|治療)(?:期間)?|服用|使用|服用本品|使用本品)$/u.test(
         condition,
       )
     )
-      return undefined;
+      // A final treatment phrase must not hide an earlier symptom gate in
+      // the same sentence, e.g. "嗜睡時，使用時勿駕車".
+      return gate(value.slice(0, matched!.index));
     return condition || undefined;
   };
   const originals = quotes.flatMap(prohibitions);

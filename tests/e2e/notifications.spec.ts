@@ -267,6 +267,65 @@ test.describe("notification history route fixtures", () => {
     expect(requests).toBe(4);
   });
 
+  test("a silent notification read stops waiting and a manual retry recovers without writes", async ({
+    page,
+  }) => {
+    let reads = 0;
+    let releaseFirst: () => void = () => {};
+    const firstRead = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const writes: string[] = [];
+    page.on("request", (request) => {
+      const path = new URL(request.url()).pathname;
+      if (
+        path.startsWith("/api/v1/") &&
+        request.method() !== "GET" &&
+        path !== "/api/v1/auth/local"
+      )
+        writes.push(`${request.method()} ${path}`);
+    });
+    await page.route("**/api/v1/notifications", async (route) => {
+      reads++;
+      if (reads === 1) {
+        await firstRead;
+        // The application aborts the original transport at its deadline. A
+        // transport's late response must not replace the successful retry.
+        await route.fulfill({ json: { items: [cancelled] } }).catch(() => {});
+      } else {
+        await route.fulfill({ json: { items: [sent] } });
+      }
+    });
+    await login(page);
+    await page.clock.install();
+    await page
+      .locator(".topbar")
+      .getByRole("link", { name: "通知紀錄", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toHaveText("正在讀取通知紀錄…");
+    await expect(
+      page.getByRole("button", { name: "正在載入…", exact: true }),
+    ).toBeDisabled();
+    expect(reads).toBe(1);
+    await page.clock.fastForward(45_001);
+    await expect(page.getByRole("status")).toHaveCount(0);
+    await expect(page.getByRole("alert")).toContainText("連線等待過久");
+    const retry = page.getByRole("button", { name: "重新載入", exact: true });
+    await expect(retry).toBeEnabled();
+    expect(reads).toBe(1);
+    await retry.click();
+    await expect(page.getByText(sent.message, { exact: true })).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    releaseFirst();
+    await page.clock.fastForward(1_000);
+    await expect(
+      page.getByText(cancelled.message, { exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByText(sent.message, { exact: true })).toBeVisible();
+    expect(reads).toBe(2);
+    expect(writes).toEqual([]);
+  });
+
   test("changing account clears previous notification content before loading the next account", async ({
     page,
     request,
