@@ -76,14 +76,19 @@ const blank = {
 };
 export function MedicationForm({
   initial = blank,
+  initialOperationKey,
   onSave,
   onRetake,
 }: {
   initial?: any;
-  onSave: (m: any) => Promise<void>;
-  onRetake?: (m: any) => void;
+  initialOperationKey?: string;
+  onSave: (m: any, operationKey: string) => Promise<void>;
+  onRetake?: (m: any, operationKey: string) => void;
 }) {
   const frequencyHelp = useId();
+  const creationOperationKey = useRef(
+    initialOperationKey || crypto.randomUUID(),
+  );
   const [m, setM] = useState(() => {
       const value = { ...blank, ...initial };
       value.candidateLicenseNo ||= initial.licenseNo || null;
@@ -119,7 +124,7 @@ export function MedicationForm({
         try {
           const { identityCandidate, identityReview, candidates, ...payload } =
             m;
-          await onSave(payload);
+          await onSave(payload, creationOperationKey.current);
         } catch (e: any) {
           setError(e.message);
           setErrorCode(e.code || "");
@@ -157,7 +162,9 @@ export function MedicationForm({
       <ProductIdentityReview
         medication={m}
         onPatch={(patch) => setM((current: any) => ({ ...current, ...patch }))}
-        onRetake={onRetake ? () => onRetake(m) : undefined}
+        onRetake={
+          onRetake ? () => onRetake(m, creationOperationKey.current) : undefined
+        }
       />
       <Field label="每次劑量">
         <input
@@ -265,9 +272,11 @@ export function MedicationForm({
       </label>
       <div className="full-grid">
         {error && <Notice error>{error}</Notice>}
-        {["already_saved", "recognition_saved_conflict"].includes(
-          errorCode,
-        ) && (
+        {[
+          "already_saved",
+          "recognition_saved_conflict",
+          "medication_saved_conflict",
+        ].includes(errorCode) && (
           <a className="btn secondary" href="#medications">
             前往我的藥品確認
           </a>
@@ -306,6 +315,9 @@ export function AddMedication({
     [busy, setBusy] = useState(""),
     [error, setError] = useState(""),
     [file, setFile] = useState<File | null>(null);
+  const [creationOperationKey, setCreationOperationKey] = useState(() =>
+    crypto.randomUUID(),
+  );
   const [photoPreview, setPhotoPreview] = useState("");
   const [pausedReviews, setPausedReviews] = useState<any[]>([]);
   const photoInput = useRef<HTMLInputElement>(null);
@@ -439,7 +451,8 @@ export function AddMedication({
     input.value = "";
     input.click();
   }
-  const select = (d: any) =>
+  const select = (d: any) => {
+    setCreationOperationKey(crypto.randomUUID());
     setDraft({
       ...blank,
       name: d.nameZh,
@@ -449,6 +462,7 @@ export function AddMedication({
       strength: d.strength,
       form: d.form,
     });
+  };
   return (
     <>
       <SectionTitle eyebrow="藥品建檔" title="新增藥品">
@@ -472,6 +486,7 @@ export function AddMedication({
             disabled={saving || !!busy}
             onClick={() => {
               setTab(id);
+              setCreationOperationKey(crypto.randomUUID());
               setDraft(null);
               setSelectedRecognition(null);
             }}
@@ -501,6 +516,7 @@ export function AddMedication({
                 setRecognized(pausedReview.recognized);
                 setSavedNames(pausedReview.savedNames);
                 setSelectedRecognition(pausedReview.selectedRecognition);
+                setCreationOperationKey(pausedReview.operationKey);
                 setDraft(pausedReview.medication);
                 setPausedReviews((reviews) =>
                   reviews.filter((review) => review.key !== pausedReview.key),
@@ -739,12 +755,14 @@ export function AddMedication({
           <MedicationForm
             key={(selectedRecognition || "") + JSON.stringify(draft)}
             initial={draft || blank}
-            onRetake={(medication) => {
+            initialOperationKey={creationOperationKey}
+            onRetake={(medication, operationKey) => {
               setPausedReviews((reviews) => [
                 ...reviews,
                 {
                   key: crypto.randomUUID(),
                   medication,
+                  operationKey,
                   tab,
                   recognitionJob,
                   recognized,
@@ -756,7 +774,7 @@ export function AddMedication({
               setDraft(null);
               setSelectedRecognition(null);
             }}
-            onSave={async (m) => {
+            onSave={async (m, operationKey) => {
               setSaving(true);
               try {
                 const row = recognized.find(
@@ -768,6 +786,7 @@ export function AddMedication({
                     : "/medications",
                   "POST",
                   m,
+                  operationKey,
                 );
                 if (tab === "photo" && selectedRecognition) {
                   const remaining = recognized.filter(
@@ -819,6 +838,18 @@ export function Medications() {
     [result, setResult] = useState<LearningRecord | null>(null);
   const editHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
+  const explanationVersion = useRef(0);
+  useEffect(
+    () => () => {
+      explanationVersion.current++;
+    },
+    [],
+  );
+  const invalidateExplanation = () => {
+    explanationVersion.current++;
+    setResult(null);
+    setBusy("");
+  };
   useEffect(() => {
     if (!edit) return;
     editHeading.current?.focus({ preventScroll: true });
@@ -852,11 +883,14 @@ export function Medications() {
         Number(b.id === savedMedicationId) - Number(a.id === savedMedicationId),
     );
   async function explain(m: any) {
+    const version = ++explanationVersion.current;
+    const isCurrent = () => explanationVersion.current === version;
     setBusy("正在讀取已保存的仿單說明…");
     setMessage("");
     setResult(null);
     try {
       const saved = await api<{ items: LearningRecord[] }>("/learning");
+      if (!isCurrent()) return;
       const existing = saved.items.find(
         (r) =>
           r.medicationIds.length === 1 &&
@@ -872,15 +906,23 @@ export function Medications() {
         setResult(existing);
         return;
       }
-      const j = await submitJob("/bundles", { medicationIds: [m.id] }, setBusy);
+      const j = await submitJob(
+        "/bundles",
+        { medicationIds: [m.id] },
+        (message) => {
+          if (isCurrent()) setBusy(message);
+        },
+      );
+      if (!isCurrent()) return;
       const current = await api<{ items: LearningRecord[] }>("/learning");
+      if (explanationVersion.current !== version) return;
       const row = current.items.find((r) => r.id === j.id);
       if (!row) throw new Error("內容已更新，請重新產生仿單說明。");
       setResult(row);
     } catch (e: any) {
-      setMessage(e.message);
+      if (isCurrent()) setMessage(e.message);
     } finally {
-      setBusy("");
+      if (isCurrent()) setBusy("");
     }
   }
   return (
@@ -1065,6 +1107,7 @@ export function Medications() {
                 <Button
                   className="ghost"
                   onClick={() => {
+                    invalidateExplanation();
                     setRetakeEdit(false);
                     setEdit({ ...m });
                   }}
@@ -1075,6 +1118,7 @@ export function Medications() {
                   <Button
                     className="secondary"
                     onClick={() => {
+                      invalidateExplanation();
                       setRetakeEdit(false);
                       setEdit({ ...m });
                     }}
@@ -1124,8 +1168,10 @@ export function Medications() {
                   aria-label={"移除" + m.name}
                   onClick={async () => {
                     if (confirm("移除這款藥品？歷史紀錄會保留。")) {
+                      invalidateExplanation();
                       try {
                         await api("/medications/" + m.id, "DELETE");
+                        invalidateExplanation();
                         setSchedule((current: any) =>
                           current?.id === m.id ? null : current,
                         );
@@ -1180,7 +1226,9 @@ export function Medications() {
             initial={edit}
             onRetake={() => setRetakeEdit(true)}
             onSave={async (m) => {
+              invalidateExplanation();
               await api("/medications/" + edit.id, "PUT", m);
+              invalidateExplanation();
               setSchedule((current: any) =>
                 current?.id === edit.id ? null : current,
               );

@@ -19,7 +19,12 @@ import {
   isSupported,
 } from "firebase/messaging";
 import { api, setJobIdentity, setTokenProvider } from "./api";
-import { requestWebPushToken, revokeWebPushToken } from "./web-push";
+import {
+  requestWebPushToken,
+  registerPushDevice,
+  pushDeviceId,
+} from "./web-push";
+import { PushTokenLifecycle } from "./push-session";
 import { authErrorMessage } from "./auth-errors";
 import { refreshEmailVerification, signInEmail } from "./email-auth";
 import { readTabValue, writeTabValue } from "./session-storage";
@@ -55,9 +60,11 @@ let firebaseAuth: Auth;
 let deviceId = readTabValue("yzt-device-id") || "";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const googleTransition = useRef(false);
+  const logoutTransition = useRef(false);
   const sessionEpoch = useRef(0);
   const notificationRequest = useRef<Promise<void> | null>(null);
   const notificationEpoch = useRef(0);
+  const pushLifecycle = useRef(new PushTokenLifecycle());
   const [config, setConfig] = useState<any>(null),
     [me, setMe] = useState<any>(null),
     [loading, setLoading] = useState(true),
@@ -129,6 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             firebaseAuth,
             async (u, isCurrent) => {
               if (disposed || googleTransition.current || !isCurrent()) return;
+              // logout already cleared this exact session synchronously. Its
+              // SDK null event must not invalidate its own pending cleanup.
+              if (logoutTransition.current && !u) return;
               const epoch = ++sessionEpoch.current;
               setJobIdentity(null);
               setMe(null);
@@ -185,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   async function googleCredential(idToken: string) {
     setAuthError("");
+    logoutTransition.current = false;
     if (firebaseSessionNeedsReload(firebaseAuth)) {
       location.reload();
       return;
@@ -216,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInEmail(firebaseAuth, method, email, password);
       return;
     }
+    logoutTransition.current = false;
     const epoch = ++sessionEpoch.current;
     const check = () => {
       if (epoch !== sessionEpoch.current)
@@ -284,11 +296,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   async function logout() {
     const epoch = ++sessionEpoch.current;
+    logoutTransition.current = true;
     notificationEpoch.current++;
     // Honor logout immediately, before SDK callbacks or remote cleanup can wait.
     location.hash = "home";
     window.speechSynthesis?.cancel();
-    const revokePush = !!deviceId || !!notificationRequest.current;
     setJobIdentity(null);
     setMe(null);
     setAuthError("");
@@ -305,24 +317,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // shared provider is cleared immediately and cannot authenticate a later
     // screen or account with the outgoing identity.
     const revokingDevice = previousDevice
-      ? config.mode === "local"
-        ? api("/devices/" + encodeURIComponent(previousDevice), "DELETE").catch(
-            () => {},
-          )
-        : revokeWebPushToken(async () => {
-            const token = await outgoingToken;
-            if (!token) return;
-            await fetch(
-              "/api/v1/devices/" + encodeURIComponent(previousDevice),
-              {
-                method: "DELETE",
-                headers: { Authorization: "Bearer " + token },
-                cache: "no-store",
-                signal: AbortSignal.timeout(10000),
-              },
-            );
-          })
-      : Promise.resolve();
+      ? pushLifecycle.current.revoke(
+          async () => {
+            if (config.mode === "local") {
+              await api(
+                "/devices/" + encodeURIComponent(previousDevice),
+                "DELETE",
+              );
+              return;
+            }
+            const coordinated = pushLifecycle.current.supportsCoordination();
+            const unlink = async () => {
+              const token = await outgoingToken;
+              if (!token) throw new Error("無法確認推播登出狀態。");
+              // Do not abort this operation on the shorter UI deadline: keep the
+              // lock until the actual response, so another tab cannot overtake it.
+              const response = await fetch(
+                "/api/v1/devices/" + encodeURIComponent(previousDevice),
+                {
+                  method: "DELETE",
+                  headers: { Authorization: "Bearer " + token },
+                  cache: "no-store",
+                },
+              );
+              // Another tab may own this shared FCM token already.
+              if (response.status === 404) return;
+              if (!response.ok) throw new Error("無法確認推播登出狀態。");
+              if (coordinated && epoch === sessionEpoch.current && firebaseApp)
+                await deleteToken(getMessaging(firebaseApp));
+            };
+            if (coordinated)
+              await pushLifecycle.current.exclusive(unlink, () => {});
+            else await unlink();
+          },
+          () => true,
+        )
+      : Promise.resolve(true);
     // Start clearing authentication before push revocation or transport can
     // stall. Identity guards immediately discard any old /me completion.
     const clearing = (
@@ -333,13 +363,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       () => true,
       () => false,
     );
-    await revokingDevice;
-    if (firebaseApp && revokePush)
-      await revokeWebPushToken(() => deleteToken(getMessaging(firebaseApp)));
+    const pushRevoked = await revokingDevice;
     const cleared = await clearing;
     if (!cleared && epoch === sessionEpoch.current)
       setAuthError("登出未能完成，請重新載入登入頁確認狀態。");
+    else if (!pushRevoked && epoch === sessionEpoch.current)
+      setAuthError(
+        "已登出，推播撤銷尚未確認；請先在瀏覽器網站設定關閉通知。連線後可重新登入、啟用推播再登出。",
+      );
     if (epoch !== sessionEpoch.current) return;
+    logoutTransition.current = false;
     setTokenProvider(async () => "");
     setMe(null);
     googleTransition.current = false;
@@ -398,6 +431,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (notificationRequest.current) return notificationRequest.current;
     const user = firebaseAuth?.currentUser;
     if (!user) throw new Error("請先登入，再啟用這台裝置的推播。");
+    if (!pushLifecycle.current.supportsCoordination())
+      throw new Error(
+        "此瀏覽器無法安全協調網頁推播，請更新瀏覽器；站內提醒仍可使用。",
+      );
     const epoch = notificationEpoch.current;
     const assertIdentity = () => {
       if (
@@ -407,7 +444,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("登入狀態已變更，請重新啟用推播。");
     };
     const operation = (async () => {
-      const token = await requestWebPushToken({
+      await requestWebPushToken({
         secureContext: window.isSecureContext,
         browserSupported:
           "Notification" in window &&
@@ -419,23 +456,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         requestPermission: () => Notification.requestPermission(),
         isSupported,
         register: () => navigator.serviceWorker.register("/sw.js"),
-        getToken: (registration) =>
-          getToken(getMessaging(firebaseApp), {
-            vapidKey: config.vapidKey,
-            serviceWorkerRegistration: registration,
-          }),
+        getToken: async (registration, assertActive) => {
+          await pushLifecycle.current.beforeRegister(assertActive);
+          return pushLifecycle.current.exclusive(async () => {
+            assertActive();
+            const token = await getToken(getMessaging(firebaseApp), {
+              vapidKey: config.vapidKey,
+              serviceWorkerRegistration: registration,
+            });
+            assertActive();
+            if (!token)
+              throw new Error(
+                "未取得推播裝置憑證，請稍後重新啟用；站內提醒仍可使用。",
+              );
+            const authorization = await user.getIdToken();
+            assertActive();
+            // Keep the pending operation addressable before the POST response:
+            // logout may need to unlink a write whose response was lost/late.
+            const pendingDevice = await pushDeviceId(token);
+            assertActive();
+            deviceId = pendingDevice;
+            writeTabValue("yzt-device-id", deviceId);
+            const device = await registerPushDevice(
+              token,
+              authorization,
+              assertActive,
+            );
+            assertActive();
+            deviceId = device.id;
+            writeTabValue("yzt-device-id", deviceId);
+            return token;
+          }, assertActive);
+        },
         assertIdentity,
       });
-      const device = await api(
-        "/devices",
-        "POST",
-        { token },
-        undefined,
-        assertIdentity,
-      );
-      assertIdentity();
-      deviceId = device.id;
-      writeTabValue("yzt-device-id", deviceId);
     })();
     notificationRequest.current = operation;
     try {

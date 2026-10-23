@@ -189,7 +189,15 @@ export function createApp(d: Domain, auth = authenticate) {
     }),
   );
   app.post("/api/v1/medications", async (c) =>
-    c.json(await d.saveMedication(uid(c), await c.req.json()), 201),
+    c.json(
+      await d.saveMedication(
+        uid(c),
+        await c.req.json(),
+        undefined,
+        c.req.header("Idempotency-Key") || undefined,
+      ),
+      201,
+    ),
   );
   app.post("/api/v1/medications/identity-check", async (c) => {
     await d.active(uid(c));
@@ -311,20 +319,10 @@ export function createApp(d: Domain, auth = authenticate) {
     const b = z
       .object({ token: z.string().min(20).max(4000) })
       .parse(await c.req.json());
-    const id = hash(b.token);
-    const old = await d.store.get("devices", id);
-    if (old && old.ownerId !== uid(c)) await d.store.delete("devices", id);
-    await d.store.set("devices", id, {
-      id,
-      ownerId: uid(c),
-      token: b.token,
-      updatedAt: now(),
-    });
-    return c.json({ id });
+    return c.json(await d.registerDevice(uid(c), b.token));
   });
   app.delete("/api/v1/devices/:id", async (c) => {
-    await d.owned("devices", c.req.param("id"), uid(c));
-    await d.store.delete("devices", c.req.param("id"));
+    await d.removeDevice(uid(c), c.req.param("id"));
     return c.json({ ok: true });
   });
   app.get("/api/v1/notifications", async (c) =>

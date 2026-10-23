@@ -214,18 +214,62 @@ export class Domain {
           : null,
     };
   }
-  async saveMedication(uid: string, data: unknown, id?: string) {
+  async saveMedication(
+    uid: string,
+    data: unknown,
+    id?: string,
+    operationKey?: string,
+  ) {
+    if (!id && operationKey && !/^[a-zA-Z0-9-]{8,100}$/.test(operationKey))
+      return fail("invalid_request", "缺少有效的 Idempotency-Key。");
+    // Keep the first submitted input fingerprint on the medication itself. The
+    // receipt survives later edits/deletion, without a second private collection.
+    const creationPayloadHash =
+      !id && operationKey
+        ? hash(JSON.stringify(MedicationSchema.parse(data)))
+        : undefined;
     const m = await this.normalizeMedication(data);
-    const key = id || randomUUID();
-    const med = await this.store.transaction(async (tx) => {
+    const key =
+      id ||
+      (operationKey
+        ? hash(uid + "|medication-create|" + operationKey)
+        : randomUUID());
+    const saved = await this.store.transaction(async (tx) => {
       const user = await tx.get<Account>("users", uid);
       if (!user || user.disabled || user.deleting)
         return fail("account_disabled", "帳號已停用。", 403);
-      const old = await tx.get<Medication>("medications", key);
+      const old = await tx.get<Medication & { creationPayloadHash?: string }>(
+        "medications",
+        key,
+      );
       if (id && (!old || old.ownerId !== uid || old.archived))
         return fail("not_found", "找不到藥品。", 404);
+      if (!id && operationKey && old) {
+        if (old.ownerId !== uid || old.creationPayloadHash !== creationPayloadHash)
+          return fail(
+            "medication_saved_conflict",
+            "這筆建檔已儲存，與目前編輯內容不同。請到我的藥品確認已儲存的資料。",
+            409,
+          );
+        if (old.archived)
+          return fail(
+            "already_saved",
+            "這筆建檔曾儲存後已移除，請到我的藥品確認；需要新增時請重新建檔。",
+            409,
+          );
+        if (old.revision !== 1)
+          return fail(
+            "medication_saved_conflict",
+            "這筆建檔已儲存且經過修改，請到我的藥品確認最新資料。",
+            409,
+          );
+        return { med: old, changed: false };
+      }
       const result: Medication = {
         ...m,
+        ...((creationPayloadHash || old?.creationPayloadHash)
+          ? { creationPayloadHash: creationPayloadHash || old!.creationPayloadHash }
+          : {}),
         id: key,
         ownerId: uid,
         revision: (old?.revision || 0) + 1,
@@ -234,10 +278,10 @@ export class Domain {
         updatedAt: now(),
       };
       tx.set("medications", key, result);
-      return result;
+      return { med: result, changed: true };
     });
-    await this.invalidateMedication(uid, key);
-    return this.reviewedMedication(med);
+    if (id && saved.changed) await this.invalidateMedication(uid, key);
+    return this.reviewedMedication(saved.med);
   }
   async saveRecognizedMedication(
     uid: string,
@@ -504,6 +548,29 @@ export class Domain {
     return [...ingredients]
       .filter(([, names]) => names.length > 1)
       .map(([ingredient, medications]) => ({ ingredient, medications }));
+  }
+  async registerDevice(uid: string, token: string) {
+    const id = hash(token);
+    await this.store.transaction(async (tx) => {
+      const user = await tx.get<Account>("users", uid);
+      if (!user || user.disabled || user.deleting)
+        return fail("account_disabled", "帳號已停用。", 403);
+      // Replacing the token's owner is one atomic operation. An old account's
+      // concurrent logout must not delete this new registration afterward.
+      tx.set("devices", id, { id, ownerId: uid, token, updatedAt: now() });
+    });
+    return { id };
+  }
+  async removeDevice(uid: string, id: string) {
+    await this.store.transaction(async (tx) => {
+      const user = await tx.get<Account>("users", uid);
+      const device = await tx.get("devices", id);
+      if (!user || user.disabled || user.deleting)
+        return fail("account_disabled", "帳號已停用。", 403);
+      if (!device || device.ownerId !== uid)
+        return fail("not_found", "找不到資料。", 404);
+      tx.delete("devices", id);
+    });
   }
   async invite(uid: string, verified: boolean) {
     if (!verified) return fail("email_unverified", "請先完成信箱驗證。", 403);
@@ -1543,7 +1610,12 @@ export class Domain {
       "jobs",
     ])
       for (const r of await this.store.list(c, ["ownerId", uid]))
-        if (!(c === "jobs" && r.kind === "delete-account"))
+        if (c === "devices")
+          await this.store.transaction(async (tx) => {
+            const current = await tx.get("devices", r.id);
+            if (current?.ownerId === uid) tx.delete("devices", r.id);
+          });
+        else if (!(c === "jobs" && r.kind === "delete-account"))
           await this.store.delete(c, r.id);
     for (const n of await this.store.list("notifications", [
       "recipientId",

@@ -6,12 +6,66 @@ interface PushDependencies {
   requestPermission: () => Promise<NotificationPermission>;
   isSupported: () => Promise<boolean>;
   register: () => Promise<ServiceWorkerRegistration>;
-  getToken: (registration: ServiceWorkerRegistration) => Promise<string>;
+  getToken: (
+    registration: ServiceWorkerRegistration,
+    assertActive: () => void,
+  ) => Promise<string>;
   assertIdentity?: () => void;
 }
 
 const unsupported =
   "此瀏覽器不支援網頁推播。iPhone／iPad 請先將網站加入主畫面，再從主畫面開啟；站內提醒仍可使用。";
+
+export async function pushDeviceId(token: string) {
+  const bytes = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(token),
+  );
+  return Array.from(new Uint8Array(bytes), (value) =>
+    value.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+/** The origin-wide lock must follow the real transport, rather than the
+ * ordinary API's shorter UI timeout. Callers keep their own bounded UI wait. */
+export async function registerPushDevice(
+  token: string,
+  authorization: string,
+  assertActive: () => void,
+) {
+  assertActive();
+  let response: Response;
+  try {
+    response = await fetch("/api/v1/devices", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + authorization,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token }),
+      cache: "no-store",
+    });
+  } catch {
+    assertActive();
+    throw new Error("推播裝置登錄未完成，請確認網路後再啟用。");
+  }
+  assertActive();
+  let device: any;
+  try {
+    device = await response.json();
+  } catch {
+    throw new Error("推播裝置登錄未完成，請稍後再啟用。");
+  }
+  assertActive();
+  if (!response.ok)
+    throw new Error(device?.message || "推播裝置登錄未完成，請稍後再啟用。");
+  if (
+    typeof device?.id !== "string" ||
+    !/^[a-zA-Z0-9_-]{1,100}$/.test(device.id)
+  )
+    throw new Error("推播裝置登錄未完成，請稍後再啟用。");
+  return { id: device.id as string };
+}
 
 /** Bound browser/FCM setup; a late result must never register an app device. */
 export async function requestWebPushToken(
@@ -60,7 +114,7 @@ export async function requestWebPushToken(
     const registration = await dependencies.register();
     assertActive();
     stage = "連線推播服務";
-    const token = await dependencies.getToken(registration);
+    const token = await dependencies.getToken(registration, assertActive);
     assertActive();
     if (!token)
       throw new Error("未取得推播裝置憑證，請稍後重新啟用；站內提醒仍可使用。");
@@ -80,7 +134,12 @@ export async function revokeWebPushToken(
   let timer: ReturnType<typeof setTimeout>;
   try {
     return await Promise.race([
-      Promise.resolve().then(revoke).then(() => true, () => false),
+      Promise.resolve()
+        .then(revoke)
+        .then(
+          () => true,
+          () => false,
+        ),
       new Promise<false>((resolve) => {
         timer = setTimeout(() => resolve(false), 10000);
       }),

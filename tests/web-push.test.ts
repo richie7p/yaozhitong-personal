@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requestWebPushToken, revokeWebPushToken } from "../src/web-push";
+import {
+  requestWebPushToken,
+  revokeWebPushToken,
+  pushDeviceId,
+  registerPushDevice,
+} from "../src/web-push";
 
 function dependencies() {
   return {
@@ -13,9 +18,87 @@ function dependencies() {
     getToken: vi.fn(async () => "synthetic-registration-token"),
   };
 }
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe("web push setup recovery", () => {
+  it("derives the same pending device ID used by the server before any POST response", async () => {
+    expect(await pushDeviceId("test")).toBe(
+      "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    );
+  });
+
+  it("keeps the registration transport unsettled beyond the ordinary API UI deadline", async () => {
+    vi.useFakeTimers();
+    let release!: (response: Response) => void;
+    const transport = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    const fetcher = vi.fn(() => transport);
+    vi.stubGlobal("fetch", fetcher);
+    let settled = false;
+    const registering = registerPushDevice(
+      "synthetic-token",
+      "synthetic-authorization",
+      () => {},
+    ).then((value) => {
+      settled = true;
+      return value;
+    });
+    await vi.advanceTimersByTimeAsync(45001);
+    expect(settled).toBe(false);
+    expect(fetcher.mock.calls[0]).toHaveLength(2);
+    release(
+      new Response(JSON.stringify({ id: "synthetic-device" }), { status: 200 }),
+    );
+    await expect(registering).resolves.toEqual({ id: "synthetic-device" });
+  });
+
+  it("does not persist a device ID after the registration response arrives for an obsolete session", async () => {
+    let current = true;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        current = false;
+        return new Response(JSON.stringify({ id: "synthetic-device" }));
+      }),
+    );
+    await expect(
+      registerPushDevice("synthetic-token", "synthetic-authorization", () => {
+        if (!current) throw new Error("identity changed");
+      }),
+    ).rejects.toThrow("identity changed");
+  });
+
+  it("rejects an unsuccessful or malformed registration response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ message: "synthetic denied" }), {
+            status: 403,
+          }),
+        )
+        .mockResolvedValueOnce(new Response("{}")),
+    );
+    await expect(
+      registerPushDevice(
+        "synthetic-token",
+        "synthetic-authorization",
+        () => {},
+      ),
+    ).rejects.toThrow("synthetic denied");
+    await expect(
+      registerPushDevice(
+        "synthetic-token",
+        "synthetic-authorization",
+        () => {},
+      ),
+    ).rejects.toThrow("推播裝置登錄未完成");
+  });
   it("requests permission in the original user gesture before async support checks", async () => {
     const d = dependencies();
     const result = requestWebPushToken(d);
@@ -23,7 +106,10 @@ describe("web push setup recovery", () => {
     expect(d.isSupported).not.toHaveBeenCalled();
     await expect(result).resolves.toBe("synthetic-registration-token");
     expect(d.register).toHaveBeenCalledOnce();
-    expect(d.getToken).toHaveBeenCalledWith(await d.register.mock.results[0].value);
+    expect(d.getToken).toHaveBeenCalledWith(
+      await d.register.mock.results[0].value,
+      expect.any(Function),
+    );
   });
 
   it("does not reprompt an already granted browser", async () => {
