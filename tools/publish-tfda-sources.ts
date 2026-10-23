@@ -4,6 +4,7 @@ import { dirname, isAbsolute, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import type { TfdaSourceInput } from "./tfda-source-core.js";
+import { hasSingleOfficialManufacturingProduct } from "./tfda-manufacturing-roles.js";
 import { verifyCandidateFromRaw } from "./tfda-candidate-verification.js";
 import { deriveSerialPaperPdf, verifyParentPaperSource, verifyParentPaperEquivalentSources } from "./tfda-parent-paper-verification.js";
 import {
@@ -82,6 +83,12 @@ export async function loadPublicationBatch(manifestPath: string, now = Date.now(
       "unverified_parent_association_not_supported");
     must(!item.parentSource || hasParentClaim, "parent_source_requires_explicit_association");
     const catalog = indexes.get(36)!, index = indexes.get(39)!;
+    if (Object.hasOwn(input, "catalogManufacturingRecords")) {
+      const records = catalog.rows.filter((row) => row["許可證字號"] === item.fullLicense);
+      must(sameDocument(input.catalogManufacturingRecords, records) &&
+        hasSingleOfficialManufacturingProduct(item.fullLicense, input.catalogRows, records),
+        "candidate_official_manufacturing_records_binding_mismatch");
+    }
     must(input.catalogCheckedAt === catalog.evidence.retrievedAt && input.indexCheckedAt === index.evidence.retrievedAt &&
       sameDocument(input.catalogRows, catalogRows(catalog.rows, item.fullLicense)) &&
       sameDocument(input.indexRows, indexRows(index.rows, item.fullLicense)), "candidate_current_official_index_binding_mismatch");

@@ -37,7 +37,11 @@ const pendingResult: GroundedResult = {
 };
 const recordId = "synthetic-source-review-record";
 
-async function mockSavedReview(page: Page, result = pendingResult) {
+async function mockSavedReview(
+  page: Page,
+  result = pendingResult,
+  sourceUpdated = false,
+) {
   const unexpected: string[] = [];
   const reads: string[] = [];
   const record = {
@@ -58,7 +62,8 @@ async function mockSavedReview(page: Page, result = pendingResult) {
     error: null,
     createdAt: record.createdAt,
     updatedAt: "2026-10-23T01:00:01Z",
-    sourceReviewPending: !!result.sourceReview,
+    sourceReviewPending: !!result.sourceReview && !sourceUpdated,
+    sourceUpdateRequired: sourceUpdated,
     sourceReadingPending: !!result.sourceReading,
     resultRequiresCheck: true,
     result: null,
@@ -531,5 +536,37 @@ test("a requested topic with no matching field is separate from an omitted canon
   ).toHaveAttribute("href", sourceUrl);
   await page.reload();
   await expect(page.locator(".source-reading")).toContainText("交互作用");
+  expect(unexpected).toEqual([]);
+});
+
+test("updated source reader directs old parser holds to regenerate without requesting product re-identification", async ({
+  page,
+}) => {
+  const { unexpected, reads } = await mockSavedReview(
+    page,
+    pendingResult,
+    true,
+  );
+  await page.goto("/#jobs");
+  const card = page.locator(`[data-job-id="${recordId}"]`);
+  await expect(card.getByText("說明規則已更新", { exact: true })).toBeVisible();
+  await expect(card.getByText("AI 內容待整理", { exact: true })).toHaveCount(0);
+  await expect(card.getByText("產品待核對", { exact: true })).toHaveCount(0);
+  await expect(
+    card.getByRole("link", { name: "回到我的藥品", exact: true }),
+  ).toHaveAttribute("href", "#medications");
+  await card.locator("summary").first().click();
+  await expect(card).toContainText(
+    "仿單整理規則已更新，請重新產生說明與測驗。",
+  );
+  await expect(
+    card.getByRole("link", { name: "補齊產品資料", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    card.getByRole("button", { name: "使用原輸入重試", exact: true }),
+  ).toHaveCount(0);
+  expect(
+    reads.filter((path) => path === "/api/v1/jobs/" + recordId),
+  ).toHaveLength(1);
   expect(unexpected).toEqual([]);
 });

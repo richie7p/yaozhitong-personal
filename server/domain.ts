@@ -33,9 +33,18 @@ import { jobFailureEvent } from "./job-telemetry.js";
 import { localWorkerBootTime } from "./local-runner.js";
 import { nextTime, initialFamilyTime } from "./schedule-time.js";
 import { requestReminderRefresh } from "./reminder-state.js";
-import { withSourceReviewResult } from "./source-review-result.js";
+import {
+  withSourceReviewResult,
+  SOURCE_READER_VERSION,
+  sourceReviewOutdated,
+} from "./source-review-result.js";
+import {
+  SOURCE_TEACHING_VERSION,
+  sourceActionResultOutdated,
+} from "./source-teaching.js";
 export { nextTime } from "./schedule-time.js";
 import { Catalog } from "./catalog.js";
+import { AdmissionGate } from "./admission.js";
 import {
   grounded,
   recognize,
@@ -57,8 +66,17 @@ const jobPayloadHash = (kind: JobKind, input: Doc) =>
 type HistoryReader = Pick<Store, "get"> & {
   identityCatalog?: Promise<ProductIdentityIndex>;
 };
+const contentUpdateRequired = (result: GroundedResult | null | undefined) =>
+  sourceReviewOutdated(result) || sourceActionResultOutdated(result);
 export class Domain {
   catalog: Catalog;
+  // Each of the two bounded web instances admits one quota transaction at a
+  // time; extra writers contend on the same exact global daily counter.
+  private reservationGate = new AdmissionGate(1);
+  private jobReservations = new Map<
+    string,
+    { payloadHash: string; promise: Promise<Job> }
+  >();
   enqueue: ((id: string) => Promise<void>) | null = null;
   constructor(
     public store: Store,
@@ -68,6 +86,17 @@ export class Domain {
     this.catalog = new Catalog(store, blobs);
   }
   async account(identity: Identity) {
+    const existing = await this.store.get<Account>("users", identity.uid);
+    if (existing?.disabled || existing?.deleting)
+      return fail("account_disabled", "帳號已停用。", 403);
+    // Ordinary reads do not need a read/write transaction or its document lock.
+    // Creation and changed claims still recheck state inside the transaction.
+    if (
+      existing &&
+      existing.admin === identity.admin &&
+      existing.email === identity.email
+    )
+      return existing;
     return this.store.transaction(async (tx) => {
       let u = await tx.get<Account>("users", identity.uid);
       if (u?.disabled || u?.deleting)
@@ -710,61 +739,101 @@ export class Domain {
     await this.authorizeJob(uid, verified, key);
     const id = hash(uid + "|" + kind + "|" + key);
     const payloadHash = jobPayloadHash(kind, input);
+    const pending = this.jobReservations.get(id);
+    if (pending) {
+      if (pending.payloadHash !== payloadHash)
+        return fail(
+          "idempotency_conflict",
+          "相同操作識別碼不能用於不同輸入。",
+          409,
+        );
+      return pending.promise;
+    }
+    const promise = this.reserveJob(uid, kind, input, id, payloadHash);
+    this.jobReservations.set(id, { payloadHash, promise });
+    try {
+      return await promise;
+    } finally {
+      if (this.jobReservations.get(id)?.promise === promise)
+        this.jobReservations.delete(id);
+    }
+  }
+  private async reserveJob(
+    uid: string,
+    kind: JobKind,
+    input: Doc,
+    id: string,
+    payloadHash: string,
+  ): Promise<Job> {
+    const existing = await this.store.get<Job & { payloadHash: string }>(
+      "jobs",
+      id,
+    );
+    if (existing && existing.payloadHash !== payloadHash)
+      return fail(
+        "idempotency_conflict",
+        "相同操作識別碼不能用於不同輸入。",
+        409,
+      );
     const day = DateTime.now().setZone("Asia/Taipei").toISODate()!;
     const uk = hash(uid + "|" + day),
       gk = "global-" + day;
-    const job = await this.store.transaction(async (tx) => {
-      const currentUser = await tx.get<Account>("users", uid);
-      if (!currentUser || currentUser.disabled || currentUser.deleting)
-        return fail("account_disabled", "帳號已停用。", 403);
-      if (!this.aiAccess(currentUser))
-        return fail("not_eligible", "此帳號尚未取得測試資格。", 403);
-      await this.jobMedications(uid, kind, input, tx);
-      const old = await tx.get<Job & { payloadHash: string }>("jobs", id);
-      if (old) {
-        if (old.payloadHash !== payloadHash)
-          return fail(
-            "idempotency_conflict",
-            "相同操作識別碼不能用於不同輸入。",
-            409,
-          );
-        return old;
-      }
-      const user = await tx.get("usage", uk);
-      const global = await tx.get("usage", gk);
-      if (
-        (user?.count || 0) >= config.userLimit ||
-        (global?.count || 0) >= config.globalLimit
-      )
-        return fail("quota_exceeded", "今日 AI 使用額度已達上限。", 429);
-      const j = {
-        id,
-        ownerId: uid,
-        kind,
-        status: "queued" as const,
-        input,
-        result: null,
-        error: null,
-        createdAt: now(),
-        updatedAt: now(),
-        leaseUntil: 0,
-        attempts: 0,
-        payloadHash,
-      };
-      tx.set("jobs", id, j);
-      tx.set("usage", uk, {
-        id: uk,
-        ownerId: uid,
-        date: day,
-        count: (user?.count || 0) + 1,
-      });
-      tx.set("usage", gk, {
-        id: gk,
-        date: day,
-        count: (global?.count || 0) + 1,
-      });
-      return j;
-    });
+    const job =
+      existing ||
+      (await this.reservationGate.run(() =>
+        this.store.transaction(async (tx) => {
+          const currentUser = await tx.get<Account>("users", uid);
+          if (!currentUser || currentUser.disabled || currentUser.deleting)
+            return fail("account_disabled", "帳號已停用。", 403);
+          if (!this.aiAccess(currentUser))
+            return fail("not_eligible", "此帳號尚未取得測試資格。", 403);
+          await this.jobMedications(uid, kind, input, tx);
+          const old = await tx.get<Job & { payloadHash: string }>("jobs", id);
+          if (old) {
+            if (old.payloadHash !== payloadHash)
+              return fail(
+                "idempotency_conflict",
+                "相同操作識別碼不能用於不同輸入。",
+                409,
+              );
+            return old;
+          }
+          const user = await tx.get("usage", uk);
+          const global = await tx.get("usage", gk);
+          if (
+            (user?.count || 0) >= config.userLimit ||
+            (global?.count || 0) >= config.globalLimit
+          )
+            return fail("quota_exceeded", "今日 AI 使用額度已達上限。", 429);
+          const j = {
+            id,
+            ownerId: uid,
+            kind,
+            status: "queued" as const,
+            input,
+            result: null,
+            error: null,
+            createdAt: now(),
+            updatedAt: now(),
+            leaseUntil: 0,
+            attempts: 0,
+            payloadHash,
+          };
+          tx.set("jobs", id, j);
+          tx.set("usage", uk, {
+            id: uk,
+            ownerId: uid,
+            date: day,
+            count: (user?.count || 0) + 1,
+          });
+          tx.set("usage", gk, {
+            id: gk,
+            date: day,
+            count: (global?.count || 0) + 1,
+          });
+          return j;
+        }),
+      ));
     if (job.status === "queued" && this.enqueue)
       try {
         await this.enqueue(id);
@@ -927,6 +996,8 @@ export class Domain {
             model: config.textModel,
             routing: aiRoutingIdentity(),
             prompt: GROUNDING_VERSION,
+            sourceReader: SOURCE_READER_VERSION,
+            sourceTeaching: SOURCE_TEACHING_VERSION,
           }),
         );
         const cached = await this.store.get("generated", ck);
@@ -1202,7 +1273,11 @@ export class Domain {
     const u = await reader.get<Account>("users", uid);
     if (!u || u.disabled || u.deleting)
       return fail("account_disabled", "帳號已停用。", 403);
-    if (row.groundingVersion !== GROUNDING_VERSION) return false;
+    if (
+      row.groundingVersion !== GROUNDING_VERSION ||
+      contentUpdateRequired(row.result)
+    )
+      return false;
     if (row.profileVersion !== u.profileVersion) return false;
     if (
       !Array.isArray(row.medicationRevisions) ||
@@ -1273,13 +1348,18 @@ export class Domain {
   }
   jobSummary(job: Job) {
     const { input, ...summary } = job;
-    if (job.kind === "recognition") return summary;
+    if (job.kind === "recognition" || job.kind === "delete-account")
+      return summary;
     return {
       ...summary,
       result: null,
       resultRequiresCheck: job.status === "succeeded",
+      sourceUpdateRequired:
+        job.status === "succeeded" &&
+        contentUpdateRequired(job.result as GroundedResult | null),
       sourceReviewPending:
         job.status === "succeeded" &&
+        !contentUpdateRequired(job.result as GroundedResult | null) &&
         (job.result as GroundedResult | null)?.status === "insufficient_data" &&
         (job.result as GroundedResult | null)?.sourceReview?.reason ===
           "safety_sections_pending",
@@ -1308,6 +1388,7 @@ export class Domain {
       (await this.learningCurrent(uid, record, reader))
     )
       return result;
+    const sourceUpdated = contentUpdateRequired(record?.result);
     return {
       ...result,
       result: {
@@ -1321,11 +1402,13 @@ export class Domain {
         verification: "model_assisted",
       } satisfies GroundedResult,
       error: {
-        code: "stale_content",
-        message:
-          "這份舊內容已過期，或藥品資料尚未完成核對。請確認藥品資料後重新產生。",
+        code: sourceUpdated ? "source_updated" : "stale_content",
+        message: sourceUpdated
+          ? "仿單整理規則已更新，請回到我的藥品重新產生說明。"
+          : "這份舊內容已過期，或藥品資料尚未完成核對。請確認藥品資料後重新產生。",
       },
-      identityReviewRequired: true,
+      sourceUpdateRequired: sourceUpdated,
+      identityReviewRequired: !sourceUpdated,
     };
   }
   async answerLearning(uid: string, id: string, data: unknown) {

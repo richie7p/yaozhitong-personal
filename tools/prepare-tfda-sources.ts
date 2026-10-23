@@ -7,6 +7,7 @@ import { execFile } from "node:child_process";
 import { promisify, isDeepStrictEqual } from "node:util";
 import { evaluateTfdaSource, isRawMaterialOfficialCategory, normalizeTfdaSourceText, type TfdaSourceInput, type TfdaFetchedArtifact } from "./tfda-source-core.js";
 import { HTML_OUTLINE_SERIALIZATION, HTML_RECTANGULAR_OUTLINE_SERIALIZATION, validateHtmlNumberedOutlineReport, validateHtmlRectangularOutlineReport } from "./tfda-candidate-verification.js";
+import { hasSingleOfficialManufacturingProduct } from "./tfda-manufacturing-roles.js";
 
 const runFile = promisify(execFile);
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
@@ -216,6 +217,9 @@ async function main() {
         fetched: fetched(record), format: record.sourceType === "html" ? "html" : "pdf", numPages: 0, pages: [],
         sameSourceArtifacts: records.slice(1).map(fetched),
       };
+      const officialRows = product.catalogRows.map((row: any) => row.record);
+      if (hasSingleOfficialManufacturingProduct(licenseNo, input.catalogRows, officialRows))
+        input.catalogManufacturingRecords = structuredClone(officialRows);
       let preparationError: string | null = independent ? null : "independent_extraction_binding_missing_or_invalid";
       let canonicalRetry: { attempts: number; nextAfter: number } | undefined;
       if (record.sourceType === "pdf") {

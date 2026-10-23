@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
 import type { TfdaSourceInput } from "../tools/tfda-source-core";
 import { loadPublicationBatch, main } from "../tools/publish-tfda-sources";
+import { projectOfficialCatalogRows } from "../tools/tfda-manufacturing-roles";
 import {
   TFDA_PUBLICATION_ACTOR, TFDA_PUBLICATION_BUCKET, TFDA_PUBLICATION_PROJECT,
   TFDA_PUBLICATION_SCHEMA, TFDA_PROTECTED_LICENSES, applyTechnicalPublication,
@@ -107,6 +108,48 @@ async function batchFixture(extraHeaders = "") {
   await writeFile(manifestPath, JSON.stringify(manifest));
   return { path, manifestPath, manifest, input, sourceRaw };
 }
+
+describe("publication independently binds complete manufacturing-role rows", () => {
+  async function roleFixture() {
+    const fixture = await batchFixture();
+    const original = JSON.parse(await readFile(join(fixture.path, "info36.json"), "utf8"))[0];
+    const records = [{ ...original, 製程: "", 製造廠國別: "合成甲", 製造廠廠址: "合成址甲", 未知產品欄位: "逐字保留", 註銷日期: null },
+      { ...original, 製程: "二級包裝廠", 製造商名稱: "合成包裝廠", 製造廠國別: "合成乙", 製造廠廠址: "合成址乙", 未知產品欄位: "逐字保留", 註銷日期: null }];
+    const infoBytes = Buffer.from(JSON.stringify(records));
+    const evidence = JSON.parse(await readFile(join(fixture.path, "evidence36.json"), "utf8"));
+    evidence.jsonSha256 = publicationHash(infoBytes); evidence.jsonBytes = infoBytes.length; evidence.rows = records.length;
+    const evidenceBytes = Buffer.from(JSON.stringify(evidence));
+    await writeFile(join(fixture.path, "info36.json"), infoBytes); await writeFile(join(fixture.path, "evidence36.json"), evidenceBytes);
+    fixture.manifest.indexSnapshots[0].sha256 = publicationHash(infoBytes);
+    fixture.manifest.indexSnapshots[0].evidenceSha256 = publicationHash(evidenceBytes);
+    fixture.input.catalogRows = projectOfficialCatalogRows(records);
+    fixture.input.catalogManufacturingRecords = records;
+    async function saveInput() {
+      const bytes = Buffer.from(JSON.stringify(fixture.input));
+      await writeFile(join(fixture.path, "candidate.json"), bytes);
+      fixture.manifest.items[0].candidateInputSha256 = publicationHash(bytes);
+      await writeFile(fixture.manifestPath, JSON.stringify(fixture.manifest));
+    }
+    await saveInput();
+    return { ...fixture, saveInput };
+  }
+  it("reparses the actual raw source and preserves the two original official role rows", async () => {
+    const fixture = await roleFixture(), batch = await loadPublicationBatch(fixture.manifestPath, now);
+    expect(batch.loaded[0].source.assessment.eligibleTechnical).toBe(true);
+    expect(batch.loaded[0].source.assessment.evidence.catalogManufacturingRecords).toEqual(fixture.input.catalogManufacturingRecords);
+    expect(batch.loaded[0].source.rawVerification?.method).toBe("html_raw_dom_reparse_v4");
+  });
+  it.each(["製程", "未知產品欄位"])("rejects an altered candidate %s even when its own SHA is valid", async (field) => {
+    const fixture = await roleFixture(); fixture.input.catalogManufacturingRecords![1][field] += "竄改";
+    await fixture.saveInput();
+    await expect(loadPublicationBatch(fixture.manifestPath, now)).rejects.toThrow("candidate_official_manufacturing_records_binding_mismatch");
+  });
+  it("rejects a caller that drops one original factory row", async () => {
+    const fixture = await roleFixture(); fixture.input.catalogManufacturingRecords!.pop();
+    await fixture.saveInput();
+    await expect(loadPublicationBatch(fixture.manifestPath, now)).rejects.toThrow("candidate_official_manufacturing_records_binding_mismatch");
+  });
+});
 
 describe("technical publication no-overwrite and crash recovery", () => {
   it("rejects Firestore-incompatible nested evidence before starting a transaction", async () => {

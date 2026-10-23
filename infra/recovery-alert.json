@@ -1,0 +1,9 @@
+{
+  "displayName": "YZT encrypted daily backup failure",
+  "enabled": true,
+  "combiner": "OR",
+  "notificationChannels": [],
+  "conditions": [{"displayName":"Backup job reports an error","conditionMatchedLog":{"filter":"resource.type=\"cloud_run_job\" resource.labels.job_name=\"yzt-recovery-backup\" resource.labels.location=\"asia-east1\" severity>=ERROR"}}],
+  "alertStrategy": {"notificationRateLimit":{"period":"300s"},"autoClose":"1800s"},
+  "documentation": {"mimeType":"text/markdown","content":"Inspect the last complete encrypted snapshot, job execution status and redacted failure code. Incomplete runs have no complete manifest. Do not retry ambiguous creates or imports, expose credentials, or overwrite the application database during recovery. This rule has no notification channels by operator choice."}
+}

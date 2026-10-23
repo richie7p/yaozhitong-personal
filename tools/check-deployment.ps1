@@ -512,6 +512,20 @@ try {
   $script:passedChecks++
   Write-Host "PASS $($result.Name)"
 
+  $result = Invoke-DeploymentScenario 'Named-task recovery receives read access on its own queue only' -Environment $bothKeys
+  $queueGrants = @($result.Calls | Where-Object { $_.Arguments -contains '--role=roles/cloudtasks.viewer' })
+  Assert-Deployment ($queueGrants.Count -eq 1) "$($result.Name): expected one queue read grant."
+  Assert-Deployment (($queueGrants[0].Arguments[0..3] -join ' ') -ceq 'tasks queues add-iam-policy-binding yzt-test-ai') "$($result.Name): task read scope must be one queue."
+  Assert-Deployment ($queueGrants[0].Arguments -contains '--member=serviceAccount:yzt-test-runtime@yzt-offline-12345.iam.gserviceaccount.com') "$($result.Name): unexpected read principal."
+  Assert-Deployment (@($result.Calls | Where-Object { ($_.Arguments[0..2] -join ' ') -eq 'projects add-iam-policy-binding' -and $_.Arguments -contains '--role=roles/cloudtasks.viewer' }).Count -eq 0) "$($result.Name): task read access must not be project-wide."
+  $script:passedChecks++
+  Write-Host "PASS $($result.Name)"
+
+  $result = Invoke-DeploymentScenario 'Queue read grant failure stops before scheduler activation' -Environment $bothKeys -FailPrefix 'tasks queues add-iam-policy-binding ' -ExpectFailure
+  Assert-Deployment (@($result.Calls | Where-Object { $_.Arguments[0] -eq 'scheduler' }).Count -eq 0) "$($result.Name): continued after missing queue read permission."
+  $script:passedChecks++
+  Write-Host "PASS $($result.Name)"
+
   Write-Host "Offline deployment checks passed: $script:passedChecks scenarios; every gcloud call was a local mock; no API or deployment executed."
 } finally {
   foreach ($name in $environmentNames) {

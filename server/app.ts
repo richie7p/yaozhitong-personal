@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import { z, ZodError } from "zod";
@@ -20,11 +20,23 @@ import { refreshCatalog } from "./import-catalog.js";
 import { completeGoogleProfile } from "./google-profile.js";
 import { Support } from "./support.js";
 import { validateRecognitionPhoto } from "./photo-validation.js";
+import { AdmissionGate } from "./admission.js";
 type Env = {
   Variables: { identity: Identity; account: Account; requestId: string };
 };
 export function createApp(d: Domain, auth = authenticate) {
   const app = new Hono<Env>();
+  const photoAdmission = new AdmissionGate(1, 40, 20000);
+  const identify = async (c: Context<Env>) => {
+    if (config.role === "worker") return fail("not_found", "沒有此端點。", 404);
+    if (c.get("identity")) return;
+    const id = await auth(
+      c.req.header("Authorization")?.replace(/^Bearer /, "") || "",
+    );
+    const account = await d.account(id);
+    c.set("identity", id);
+    c.set("account", account);
+  };
   app.use(
     "*",
     secureHeaders({
@@ -37,6 +49,14 @@ export function createApp(d: Domain, auth = authenticate) {
     c.header("X-Request-Id", c.get("requestId"));
     c.header("Cache-Control", "no-store");
     await next();
+  });
+  // Authenticate before admission so an anonymous unfinished body cannot hold
+  // the upload slot. Acquire before bodyLimit can buffer chunked bodies.
+  app.use("/api/v1/recognitions", async (c, next) => {
+    await identify(c);
+    if (!c.get("identity").verified)
+      return fail("email_unverified", "請先完成信箱驗證。", 403);
+    await photoAdmission.run(next);
   });
   app.use(
     "/api/*",
@@ -121,13 +141,7 @@ export function createApp(d: Domain, auth = authenticate) {
     return c.json(result);
   });
   app.use("/api/v1/*", async (c, next) => {
-    if (config.role === "worker") return fail("not_found", "沒有此端點。", 404);
-    const id = await auth(
-      c.req.header("Authorization")?.replace(/^Bearer /, "") || "",
-    );
-    const account = await d.account(id);
-    c.set("identity", id);
-    c.set("account", account);
+    await identify(c);
     await next();
   });
   const uid = (c: any) => c.get("identity").uid as string;
@@ -316,6 +330,8 @@ export function createApp(d: Domain, auth = authenticate) {
   app.get("/api/v1/notifications", async (c) =>
     c.json({ items: await d.store.list("notifications", ["ownerId", uid(c)]) }),
   );
+  // Wait before parsing base64 or allocating image buffers. The decoder's
+  // independent process-wide one-image guard remains the final safety limit.
   app.post("/api/v1/recognitions", async (c) => {
     const b = z
       .object({
@@ -598,7 +614,13 @@ export function createApp(d: Domain, auth = authenticate) {
           ? new AppError("invalid_request", "JSON 格式不正確。", 400)
           : e instanceof AppError
             ? e
-            : new AppError("internal_error", "服務暫時無法完成請求。", 500);
+            : [4, 8, 10, 14].includes(Number((e as { code?: unknown }).code))
+              ? new AppError(
+                  "service_busy",
+                  "服務目前忙碌，請稍候以原操作重試；已送出的任務可至處理紀錄確認。",
+                  503,
+                )
+              : new AppError("internal_error", "服務暫時無法完成請求。", 500);
     console.error(
       JSON.stringify({
         requestId: c.get("requestId"),
@@ -610,6 +632,7 @@ export function createApp(d: Domain, auth = authenticate) {
             : (e as NodeJS.ErrnoException).code,
       }),
     );
+    if (error.status === 503) c.header("Retry-After", "3");
     return c.json(
       {
         code: error.code,

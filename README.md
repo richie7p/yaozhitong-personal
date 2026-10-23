@@ -18,7 +18,7 @@
 
 ## 官方來源與 AI 說明
 
-目前雲端發布 **3,521 份官方仿單來源**。官方目錄與可用內容的涵蓋範圍不同，部分掃描圖、複雜版面或來源關聯仍待整理；可用數量及限制見 [仿單匯入紀錄](docs/TFDA-LEAFLET-INGESTION.md)。
+目前雲端發布 **3,593 份官方仿單來源**。官方目錄與可用內容的涵蓋範圍不同，部分掃描圖、複雜版面或來源關聯仍待整理；可用數量及限制見 [仿單匯入紀錄](docs/TFDA-LEAFLET-INGESTION.md)。
 
 白話說明、完整原文與測驗涵蓋範圍分開呈現。安全欄保留完整父條件、年齡、例外、跨頁文字與表格關係；白話內容及安全題會經模型輔助核對，每題只抽查一個重點。無法可靠整理的部分保留原文入口或顯示資料不足。來源更新後，過期學習內容須重新產生。
 
@@ -28,7 +28,7 @@
 
 前端使用 React／TypeScript，後端使用 Hono。雲端採 Firebase Authentication、Firestore、Cloud Storage、Cloud Run 與 Cloud Tasks；背景工作處理 AI、提醒及帳號清理。AI 使用 OpenAI GPT-6 Luna，不自動跨供應商備援。部署範本採文字推理 `medium`、影像轉錄 `none`；已部署版本與實測結果見公開使用狀態。
 
-AI 任務具有重送識別碼、交易式額度扣次、有限重試及結果版本檢查。營運設定與備份還原、告警範圍詳見 [PUBLIC-READINESS](docs/PUBLIC-READINESS.md)。
+AI 任務具有重送識別碼、交易式額度扣次、有限重試及結果版本檢查。維護工具包括[帳號與檔案備份還原](docs/BACKUP-RECOVERY.md)及[多人負載測試](docs/LOAD-TESTING.md)；現行部署與告警範圍詳見 [PUBLIC-READINESS](docs/PUBLIC-READINESS.md)。
 
 ## 本機啟動
 

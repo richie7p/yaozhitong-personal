@@ -74,6 +74,138 @@ async function fixture(verified = true, eligible = true) {
 }
 
 describe("photo upload API boundaries without devices or real AI", () => {
+  it.each(["anonymous", "unverified", "disabled"])(
+    "rejects an unfinished %s body before it can hold the photo slot",
+    async (kind) => {
+      const { app, submit, identity, store } = await fixture(
+        kind !== "unverified",
+      );
+      if (kind === "disabled") {
+        const account = (await store.get("users", identity.uid))!;
+        await store.set("users", identity.uid, { ...account, disabled: true });
+      }
+      let pulls = 0;
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          if (pulls++ === 0)
+            controller.enqueue(new TextEncoder().encode('{"image":"'));
+        },
+      });
+      const response = await app.request("/api/v1/recognitions", {
+        method: "POST",
+        headers: {
+          ...(kind === "anonymous"
+            ? {}
+            : { Authorization: "Bearer synthetic-owner" }),
+          "Content-Type": "application/json",
+          "Idempotency-Key": "unfinished-body-001",
+        },
+        body: stream,
+        duplex: "half",
+      } as RequestInit);
+      expect(response.status).toBe(kind === "anonymous" ? 401 : 403);
+      expect(pulls).toBeLessThanOrEqual(1);
+      await store.set("users", identity.uid, {
+        ...(await store.get("users", identity.uid))!,
+        disabled: false,
+      });
+      const authorizedApp =
+        kind === "unverified"
+          ? createApp(
+              new Domain(
+                store,
+                { put: async (key: string) => key } as unknown as Blobs,
+                () => ({ json: vi.fn() }),
+              ),
+              async () => ({ ...identity, verified: true }),
+            )
+          : app;
+      const valid =
+        kind === "unverified"
+          ? await authorizedApp.request("/api/v1/recognitions", {
+              method: "POST",
+              headers: {
+                Authorization: "Bearer synthetic-owner",
+                "Content-Type": "application/json",
+                "Idempotency-Key": "valid-body-001",
+              },
+              body: JSON.stringify({
+                image: png.toString("base64"),
+                mediaType: "image/png",
+              }),
+            })
+          : await submit();
+      expect(valid.status).toBe(202);
+    },
+  );
+
+  it("queues chunked photo bodies before buffering and preserves duplicate-request quota", async () => {
+    const { app, submit, blobs, store, model } = await fixture();
+    let release!: () => void;
+    let entered!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const originalPut = blobs.put.getMockImplementation()!;
+    blobs.put.mockImplementation(async (key, value) => {
+      entered();
+      await blocked;
+      return originalPut(key, value);
+    });
+    const first = submit();
+    await started;
+    const json = JSON.stringify({
+      image: png.toString("base64"),
+      mediaType: "image/png",
+    });
+    const chunks = [json.slice(0, 20), json.slice(20, 40), json.slice(40)];
+    let pulls = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const chunk = chunks[pulls++];
+        if (chunk === undefined) controller.close();
+        else controller.enqueue(new TextEncoder().encode(chunk));
+      },
+    });
+    let secondFinished = false;
+    const second = Promise.resolve(
+      app.request("/api/v1/recognitions", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer synthetic-owner",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "synthetic-upload-001",
+        },
+        body: stream,
+        duplex: "half",
+      } as RequestInit),
+    ).then((response) => {
+      secondFinished = true;
+      return response;
+    });
+    // A stream can prefetch one chunk itself, but middleware must not drain it
+    // while an earlier upload owns the bounded photo admission slot.
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(pulls).toBeLessThanOrEqual(1);
+    expect(secondFinished).toBe(false);
+    release();
+    const responses = await Promise.all([first, second]);
+    expect(responses.map((response) => response.status)).toEqual([202, 202]);
+    const bodies = await Promise.all(
+      responses.map((response) => response.json()),
+    );
+    expect(bodies[0].jobId).toBe(bodies[1].jobId);
+    expect(blobs.put).toHaveBeenCalledOnce();
+    expect(await store.list("jobs")).toHaveLength(1);
+    expect((await store.list("usage")).map((usage) => usage.count)).toEqual([
+      1, 1,
+    ]);
+    expect(model.json).not.toHaveBeenCalled();
+  });
+
   it("accepts original PNG bytes and hides the private input from job responses", async () => {
     const { submit, files, store, app } = await fixture();
     const response = await submit();
@@ -150,8 +282,8 @@ describe("photo upload API boundaries without devices or real AI", () => {
     "oversized chunk",
     "IEND inside a chunk",
     "nonempty IEND",
-      "bad IEND CRC",
-      "non-ASCII IEND type",
+    "bad IEND CRC",
+    "non-ASCII IEND type",
     "trailing chunk",
   ])(
     "rejects PNG with %s rather than trusting an IEND suffix",

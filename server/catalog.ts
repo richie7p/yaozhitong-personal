@@ -168,6 +168,14 @@ function bilingualNameMatch(
   strength: string,
   form: string,
 ) {
+  // This fallback requires both language parts. Reject an impossible query
+  // before re-parsing every unrelated catalog title and strength.
+  const languageCheck = query.normalize("NFKC");
+  if (
+    !/[A-Za-z]/u.test(languageCheck) ||
+    !/\p{Script=Han}/u.test(languageCheck)
+  )
+    return false;
   if (
     !d.nameZh ||
     !d.nameEn ||
@@ -249,7 +257,37 @@ function bilingualNameMatch(
   });
 }
 
+type ScoreQuery = {
+  normalized: string;
+  bilingualPossible: boolean;
+  ingredientPossible: boolean;
+};
+const scoreQuery = (q: string): ScoreQuery => {
+  const text = q.normalize("NFKC");
+  return {
+    normalized: normalize(q),
+    bilingualPossible: /[A-Za-z]/u.test(text) && /\p{Script=Han}/u.test(text),
+    ingredientPossible: /^([A-Za-z][A-Za-z0-9 .'-]*?)\s*\(([^()]+)\)$/u.test(
+      text.trim(),
+    ),
+  };
+};
+const noStrength = {
+  conflict: false,
+  equivalent: false,
+  splitNameMatch: false,
+};
 export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
+  return scoreIndexedDrug(d, q, strength, form, scoreQuery(q));
+}
+function scoreIndexedDrug(
+  d: Drug,
+  q: string,
+  strength: string,
+  form: string,
+  query: ScoreQuery,
+  names?: { zh: string; en: string },
+) {
   // An incompatible supplied form must not survive merely because an exact
   // name's positive score outweighed the former form-mismatch penalty.
   if (!formMatches(d, form, q)) return 0;
@@ -261,11 +299,13 @@ export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
     )
   )
     return 0;
-  const identity = strengthIdentity(d, q, strength, form);
+  const identity = strength
+    ? strengthIdentity(d, q, strength, form)
+    : noStrength;
   if (identity.conflict) return 0;
-  const n = normalize(q),
-    zh = normalize(d.nameZh),
-    en = normalize(d.nameEn);
+  const n = query.normalized,
+    zh = names?.zh ?? normalize(d.nameZh),
+    en = names?.en ?? normalize(d.nameEn);
   let s =
     zh === n || en === n
       ? 100
@@ -275,8 +315,18 @@ export function scoreDrug(d: Drug, q: string, strength = "", form = "") {
           ? 35
           : 0;
   if (identity.splitNameMatch) s = Math.max(s, 85);
-  if (s === 0 && bilingualNameMatch(d, q, strength, form)) s = 85;
-  if (s === 0 && fullBrandAndIngredientsMatch(d, q, strength, form)) s = 85;
+  if (
+    s === 0 &&
+    query.bilingualPossible &&
+    bilingualNameMatch(d, q, strength, form)
+  )
+    s = 85;
+  if (
+    s === 0 &&
+    query.ingredientPossible &&
+    fullBrandAndIngredientsMatch(d, q, strength, form)
+  )
+    s = 85;
   if (d.licenseNo === q) s = 150;
   if (s === 0) return 0;
   if (strength)
@@ -292,35 +342,89 @@ export class Catalog {
   private version = "";
   private rows: Drug[] = [];
   private loadedAt = 0;
+  private path = "";
+  private readSequence = 0;
+  private appliedSequence = 0;
+  private loads = new Map<string, Promise<Drug[]>>();
+  private searchRows: Drug[] | null = null;
+  private rankIndex: { drug: Drug; zh: string; en: string }[] = [];
+  private searchCache = new Map<string, (Drug & { score: number })[]>();
   private identityRows: Drug[] | null = null;
   private identityIndex: ProductIdentityIndex | null = null;
   constructor(
     private store: Store,
     private blobs = new Blobs(),
   ) {}
+  private async loadRows(version: string, path: string) {
+    const key = JSON.stringify([version, path]);
+    const existing = this.loads.get(key);
+    if (existing) return existing;
+    const promise = (async () =>
+      JSON.parse((await this.blobs.get(path)).toString()) as Drug[])();
+    this.loads.set(key, promise);
+    try {
+      return await promise;
+    } finally {
+      if (this.loads.get(key) === promise) this.loads.delete(key);
+    }
+  }
   async all(refresh = false) {
     if (!refresh && Date.now() - this.loadedAt < 30000) return this.rows;
+    const sequence = ++this.readSequence;
     const m = await this.store.get("settings", "catalog");
-    if (m && m.version !== this.version) {
-      this.rows = JSON.parse((await this.blobs.get(m.path)).toString());
-      this.version = m.version;
+    const version = m?.version || "";
+    const path = m?.path || "";
+    const rows = !m
+      ? []
+      : version === this.version && path === this.path
+        ? this.rows
+        : await this.loadRows(version, path);
+    // An earlier, slow blob fetch must not replace a newer observed version
+    // (or restore catalog rows after metadata was deliberately removed).
+    if (sequence >= this.appliedSequence) {
+      this.rows = rows;
+      this.version = version;
+      this.path = path;
+      this.loadedAt = Date.now();
+      this.appliedSequence = sequence;
     }
-    if (!m && this.version) {
-      this.rows = [];
-      this.version = "";
-    }
-    this.loadedAt = Date.now();
-    return this.rows;
+    return rows;
   }
   async search(q: string, strength = "", form = "") {
     if (q.trim().length < 2) return [];
-    return (await this.all())
-      .map((d) => ({ ...d, score: scoreDrug(d, q, strength, form) }))
-      .filter((d) => d.score > 0)
+    const rows = await this.all();
+    if (rows !== this.searchRows) {
+      this.searchRows = rows;
+      this.searchCache.clear();
+      this.rankIndex = rows.map((drug) => ({
+        drug,
+        zh: normalize(drug.nameZh),
+        en: normalize(drug.nameEn),
+      }));
+    }
+    const key = JSON.stringify([q, strength, form]);
+    const cached = this.searchCache.get(key);
+    if (cached) {
+      this.searchCache.delete(key);
+      this.searchCache.set(key, cached);
+      return structuredClone(cached);
+    }
+    const hits: (Drug & { score: number })[] = [];
+    const query = scoreQuery(q);
+    for (const entry of this.rankIndex) {
+      const drug = entry.drug;
+      const score = scoreIndexedDrug(drug, q, strength, form, query, entry);
+      if (score > 0) hits.push({ ...drug, score });
+    }
+    const result = hits
       .sort(
         (a, b) => Number(a.revoked) - Number(b.revoked) || b.score - a.score,
       )
       .slice(0, 12);
+    this.searchCache.set(key, result);
+    if (this.searchCache.size > 96)
+      this.searchCache.delete(this.searchCache.keys().next().value!);
+    return structuredClone(result);
   }
   async get(lic: string) {
     return (await this.all()).find((d) => d.licenseNo === lic) || null;

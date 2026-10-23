@@ -1,0 +1,14 @@
+{
+  "schema": "yzt-load-plan/v1",
+  "mode": "emulator",
+  "project": "demo-yzt-load-20261023",
+  "origin": "http://127.0.0.1:18095",
+  "profiles": [
+    { "virtualUsers": 20, "requests": 400, "thinkTimeMs": 50 },
+    { "virtualUsers": 50, "requests": 1000, "thinkTimeMs": 50 },
+    { "virtualUsers": 100, "requests": 2000, "thinkTimeMs": 50 }
+  ],
+  "requestTimeoutMs": 30000,
+  "stopP95Ms": 15000,
+  "stopServerErrorRate": 0.05
+}

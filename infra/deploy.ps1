@@ -184,6 +184,8 @@ try {
   Invoke-Gcloud run services update "$name-worker" --project=$ProjectId --region=$Region --env-vars-file=$envFile --set-secrets=$secretBinding --quiet
   $queues=@(Invoke-Gcloud tasks queues list --project=$ProjectId --location=$Region --format='value(name)')
   if (-not ($queues -match "/$name-ai$")) { Invoke-Gcloud tasks queues create "$name-ai" --project=$ProjectId --location=$Region --max-concurrent-dispatches=2 --max-dispatches-per-second=2 --max-attempts=3 }
+  # Named-task recovery needs only BASIC task existence reads on this queue.
+  Invoke-Gcloud tasks queues add-iam-policy-binding "$name-ai" --project=$ProjectId --location=$Region --member="serviceAccount:$runtime" --role=roles/cloudtasks.viewer --quiet | Out-Null
   $jobs=@(Invoke-Gcloud scheduler jobs list --project=$ProjectId --location=$Region --format='value(name)')
   $mode=if($jobs -match "/$name-tick$"){'update'}else{'create'}
   Invoke-Gcloud scheduler jobs $mode http "$name-tick" --project=$ProjectId --location=$Region --schedule='* * * * *' --uri="$workerUrl/internal/tick" --http-method=POST --oidc-service-account-email=$caller --oidc-token-audience=$workerUrl --attempt-deadline=180s --quiet

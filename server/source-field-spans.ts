@@ -49,9 +49,22 @@ const invalid = () =>
     "仿單欄位的原始頁面或完整段落無法核對，請先完成來源整理。",
     422,
   );
-const complete = (text: string) =>
-  /[。！？.!?；;][」』”"')）]*\s*$/u.test(text) &&
-  !/(?:^|\n)\s*(?:\d+|[一二三四五六七八九十]+)\s*[.、]\s*$/u.test(text);
+const complete = (text: string) => {
+  // Typography is a classification projection only. Quotes/citations stay exact.
+  const projected = text.normalize("NFKC");
+  return /[。！？.!?；;][」』”"')）]*\s*$/u.test(projected) &&
+    !/(?:^|\n)\s*(?:\d+|[一二三四五六七八九十]+)\s*[.、]\s*$/u.test(projected);
+};
+function literalUnavailable(text: string) {
+  if (/^(?:無|N\/?A|尚無資訊|目前尚無資訊)[。.!?；;]?$/iu.test(text)) return true;
+  // Exact whole-field absence markers may have an explicit literature label or
+  // balanced quotation marks. Never remove other prose, conditions, or tables.
+  const absence = "(?:尚無資訊|目前尚無資訊)[。.!?；;]?";
+  return new RegExp(
+    `^(?:(?:\\(依文獻記載\\)|【依文獻記載】)\\s*)?(?:${absence}|「\\s*${absence}\\s*」|『\\s*${absence}\\s*』|“\\s*${absence}\\s*”|"\\s*${absence}\\s*")[。.!?；;]?$`,
+    "u",
+  ).test(text);
+}
 const visibleLength = (text: string) =>
   text.replace(/\s+/gu, " ").trim().length;
 const hash = (value: string) =>
@@ -151,7 +164,7 @@ export function canonicalSourceFields(
         .normalize("NFKC")
         .replace(shortHeading, "")
         .trim();
-      if (/^(?:無|N\/?A|尚無資訊|目前尚無資訊)[。.!?；;]?$/iu.test(shortBody))
+      if (literalUnavailable(shortBody))
         evidenceKind = "literal_unavailable";
       else if (
         !shortBody &&

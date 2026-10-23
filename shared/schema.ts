@@ -242,6 +242,7 @@ export interface GroundedResult {
   sourceVersions: Record<string, string>;
   /** Server-authored pending state, never a generated medical conclusion. */
   sourceReview?: {
+    readerVersion?: string;
     reason: "safety_sections_pending";
     sources: OfficialSourceReference[];
   };

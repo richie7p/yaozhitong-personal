@@ -1,0 +1,2960 @@
+{
+  "schema": "yzt-public-load-acceptance/v1",
+  "date": "2026-10-23",
+  "status": "bounded_emulator_and_predeployment_cloud_read_checks_passed",
+  "codeContext": {
+    "baseCommit": "a458cb11e9b0329b9c034b4b530d98945d5982da",
+    "candidate": "public-stability-v7",
+    "emulatorSourcePinMethod": "SHA256 of raw local candidate source bytes before and after execution",
+    "sourceFilesStableDuringRun": true,
+    "sourcePins": {
+      "tools/run-load.ts": "9cde9477caa8cea9849921086b374d265443643a4472113e9d5d66536847c433",
+      "tools/load-core.ts": "d30f9b3c91cdd7265bb17a1d1f2af3e77ce600da25702c78bb21ef5c59698151",
+      "tools/load-emulator.ts": "87d37f9cd2f77bc3c44ceacca12f84fceb1e333041cea5ec278ec2c3dae9d5fa",
+      "tools/load-photo.ts": "429a96dae3b9e2de763aa621e8061ede4a1a3093626bc4be08b6c3110b95f261",
+      "server/app.ts": "8fa58e6d4566db3971cae53adb21088927935832a59f597fb76923dbcc330890",
+      "server/domain.ts": "16300edf3a56ccbeab757aef6522f3d6dbc89c70eecc1dc6df1642d333c97746",
+      "server/auth.ts": "dd30491013500534be0796e09f372244a2e5f9f6b81bebde8f9bf66bb6b730ad",
+      "server/store.ts": "86c73a7689a807bf689b3ba20fe78e83f57e7a13c7d04e91adf138ed1404bae0",
+      "server/config.ts": "df98dd209b0ed918f072f7d142e6d5414848f87ede804e53460baf5dc21d6eb1",
+      "server/catalog.ts": "e577dbd5d43e306be3d7395cc76c156f08e72685a5f1fd3334d014adac1660db",
+      "server/job-queue.ts": "27318b5af1694f4f29c1848a14d82d66894bac365b3413d5645b88ab6ab9fc13",
+      "server/admission.ts": "cf82dbf19a2bf70b026589426d6e7b2d50528e76556273251a557fa79b83c5b8",
+      "server/photo-validation.ts": "f4d7638420ae5d925c095b8de017c7e3580b35d91b836ade8da8f132f67c95dc",
+      "server/source-teaching.ts": "9e85dc4f5b7d403f4cc0458839b3668a0f6fa865838f1662d7bbd9ea62afcaa9",
+      "server/source-review-result.ts": "6a58fd48843dad63fbec6aaa0124beb08d19fe00bfbac67715ea81565915ed57",
+      "server/ai.ts": "165a09dc06f7336b322bc621a2c5b04aa9ecb512438103041e86ae6bc041daaf",
+      "shared/product-identity.ts": "f28a30521cf4e5be5423f82c5e47509368b91659d9848dd43c37f69cf40fb4f9"
+    },
+    "sourcePinsDescribe": "Final complete v7 run includes the current source-teaching/history guard, authenticated photo admission and one reservation permit per web Domain."
+  },
+  "policy": {
+    "dailyAiJobsPerPerson": 20,
+    "dailyAiJobsSiteWide": 1000,
+    "timezone": "Asia/Taipei",
+    "realQuotaResets": 0,
+    "realAccountsCreated": 0,
+    "providerCalls": 0,
+    "cloudApplicationMutationRequests": 0,
+    "syntheticBoundaryCounterFixturesOnly": true
+  },
+  "emulator": {
+    "receiptSha256": "9579c10edf22a40e014eda0b6035ff4c11c83dc18a25defaf83c174a8ef403e2",
+    "planSha256": "35e4260c02f5055a95e946008c3e8c8f8e10c043b140a7e7ca6f636664ff6efd",
+    "startedAtUtc": "2026-10-23T04:40:43.659Z",
+    "completedAtUtc": "2026-10-23T04:42:11.792Z",
+    "auth": "official_Authentication_emulator_with_shipped_verifyIdToken_checkRevoked",
+    "store": "official_Firestore_emulator_with_shipped_FirestoreStore",
+    "identities": 101,
+    "maximumConcurrentDistinctOrdinaryIdentities": 100,
+    "dedicatedQuotaBoundaryIdentities": 1,
+    "catalog": {
+      "actualPublicCatalogRows": 66521,
+      "sourceSha256": "ef9caf16a5285aeab31ebf4bfbf00b508be9d61e768991962c029297e5a35192",
+      "syntheticRowsAdded": 1,
+      "source": "in_memory_readback_blob",
+      "blobReads": 3
+    },
+    "mixedProfiles": [
+      {
+        "virtualUsers": 20,
+        "distinctOrdinaryIdentities": 20,
+        "durationMs": 4178,
+        "requestsPerSecond": 95.73,
+        "requests": 400,
+        "p50Ms": 134.84,
+        "p95Ms": 292.24,
+        "p99Ms": 550.69,
+        "maximumMs": 565.8,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 80,
+        "responseBytes": 329610,
+        "statusCounts": {
+          "200": 280,
+          "201": 40,
+          "401": 20,
+          "403": 20,
+          "404": 40
+        },
+        "stopReason": null,
+        "byOperation": {
+          "admin_denied": {
+            "requests": 20,
+            "p50Ms": 47.3,
+            "p95Ms": 59.72,
+            "p99Ms": 60.14,
+            "maximumMs": 60.14,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 20,
+            "responseBytes": 2160,
+            "statusCounts": {
+              "403": 20
+            }
+          },
+          "chat": {
+            "requests": 20,
+            "p50Ms": 187.52,
+            "p95Ms": 191.68,
+            "p99Ms": 194.6,
+            "maximumMs": 194.6,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 88590,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "create_medication": {
+            "requests": 20,
+            "p50Ms": 241.91,
+            "p95Ms": 255.9,
+            "p99Ms": 259.17,
+            "maximumMs": 259.17,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 18650,
+            "statusCounts": {
+              "201": 20
+            }
+          },
+          "cross_owner_job": {
+            "requests": 20,
+            "p50Ms": 79.3,
+            "p95Ms": 90.78,
+            "p99Ms": 91.27,
+            "maximumMs": 91.27,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 20,
+            "responseBytes": 2040,
+            "statusCounts": {
+              "404": 20
+            }
+          },
+          "cross_owner_medication_write": {
+            "requests": 20,
+            "p50Ms": 101.77,
+            "p95Ms": 111.68,
+            "p99Ms": 112.88,
+            "maximumMs": 112.88,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 20,
+            "responseBytes": 2040,
+            "statusCounts": {
+              "404": 20
+            }
+          },
+          "delete_medication": {
+            "requests": 20,
+            "p50Ms": 222.21,
+            "p95Ms": 226.67,
+            "p99Ms": 227.06,
+            "maximumMs": 227.06,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 220,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "dose_logs": {
+            "requests": 20,
+            "p50Ms": 46.72,
+            "p95Ms": 53.75,
+            "p99Ms": 54.17,
+            "maximumMs": 54.17,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 240,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "invalid_session": {
+            "requests": 20,
+            "p50Ms": 8.09,
+            "p95Ms": 18.39,
+            "p99Ms": 18.52,
+            "maximumMs": 18.52,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 20,
+            "responseBytes": 2520,
+            "statusCounts": {
+              "401": 20
+            }
+          },
+          "learning": {
+            "requests": 20,
+            "p50Ms": 179.08,
+            "p95Ms": 187.41,
+            "p99Ms": 190.8,
+            "maximumMs": 190.8,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 118280,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "me": {
+            "requests": 20,
+            "p50Ms": 105.33,
+            "p95Ms": 117.06,
+            "p99Ms": 118.4,
+            "maximumMs": 118.4,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 5570,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "medication_archive_visible": {
+            "requests": 20,
+            "p50Ms": 221.98,
+            "p95Ms": 224.45,
+            "p99Ms": 237.79,
+            "maximumMs": 237.79,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 19160,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "medications": {
+            "requests": 20,
+            "p50Ms": 535.04,
+            "p95Ms": 557.01,
+            "p99Ms": 565.8,
+            "maximumMs": 565.8,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 19160,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "notifications": {
+            "requests": 20,
+            "p50Ms": 51.62,
+            "p95Ms": 59.53,
+            "p99Ms": 63.82,
+            "maximumMs": 63.82,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 240,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "save_schedule": {
+            "requests": 20,
+            "p50Ms": 134.07,
+            "p95Ms": 140.03,
+            "p99Ms": 140.17,
+            "maximumMs": 140.17,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 9010,
+            "statusCounts": {
+              "201": 20
+            }
+          },
+          "saved_bundle": {
+            "requests": 20,
+            "p50Ms": 138.42,
+            "p95Ms": 144.94,
+            "p99Ms": 145.38,
+            "maximumMs": 145.38,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 14240,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "schedules": {
+            "requests": 20,
+            "p50Ms": 74.12,
+            "p95Ms": 76.11,
+            "p99Ms": 76.42,
+            "maximumMs": 76.42,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 240,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "support": {
+            "requests": 20,
+            "p50Ms": 79.42,
+            "p95Ms": 84.92,
+            "p99Ms": 88.4,
+            "maximumMs": 88.4,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 560,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "today_revision_invalidated": {
+            "requests": 20,
+            "p50Ms": 147.36,
+            "p95Ms": 160.83,
+            "p99Ms": 161.31,
+            "maximumMs": 161.31,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 240,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "today_saved": {
+            "requests": 20,
+            "p50Ms": 154.79,
+            "p95Ms": 159.57,
+            "p99Ms": 160.02,
+            "maximumMs": 160.02,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 7220,
+            "statusCounts": {
+              "200": 20
+            }
+          },
+          "update_medication": {
+            "requests": 20,
+            "p50Ms": 283.9,
+            "p95Ms": 291.52,
+            "p99Ms": 292.24,
+            "maximumMs": 292.24,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 19230,
+            "statusCounts": {
+              "200": 20
+            }
+          }
+        },
+        "resources": {
+          "nodePeakRssKiB": 540588,
+          "nodeRssAfterBytes": 553627648,
+          "cpuUserMs": 4141,
+          "cpuSystemMs": 172,
+          "eventLoopP95Ms": 41.98
+        }
+      },
+      {
+        "virtualUsers": 50,
+        "distinctOrdinaryIdentities": 50,
+        "durationMs": 5750,
+        "requestsPerSecond": 173.91,
+        "requests": 1000,
+        "p50Ms": 228.26,
+        "p95Ms": 461.94,
+        "p99Ms": 498.6,
+        "maximumMs": 507.17,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 200,
+        "responseBytes": 833910,
+        "statusCounts": {
+          "200": 700,
+          "201": 100,
+          "401": 50,
+          "403": 50,
+          "404": 100
+        },
+        "stopReason": null,
+        "byOperation": {
+          "admin_denied": {
+            "requests": 50,
+            "p50Ms": 46.96,
+            "p95Ms": 118.6,
+            "p99Ms": 150.96,
+            "maximumMs": 150.96,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 50,
+            "responseBytes": 5400,
+            "statusCounts": {
+              "403": 50
+            }
+          },
+          "chat": {
+            "requests": 50,
+            "p50Ms": 363.98,
+            "p95Ms": 377.66,
+            "p99Ms": 389.87,
+            "maximumMs": 389.87,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 221850,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "create_medication": {
+            "requests": 50,
+            "p50Ms": 412.57,
+            "p95Ms": 479.62,
+            "p99Ms": 507.17,
+            "maximumMs": 507.17,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 46640,
+            "statusCounts": {
+              "201": 50
+            }
+          },
+          "cross_owner_job": {
+            "requests": 50,
+            "p50Ms": 129.43,
+            "p95Ms": 154.87,
+            "p99Ms": 161.59,
+            "maximumMs": 161.59,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 50,
+            "responseBytes": 5100,
+            "statusCounts": {
+              "404": 50
+            }
+          },
+          "cross_owner_medication_write": {
+            "requests": 50,
+            "p50Ms": 198.95,
+            "p95Ms": 288.82,
+            "p99Ms": 316.28,
+            "maximumMs": 316.28,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 50,
+            "responseBytes": 5100,
+            "statusCounts": {
+              "404": 50
+            }
+          },
+          "delete_medication": {
+            "requests": 50,
+            "p50Ms": 285.49,
+            "p95Ms": 346.82,
+            "p99Ms": 348.33,
+            "maximumMs": 348.33,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 550,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "dose_logs": {
+            "requests": 50,
+            "p50Ms": 62.08,
+            "p95Ms": 120.96,
+            "p99Ms": 121.34,
+            "maximumMs": 121.34,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 600,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "invalid_session": {
+            "requests": 50,
+            "p50Ms": 25.76,
+            "p95Ms": 46.95,
+            "p99Ms": 49.44,
+            "maximumMs": 49.44,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 50,
+            "responseBytes": 6300,
+            "statusCounts": {
+              "401": 50
+            }
+          },
+          "learning": {
+            "requests": 50,
+            "p50Ms": 304.54,
+            "p95Ms": 322.92,
+            "p99Ms": 325.89,
+            "maximumMs": 325.89,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 296000,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "me": {
+            "requests": 50,
+            "p50Ms": 195.89,
+            "p95Ms": 210.65,
+            "p99Ms": 211.53,
+            "maximumMs": 211.53,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 13970,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "medication_archive_visible": {
+            "requests": 50,
+            "p50Ms": 292.46,
+            "p95Ms": 339.28,
+            "p99Ms": 348.08,
+            "maximumMs": 348.08,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 47930,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "medications": {
+            "requests": 50,
+            "p50Ms": 484.27,
+            "p95Ms": 500.45,
+            "p99Ms": 503.15,
+            "maximumMs": 503.15,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 47930,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "notifications": {
+            "requests": 50,
+            "p50Ms": 42.35,
+            "p95Ms": 80.1,
+            "p99Ms": 80.41,
+            "maximumMs": 80.41,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 600,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "save_schedule": {
+            "requests": 50,
+            "p50Ms": 229.21,
+            "p95Ms": 241.26,
+            "p99Ms": 248.27,
+            "maximumMs": 248.27,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 22540,
+            "statusCounts": {
+              "201": 50
+            }
+          },
+          "saved_bundle": {
+            "requests": 50,
+            "p50Ms": 259.5,
+            "p95Ms": 342.72,
+            "p99Ms": 343.14,
+            "maximumMs": 343.14,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 35630,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "schedules": {
+            "requests": 50,
+            "p50Ms": 118.41,
+            "p95Ms": 133.52,
+            "p99Ms": 134.41,
+            "maximumMs": 134.41,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 9630,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "support": {
+            "requests": 50,
+            "p50Ms": 104.14,
+            "p95Ms": 145.54,
+            "p99Ms": 146.65,
+            "maximumMs": 146.65,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1400,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "today_revision_invalidated": {
+            "requests": 50,
+            "p50Ms": 247.05,
+            "p95Ms": 263.39,
+            "p99Ms": 338.48,
+            "maximumMs": 338.48,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 600,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "today_saved": {
+            "requests": 50,
+            "p50Ms": 245.34,
+            "p95Ms": 270.73,
+            "p99Ms": 285.85,
+            "maximumMs": 285.85,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 18050,
+            "statusCounts": {
+              "200": 50
+            }
+          },
+          "update_medication": {
+            "requests": 50,
+            "p50Ms": 409.5,
+            "p95Ms": 445.95,
+            "p99Ms": 446.94,
+            "maximumMs": 446.94,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 48090,
+            "statusCounts": {
+              "200": 50
+            }
+          }
+        },
+        "resources": {
+          "nodePeakRssKiB": 698032,
+          "nodeRssAfterBytes": 714784768,
+          "cpuUserMs": 6484,
+          "cpuSystemMs": 313,
+          "eventLoopP95Ms": 58.29
+        }
+      },
+      {
+        "virtualUsers": 100,
+        "distinctOrdinaryIdentities": 100,
+        "durationMs": 9653,
+        "requestsPerSecond": 207.19,
+        "requests": 2000,
+        "p50Ms": 407.2,
+        "p95Ms": 783.61,
+        "p99Ms": 944.7,
+        "maximumMs": 969.51,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 400,
+        "responseBytes": 1681970,
+        "statusCounts": {
+          "200": 1400,
+          "201": 200,
+          "401": 100,
+          "403": 100,
+          "404": 200
+        },
+        "stopReason": null,
+        "byOperation": {
+          "admin_denied": {
+            "requests": 100,
+            "p50Ms": 99.92,
+            "p95Ms": 139.33,
+            "p99Ms": 140.22,
+            "maximumMs": 153.42,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 100,
+            "responseBytes": 10800,
+            "statusCounts": {
+              "403": 100
+            }
+          },
+          "chat": {
+            "requests": 100,
+            "p50Ms": 714.24,
+            "p95Ms": 798.35,
+            "p99Ms": 831.07,
+            "maximumMs": 831.83,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 443950,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "create_medication": {
+            "requests": 100,
+            "p50Ms": 687.27,
+            "p95Ms": 781.61,
+            "p99Ms": 787.08,
+            "maximumMs": 789.31,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 93290,
+            "statusCounts": {
+              "201": 100
+            }
+          },
+          "cross_owner_job": {
+            "requests": 100,
+            "p50Ms": 196,
+            "p95Ms": 222.97,
+            "p99Ms": 228.49,
+            "maximumMs": 228.65,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 100,
+            "responseBytes": 10200,
+            "statusCounts": {
+              "404": 100
+            }
+          },
+          "cross_owner_medication_write": {
+            "requests": 100,
+            "p50Ms": 420.73,
+            "p95Ms": 526.39,
+            "p99Ms": 633.83,
+            "maximumMs": 645.42,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 100,
+            "responseBytes": 10200,
+            "statusCounts": {
+              "404": 100
+            }
+          },
+          "delete_medication": {
+            "requests": 100,
+            "p50Ms": 516.01,
+            "p95Ms": 623.61,
+            "p99Ms": 665.08,
+            "maximumMs": 665.89,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1100,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "dose_logs": {
+            "requests": 100,
+            "p50Ms": 139.56,
+            "p95Ms": 164.32,
+            "p99Ms": 165.89,
+            "maximumMs": 166.54,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1200,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "invalid_session": {
+            "requests": 100,
+            "p50Ms": 38.7,
+            "p95Ms": 97.22,
+            "p99Ms": 98.84,
+            "maximumMs": 99.27,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 100,
+            "responseBytes": 12600,
+            "statusCounts": {
+              "401": 100
+            }
+          },
+          "learning": {
+            "requests": 100,
+            "p50Ms": 642.79,
+            "p95Ms": 711.02,
+            "p99Ms": 751.27,
+            "maximumMs": 752.3,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 592200,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "me": {
+            "requests": 100,
+            "p50Ms": 334.43,
+            "p95Ms": 356.97,
+            "p99Ms": 357.85,
+            "maximumMs": 358.12,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 27970,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "medication_archive_visible": {
+            "requests": 100,
+            "p50Ms": 669.29,
+            "p95Ms": 764.15,
+            "p99Ms": 798.19,
+            "maximumMs": 833.55,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 95880,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "medications": {
+            "requests": 100,
+            "p50Ms": 799.5,
+            "p95Ms": 952.79,
+            "p99Ms": 969.2,
+            "maximumMs": 969.51,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 95880,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "notifications": {
+            "requests": 100,
+            "p50Ms": 102.82,
+            "p95Ms": 165.6,
+            "p99Ms": 166.02,
+            "maximumMs": 178.84,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1200,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "save_schedule": {
+            "requests": 100,
+            "p50Ms": 351.19,
+            "p95Ms": 447.03,
+            "p99Ms": 482.68,
+            "maximumMs": 483.34,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 45090,
+            "statusCounts": {
+              "201": 100
+            }
+          },
+          "saved_bundle": {
+            "requests": 100,
+            "p50Ms": 414.94,
+            "p95Ms": 457.26,
+            "p99Ms": 526.91,
+            "maximumMs": 527.1,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 71280,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "schedules": {
+            "requests": 100,
+            "p50Ms": 223.61,
+            "p95Ms": 345.76,
+            "p99Ms": 348.78,
+            "maximumMs": 351.45,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 32840,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "support": {
+            "requests": 100,
+            "p50Ms": 187.87,
+            "p95Ms": 207.48,
+            "p99Ms": 209.25,
+            "maximumMs": 209.75,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2800,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "today_revision_invalidated": {
+            "requests": 100,
+            "p50Ms": 442.61,
+            "p95Ms": 486.13,
+            "p99Ms": 487.49,
+            "maximumMs": 489.32,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1200,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "today_saved": {
+            "requests": 100,
+            "p50Ms": 429.74,
+            "p95Ms": 496.11,
+            "p99Ms": 503.61,
+            "maximumMs": 503.64,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 36100,
+            "statusCounts": {
+              "200": 100
+            }
+          },
+          "update_medication": {
+            "requests": 100,
+            "p50Ms": 724.16,
+            "p95Ms": 792.91,
+            "p99Ms": 851.99,
+            "maximumMs": 889.01,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 96190,
+            "statusCounts": {
+              "200": 100
+            }
+          }
+        },
+        "resources": {
+          "nodePeakRssKiB": 782660,
+          "nodeRssAfterBytes": 736604160,
+          "cpuUserMs": 11094,
+          "cpuSystemMs": 547,
+          "eventLoopP95Ms": 89
+        }
+      }
+    ],
+    "mixedRequests": 3400,
+    "mixedUnexpectedResponses": 0,
+    "nativeAiQualityOrThroughputMeasured": false
+  },
+  "searchProfiles": [
+    {
+      "name": "full_catalog_single_user_search",
+      "actualPublicCatalogRows": 66521,
+      "requests": 3,
+      "p50Ms": 54.42,
+      "p95Ms": 292.4,
+      "p99Ms": 292.4,
+      "maximumMs": 292.4,
+      "unexpectedResponses": 0,
+      "serverErrors": 0,
+      "transportErrors": 0,
+      "invariantFailures": 0,
+      "expectedRejections": 0,
+      "responseBytes": 5327,
+      "statusCounts": {
+        "200": 3
+      },
+      "stopReason": null,
+      "byOperation": {
+        "full_catalog_search": {
+          "requests": 3,
+          "p50Ms": 54.42,
+          "p95Ms": 292.4,
+          "p99Ms": 292.4,
+          "maximumMs": 292.4,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 5327,
+          "statusCounts": {
+            "200": 3
+          }
+        }
+      },
+      "catalogBlobReads": 1
+    },
+    {
+      "name": "warm_repeated_search_20",
+      "virtualUsers": 20,
+      "distinctQueries": 3,
+      "catalogRows": 66521,
+      "elapsedMs": 360,
+      "additionalBlobReads": 0,
+      "eventLoopP95Ms": 39.85,
+      "requests": 60,
+      "p50Ms": 109.4,
+      "p95Ms": 146.31,
+      "p99Ms": 183.16,
+      "maximumMs": 183.16,
+      "unexpectedResponses": 0,
+      "serverErrors": 0,
+      "transportErrors": 0,
+      "invariantFailures": 0,
+      "expectedRejections": 0,
+      "responseBytes": 106540,
+      "statusCounts": {
+        "200": 60
+      },
+      "stopReason": null,
+      "byOperation": {
+        "full_catalog_search": {
+          "requests": 60,
+          "p50Ms": 109.4,
+          "p95Ms": 146.31,
+          "p99Ms": 183.16,
+          "maximumMs": 183.16,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 106540,
+          "statusCounts": {
+            "200": 60
+          }
+        }
+      }
+    },
+    {
+      "name": "warm_repeated_search_50",
+      "virtualUsers": 50,
+      "distinctQueries": 3,
+      "catalogRows": 66521,
+      "elapsedMs": 622,
+      "additionalBlobReads": 0,
+      "eventLoopP95Ms": 59.05,
+      "requests": 100,
+      "p50Ms": 293.14,
+      "p95Ms": 365.97,
+      "p99Ms": 370.4,
+      "maximumMs": 386.8,
+      "unexpectedResponses": 0,
+      "serverErrors": 0,
+      "transportErrors": 0,
+      "invariantFailures": 0,
+      "expectedRejections": 0,
+      "responseBytes": 176067,
+      "statusCounts": {
+        "200": 100
+      },
+      "stopReason": null,
+      "byOperation": {
+        "full_catalog_search": {
+          "requests": 100,
+          "p50Ms": 293.14,
+          "p95Ms": 365.97,
+          "p99Ms": 370.4,
+          "maximumMs": 386.8,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 176067,
+          "statusCounts": {
+            "200": 100
+          }
+        }
+      }
+    },
+    {
+      "name": "distinct_uncached_search_20",
+      "virtualUsers": 20,
+      "distinctQueries": 20,
+      "catalogRows": 66521,
+      "elapsedMs": 1156,
+      "additionalBlobReads": 0,
+      "eventLoopP95Ms": 969.41,
+      "requests": 20,
+      "p50Ms": 1148.99,
+      "p95Ms": 1154.69,
+      "p99Ms": 1154.89,
+      "maximumMs": 1154.89,
+      "unexpectedResponses": 0,
+      "serverErrors": 0,
+      "transportErrors": 0,
+      "invariantFailures": 0,
+      "expectedRejections": 0,
+      "responseBytes": 13413,
+      "statusCounts": {
+        "200": 20
+      },
+      "stopReason": null,
+      "byOperation": {
+        "full_catalog_search": {
+          "requests": 20,
+          "p50Ms": 1148.99,
+          "p95Ms": 1154.69,
+          "p99Ms": 1154.89,
+          "maximumMs": 1154.89,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 13413,
+          "statusCounts": {
+            "200": 20
+          }
+        }
+      }
+    },
+    {
+      "name": "distinct_uncached_search_50",
+      "virtualUsers": 50,
+      "distinctQueries": 50,
+      "catalogRows": 66521,
+      "elapsedMs": 2355,
+      "additionalBlobReads": 0,
+      "eventLoopP95Ms": 1243.61,
+      "requests": 50,
+      "p50Ms": 2346.32,
+      "p95Ms": 2352.14,
+      "p99Ms": 2352.52,
+      "maximumMs": 2352.52,
+      "unexpectedResponses": 0,
+      "serverErrors": 0,
+      "transportErrors": 0,
+      "invariantFailures": 0,
+      "expectedRejections": 0,
+      "responseBytes": 19972,
+      "statusCounts": {
+        "200": 50
+      },
+      "stopReason": null,
+      "byOperation": {
+        "full_catalog_search": {
+          "requests": 50,
+          "p50Ms": 2346.32,
+          "p95Ms": 2352.14,
+          "p99Ms": 2352.52,
+          "maximumMs": 2352.52,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 19972,
+          "statusCounts": {
+            "200": 50
+          }
+        }
+      }
+    }
+  ],
+  "admissionAndRecovery": {
+    "controls": [
+      {
+        "name": "duplicate_admission_response_diagnostics",
+        "statusCounts": {
+          "202": 100
+        },
+        "codeCounts": {
+          "none": 100
+        }
+      },
+      {
+        "name": "100_identical_http_submissions_two_queue_instances",
+        "requests": 100,
+        "uniqueJobs": 1,
+        "perPersonUsage": 1,
+        "globalUsage": 1,
+        "actualTasks": 1,
+        "callbackInvocations": 1,
+        "createRpc": 1
+      },
+      {
+        "name": "100_simultaneous_direct_dispatches_two_instances",
+        "actualTasksRemainOne": true,
+        "createRpc": 2
+      },
+      {
+        "name": "changed_payload_same_key",
+        "status": 409,
+        "additionalQuota": 0
+      },
+      {
+        "name": "deleted_task_tombstone_recovery",
+        "newGeneration": 1,
+        "additionalQuota": 0
+      },
+      {
+        "name": "30_concurrent_worker_deliveries",
+        "committedAttempts": 1,
+        "providerCalls": 0,
+        "result": "missing_synthetic_source_reported_without_generation"
+      },
+      {
+        "name": "personal_19_to_20_concurrent_boundary",
+        "submissions": 20,
+        "admitted": 1,
+        "quotaRejected": 19,
+        "finalCount": 20
+      },
+      {
+        "name": "global_999_to_1000_concurrent_boundary",
+        "ordinaryIdentities": 19,
+        "admitted": 1,
+        "quotaRejected": 18,
+        "finalCount": 1000
+      },
+      {
+        "name": "independent_users_simultaneous_new_jobs",
+        "ordinaryIdentities": 20,
+        "admitted": 20,
+        "statusCounts": {
+          "202": 20
+        }
+      },
+      {
+        "name": "independent_users_simultaneous_new_jobs",
+        "ordinaryIdentities": 50,
+        "admitted": 50,
+        "statusCounts": {
+          "202": 50
+        }
+      },
+      {
+        "name": "independent_users_simultaneous_new_jobs",
+        "ordinaryIdentities": 100,
+        "admitted": 100,
+        "statusCounts": {
+          "202": 100
+        }
+      },
+      {
+        "name": "two_domain_shared_firestore_50_plus_50_admission",
+        "ordinaryIdentities": 100,
+        "webDomainInstances": 2,
+        "admitted": 100,
+        "actualTasksCreated": 100,
+        "statusCounts": {
+          "202": 100
+        }
+      },
+      {
+        "name": "definite_dispatch_failure_same_key_recovery",
+        "initialStatus": 503,
+        "resumedStatus": 202,
+        "quotaCharges": 1
+      },
+      {
+        "name": "accepted_dispatch_response_lost_same_key_recovery",
+        "initialStatus": 503,
+        "resumedStatus": 202,
+        "quotaCharges": 1,
+        "generationUnchanged": true
+      },
+      {
+        "name": "normal_failed_job_retry",
+        "newAttemptTaskIdentity": true,
+        "additionalQuota": 0
+      },
+      {
+        "name": "expired_worker_recovery",
+        "committedAttempt": 2,
+        "overlappingDeliveries": 20,
+        "additionalQuota": 0
+      },
+      {
+        "name": "concurrent_quiz_answer_merge",
+        "questionsRetained": 2,
+        "passed": true
+      },
+      {
+        "name": "disabled_and_deleting_application_account",
+        "existingSessionReadRejected": true,
+        "writeRejected": true,
+        "syntheticFixtureRestored": true
+      },
+      {
+        "name": "actual_unverified_emulator_id_token",
+        "status": 403,
+        "quotaCharges": 0
+      },
+      {
+        "name": "firebase_auth_disabled_existing_token",
+        "status": 401,
+        "checkRevokedVerified": true
+      },
+      {
+        "name": "application_http_restart",
+        "sameFirebaseTokenAccepted": true,
+        "persistedJobReadable": true,
+        "additionalJobs": 0
+      }
+    ],
+    "allBoundaryRequests": {
+      "requests": 423,
+      "p50Ms": 1837.29,
+      "p95Ms": 8228.89,
+      "p99Ms": 9723.17,
+      "maximumMs": 10079.5,
+      "unexpectedResponses": 0,
+      "serverErrors": 2,
+      "transportErrors": 0,
+      "invariantFailures": 0,
+      "expectedRejections": 45,
+      "responseBytes": 43101,
+      "statusCounts": {
+        "200": 3,
+        "202": 375,
+        "401": 1,
+        "403": 4,
+        "409": 1,
+        "429": 37,
+        "503": 2
+      },
+      "stopReason": null,
+      "byOperation": {
+        "auth_disabled_existing_id_token": {
+          "requests": 1,
+          "p50Ms": 7.97,
+          "p95Ms": 7.97,
+          "p99Ms": 7.97,
+          "maximumMs": 7.97,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 1,
+          "responseBytes": 126,
+          "statusCounts": {
+            "401": 1
+          }
+        },
+        "concurrent_quiz_answers": {
+          "requests": 2,
+          "p50Ms": 5821.74,
+          "p95Ms": 5959.11,
+          "p99Ms": 5959.11,
+          "maximumMs": 5959.11,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 1238,
+          "statusCounts": {
+            "200": 2
+          }
+        },
+        "deleting_account_existing_session": {
+          "requests": 1,
+          "p50Ms": 28.79,
+          "p95Ms": 28.79,
+          "p99Ms": 28.79,
+          "maximumMs": 28.79,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 1,
+          "responseBytes": 109,
+          "statusCounts": {
+            "403": 1
+          }
+        },
+        "disabled_account_existing_session": {
+          "requests": 1,
+          "p50Ms": 30.09,
+          "p95Ms": 30.09,
+          "p99Ms": 30.09,
+          "maximumMs": 30.09,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 1,
+          "responseBytes": 109,
+          "statusCounts": {
+            "403": 1
+          }
+        },
+        "disabled_account_write": {
+          "requests": 1,
+          "p50Ms": 31.54,
+          "p95Ms": 31.54,
+          "p99Ms": 31.54,
+          "maximumMs": 31.54,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 1,
+          "responseBytes": 109,
+          "statusCounts": {
+            "403": 1
+          }
+        },
+        "job_admission": {
+          "requests": 314,
+          "p50Ms": 1255.02,
+          "p95Ms": 8025.7,
+          "p99Ms": 9162.14,
+          "maximumMs": 9378.59,
+          "unexpectedResponses": 0,
+          "serverErrors": 2,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 40,
+          "responseBytes": 30859,
+          "statusCounts": {
+            "202": 274,
+            "409": 1,
+            "429": 37,
+            "503": 2
+          }
+        },
+        "normal_job_retry": {
+          "requests": 1,
+          "p50Ms": 91.45,
+          "p95Ms": 91.45,
+          "p99Ms": 91.45,
+          "maximumMs": 91.45,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 76,
+          "statusCounts": {
+            "202": 1
+          }
+        },
+        "second_instance_warmup": {
+          "requests": 1,
+          "p50Ms": 576.28,
+          "p95Ms": 576.28,
+          "p99Ms": 576.28,
+          "maximumMs": 576.28,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 957,
+          "statusCounts": {
+            "200": 1
+          }
+        },
+        "two_instance_new_job": {
+          "requests": 100,
+          "p50Ms": 5057.92,
+          "p95Ms": 9627.98,
+          "p99Ms": 9987.66,
+          "maximumMs": 10079.5,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 0,
+          "responseBytes": 9400,
+          "statusCounts": {
+            "202": 100
+          }
+        },
+        "unverified_account_ai_denied": {
+          "requests": 1,
+          "p50Ms": 65.12,
+          "p95Ms": 65.12,
+          "p99Ms": 65.12,
+          "maximumMs": 65.12,
+          "unexpectedResponses": 0,
+          "serverErrors": 0,
+          "transportErrors": 0,
+          "invariantFailures": 0,
+          "expectedRejections": 1,
+          "responseBytes": 118,
+          "statusCounts": {
+            "403": 1
+          }
+        }
+      }
+    },
+    "injectedFaults": {
+      "deliberateDispatch503Responses": 2,
+      "bothRecoveredUsingSameKey": true,
+      "quotaChargesPerLogicalOperation": 1
+    },
+    "interpretation": "The boundary latency distribution includes admitted AI-work reservations, expected quota/access refusals and deliberate dispatch failures. It is separate from the mixed read/CRUD latency and does not measure native generation or queue completion.",
+    "reservationAdmission": {
+      "perDomainActiveTransactions": 1,
+      "maximumCurrentWebInstances": 2,
+      "maximumReservationTransactionsAcrossCurrentWebInstances": 2,
+      "waitingLimitPerDomain": 128,
+      "waitingTimeoutMs": 20000,
+      "dispatchOutsidePermit": true
+    }
+  },
+  "photoUploads": {
+    "name": "photo_upload_concurrency",
+    "fixture": "synthetic_noise_jpeg_not_a_drug_photo",
+    "fixtureSha256": "acf8451456f22a1ad454cb287a8700800e37902e99e3859de1f9bcf551e8e0f3",
+    "width": 1536,
+    "height": 1536,
+    "providerCalls": 0,
+    "storage": "isolated_in_memory_blob_adapter",
+    "phases": [
+      {
+        "virtualUsers": 5,
+        "jpegBytesPerUpload": 1563581,
+        "allDistinctUsersEventuallyAccepted": true,
+        "initialBusyResponses": 0,
+        "totalImageBusyResponses": 0,
+        "serverBusyResponses": 0,
+        "sameKeyRecoveryRequests": 0,
+        "logicalJobsCreated": 5,
+        "quotaCharges": 5,
+        "exactOriginalBytesRetained": true,
+        "extraBlobsFromResends": 0,
+        "crossOwnerStatus": 404,
+        "changedInputStatus": 409,
+        "durationMs": 1161,
+        "driverAndServerSameProcess": true,
+        "rssBeforeBytes": 493342720,
+        "sampledPeakRssBytes": 567779328,
+        "requests": 8,
+        "p50Ms": 144.12,
+        "p95Ms": 882.73,
+        "p99Ms": 882.73,
+        "maximumMs": 882.73,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 2,
+        "responseBytes": 809,
+        "statusCounts": {
+          "202": 6,
+          "404": 1,
+          "409": 1
+        },
+        "stopReason": null,
+        "byOperation": {
+          "photo_changed_input_same_key": {
+            "requests": 1,
+            "p50Ms": 44.53,
+            "p95Ms": 44.53,
+            "p99Ms": 44.53,
+            "maximumMs": 44.53,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 143,
+            "statusCounts": {
+              "409": 1
+            }
+          },
+          "photo_cross_owner_read": {
+            "requests": 1,
+            "p50Ms": 49.1,
+            "p95Ms": 49.1,
+            "p99Ms": 49.1,
+            "maximumMs": 49.1,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 102,
+            "statusCounts": {
+              "404": 1
+            }
+          },
+          "photo_initial_concurrent_upload": {
+            "requests": 5,
+            "p50Ms": 533.61,
+            "p95Ms": 882.73,
+            "p99Ms": 882.73,
+            "maximumMs": 882.73,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 470,
+            "statusCounts": {
+              "202": 5
+            }
+          },
+          "photo_repeat_accepted_operation": {
+            "requests": 1,
+            "p50Ms": 106.94,
+            "p95Ms": 106.94,
+            "p99Ms": 106.94,
+            "maximumMs": 106.94,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 94,
+            "statusCounts": {
+              "202": 1
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 10,
+        "jpegBytesPerUpload": 1563581,
+        "allDistinctUsersEventuallyAccepted": true,
+        "initialBusyResponses": 0,
+        "totalImageBusyResponses": 0,
+        "serverBusyResponses": 0,
+        "sameKeyRecoveryRequests": 0,
+        "logicalJobsCreated": 10,
+        "quotaCharges": 10,
+        "exactOriginalBytesRetained": true,
+        "extraBlobsFromResends": 0,
+        "crossOwnerStatus": 404,
+        "changedInputStatus": 409,
+        "durationMs": 2100,
+        "driverAndServerSameProcess": true,
+        "rssBeforeBytes": 568033280,
+        "sampledPeakRssBytes": 617361408,
+        "requests": 13,
+        "p50Ms": 718.23,
+        "p95Ms": 1772.4,
+        "p99Ms": 1772.4,
+        "maximumMs": 1772.4,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 2,
+        "responseBytes": 1279,
+        "statusCounts": {
+          "202": 11,
+          "404": 1,
+          "409": 1
+        },
+        "stopReason": null,
+        "byOperation": {
+          "photo_changed_input_same_key": {
+            "requests": 1,
+            "p50Ms": 61.29,
+            "p95Ms": 61.29,
+            "p99Ms": 61.29,
+            "maximumMs": 61.29,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 143,
+            "statusCounts": {
+              "409": 1
+            }
+          },
+          "photo_cross_owner_read": {
+            "requests": 1,
+            "p50Ms": 46.15,
+            "p95Ms": 46.15,
+            "p99Ms": 46.15,
+            "maximumMs": 46.15,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 102,
+            "statusCounts": {
+              "404": 1
+            }
+          },
+          "photo_initial_concurrent_upload": {
+            "requests": 10,
+            "p50Ms": 899.8,
+            "p95Ms": 1772.4,
+            "p99Ms": 1772.4,
+            "maximumMs": 1772.4,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 940,
+            "statusCounts": {
+              "202": 10
+            }
+          },
+          "photo_repeat_accepted_operation": {
+            "requests": 1,
+            "p50Ms": 123.46,
+            "p95Ms": 123.46,
+            "p99Ms": 123.46,
+            "maximumMs": 123.46,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 94,
+            "statusCounts": {
+              "202": 1
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 20,
+        "jpegBytesPerUpload": 1563581,
+        "allDistinctUsersEventuallyAccepted": true,
+        "initialBusyResponses": 0,
+        "totalImageBusyResponses": 0,
+        "serverBusyResponses": 0,
+        "sameKeyRecoveryRequests": 0,
+        "logicalJobsCreated": 20,
+        "quotaCharges": 20,
+        "exactOriginalBytesRetained": true,
+        "extraBlobsFromResends": 0,
+        "crossOwnerStatus": 404,
+        "changedInputStatus": 409,
+        "durationMs": 3812,
+        "driverAndServerSameProcess": true,
+        "rssBeforeBytes": 589070336,
+        "sampledPeakRssBytes": 704319488,
+        "requests": 23,
+        "p50Ms": 1755.27,
+        "p95Ms": 3257.85,
+        "p99Ms": 3461.64,
+        "maximumMs": 3461.64,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 2,
+        "responseBytes": 2219,
+        "statusCounts": {
+          "202": 21,
+          "404": 1,
+          "409": 1
+        },
+        "stopReason": null,
+        "byOperation": {
+          "photo_changed_input_same_key": {
+            "requests": 1,
+            "p50Ms": 46.81,
+            "p95Ms": 46.81,
+            "p99Ms": 46.81,
+            "maximumMs": 46.81,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 143,
+            "statusCounts": {
+              "409": 1
+            }
+          },
+          "photo_cross_owner_read": {
+            "requests": 1,
+            "p50Ms": 47.99,
+            "p95Ms": 47.99,
+            "p99Ms": 47.99,
+            "maximumMs": 47.99,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 102,
+            "statusCounts": {
+              "404": 1
+            }
+          },
+          "photo_initial_concurrent_upload": {
+            "requests": 20,
+            "p50Ms": 1873.65,
+            "p95Ms": 3257.85,
+            "p99Ms": 3461.64,
+            "maximumMs": 3461.64,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1880,
+            "statusCounts": {
+              "202": 20
+            }
+          },
+          "photo_repeat_accepted_operation": {
+            "requests": 1,
+            "p50Ms": 107.11,
+            "p95Ms": 107.11,
+            "p99Ms": 107.11,
+            "maximumMs": 107.11,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 94,
+            "statusCounts": {
+              "202": 1
+            }
+          }
+        }
+      }
+    ],
+    "limitations": [
+      "This verifies upload validation, owner boundaries, idempotency, queued persistence and recovery. It does not run paid vision or assess recognition accuracy.",
+      "RSS includes the load driver and test fixtures in the same process; it is not a standalone production server memory measurement."
+    ]
+  },
+  "cloudReadBaseline": {
+    "status": "passed_before_stability_deployment",
+    "deployedCode": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+    "receiptSha256": "f55584983047d56dc48ee7bb695414d3fe3b02665705c5e56c93759f399fcf4c",
+    "planSha256": "94b20da627e9366b8119306cac3d50606e4b6721f8406585351d3df50e37f5a3",
+    "startedAtUtc": "2026-10-23T03:46:44.484Z",
+    "completedAtUtc": "2026-10-23T03:48:25.395Z",
+    "scope": "same_existing_owner_read_burst",
+    "genuineIndependentCloudUsers": 1,
+    "ordinarySignIns": 1,
+    "applicationMutationRequests": 0,
+    "aiJobsCreated": 0,
+    "providerCalls": 0,
+    "quotaResets": 0,
+    "profiles": [
+      {
+        "virtualUsers": 1,
+        "durationMs": 68370,
+        "requestsPerSecond": 0.88,
+        "requests": 60,
+        "p50Ms": 671,
+        "p95Ms": 2563.11,
+        "p99Ms": 6364.91,
+        "maximumMs": 6364.91,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 0,
+        "responseBytes": 4005161,
+        "statusCounts": {
+          "200": 60
+        },
+        "stopReason": null,
+        "byOperation": {
+          "GET /chat": {
+            "requests": 6,
+            "p50Ms": 1154.79,
+            "p95Ms": 4587.45,
+            "p99Ms": 4587.45,
+            "maximumMs": 4587.45,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1228416,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /jobs": {
+            "requests": 7,
+            "p50Ms": 1024.92,
+            "p95Ms": 1316.67,
+            "p99Ms": 1316.67,
+            "maximumMs": 1316.67,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 510314,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /learning": {
+            "requests": 7,
+            "p50Ms": 1745.81,
+            "p95Ms": 6364.91,
+            "p99Ms": 6364.91,
+            "maximumMs": 6364.91,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1981161,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /me": {
+            "requests": 7,
+            "p50Ms": 644.17,
+            "p95Ms": 1050.15,
+            "p99Ms": 1050.15,
+            "maximumMs": 1050.15,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2331,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /medications": {
+            "requests": 7,
+            "p50Ms": 860.69,
+            "p95Ms": 2563.11,
+            "p99Ms": 2563.11,
+            "maximumMs": 2563.11,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 279699,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /notifications": {
+            "requests": 6,
+            "p50Ms": 438.44,
+            "p95Ms": 672.1,
+            "p99Ms": 672.1,
+            "maximumMs": 672.1,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 72,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /schedules": {
+            "requests": 7,
+            "p50Ms": 465.64,
+            "p95Ms": 548.99,
+            "p99Ms": 548.99,
+            "maximumMs": 548.99,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /support": {
+            "requests": 6,
+            "p50Ms": 460.58,
+            "p95Ms": 719.48,
+            "p99Ms": 719.48,
+            "maximumMs": 719.48,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 3000,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /today": {
+            "requests": 7,
+            "p50Ms": 527.63,
+            "p95Ms": 977.44,
+            "p99Ms": 977.44,
+            "maximumMs": 977.44,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 4,
+        "durationMs": 18072,
+        "requestsPerSecond": 3.32,
+        "requests": 60,
+        "p50Ms": 709.7,
+        "p95Ms": 2518.52,
+        "p99Ms": 4133.09,
+        "maximumMs": 4133.09,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 0,
+        "responseBytes": 4176940,
+        "statusCounts": {
+          "200": 60
+        },
+        "stopReason": null,
+        "byOperation": {
+          "GET /chat": {
+            "requests": 7,
+            "p50Ms": 2030.47,
+            "p95Ms": 3050.14,
+            "p99Ms": 3050.14,
+            "maximumMs": 3050.14,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1433152,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /jobs": {
+            "requests": 6,
+            "p50Ms": 1158.13,
+            "p95Ms": 1446.8,
+            "p99Ms": 1446.8,
+            "maximumMs": 1446.8,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 437412,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /learning": {
+            "requests": 7,
+            "p50Ms": 2491.96,
+            "p95Ms": 4133.09,
+            "p99Ms": 4133.09,
+            "maximumMs": 4133.09,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1981161,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /me": {
+            "requests": 7,
+            "p50Ms": 411.21,
+            "p95Ms": 1092.01,
+            "p99Ms": 1092.01,
+            "maximumMs": 1092.01,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2331,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /medications": {
+            "requests": 8,
+            "p50Ms": 758.21,
+            "p95Ms": 1470.12,
+            "p99Ms": 1470.12,
+            "maximumMs": 1470.12,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 319656,
+            "statusCounts": {
+              "200": 8
+            }
+          },
+          "GET /notifications": {
+            "requests": 6,
+            "p50Ms": 428.81,
+            "p95Ms": 744.28,
+            "p99Ms": 744.28,
+            "maximumMs": 744.28,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 72,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /schedules": {
+            "requests": 7,
+            "p50Ms": 517.31,
+            "p95Ms": 1345.57,
+            "p99Ms": 1345.57,
+            "maximumMs": 1345.57,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /support": {
+            "requests": 6,
+            "p50Ms": 431.25,
+            "p95Ms": 552.29,
+            "p99Ms": 552.29,
+            "maximumMs": 552.29,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 3000,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /today": {
+            "requests": 6,
+            "p50Ms": 513.67,
+            "p95Ms": 1234.17,
+            "p99Ms": 1234.17,
+            "maximumMs": 1234.17,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 72,
+            "statusCounts": {
+              "200": 6
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 8,
+        "durationMs": 8359,
+        "requestsPerSecond": 7.18,
+        "requests": 60,
+        "p50Ms": 644.67,
+        "p95Ms": 2682.59,
+        "p99Ms": 3672.44,
+        "maximumMs": 3672.44,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 0,
+        "responseBytes": 4420006,
+        "statusCounts": {
+          "200": 60
+        },
+        "stopReason": null,
+        "byOperation": {
+          "GET /chat": {
+            "requests": 7,
+            "p50Ms": 949.87,
+            "p95Ms": 3270.49,
+            "p99Ms": 3270.49,
+            "maximumMs": 3270.49,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1433152,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /jobs": {
+            "requests": 6,
+            "p50Ms": 861.41,
+            "p95Ms": 1391.54,
+            "p99Ms": 1391.54,
+            "maximumMs": 1391.54,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 437412,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /learning": {
+            "requests": 8,
+            "p50Ms": 1551.15,
+            "p95Ms": 3672.44,
+            "p99Ms": 3672.44,
+            "maximumMs": 3672.44,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2264184,
+            "statusCounts": {
+              "200": 8
+            }
+          },
+          "GET /me": {
+            "requests": 7,
+            "p50Ms": 611.12,
+            "p95Ms": 863.16,
+            "p99Ms": 863.16,
+            "maximumMs": 863.16,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 2331,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /medications": {
+            "requests": 7,
+            "p50Ms": 857.24,
+            "p95Ms": 1101.31,
+            "p99Ms": 1101.31,
+            "maximumMs": 1101.31,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 279699,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /notifications": {
+            "requests": 7,
+            "p50Ms": 542.66,
+            "p95Ms": 586.62,
+            "p99Ms": 586.62,
+            "maximumMs": 586.62,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 84,
+            "statusCounts": {
+              "200": 7
+            }
+          },
+          "GET /schedules": {
+            "requests": 6,
+            "p50Ms": 454.39,
+            "p95Ms": 618.79,
+            "p99Ms": 618.79,
+            "maximumMs": 618.79,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 72,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /support": {
+            "requests": 6,
+            "p50Ms": 421.49,
+            "p95Ms": 715.4,
+            "p99Ms": 715.4,
+            "maximumMs": 715.4,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 3000,
+            "statusCounts": {
+              "200": 6
+            }
+          },
+          "GET /today": {
+            "requests": 6,
+            "p50Ms": 459.34,
+            "p95Ms": 699.53,
+            "p99Ms": 699.53,
+            "maximumMs": 699.53,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 72,
+            "statusCounts": {
+              "200": 6
+            }
+          }
+        }
+      }
+    ],
+    "authMetadata": "Ordinary sign-in can update last-login metadata. No accounts or privileges are created or changed by the load runner."
+  },
+  "cloudReadAfterDeployment": {
+    "status": "pending_exact_final_revision",
+    "requestsPerformed": 0
+  },
+  "diagnosticHistory": {
+    "beforeFixSameKey": {
+      "requests": 100,
+      "inMemoryUniqueJobs": 1,
+      "queueCallbackInvocations": 100,
+      "firstOfficialAdapterProbe": {
+        "accepted202": 1,
+        "internalErrors500": 99,
+        "emulatorLog": "transaction_lock_timeout"
+      }
+    },
+    "beforeBoundedReservation": {
+      "ordinaryIdentities": 50,
+      "accepted202": 45,
+      "serviceBusy503": 5,
+      "status": "failed_probe_not_counted_as_acceptance"
+    },
+    "beforeFinalSearchAndPhotoChanges": {
+      "receiptSha256": "6cf5738dc8fc4feb5834c60f44f3ad4dfff4d643d044e047621530bd439a9d15",
+      "uncached20SearchP95Ms": 4330.41,
+      "uncached50SearchP95Ms": 9963.3,
+      "photoInitialImageBusyResponses": [4, 9, 18]
+    },
+    "controlledSingleVariablePerformanceStudy": false,
+    "previousCompleteV4": {
+      "receiptSha256": "68860737e9aa78a5ba0161111e501befb52d69a307cf4472d4b9402d320f415f",
+      "mixedP95Ms": [239.68, 437, 820.66],
+      "boundaryP95Ms": 16317.27
+    },
+    "beforeOneReservationPermitPerDomain": {
+      "receiptSha256": "074f5159fdf3b526c066b85fdd69d001de3d8b04986f5948eca18d076b4009c4",
+      "status": "failed_probe_not_counted_as_acceptance",
+      "sameKey100Passed": true,
+      "mixedRequests": 3400,
+      "mixedUnexpectedResponses": 0,
+      "twoDomain50Plus50": {
+        "name": "two_domain_shared_firestore_50_plus_50_admission",
+        "ordinaryIdentities": 100,
+        "webDomainInstances": 2,
+        "admitted": 60,
+        "actualTasksCreated": 60,
+        "statusCounts": {
+          "202": 60,
+          "503": 40
+        }
+      },
+      "boundaryP95Ms": 20661.99,
+      "cause": "Each Domain allowed two reservation transactions. Four transactions competed on the exact global quota counter; pending callers reached the unchanged 20-second admission deadline. The 40 service_busy responses did not reserve quota.",
+      "newRetriesAdded": 0,
+      "timeoutIncreased": false
+    },
+    "boundedOnePermitPrivateComparisons": [
+      {
+        "receiptSha256": "30cd064c648aa523c085c844ca0ed505ee61608efd2193ef3b217b4516b84f30",
+        "status": "passed",
+        "syntheticIdentities": 100,
+        "webDomains": 2,
+        "privateOverridePermitsPerDomain": 1,
+        "accepted202": 100,
+        "actualTasks": 100,
+        "globalQuotaDelta": 100,
+        "p95Ms": 12678.42,
+        "maximumMs": 12865.68,
+        "providerCalls": 0,
+        "sourceFilesStable": true
+      },
+      {
+        "receiptSha256": "9983cd5321e8d6d57bbe8d49da1c6392e8ae55e678d57075bced75f84679489e",
+        "status": "passed",
+        "syntheticIdentities": 100,
+        "webDomains": 2,
+        "privateOverridePermitsPerDomain": 1,
+        "accepted202": 100,
+        "actualTasks": 100,
+        "globalQuotaDelta": 100,
+        "p95Ms": 8423.4,
+        "maximumMs": 8529.41,
+        "providerCalls": 0,
+        "sourceFilesStable": true
+      }
+    ],
+    "nativeCloudCapacityInferredFromComparisons": false
+  },
+  "remainingScope": [
+    "The cloud baseline used one existing owner and up to eight read clients. Independent-user cloud write capacity is not established by that measurement.",
+    "Emulators do not reproduce all production latency, index, transaction contention, quota or autoscaling behavior.",
+    "Resource measurements include the load driver and fixture data in the HTTP server process; they are not standalone Cloud Run memory capacity measurements.",
+    "Native model throughput, long AI queues and full public traffic have not been stress tested. Daily quota limits are budget bounds, not response-time guarantees.",
+    "The final deployed revision still requires the bounded cloud read rerun recorded in cloudReadAfterDeployment."
+  ],
+  "photoPostReview": {
+    "receiptSha256": "5d419f4ddeab8553365310251b3f4ac698ccb04cf7e7638497d9268ea83a6555",
+    "atUtc": "2026-10-23T04:28:53.030Z",
+    "status": "passed",
+    "reason": "Authenticate actual token, current account and verified email before the photo FIFO or chunked-body buffering.",
+    "appSha256": "8fa58e6d4566db3971cae53adb21088927935832a59f597fb76923dbcc330890",
+    "unchangedV4CorePins": {
+      "server/domain.ts": true,
+      "server/catalog.ts": true,
+      "server/auth.ts": true,
+      "server/store.ts": true,
+      "server/config.ts": true,
+      "server/job-queue.ts": true,
+      "server/admission.ts": true,
+      "server/photo-validation.ts": true,
+      "shared/product-identity.ts": true,
+      "tools/load-photo.ts": true
+    },
+    "sourceFilesStableDuringRun": true,
+    "ordinarySyntheticEmulatorIdentities": 20,
+    "providerCalls": 0,
+    "realAccountChanges": 0,
+    "realQuotaChanges": 0,
+    "anonymousUnfinishedBodyControl": {
+      "beforeFixReceiptSha256": "f6b3245a46911e7defb76863a0e071e562d952dbbc85384108b15961e4184d49",
+      "afterFixReceiptSha256": "b93d2c46dbe34868fb17aba94df55949f5db229bc1726ba6c6785d0f106f9791",
+      "before": "Anonymous unfinished chunked body occupied the sole photo slot before authentication; verified upload remained blocked.",
+      "after": "Anonymous request returned 401 before its body ended; a simultaneous verified upload reached image validation independently.",
+      "networkRequests": 0,
+      "cloudMutations": 0
+    },
+    "fixture": "synthetic_noise_jpeg_not_a_drug_photo",
+    "fixtureSha256": "19e9d7bf996174c4a2fa5c664e49f2234edab937b3c75bf1b6d463a9f72e88b5",
+    "width": 1536,
+    "height": 1536,
+    "storage": "isolated_in_memory_blob_adapter",
+    "phases": [
+      {
+        "virtualUsers": 5,
+        "jpegBytesPerUpload": 1563469,
+        "allDistinctUsersEventuallyAccepted": true,
+        "initialBusyResponses": 0,
+        "totalImageBusyResponses": 0,
+        "serverBusyResponses": 0,
+        "sameKeyRecoveryRequests": 0,
+        "logicalJobsCreated": 5,
+        "quotaCharges": 5,
+        "exactOriginalBytesRetained": true,
+        "extraBlobsFromResends": 0,
+        "crossOwnerStatus": 404,
+        "changedInputStatus": 409,
+        "durationMs": 1354,
+        "driverAndServerSameProcess": true,
+        "rssBeforeBytes": 297103360,
+        "sampledPeakRssBytes": 376393728,
+        "requests": 8,
+        "p50Ms": 367.93,
+        "p95Ms": 1062.8,
+        "p99Ms": 1062.8,
+        "maximumMs": 1062.8,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 2,
+        "responseBytes": 809,
+        "statusCounts": {
+          "202": 6,
+          "404": 1,
+          "409": 1
+        },
+        "stopReason": null,
+        "byOperation": {
+          "photo_changed_input_same_key": {
+            "requests": 1,
+            "p50Ms": 60.18,
+            "p95Ms": 60.18,
+            "p99Ms": 60.18,
+            "maximumMs": 60.18,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 143,
+            "statusCounts": {
+              "409": 1
+            }
+          },
+          "photo_cross_owner_read": {
+            "requests": 1,
+            "p50Ms": 33.44,
+            "p95Ms": 33.44,
+            "p99Ms": 33.44,
+            "maximumMs": 33.44,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 102,
+            "statusCounts": {
+              "404": 1
+            }
+          },
+          "photo_initial_concurrent_upload": {
+            "requests": 5,
+            "p50Ms": 731.48,
+            "p95Ms": 1062.8,
+            "p99Ms": 1062.8,
+            "maximumMs": 1062.8,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 470,
+            "statusCounts": {
+              "202": 5
+            }
+          },
+          "photo_repeat_accepted_operation": {
+            "requests": 1,
+            "p50Ms": 124.68,
+            "p95Ms": 124.68,
+            "p99Ms": 124.68,
+            "maximumMs": 124.68,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 94,
+            "statusCounts": {
+              "202": 1
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 10,
+        "jpegBytesPerUpload": 1563469,
+        "allDistinctUsersEventuallyAccepted": true,
+        "initialBusyResponses": 0,
+        "totalImageBusyResponses": 0,
+        "serverBusyResponses": 0,
+        "sameKeyRecoveryRequests": 0,
+        "logicalJobsCreated": 10,
+        "quotaCharges": 10,
+        "exactOriginalBytesRetained": true,
+        "extraBlobsFromResends": 0,
+        "crossOwnerStatus": 404,
+        "changedInputStatus": 409,
+        "durationMs": 2072,
+        "driverAndServerSameProcess": true,
+        "rssBeforeBytes": 376406016,
+        "sampledPeakRssBytes": 443260928,
+        "requests": 13,
+        "p50Ms": 833.8,
+        "p95Ms": 1783.86,
+        "p99Ms": 1783.86,
+        "maximumMs": 1783.86,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 2,
+        "responseBytes": 1279,
+        "statusCounts": {
+          "202": 11,
+          "404": 1,
+          "409": 1
+        },
+        "stopReason": null,
+        "byOperation": {
+          "photo_changed_input_same_key": {
+            "requests": 1,
+            "p50Ms": 63.95,
+            "p95Ms": 63.95,
+            "p99Ms": 63.95,
+            "maximumMs": 63.95,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 143,
+            "statusCounts": {
+              "409": 1
+            }
+          },
+          "photo_cross_owner_read": {
+            "requests": 1,
+            "p50Ms": 48.15,
+            "p95Ms": 48.15,
+            "p99Ms": 48.15,
+            "maximumMs": 48.15,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 102,
+            "statusCounts": {
+              "404": 1
+            }
+          },
+          "photo_initial_concurrent_upload": {
+            "requests": 10,
+            "p50Ms": 988.83,
+            "p95Ms": 1783.86,
+            "p99Ms": 1783.86,
+            "maximumMs": 1783.86,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 940,
+            "statusCounts": {
+              "202": 10
+            }
+          },
+          "photo_repeat_accepted_operation": {
+            "requests": 1,
+            "p50Ms": 64.99,
+            "p95Ms": 64.99,
+            "p99Ms": 64.99,
+            "maximumMs": 64.99,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 94,
+            "statusCounts": {
+              "202": 1
+            }
+          }
+        }
+      },
+      {
+        "virtualUsers": 20,
+        "jpegBytesPerUpload": 1563469,
+        "allDistinctUsersEventuallyAccepted": true,
+        "initialBusyResponses": 0,
+        "totalImageBusyResponses": 0,
+        "serverBusyResponses": 0,
+        "sameKeyRecoveryRequests": 0,
+        "logicalJobsCreated": 20,
+        "quotaCharges": 20,
+        "exactOriginalBytesRetained": true,
+        "extraBlobsFromResends": 0,
+        "crossOwnerStatus": 404,
+        "changedInputStatus": 409,
+        "durationMs": 3995,
+        "driverAndServerSameProcess": true,
+        "rssBeforeBytes": 384909312,
+        "sampledPeakRssBytes": 524890112,
+        "requests": 23,
+        "p50Ms": 1817.53,
+        "p95Ms": 3472.98,
+        "p99Ms": 3604.43,
+        "maximumMs": 3604.43,
+        "unexpectedResponses": 0,
+        "serverErrors": 0,
+        "transportErrors": 0,
+        "invariantFailures": 0,
+        "expectedRejections": 2,
+        "responseBytes": 2219,
+        "statusCounts": {
+          "202": 21,
+          "404": 1,
+          "409": 1
+        },
+        "stopReason": null,
+        "byOperation": {
+          "photo_changed_input_same_key": {
+            "requests": 1,
+            "p50Ms": 46.11,
+            "p95Ms": 46.11,
+            "p99Ms": 46.11,
+            "maximumMs": 46.11,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 143,
+            "statusCounts": {
+              "409": 1
+            }
+          },
+          "photo_cross_owner_read": {
+            "requests": 1,
+            "p50Ms": 47.86,
+            "p95Ms": 47.86,
+            "p99Ms": 47.86,
+            "maximumMs": 47.86,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 1,
+            "responseBytes": 102,
+            "statusCounts": {
+              "404": 1
+            }
+          },
+          "photo_initial_concurrent_upload": {
+            "requests": 20,
+            "p50Ms": 1972.3,
+            "p95Ms": 3472.98,
+            "p99Ms": 3604.43,
+            "maximumMs": 3604.43,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 1880,
+            "statusCounts": {
+              "202": 20
+            }
+          },
+          "photo_repeat_accepted_operation": {
+            "requests": 1,
+            "p50Ms": 107.97,
+            "p95Ms": 107.97,
+            "p99Ms": 107.97,
+            "maximumMs": 107.97,
+            "unexpectedResponses": 0,
+            "serverErrors": 0,
+            "transportErrors": 0,
+            "invariantFailures": 0,
+            "expectedRejections": 0,
+            "responseBytes": 94,
+            "statusCounts": {
+              "202": 1
+            }
+          }
+        }
+      }
+    ],
+    "limitations": [
+      "This verifies upload validation, owner boundaries, idempotency, queued persistence and recovery. It does not run paid vision or assess recognition accuracy.",
+      "RSS includes the load driver and test fixtures in the same process; it is not a standalone production server memory measurement."
+    ],
+    "historicalSupplement": "Photo-only v5 supplement. The final photo profiles and current source pins are recorded in photoUploads and codeContext."
+  }
+}

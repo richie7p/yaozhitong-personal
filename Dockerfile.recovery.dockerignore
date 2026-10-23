@@ -1,0 +1,10 @@
+*
+!package.json
+!package-lock.json
+!Dockerfile.recovery
+!Dockerfile.recovery.dockerignore
+!tools/
+tools/*
+!tools/recovery-core.ts
+!tools/recovery-backup.ts
+!tools/recovery-job.ts

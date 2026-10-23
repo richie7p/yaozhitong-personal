@@ -1,0 +1,137 @@
+{
+  "schema": "tfda-manufacturing-reader-recovery-20261023/v1",
+  "status": "source_publication_readback_passed_application_changes_pending_root_deployment",
+  "officialSnapshotDate": "2026-10-22",
+  "publication": {
+    "before": 3521,
+    "newSources": 72,
+    "after": 3593,
+    "newSourceFormat": "official_html",
+    "batches": [
+      50,
+      22
+    ],
+    "freshCandidatesAssessed": 81,
+    "heldFreshCandidates": 9,
+    "firestoreCreates": 216,
+    "rawObjectCreates": 72,
+    "existingPointerMetadataPreserved": 3521,
+    "existingSourceFullMetadataPreserved": 3524,
+    "existingRawObjectGenerationAndMetadataPreserved": 3533,
+    "newRawReadbacksExact": 72,
+    "replacements": 0,
+    "applyReceiptSha256": "cde04a76f3cbf104f84b1d2d50b2b9e00dbc514763dbd926e3e46bcb6f19c5af",
+    "fullReadbackSha256": "30efd26fa1477dc30c766965b7d68fcd3a6fb45edc4c9be5e08745cbbdf5eb8c"
+  },
+  "manufacturingIdentityRule": {
+    "allOfficialRowsAndRolesPreserved": true,
+    "onlyManufacturingRoleFieldsMayDiffer": [
+      "製程",
+      "製造商名稱",
+      "製造廠公司地址",
+      "製造廠國別",
+      "製造廠廠址"
+    ],
+    "allOtherOfficialFieldsMustBeLiteralEqual": true,
+    "publisherRechecksCompleteRawInfo36Rows": true,
+    "globalDuplicateLicenseGroups": 3618,
+    "globalDuplicateGroupsWithNonRoleDifferences": 0,
+    "globalAuditSha256": "a3d9a3a576ac1a2e148884c18aa9f3f623982f9d4cc2865036c6162f48c584f9"
+  },
+  "readerCandidate": {
+    "version": "source-reader-v2-literal-typography",
+    "scope": "offline deterministic source availability, not generated answer accuracy",
+    "existingSources": 3521,
+    "beforeAccepted": 2764,
+    "beforeHeld": 757,
+    "afterAccepted": 2811,
+    "afterHeld": 710,
+    "restored": 47,
+    "acceptedRegressions": 0,
+    "new72Accepted": 36,
+    "new72Held": 36,
+    "all3593Accepted": 2847,
+    "all3593Held": 746,
+    "allReturnedCitationsLiteral": true,
+    "fullCounterfactualSha256": "0fc258345377de5d788f086cc2848db3f6472f10d483c5b48e09fe26622c1321",
+    "new72ClassificationSha256": "6b6cf9628fc7750bde4b9ccec4983e0190c67498f673e973249604d1bcd76acb",
+    "applicationDeploymentVerified": false
+  },
+  "nativeEvaluation": {
+    "scope": "offline candidate production grounded pipeline; not website/cloud jobs",
+    "model": "gpt-6-luna",
+    "reasoningEffort": "medium",
+    "cases": 2,
+    "actualProviderHttp": 5,
+    "tokens": 40652,
+    "timeouts": 0,
+    "providerErrors": 0,
+    "productQuotaCharges": 0,
+    "cloudWrites": 0,
+    "originalClaims": 39,
+    "originalQuizQuestions": 9,
+    "plainLanguageCompleteCases": 0,
+    "originalStatuses": [
+      "insufficient_data",
+      "supported"
+    ],
+    "reviewSha256": "5cd1fadb5c0339716abf22b80d697ea5f5c784da498a550d4cf4ed0ba4c6ef80",
+    "providerReceiptSha256": "b625d4633e8c7db0c5cbdfe9b62507ee8f82c4b053d3e0374490f2067dabedbc",
+    "discoveredBug": "One correct quiz option added a symptom threshold to an unconditional driving prohibition.",
+    "fix": "Bounded explicit-condition/literal-action check for lessons and indexed correct options; original source conditions and unrecognized grammar remain for whole-field review. This is not a complete semantic guarantee.",
+    "teachingVersion": "source-teaching-v2-unconditional-actions",
+    "selectiveStoredResultInvalidation": true,
+    "offlineReplay": {
+      "providerHttp": 0,
+      "productQuotaCharges": 0,
+      "finalQuizQuestions": 8,
+      "removedQuizQuestions": 1,
+      "allOtherResultContentExact": true,
+      "receiptSha256": "cdc782e254859366afffbe66a14cbea46d4e10f1e424ee6c1ddadf2e3f583ac1"
+    }
+  },
+  "remainingOfficialSourceScope": {
+    "activeLicenses": 21247,
+    "activeWithSourceLinks": 18188,
+    "published": 3593,
+    "withLinksUnpublished": 14595,
+    "withoutIndexOrLinks": 3059,
+    "countsExclusivePrimaryGate": {
+      "unverified_complex_layout": 13176,
+      "independent_text_disagreement": 217,
+      "text_quality_or_other_evidence_review": 167,
+      "raw_material_not_patient_leaflet": 529,
+      "missing_or_empty_current_raw_branch": 98,
+      "independent_pdf_or_canonical_extraction_failed": 168,
+      "current_identity_or_source_provenance_review": 143,
+      "image_or_scan_evidence_unverified": 27,
+      "additional_explicit_manufacturing_role_candidate_needs_fresh_reacquisition": 69,
+      "source_size_or_runtime_budget_review": 1
+    },
+    "overlappingImageRiskFlags": 5993,
+    "historicalRoleCandidatesAreNotPublicationApproved": true,
+    "historicalClassificationIsNotFreshPublicationApproval": true,
+    "sourceDenominatorIncludesNonPatientRawMaterials": true,
+    "fullClassificationSha256": "11cf6c7ef9c81bef7ab9ee5ae1a519036db0c22f0144e7bec5d73492de789d9c"
+  },
+  "verification": {
+    "manufacturingAndPublicationFocusedTests": 183,
+    "finalReaderTeachingAndLlmFocusedTests": 219,
+    "typescriptNoEmitPassed": true,
+    "noAdditionalPaidCallsDuringReplay": true,
+    "wholeSourceTextOrHashesRewritten": false
+  },
+  "quotas": {
+    "perUserDaily": 20,
+    "siteDaily": 1000,
+    "changed": false
+  },
+  "remainingGaps": [
+    "14,595 linked licenses remain unpublished for the documented primary gates; 3,059 have no official source link in the frozen snapshot.",
+    "746 published sources remain held by the candidate deterministic reader.",
+    "The two native sample bundles retain partial plain-language teaching coverage; source availability is not complete generated explanation.",
+    "Production deployment and the one post-deployment 026558 website bundle are coordinated by the parent task.",
+    "No statistical user-comprehension or clinical assessment was performed."
+  ],
+  "humanClinicalReview": false
+}

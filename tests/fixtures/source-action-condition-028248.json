@@ -1,0 +1,15 @@
+{
+  "schema": "recorded-native-source-action-condition/v1",
+  "licenseNo": "衛部藥輸字第028248號",
+  "sourceSection": "使用上注意事項",
+  "fullSourceField": "\n3 使用上注意事項\n3.1\t有下列情形者，請勿使用\n\t曾因本藥成分引起過敏的人。 本品含阿斯巴甜 (Aspartame) 賦形劑，苯酮尿症患者 (Phenylketonurics) 不宜使用。\n\t\n3.2\t有下列情形者，使用前請洽醫師診治\n\t有心臟病及 65 歲以上的人。 有肝、腎疾病或其他重大疾病的人。 吸菸、氣喘、慢性阻塞性肺疾病（如慢性氣管炎或肺氣腫）所引起之持續或慢性咳嗽的人。 有呼吸疾病的人：如慢性支氣管炎、肺氣腫、慢性肺疾病、呼吸急促、呼吸困難及青光眼的人。 因前列腺肥大引起排尿困難的人。\n\t\n3.3\t有下列情形者，使用前請先諮詢醫師藥師藥劑生\n\t孕婦、可能懷孕婦女及哺乳婦。 有水腫症狀的人。 正在服用其他綜合感冒、止咳化痰、鼻炎、抗過敏、止痛或退燒等藥品。 同時服用含 Acetaminophen 成分之止痛、退燒或綜合感冒等藥品。 服用鎮靜藥或安眠藥的人。\n\t\n3.4\t其他使用上注意事項\n\t為防止兒童誤食請妥善保管。 避免陽光直射。 勿超過建議使用量。 不要服用本藥超過七日。 服用過量的 Acetaminophen 可能是因為想要更快或更強的止痛效果，或是在不知道及未注意的情況下重複服用含 Acetaminophen成分的藥品，但是每天服用 Acetaminophen 超過 4,000 毫克(mg)會發生肝臟損害。 酒精警語：不得併服含酒精飲料，因為Acetaminophen（Paracetamol）有急性肝衰竭的風險。 可能引起嗜睡，勿駕車或操作危險性機械。 避免再服用含咖啡因藥品、飲料，過多的咖啡因會引起神經緊張，興奮與失眠，且常會引起心搏過速。為避免造成依賴性及肝腎傷害，不可長期使用。\n\t\n",
+  "question": "服用本藥期間，哪一項符合「使用上注意事項」？",
+  "options": [
+    "不得併服含酒精飲料，且可能嗜睡時勿駕車或操作危險性機械。",
+    "可以併服含酒精飲料；嗜睡時仍可駕車或操作危險性機械。"
+  ],
+  "answer": 0,
+  "correctExplanation": "不得併服含酒精飲料；原文指出Acetaminophen（Paracetamol）有急性肝衰竭風險。藥品可能引起嗜睡，因此勿駕車或操作危險性機械。",
+  "originalResultSha256": "2ffb6d99d860fa0c89105a86bafc687d7dbc7df8cec2f86c807d7e973522d030",
+  "provenance": "Official TFDA HTML whole canonical field; actual GPT-6 Luna medium native output on 2026-10-23; no personal data."
+}

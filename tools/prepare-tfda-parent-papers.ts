@@ -6,6 +6,7 @@ import { dirname, join, resolve, relative, isAbsolute, sep } from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { evaluateTfdaSource, type TfdaFetchedArtifact, type TfdaSourceInput } from "./tfda-source-core.js";
+import { hasSingleOfficialManufacturingProduct } from "./tfda-manufacturing-roles.js";
 import { sameCandidateExceptEvaluation, storeImmutableCandidateInput } from "./prepare-tfda-sources.js";
 import { deriveSerialPaperPdf, verifyParentPaperSource, verifyParentPaperEquivalentSources } from "./tfda-parent-paper-verification.js";
 import { equivalentFetchedFromReceipt, type CurrentEquivalentSource } from "./tfda-current-paper-equivalence.js";
@@ -176,6 +177,8 @@ export async function main(args = process.argv.slice(2)) {
         catalogRows: catalogRows.map((row) => ({ licenseNo, nameZh: row["中文品名"] || "", nameEn: row["英文品名"] || "", form: row["劑型"] || "", manufacturer: row["製造商名稱"] || "", effectiveUntil: row["有效日期"] || "", revoked: !!String(row["註銷狀態"] || "").trim() })),
         indexRows: indexRows.map((row) => ({ licenseNo, nameZh: row["中文品名"] || "", nameEn: row["英文品名"] || "", urls: urls(row["仿單圖檔連結"]) })),
         fetched: fetchedFromSuccessfulReceipt(result, "pdf"), format: "pdf", numPages: 0, pages: [] };
+      if (hasSingleOfficialManufacturingProduct(licenseNo, input.catalogRows, catalogRows))
+        input.catalogManufacturingRecords = structuredClone(catalogRows) as Record<string, string | null>[];
       const parentSource = { rawSourcePath: parentRawPath, rawSourceSha256: hash(parentRaw), fetched: fetchedFromSuccessfulReceipt(parentRecord, "html"),
         ...(parentPaperMode === "byte-equivalent-v1" ? { currentEquivalentSources: aliases } : {}) };
       const verified = parentPaperMode === "byte-equivalent-v1" ?

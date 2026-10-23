@@ -307,3 +307,109 @@ it("hides saved source access if a published pointer resolves to another license
   const record = (await store.get("learning", job.id))!;
   expect(await d.learningCurrent(uid, record)).toBe(false);
 });
+
+it("expires only an old parser hold while preserving normal saved content and quiz answers", async () => {
+  const { d, store, job } = await setup();
+  await d.processJob(job.id);
+  const record = (await store.get<any>("learning", job.id))!;
+  const saved = (await store.get<Job>("jobs", job.id))!;
+  const old = structuredClone(record);
+  delete old.result.sourceReview.readerVersion;
+  await store.set("learning", job.id, old);
+  const oldJob = { ...saved, result: old.result };
+  expect(await d.learningCurrent(uid, old)).toBe(false);
+  expect(await d.publicJob(uid, oldJob)).toMatchObject({
+    sourceUpdateRequired: true,
+    identityReviewRequired: false,
+    error: { code: "source_updated" },
+    result: { claims: [], quiz: [] },
+  });
+  expect(d.jobSummary(oldJob)).toMatchObject({
+    sourceUpdateRequired: true,
+    sourceReviewPending: false,
+  });
+  const useful = {
+    ...record,
+    result: { ...record.result },
+    answers: { "saved-question": 1 },
+  };
+  delete useful.result.sourceReview;
+  expect(await d.learningCurrent(uid, useful)).toBe(true);
+  expect(useful.answers).toEqual({ "saved-question": 1 });
+  expect(
+    (await store.get<any>("learning", job.id)).result.sourceReview
+      .readerVersion,
+  ).toBeUndefined();
+});
+
+it("withholds a saved weakened prohibition without expiring other v18 learning", async () => {
+  const { d, store, job } = await setup();
+  await d.processJob(job.id);
+  const record = (await store.get<any>("learning", job.id))!;
+  const saved = (await store.get<Job>("jobs", job.id))!;
+  const citation = {
+    chunkId: "synthetic-action-source",
+    quote: "可能引起嗜睡，勿駕車或操作危險性機械。",
+  };
+  const unsafe = {
+    ...record,
+    result: {
+      ...record.result,
+      sourceReview: undefined,
+      quiz: [
+        {
+          id: "old-unsafe-question",
+          q: "服用期間應注意什麼？",
+          options: ["嗜睡時勿駕車。", "可駕車。"],
+          answer: 0,
+          explain: "合成",
+          citations: [citation],
+        },
+      ],
+    },
+  };
+  await store.set("learning", job.id, unsafe);
+  expect(await d.learningCurrent(uid, unsafe)).toBe(false);
+  expect(
+    await d.publicJob(uid, { ...saved, result: unsafe.result }),
+  ).toMatchObject({
+    sourceUpdateRequired: true,
+    identityReviewRequired: false,
+    error: { code: "source_updated" },
+    result: { claims: [], quiz: [] },
+  });
+  expect(d.jobSummary({ ...saved, result: unsafe.result })).toMatchObject({
+    sourceUpdateRequired: true,
+  });
+  await expect(
+    d.answerLearning(uid, job.id, { answers: { "old-unsafe-question": 0 } }),
+  ).rejects.toMatchObject({ code: "stale_content" });
+  const valid = {
+    ...unsafe,
+    result: {
+      ...unsafe.result,
+      quiz: [
+        {
+          ...unsafe.result.quiz[0],
+          options: ["本藥可能引起嗜睡，因此勿駕車。", "可駕車。"],
+        },
+      ],
+    },
+  };
+  expect(await d.learningCurrent(uid, valid)).toBe(true);
+});
+
+it("keeps account-cleanup job metadata outside grounded-content validation", async () => {
+  const { d, job } = await setup();
+  const cleanup = {
+    ...job,
+    kind: "delete-account" as const,
+    status: "succeeded" as const,
+    result: { deleted: true },
+  };
+  expect(d.jobSummary(cleanup)).toMatchObject({
+    kind: "delete-account",
+    status: "succeeded",
+    result: { deleted: true },
+  });
+});

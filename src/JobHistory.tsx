@@ -70,7 +70,12 @@ function JobResultPreview({ job }: { job: any }) {
           {error} <Button onClick={load}>重新核對結果</Button>
         </Notice>
       )}
-      {checked?.identityReviewRequired ? (
+      {checked?.sourceUpdateRequired ? (
+        <Notice>
+          仿單整理規則已更新，請重新產生說明與測驗。
+          <a href="#medications">回到我的藥品</a>
+        </Notice>
+      ) : checked?.identityReviewRequired ? (
         <Notice>
           產品身分或資料已更新，暫不提供先前仿單回答。
           <a href="#medications">補齊產品資料</a>
@@ -143,17 +148,25 @@ export function JobHistory() {
             <div className="row spread">
               <h3>{names[job.kind]}</h3>
               <span className="tag">
-                {job.identityReviewRequired
-                  ? "產品待核對"
-                  : job.sourceReviewPending
-                    ? "AI 內容待整理"
-                    : job.sourceReadingPending
-                      ? "部分內容尚未整理"
-                      : states[job.status]}
+                {job.sourceUpdateRequired
+                  ? "說明規則已更新"
+                  : job.identityReviewRequired
+                    ? "產品待核對"
+                    : job.sourceReviewPending
+                      ? "AI 內容待整理"
+                      : job.sourceReadingPending
+                        ? "部分內容尚未整理"
+                        : states[job.status]}
               </span>
             </div>
             <small>{new Date(job.createdAt).toLocaleString("zh-TW")}</small>
             {job.error && <p>{job.error.message}</p>}
+            {job.sourceUpdateRequired && (
+              <Notice>
+                仿單整理規則已更新，請重新產生說明與測驗。
+                <a href="#medications">回到我的藥品</a>
+              </Notice>
+            )}
             {job.identityReviewRequired && (
               <Notice>
                 這筆內容的產品資料需要重新核對，暫不提供先前仿單回答。

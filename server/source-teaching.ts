@@ -24,6 +24,7 @@ export type TeachingCoverage = NonNullable<
   GroundedResult["plainLanguageCoverage"]
 >;
 export const MAX_TEACHING_FIELDS = 4;
+export const SOURCE_TEACHING_VERSION = "source-teaching-v2-unconditional-actions";
 // This output budget bounds the teaching batch, not canonical-source validity.
 // Whole fields beyond it stay intact and explicitly unassessed.
 export const MAX_TEACHING_SOURCE_CHARS = 4000;
@@ -189,6 +190,106 @@ export function sourceSituationExplicit(text: string, quotes: string[]) {
     /漏(?:服|吃|藥)|忘(?:記|了)?(?:服藥|吃藥|用藥|服用)|未按時(?:服|用)/u.test(
       compactSource(quote),
     ),
+  );
+}
+
+/** A stated risk is not a new threshold for an unqualified prohibition.
+ * This narrow literal-action check supplements whole-field semantic review:
+ * it recognizes explicit if/when/only gates on the same recorded action, not
+ * arbitrary paraphrases or an inferred medical condition. Source conditions,
+ * including list introductions, remain for the existing scope reviewer. */
+export function sourceActionConditionsExplicit(text: string, quotes: string[]) {
+  // An unchanged complete source field is evidence reading, not a new AI
+  // instruction. Its original conditional and unconditional clauses stay intact.
+  if (quotes.some((quote) => quote.trim() === text.trim())) return true;
+  const prohibitions = (value: string) =>
+    [
+      ...value.matchAll(
+        /(?:請勿|勿|不得|不可|不能|不應|禁止|不要|避免)([^，,。！？；;\r\n]{2,80})/gu,
+      ),
+    ].map((match) => {
+      const before = value.slice(0, match.index!);
+      const prefix = before.split(/[。！？；;\r\n]/u).at(-1) || "";
+      const parts = match[1].split(/或|以及|及|、/u).map(compactSource);
+      return { prefix, parts };
+    });
+  const gate = (prefix: string) => {
+    const value = compactSource(prefix).replace(
+      /(?:[，,]|請|應|須|則|就|也|再)+$/u,
+      "",
+    );
+    const explicit = value.match(
+      /(?:如果|一旦|只有|僅在|若|當|如)([^。！？；;]{1,60})$/u,
+    )?.[1];
+    const timed = value.match(
+      /(?:^|[，,])([^，,]{1,40}?)(?:(?:時|後)(?:才)?|才)$/u,
+    )?.[1];
+    const found = explicit || timed;
+    if (!found) return undefined;
+    const condition = found
+      .replace(
+        /^[，,且並亦也]*(?:可能|已經|已|出現|發生|產生|感到|感覺|有)*/u,
+        "",
+      )
+      .replace(/(?:[，,]|時|後|才|則|就|應|須|請|也|再)+$/u, "");
+    // Ordinary treatment context does not add a symptom threshold.
+    if (
+      /^(?:(?:正在)?(?:服用|使用|服|用)(?:本|此|該)?(?:藥品|藥物|藥|本品)|(?:服藥|用藥|治療)(?:期間)?|服用本品|使用本品)$/u.test(
+        condition,
+      )
+    )
+      return undefined;
+    return condition || undefined;
+  };
+  const originals = quotes.flatMap(prohibitions);
+  for (const proposed of prohibitions(text)) {
+    if (!gate(proposed.prefix)) continue;
+    for (const original of originals) {
+      const sameAction = proposed.parts.some((part) =>
+        original.parts.some((source) => source.length >= 2 && part === source),
+      );
+      if (!sameAction) continue;
+      // A source's own explicit condition or list heading is not an
+      // unconditional prohibition. Never strip it to manufacture one.
+      if (
+        /(?:如果|一旦|只有|僅在|若|當|如下|下列|以下|情形|情況|者|時|後|才)/u.test(
+          original.prefix,
+        )
+      )
+        continue;
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Selectively retire stored AI wording rejected by the new action gate.
+ * Whole canonical fields and otherwise valid lessons/questions stay current;
+ * this does not infer completeness or invalidate all old model results. */
+export function sourceActionResultOutdated(
+  result: GroundedResult | null | undefined,
+) {
+  if (
+    !result ||
+    !Array.isArray(result.claims) ||
+    !Array.isArray(result.quiz)
+  )
+    return false;
+  return (
+    result.claims.some(
+      (claim) =>
+        !sourceActionConditionsExplicit(
+          claim.text,
+          claim.citations.map((citation) => citation.quote),
+        ),
+    ) ||
+    result.quiz.some(
+      (question) =>
+        !sourceActionConditionsExplicit(
+          question.options[question.answer],
+          question.citations.map((citation) => citation.quote),
+        ),
+    )
   );
 }
 
@@ -570,6 +671,7 @@ export function sourceQuizInterpretationExplicit(
   return (
     sourceAbsenceExplicit(combined, quotes) &&
     sourceSituationExplicit(combined, quotes) &&
+    sourceActionConditionsExplicit(correct, quotes) &&
     sourceConditionBoundariesPreserved(combined, quotes) &&
     sourceInheritedScopePreserved(question, quotes) &&
     sourceInheritedScopePreserved(correct, quotes, question)
@@ -580,6 +682,7 @@ export function sourceInterpretationExplicit(text: string, quotes: string[]) {
   return (
     sourceAbsenceExplicit(text, quotes) &&
     sourceSituationExplicit(text, quotes) &&
+    sourceActionConditionsExplicit(text, quotes) &&
     sourceConditionBoundariesPreserved(text, quotes) &&
     sourceInheritedScopePreserved(text, quotes)
   );
@@ -794,6 +897,7 @@ export async function reviewTeachingPlan(
           !aligned(lesson.spanIds) ||
           !sourceAbsenceExplicit(lesson.text, [field.quote]) ||
           !sourceSituationExplicit(lesson.text, [field.quote]) ||
+          !sourceActionConditionsExplicit(lesson.text, [field.quote]) ||
           !sourceConditionBoundariesPreserved(lesson.text, [field.quote]) ||
           !sourceInheritedScopePreserved(lesson.text, [field.quote]) ||
           compactSource(lesson.text).length < 8 ||

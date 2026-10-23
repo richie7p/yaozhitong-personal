@@ -7,30 +7,61 @@ import { Domain } from "./domain.js";
 import { createApp } from "./app.js";
 import { tick } from "./scheduler.js";
 import { LocalRunner } from "./local-runner.js";
+import { CloudJobQueue } from "./job-queue.js";
 const domain = new Domain(await makeStore());
 const localRunner = new LocalRunner((id) => domain.processJob(id));
-domain.enqueue = async (id) => {
-  if (config.mode === "local") {
-    return localRunner.enqueue(id);
-  }
-  const client = new CloudTasksClient();
-  await client.createTask({
-    parent: client.queuePath(config.project, config.location, config.queue),
-    task: {
-      httpRequest: {
-        httpMethod: "POST",
-        url: config.workerUrl + "/internal/jobs/" + id,
-        oidcToken: {
-          serviceAccountEmail: config.workerEmail,
-          audience: config.workerUrl,
+const tasks = new CloudTasksClient();
+const cloudQueue = new CloudJobQueue(domain.store, {
+  create: async (taskId, id) => {
+    await tasks.createTask(
+      {
+        parent: tasks.queuePath(config.project, config.location, config.queue),
+        task: {
+          name: tasks.taskPath(
+            config.project,
+            config.location,
+            config.queue,
+            taskId,
+          ),
+          httpRequest: {
+            httpMethod: "POST",
+            url: config.workerUrl + "/internal/jobs/" + id,
+            oidcToken: {
+              serviceAccountEmail: config.workerEmail,
+              audience: config.workerUrl,
+            },
+            headers: { "content-type": "application/json" },
+            body: Buffer.from("{}").toString("base64"),
+          },
+          dispatchDeadline: { seconds: 600 },
         },
-        headers: { "content-type": "application/json" },
-        body: Buffer.from("{}").toString("base64"),
       },
-      dispatchDeadline: { seconds: 600 },
-    },
-  });
-};
+      { timeout: 15000, retry: null },
+    );
+  },
+  exists: async (taskId) => {
+    try {
+      await tasks.getTask(
+        {
+          name: tasks.taskPath(
+            config.project,
+            config.location,
+            config.queue,
+            taskId,
+          ),
+        },
+        { timeout: 10000, retry: null },
+      );
+      return true;
+    } catch (error) {
+      if ((error as { code?: number }).code === 5) return false;
+      throw error;
+    }
+  },
+});
+domain.enqueue = (id) =>
+  config.mode === "local" ? localRunner.enqueue(id) : cloudQueue.enqueue(id);
+
 const app = createApp(domain);
 if (config.role === "web") {
   app.get("/assets/*", serveStatic({ root: "./dist/web" }));

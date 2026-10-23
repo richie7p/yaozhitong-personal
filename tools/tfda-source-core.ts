@@ -5,6 +5,7 @@
  */
 import { createHash } from "node:crypto";
 import type { Chunk, Leaflet } from "../shared/schema.js";
+import { hasSingleOfficialManufacturingProduct, type OfficialCatalogManufacturingRecord } from "./tfda-manufacturing-roles.js";
 
 export const TFDA_SOURCE_LIMITS = {
   rawBytes: 15_000_000,
@@ -109,6 +110,8 @@ export interface TfdaSourceInput {
   catalogCheckedAt: string;
   indexCheckedAt: string;
   catalogRows: TfdaCatalogProduct[];
+  /** Complete original InfoId36 rows. Publication rechecks these against raw bytes. */
+  catalogManufacturingRecords?: OfficialCatalogManufacturingRecord[];
   indexRows: TfdaLeafletIndexRow[];
   fetched: TfdaFetchedArtifact;
   format: "pdf" | "html";
@@ -190,6 +193,7 @@ export interface TfdaSourceAssessment {
   evidence: {
     catalogRowCount: number;
     coalescedProductCount: number;
+    catalogManufacturingRecords?: OfficialCatalogManufacturingRecord[];
     indexRowCount: number;
     indexUrlCount: number;
     totalCharacters: number;
@@ -328,12 +332,15 @@ export function evaluateTfdaSource(
     (row) => norm(row.licenseNo) === licenseNo,
   );
   const products = new Map<string, TfdaCatalogProduct>();
+  const sharedManufacturingProduct = hasSingleOfficialManufacturingProduct(
+    licenseNo, catalogRows, input.catalogManufacturingRecords,
+  );
   for (const row of catalogRows) {
     const key = JSON.stringify([
       norm(row.nameZh),
       norm(row.nameEn),
       norm(row.form),
-      norm(row.manufacturer),
+      sharedManufacturingProduct ? "official_manufacturing_roles_preserved" : norm(row.manufacturer),
       calendarDate(row.effectiveUntil) || row.effectiveUntil,
       row.revoked,
     ]);
@@ -341,6 +348,7 @@ export function evaluateTfdaSource(
   }
   if (!catalogRows.length) add("catalog_license_missing");
   if (products.size > 1) add("catalog_product_ambiguous");
+  if (sharedManufacturingProduct) warnings.push("official_manufacturing_roles_preserved_not_unique_factory");
   const product = products.size === 1 ? [...products.values()][0] : null;
   // An official source can describe manufacturing material rather than a
   // patient medicine. Keep it in the corpus, outside patient-facing publication.
@@ -673,6 +681,7 @@ export function evaluateTfdaSource(
     evidence: {
       catalogRowCount: catalogRows.length,
       coalescedProductCount: products.size,
+      ...(sharedManufacturingProduct ? { catalogManufacturingRecords: structuredClone(input.catalogManufacturingRecords!) } : {}),
       indexRowCount: indexRows.length,
       indexUrlCount: indexUrls.length,
       totalCharacters,

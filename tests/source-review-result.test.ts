@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { AppError } from "../server/config";
-import { withSourceReviewResult } from "../server/source-review-result";
+import { SOURCE_READER_VERSION, sourceReviewOutdated, withSourceReviewResult } from "../server/source-review-result";
 import { officialLeafletUrl } from "../shared/official-leaflet-url";
 import type { GroundedResult, Leaflet } from "../shared/schema";
 
@@ -49,6 +49,7 @@ describe("source review result boundary", () => {
       verification: "model_assisted",
       sourceReview: {
         reason: "safety_sections_pending",
+        readerVersion: SOURCE_READER_VERSION,
         sources: [leaflet, second].map(({ licenseNo, version, sourceUrl }) => ({
           licenseNo,
           version,
@@ -112,6 +113,30 @@ describe("source review result boundary", () => {
     expect(result.sourceReview?.sources).toEqual([
       { licenseNo: leaflet.licenseNo, version: leaflet.version },
     ]);
+  });
+});
+
+describe("source reader version applies only to persisted parser holds", () => {
+  const pending = { sourceReview: { reason: "safety_sections_pending" as const, sources: [{ licenseNo: leaflet.licenseNo, version: leaflet.version }] } };
+  it("expires old parser holds without a version or with an earlier version", () => {
+    expect(sourceReviewOutdated(pending)).toBe(true);
+    expect(sourceReviewOutdated({ sourceReview: { ...pending.sourceReview, readerVersion: "source-reader-v1" } })).toBe(true);
+  });
+  it("keeps a newly stamped parser hold current and never changes the supplied record", async () => {
+    const result = await withSourceReviewResult(throws(hold), [leaflet]);
+    const original = structuredClone(result);
+    expect(result.sourceReview?.readerVersion).toBe(SOURCE_READER_VERSION);
+    expect(sourceReviewOutdated(result)).toBe(false);
+    expect(result).toEqual(original);
+  });
+  it("does not expire normal model content, saved quiz progress, or original-reading results", () => {
+    for (const result of [undefined, null, {}, { sourceReview: undefined }]) expect(sourceReviewOutdated(result)).toBe(false);
+    const current: GroundedResult = { status: "supported", claims: [{ text: "合成用途", citations: [{ chunkId: "synthetic", quote: "合成原文。" }] }], quiz: [], chunks: [], followups: [], rejectedCount: 0, sourceVersions: {}, verification: "model_assisted" };
+    const original = structuredClone(current);
+    expect(sourceReviewOutdated(current)).toBe(false);
+    const reading: GroundedResult = { ...current, status: "insufficient_data", sourceReading: { reason: "model_source_capacity", sections: [] } };
+    expect(sourceReviewOutdated(reading)).toBe(false);
+    expect(current).toEqual(original);
   });
 });
 

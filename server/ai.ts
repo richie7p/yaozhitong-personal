@@ -316,7 +316,7 @@ export function sourcePassages(chunks: Chunk[]) {
       quotes.push(originalSection);
     } else {
       let pending = "";
-      for (const piece of originalSection.match(/[^。！？]+[。！？]?/gu) ||
+      for (const piece of originalSection.match(/[^。！？]+[。！？]*|[。！？]+/gu) ||
         []) {
         pending += piece;
         if (norm(pending).length >= 8) {

@@ -2,6 +2,17 @@ import type { GroundedResult, Leaflet } from "../shared/schema.js";
 import { officialLeafletUrl } from "../shared/official-leaflet-url.js";
 import { AppError } from "./config.js";
 
+export const SOURCE_READER_VERSION = "source-reader-v2-literal-typography";
+/** Only saved parser holds age with reader capability; normal model output stays current. */
+export function sourceReviewOutdated(
+  result: Pick<GroundedResult, "sourceReview"> | null | undefined,
+) {
+  return (
+    result?.sourceReview?.reason === "safety_sections_pending" &&
+    result.sourceReview.readerVersion !== SOURCE_READER_VERSION
+  );
+}
+
 function sourceReferences(leaflets: Leaflet[]) {
   return [
     ...new Map(
@@ -63,7 +74,11 @@ export async function withSourceReviewResult(
         sources.map((source) => [source.licenseNo, source.version]),
       ),
       verification: "model_assisted",
-      sourceReview: { reason: "safety_sections_pending", sources },
+      sourceReview: {
+        reason: "safety_sections_pending",
+        readerVersion: SOURCE_READER_VERSION,
+        sources,
+      },
     };
   }
 }
