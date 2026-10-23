@@ -1,0 +1,158 @@
+{
+  "schema": "public-completion-acceptance/v1",
+  "date": "2026-10-23",
+  "status": "deployed_automated_acceptance_with_documented_data_and_quality_limits",
+  "runtimeCommit": "ad76753014f249ca6474cba48768ec50273949c7",
+  "ci": {
+    "commit": "ad76753014f249ca6474cba48768ec50273949c7",
+    "runId": 39953116669,
+    "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39953116669",
+    "status": "completed",
+    "conclusion": "success",
+    "unit": 1800,
+    "browser": 254,
+    "python": 173,
+    "deploymentMockScenarios": 81,
+    "hostingMockScenarios": 17,
+    "typecheck": true,
+    "lifecycle": true,
+    "logSha256": "2e0fa8727186d21f32b3326ed0904a2f0aeff9af729a76bcbb974db24b6c38c8",
+    "exactHeadVerified": true
+  },
+  "deployment": {
+    "commit": "ad76753014f249ca6474cba48768ec50273949c7",
+    "buildId": "b3490835-d9a2-4f6b-94e1-69321e8e4b54",
+    "image": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:e67cec365d4d689440483e71bf548e7372aa6c6407515a83a429573f37aebd64",
+    "services": [
+      {
+        "service": "yzt-test-web",
+        "revision": "yzt-test-web-00027-7l7",
+        "ready": true,
+        "traffic": 100,
+        "controlsUnchanged": true
+      },
+      {
+        "service": "yzt-test-worker",
+        "revision": "yzt-test-worker-00027-8c6",
+        "ready": true,
+        "traffic": 100,
+        "controlsUnchanged": true
+      }
+    ],
+    "queueUnchanged": true,
+    "quotas": {
+      "person": 20,
+      "site": 1000
+    },
+    "model": "gpt-6-luna",
+    "secretAndCapacityControlsUnchanged": true
+  },
+  "sources": {
+    "published": 3661,
+    "offlineReadable": 2899,
+    "heldForSourceReview": 762,
+    "officialLinksUnpublished": 14527,
+    "withoutOfficialLinks": 3057,
+    "newSourcesThisStage": 68,
+    "allOriginalSourcesPreserved": true,
+    "reportSha256": "9576a37407c672b1739c47c7b4d5e1e3b667e2358fe3c3c72aa1a0f40963a981"
+  },
+  "productFixes": [
+    "explicit_partial_teaching_and_quiz_completion_with_normal_quota",
+    "whole_field_bounded_repair_and_condition_preservation",
+    "general_use_fields_and_blank_ledger_recovery",
+    "same_operation_prn_dose_log_recovery",
+    "same_operation_cabinet_create_recovery",
+    "late_completion_refresh_does_not_navigate_back",
+    "one_disconnected_get_retry_with_original_total_deadline",
+    "opaque_request_and_phase_correlation"
+  ],
+  "cloudRead": {
+    "schema": "yzt-current-cloud-read-correlation/v1",
+    "commit": "ad76753014f249ca6474cba48768ec50273949c7",
+    "sourceReportSha256": "e42f0bc97f5968f30f60c5b9af127d85a6e1445ad332415ea3d3c919bbc5dda5",
+    "authenticatedGets": 60,
+    "configurationGets": 1,
+    "logicalClientConcurrency": 4,
+    "ordinaryExistingOwnerAccounts": 1,
+    "applicationMutations": 0,
+    "aiJobs": 0,
+    "newAccounts": 0,
+    "quotaChanges": 0,
+    "automaticRetries": 0,
+    "failures": 0,
+    "matchedRequestCorrelations": 60,
+    "serverStatuses": {
+      "200": 60
+    },
+    "p95Ms": 3997.39,
+    "maximumMs": 4945.55,
+    "historicTimeoutCause": "unlocated_preserved",
+    "configurationTraceScope": "configuration_not_in_authenticated_correlation_plan",
+    "status": "passed"
+  },
+  "cloudWrite": {
+    "status": "passed",
+    "cleanupCompleted": true,
+    "exactRowsCleaned": 3,
+    "originalSnapshotUnchanged": true,
+    "quotaUnchanged": true,
+    "applicationCreatesUseOrdinaryAccount": true,
+    "cleanupUsesExactAdminTransaction": true,
+    "initialHarnessFailurePreserved": true,
+    "initialMedicationPosts": 2,
+    "continuationMedicationPosts": 0,
+    "totalUpstreamPosts": 6,
+    "totalMaximumPosts": 6,
+    "maximumSyntheticRows": 3,
+    "receiptSha256": "d8c65580958db68cec053fad1730e9125da352764087317c166f487c605db782",
+    "scope": "same logical case continued only after exact read-only reconciliation; initial simultaneous-submit tool assertion was not marked passed"
+  },
+  "history": {
+    "rawChats": 20,
+    "visibleChats": 3,
+    "hiddenChats": 17,
+    "oldResultsAndAnswersPreserved": true,
+    "allVisibleChatResultsAndHoldReasonsPreserved": true,
+    "newCompletionActionVisible": true,
+    "applicationWrites": 0,
+    "newAiJobs": 0,
+    "receiptSha256": "e477ff50f9902f24aaf1ed2aecf571f003de91f4b77432c4481ef90f4043a40d",
+    "allHistoryBaselineComparisonSha256": "8c327bd4ac04f0cc028910537359b31a570a90c44044839432d0b0e3e659ce39"
+  },
+  "nativeAi": {
+    "distinctOfficialSources": 3,
+    "developmentAndFixedRepeatAttempts": 12,
+    "providerHttp": 45,
+    "tokens": 357435,
+    "fixedFinalRepeatAttempts": 2,
+    "repeatSource": "028248",
+    "repeatRecognizedSafetyFieldObservationsComplete": 4,
+    "repeatQuestionStemAmbiguities": 1,
+    "ambiguousQuestionExcludedFromDemonstration": true,
+    "allAttemptsSuccessful": false,
+    "websiteAiJobsCreated": 0,
+    "humanReview": false,
+    "clinicalReview": false,
+    "pharmacistReview": false,
+    "reportSha256": "cfed2b947b1791c7daa3d140de94c9c4dccfd4815293a1b1d9130c28a3a5b55f"
+  },
+  "quota": {
+    "perPersonDaily": 20,
+    "siteDaily": 1000,
+    "changes": 0,
+    "resets": 0,
+    "newAccounts": 0
+  },
+  "remainingLimits": [
+    "14527 official-link products are not yet published and 3057 lack links",
+    "762 published sources still need reader work; long teaching exceeds the bounded per-job scope",
+    "generation remains stochastic; initial partial results and one ambiguous repeated question stem are retained in the evidence",
+    "historic single pre-header timeout cannot be retrospectively located",
+    "new cloud AI jobs were not created from the exhausted acceptance owner; native evaluation and saved-result cloud reopening have separate scopes",
+    "new Android lock-screen receipt testing is deferred by the user",
+    "large independent-user paid-AI cloud throughput is unverified",
+    "source fidelity was checked by coding agents; clinical and human comprehension outcomes remain unvalidated",
+    "new 68 source objects are awaiting the next regular backup snapshot; prior proven snapshot covers 3605 objects"
+  ]
+}
