@@ -216,9 +216,9 @@ test("a failed unlink explains a working re-enable then logout recovery sequence
   harness.failDelete(true);
   await logout(page);
   await page.waitForFunction(() => (window as any).logoutDone);
-  expect(
-    await page.evaluate(() => (window as any).authProbe.authError),
-  ).toContain("啟用推播再登出");
+  await expect
+    .poll(() => page.evaluate(() => (window as any).authProbe.authError))
+    .toContain("啟用推播再登出");
   expect(harness.state()).toMatchObject({
     owner: "synthetic-A",
     active: true,

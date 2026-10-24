@@ -151,23 +151,55 @@ export function SectionTitle({
 }
 export function Speak({ text }: { text: string }) {
   const [playing, setPlaying] = useState(false);
-  useEffect(() => () => speechSynthesis.cancel(), []);
+  const [unavailable, setUnavailable] = useState(false);
+  useEffect(() => () => {
+    try {
+      const speech = typeof window === "undefined" ? undefined : window.speechSynthesis;
+      if (typeof speech?.cancel === "function") speech.cancel();
+    } catch {
+      // Optional audio cleanup must not interrupt reading or navigation.
+    }
+  }, []);
+  let supported = false;
+  try {
+    supported = typeof window !== "undefined" &&
+      typeof window.speechSynthesis?.cancel === "function" &&
+      typeof window.speechSynthesis?.speak === "function" &&
+      typeof window.SpeechSynthesisUtterance === "function";
+  } catch {
+    // Some environments expose an API without allowing access to it.
+  }
+  if (!supported || unavailable)
+    return <span className="fine">目前無法朗讀，可繼續閱讀文字。</span>;
   return (
     <button
       className="btn ghost"
       onClick={() => {
-        if (playing) {
-          speechSynthesis.cancel();
+        try {
+          const speech = window.speechSynthesis;
+          const Utterance = window.SpeechSynthesisUtterance;
+          if (typeof speech?.cancel !== "function" || typeof speech?.speak !== "function" ||
+              typeof Utterance !== "function") {
+            setPlaying(false);
+            setUnavailable(true);
+            return;
+          }
+          if (playing) {
+            speech.cancel();
+            setPlaying(false);
+            return;
+          }
+          const u = new Utterance(text);
+          u.lang = "zh-TW";
+          u.rate = 0.85;
+          u.onend = () => setPlaying(false);
+          speech.cancel();
+          speech.speak(u);
+          setPlaying(true);
+        } catch {
           setPlaying(false);
-          return;
+          setUnavailable(true);
         }
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "zh-TW";
-        u.rate = 0.85;
-        u.onend = () => setPlaying(false);
-        speechSynthesis.cancel();
-        speechSynthesis.speak(u);
-        setPlaying(true);
       }}
     >
       <Volume2 size={16} />

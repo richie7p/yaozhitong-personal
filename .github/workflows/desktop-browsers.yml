@@ -79,12 +79,12 @@ jobs:
           done
           grep -q 'Browser deny proxy ready' "artifacts/desktop/$PLAYWRIGHT_PROJECT/browser-proxy.log"
           node node_modules/@playwright/test/cli.js test --config playwright.desktop.config.ts --project "$PLAYWRIGHT_PROJECT"
-      - name: Assert all 135 workflows executed and passed
+      - name: Assert all 136 workflows executed and passed
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const r = JSON.parse(fs.readFileSync(process.env.PLAYWRIGHT_JSON_OUTPUT_NAME, 'utf8'));
-          if (r.stats.expected !== 135 || r.stats.unexpected || r.stats.flaky || r.stats.skipped || r.errors.length)
+          if (r.stats.expected !== 136 || r.stats.unexpected || r.stats.flaky || r.stats.skipped || r.errors.length)
             throw new Error('Incomplete or failed desktop coverage');
           const network = `artifacts/desktop/${process.env.PLAYWRIGHT_PROJECT}/node-network.jsonl`;
           if (fs.existsSync(network) && fs.readFileSync(network, 'utf8').trim())
