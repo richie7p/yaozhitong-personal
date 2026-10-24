@@ -243,13 +243,34 @@ def check(driver, checks, name: str, **detail):
 def service_worker_state(driver, checks, label: str):
     """Real Safari SW state/cache proof, never a fixture or a substituted ready promise."""
     result=driver.execute_async("""
-const done=arguments[arguments.length-1];let ended=false;const finish=x=>{if(!ended){ended=true;done(x);}};
-setTimeout(()=>finish({ok:false,error:'service-worker-ready-timeout'}),15000);
+const done=arguments[arguments.length-1],started=performance.now(),deadline=started+15000;
+const expectedScope=location.origin+'/',expectedScript=location.origin+'/sw.js';
+let ended=false,readyScope=null,registrations=[],polls=0,pollTimer;
+const history=[];
+const finish=x=>{if(!ended){ended=true;clearTimeout(timeout);clearTimeout(pollTimer);
+ done({...x,readyScope,registrations,polls,elapsedMs:Math.round(performance.now()-started),history});}};
+const timeout=setTimeout(()=>finish({ok:false,error:'service-worker-ready-timeout'}),15000);
 if(!('serviceWorker' in navigator)){finish({ok:false,error:'service-worker-unsupported'});return;}
-navigator.serviceWorker.ready.then(async ready=>{
- const regs=await navigator.serviceWorker.getRegistrations();
- const registrations=regs.map(r=>({scope:r.scope,active:r.active?{scriptURL:r.active.scriptURL,state:r.active.state}:null}));
- finish({ok:true,registrations,readyScope:ready.scope});
+navigator.serviceWorker.ready.then(ready=>{
+ readyScope=ready.scope;
+ const poll=async()=>{
+  if(ended)return;
+  if(performance.now()>=deadline){finish({ok:false,error:'service-worker-ready-timeout'});return;}
+  try{
+   const regs=await navigator.serviceWorker.getRegistrations();
+   if(ended)return;
+   registrations=regs.map(r=>({scope:r.scope,active:r.active?{scriptURL:r.active.scriptURL,state:r.active.state}:null}));
+   polls++;
+   if(!history.length||JSON.stringify(history[history.length-1].registrations)!==JSON.stringify(registrations))
+    history.push({elapsedMs:Math.round(performance.now()-started),registrations});
+   if(performance.now()>=deadline){finish({ok:false,error:'service-worker-ready-timeout'});return;}
+   if(readyScope===expectedScope&&registrations.some(r=>r.scope===expectedScope&&r.active?.scriptURL===expectedScript&&r.active.state==='activated')){
+    finish({ok:true});return;
+   }
+   pollTimer=setTimeout(poll,Math.min(100,deadline-performance.now()));
+  }catch(e){finish({ok:false,error:String(e.name)+': '+String(e.message)});}
+ };
+ void poll();
 }).catch(e=>finish({ok:false,error:String(e.name)+': '+String(e.message)}));
 """)
     driver.diagnostics[label]=result
