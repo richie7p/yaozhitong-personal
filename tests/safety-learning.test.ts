@@ -8,6 +8,7 @@ import {
   SAFETY_SECTIONS,
 } from "../server/safety-learning";
 import type { Chunk, GroundedResult } from "../shared/schema";
+import { sourceActionResultOutdated } from "../server/source-teaching";
 import { SOURCE_PAGE_CHAR_LIMIT } from "../shared/source";
 
 const norm = (value: string) => value.normalize("NFKC").replace(/\s/gu, "");
@@ -65,9 +66,9 @@ const approve: Llm = {
 
 describe("complete safety-source education and bounded section reading", () => {
   it.each([
-    ["040161", ["警語", "過量", "注意事項"], ["過量", "注意事項"]],
+    ["040161", ["警語", "過量", "注意事項"], ["過量"]],
     ["030418", ["使用上注意事項", "警語"], ["警語"]],
-    ["026087", ["副作用", "注意事項", "警語"], ["副作用", "注意事項", "警語"]],
+    ["026087", ["副作用", "注意事項", "警語"], ["副作用", "注意事項"]],
     ["039632", ["注意事項"], []],
     ["040833", ["使用上注意事項", "警語"], ["警語"]],
     [
@@ -76,7 +77,7 @@ describe("complete safety-source education and bounded section reading", () => {
       ["禁忌", "警語及注意事項", "副作用/不良反應"],
     ],
   ])(
-    "fills every real %s safety field even when generation omits all warnings and warning quizzes",
+    "retains every real %s safety field while publishing only read-guard-compatible quizzes",
     async (license, expected, tested) => {
       const page = original(license as string);
       const result = await grounded(
@@ -125,9 +126,64 @@ describe("complete safety-source education and bounded section reading", () => {
         expect(question.q).not.toContain("可忽略");
         expect(question.explain).toContain(passage.quote.trim());
       }
-      expect(result.rejectedCount).toBe(0);
+      expect(result.rejectedCount).toBe(["026087", "040161"].includes(license as string) ? 1 : 0);
+      expect(sourceActionResultOutdated(result)).toBe(false);
     },
   );
+
+  it("rejects a server fallback that fails the read gate while retaining other 026087 content and truthful coverage", async () => {
+    const page = original("026087");
+    const warning = sourcePassages([page]).find(
+      (passage) => passage.sourceSection === "警語",
+    )!;
+    const fallback = safetyReadingQuestion(warning)!;
+    // The public source wraps the parenthetical example across a line; the
+    // fallback normalizes it. Keep the current conservative read guard intact.
+    const isolated: GroundedResult = {
+      status: "supported", claims: [], quiz: [fallback], chunks: [page],
+      followups: [], rejectedCount: 0, sourceVersions: {},
+      verification: "model_assisted",
+    };
+    expect(sourceActionResultOutdated(isolated)).toBe(true);
+    const withTwoPurposeClaims: Llm = {
+      json: async (system, input) => {
+        const output = await approve.json(system, input) as any;
+        return system.includes("審核器") ? output : {
+          ...output,
+          claims: [...output.claims, { ...output.claims[0], text: "仿單記載的用途是袪痰。" }],
+        };
+      },
+    };
+    const result = await grounded(withTwoPurposeClaims, "完整仿單與理解確認", [page], {}, "bundle");
+    expect(result.claims).toHaveLength(5);
+    expect(result.quiz).toHaveLength(3);
+    expect(result.quiz.some((question) => question.id === fallback.id)).toBe(false);
+    expect(result.rejectedCount).toBe(1);
+    expect(sourceActionResultOutdated(result)).toBe(false);
+    expect(result.safetyCoverage).toMatchObject({
+      status: "partial", sourceSectionCount: 3,
+      coveredSectionCount: 3, quizCoveredSectionCount: 2,
+    });
+    const published = new Set(result.quiz.map((question) => question.id));
+    for (const section of result.safetyCoverage!.sections) {
+      expect(section.quizIds.every((id) => published.has(id))).toBe(true);
+      expect(section.quizIds).not.toContain(fallback.id);
+    }
+    expect(result.safetyCoverage!.sections.find(
+      (section) => section.sourceSection === "警語",
+    )!.quizIds).toEqual([]);
+    for (const field of result.plainLanguageCoverage!.fields) {
+      expect(field.quizIds.every((id) => published.has(id))).toBe(true);
+      expect(field.status).not.toBe("complete");
+    }
+    // A genuine extra symptom threshold remains rejected independently of the
+    // format-normalized source-reading template above.
+    expect(sourceActionResultOutdated({ ...isolated, quiz: [{
+      ...fallback, q: "服用本藥可能嗜睡時，哪項符合提醒？",
+      options: ["勿駕車或操作危險性機械", "可以照常駕車或操作危險性機械"], answer: 0,
+      citations: [{ chunkId: "synthetic-action", quote: "服用本藥可能引起嗜睡，因此勿駕車或操作危險性機械。" }],
+    }] })).toBe(true);
+  });
 
   it("preserves numbered official HTML titles, both flavor branches and table ancestry", () => {
     const page = original("040833");

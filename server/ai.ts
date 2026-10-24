@@ -37,6 +37,7 @@ import {
   quizOptionStrings,
   reviewTeachingPlan,
   sourceInterpretationExplicit,
+  sourceActionResultOutdated,
   sourceQuizInterpretationExplicit,
   teachingGenerationPrompt,
   teachingPlanInput,
@@ -1582,6 +1583,16 @@ export async function grounded(
     )
     .concat(teaching.quiz)
     .slice(0, 40);
+  // Server-generated reading fallbacks join after model review. Apply the same
+  // deterministic gate used on saved results before publishing any final quiz;
+  // the coverage ledgers below must only refer to questions that survive it.
+  const quizBeforeReadGuard = approvedQuiz.length;
+  approvedQuiz = approvedQuiz.filter((question) =>
+    !sourceActionResultOutdated({
+      ...base, status: "supported", claims: [], quiz: [question],
+    }),
+  );
+  const rejectedQuizByReadGuard = quizBeforeReadGuard - approvedQuiz.length;
   const publishedQuizIds = new Set(approvedQuiz.map((question) => question.id));
   const plainLanguageCoverage = teaching.coverage && {
     ...teaching.coverage,
@@ -1660,7 +1671,7 @@ export async function grounded(
     ...(sourceReading ? { sourceReading } : {}),
     chunks:
       kind === "bundle" ? selected : selected.filter((c) => ids.has(c.id)),
-    rejectedCount: d.claims.length - approved.length + legacy.discarded + resolved.discardedQuiz,
+    rejectedCount: d.claims.length - approved.length + legacy.discarded + resolved.discardedQuiz + rejectedQuizByReadGuard,
   };
 }
 export const RecognitionSchema = z.object({
