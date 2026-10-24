@@ -308,6 +308,21 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
   credentialTransitions.add(auth);
   activeCredentialAttempts.set(auth, attempt);
   configureFirebaseTokenProvider(auth);
+  const page = typeof window === "undefined" ? undefined : window;
+  const leavePage = () => {
+    // Navigation can reject the profile fetch before pagehide. Quarantine at
+    // beforeunload first, with pagehide as a fallback; never request a prompt.
+    // Late cleanup must not erase the marker needed by the next page.
+    invalidateReturn(
+      auth,
+      attempt,
+      Object.assign(new Error("登入狀態已變更，請重新登入。"), {
+        code: "identity_changed",
+      }),
+    );
+  };
+  page?.addEventListener("beforeunload", leavePage, { once: true });
+  page?.addEventListener("pagehide", leavePage, { once: true });
   const completion = withinDeadline(auth, attempt, async (check) => {
     check();
     if (!googleIdToken)
@@ -333,6 +348,8 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
     current();
     return next;
   }).finally(() => {
+    page?.removeEventListener("beforeunload", leavePage);
+    page?.removeEventListener("pagehide", leavePage);
     credentialTransitions.delete(auth);
     credentialAttempts.delete(auth);
     activeCredentialAttempts.delete(auth);

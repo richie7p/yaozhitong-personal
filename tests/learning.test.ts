@@ -11,6 +11,7 @@ import { Domain, hash } from "../server/domain";
 import { MemoryStore } from "../server/store";
 import { createApp } from "../server/app";
 import { AppError } from "../server/config";
+import { sourceActionResultOutdated } from "../server/source-teaching";
 import {
   profileFacts,
   warningConditions,
@@ -678,6 +679,25 @@ describe("shared parent conditions and numbered source items", () => {
 });
 
 describe("question scope and the three acceptance counterexamples", () => {
+  const rejectedSafetyFallbackId = "safety-38ca7b2ba4773364";
+  function expectReadCompatibleWithoutRejectedFallback(value: GroundedResult) {
+    expect(sourceActionResultOutdated(value)).toBe(false);
+    expect(value.quiz.map((question) => question.id)).not.toContain(
+      rejectedSafetyFallbackId,
+    );
+    expect(value.rejectedCount).toBe(1);
+    expect(value.safetyCoverage).toMatchObject({
+      status: "partial",
+      sourceSectionCount: 1,
+      coveredSectionCount: 1,
+      quizCoveredSectionCount: 0,
+    });
+    const published = new Set(value.quiz.map((question) => question.id));
+    for (const section of value.safetyCoverage!.sections) {
+      expect(section.quizIds).not.toContain(rejectedSafetyFallbackId);
+      expect(section.quizIds.every((id) => published.has(id))).toBe(true);
+    }
+  }
   const purposeQuote = "適應症：袪痰。用法用量：一天4-6次。";
   const warningQuote =
     "警語：吸菸、氣喘、慢性阻塞性肺疾患（包括如慢性支氣管炎、肺氣腫）所引起之咳嗽，及伴有濃痰之咳嗽病人請勿自行使用。";
@@ -772,10 +792,12 @@ describe("question scope and the three acceptance counterexamples", () => {
       q: "本品主要功效為何？",
     });
     expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
-    expect(r.safetyCoverage?.quizCoveredSectionCount).toBe(1);
+    expectReadCompatibleWithoutRejectedFallback(r);
     const corrected = await generate([purpose], purposeQuestion);
-    expect(corrected.quiz).toHaveLength(2);
+    expect(corrected.quiz).toHaveLength(1);
+    expect(corrected.quiz.filter((question) => question.id.startsWith("q"))).toHaveLength(1);
     expect(corrected.quiz[0].q).toBe(purposeQuestion.q);
+    expectReadCompatibleWithoutRejectedFallback(corrected);
   });
   it("rejects a lost causal condition even when it was omitted from declared conditions", async () => {
     const r = await generate([warning], {
@@ -786,16 +808,16 @@ describe("question scope and the three acceptance counterexamples", () => {
     expect(r.claims).toHaveLength(2);
     expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
     expect(r.quiz.some((q) => q.q.includes("對於氣喘病人"))).toBe(false);
-    expect(
-      r.quiz
-        .find((q) => q.id.startsWith("safety-"))
-        ?.options.every((option) => option.includes("所引起之咳嗽")),
-    ).toBe(true);
-    expect(
-      (await generate([warning], warningQuestion)).quiz.filter((q) =>
-        q.id.startsWith("q"),
-      ),
-    ).toHaveLength(1);
+    expectReadCompatibleWithoutRejectedFallback(r);
+    const norm = (value: string) => value.normalize("NFKC").replace(/\s/gu, "");
+    expect(r.claims.some((claim) =>
+      norm(claim.text).includes(norm("所引起之咳嗽")) &&
+      claim.citations.some((citation) => norm(citation.quote) === norm(warningQuote)),
+    )).toBe(true);
+    const corrected = await generate([warning], warningQuestion);
+    expect(corrected.quiz.filter((q) => q.id.startsWith("q"))).toHaveLength(1);
+    expect(corrected.quiz).toHaveLength(2);
+    expect(sourceActionResultOutdated(corrected)).toBe(false);
   });
   it("uses the cited original conditions instead of an incomplete provider explanation, and rejects failed linked claims", async () => {
     const quoted = await generate([warning], {
@@ -825,9 +847,11 @@ describe("question scope and the three acceptance counterexamples", () => {
         ...purposeQuestion,
         claimIndex,
       });
-      expect(r.quiz).toHaveLength(2);
+      expect(r.quiz).toHaveLength(1);
+      expect(r.quiz.filter((question) => question.id.startsWith("q"))).toHaveLength(1);
       expect(r.quiz[0].q).toBe(purposeQuestion.q);
       expect(r.quiz[0].explain).toBe("依仿單「適應症」原文：適應症：袪痰。");
+      expectReadCompatibleWithoutRejectedFallback(r);
     }
     expect(
       (
@@ -841,7 +865,7 @@ describe("question scope and the three acceptance counterexamples", () => {
       purposeQuestion,
     );
     expect(ambiguous.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
-    expect(ambiguous.safetyCoverage?.quizCoveredSectionCount).toBe(1);
+    expectReadCompatibleWithoutRejectedFallback(ambiguous);
     expect(
       (
         await generate([{ ...purpose, category: "other" }], {
@@ -874,7 +898,7 @@ describe("question scope and the three acceptance counterexamples", () => {
       const r = await generate([purpose], candidate);
       expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
       expect(r.claims).toHaveLength(2);
-      expect(r.safetyCoverage?.quizCoveredSectionCount).toBe(1);
+      expectReadCompatibleWithoutRejectedFallback(r);
     }
   });
   it("does not display a personalized warning that generalizes a causal condition", async () => {

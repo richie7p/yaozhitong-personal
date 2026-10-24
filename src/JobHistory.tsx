@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
+import { publicApiErrorMessage } from "./api-error-messages";
 import { Button, Busy, Empty, Notice, useData } from "./components";
 import { Evidence } from "./Evidence";
 
@@ -160,7 +161,7 @@ export function JobHistory() {
               </span>
             </div>
             <small>{new Date(job.createdAt).toLocaleString("zh-TW")}</small>
-            {job.error && <p>{job.error.message}</p>}
+            {job.error && <p>{publicApiErrorMessage(job.error.code, job.error.message)}</p>}
             {job.sourceUpdateRequired && (
               <Notice>
                 仿單整理規則已更新，請重新產生說明與測驗。
@@ -199,7 +200,7 @@ export function JobHistory() {
               ["chat", "bundle", "interaction"].includes(job.kind) && (
                 <>
                   <p className="muted">
-                    這次任務已達重試上限，可返回原功能重新提出請求。
+                    這次任務已達重試上限。請先依上方訊息處理，確定可繼續後再回原功能。
                   </p>
                   <a
                     className="btn secondary"

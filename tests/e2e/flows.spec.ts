@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
-test("offline keeps the public shell without caching private APIs", async ({
+// This workflow tests the real worker and its private-data cache boundary.
+// Other workflows can block workers so route fixtures remain deterministic.
+const serviceWorkerTest = test.extend({ serviceWorkers: "allow" as const });
+serviceWorkerTest("offline keeps the public shell without caching private APIs", async ({
   page,
   context,
 }) => {

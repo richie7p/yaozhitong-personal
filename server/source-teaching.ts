@@ -336,7 +336,7 @@ export function sourceSituationExplicit(text: string, quotes: string[]) {
  * it recognizes explicit if/when/only gates on the same recorded action, not
  * arbitrary paraphrases or an inferred medical condition. Source conditions,
  * including list introductions, remain for the existing scope reviewer. */
-export function sourceActionConditionsExplicit(text: string, quotes: string[], questionScenario = false) {
+export function sourceActionConditionsExplicit(text: string, quotes: string[], questionScenario = false, questionAnswer?: string) {
   // An unchanged complete source field is evidence reading, not a new AI
   // instruction. Its original conditional and unconditional clauses stay intact.
   if (quotes.some((quote) => quote.trim() === text.trim())) return true;
@@ -349,7 +349,7 @@ export function sourceActionConditionsExplicit(text: string, quotes: string[], q
       const before = value.slice(0, match.index!);
       const prefix = before.split(/[。！？；;\r\n]/u).at(-1) || "";
       const parts = match[1].split(/或|以及|及|、/u).map(compactSource);
-      return { prefix, parts };
+      return { prefix, parts, before };
     });
   const gate = (prefix: string): string | undefined => {
     const value = compactSource(prefix).replace(
@@ -382,9 +382,44 @@ export function sourceActionConditionsExplicit(text: string, quotes: string[], q
       return gate(value.slice(0, matched!.index));
     return condition || undefined;
   };
+  // Resolve one literal source reference only. A PDF line wrap is not a new
+  // paragraph; a blank line, heading, list item or intervening sentence is.
+  const adjacentTemporalCondition = (before: string) => {
+    const source = before.normalize("NFKC").replace(/\r\n?/gu, "\n");
+    const boundary = source.lastIndexOf("。");
+    if (boundary < 0) return undefined;
+    const reference = source.slice(boundary + 1);
+    if (/\n[^\S\n]*\n/u.test(reference) ||
+      !/^此時[，,]?(?:病人|患者)?(?:應|須|請|則|就|也|再)*$/u.test(compactSource(reference)))
+      return undefined;
+    const previous = (source.slice(0, boundary).split(/[。！？；;]/u).at(-1) || "").trim()
+      .replace(/^(?:\d{1,3}[.、)]|[（(]\d{1,3}[）)]|[一二三四五六七八九十]+[、.])\s*/u, "");
+    if (/\n[^\S\n]*\n|[【】]|(?:^|\n)\s*(?:[•●▪#]|\d{1,3}[.、)])/u.test(previous))
+      return undefined;
+    const comma = previous.search(/[，,]/u);
+    if (comma < 1) return undefined;
+    // The indexed answer must retain the complete preceding instruction,
+    // including any later condition/exception. Only its imperative 須 may elide.
+    const disposition = compactSource(previous.slice(comma + 1)).replace(/須/gu, "");
+    const answer = compactSource(questionAnswer || "").replace(/須/gu, "");
+    if (!disposition || !answer.includes(disposition)) return undefined;
+    const first = compactSource(previous.slice(0, comma));
+    if (!/^(?:如果|一旦|只有|僅在|若|當)/u.test(first) && !/時$/u.test(first))
+      return undefined;
+    return gate(first);
+  };
+  const sameEstablishedTreatmentEnding = (proposed: string, original: string) => {
+    // Only two complete surface forms of an already-established treatment
+    // ending qualify. Literal equality alone never resolves another event or
+    // a relative/deictic time; partial wording, negation and symptoms also fail.
+    const establishedTreatmentEnding = (value: string) =>
+      /^(?:(?:自|從)?(?:已經|已)建立(?:之|的)?(?:療法|治療)(?:上)?(?:停藥|停止(?:療法|治療)?)|(?:療法|治療)(?:已經|已)建立(?:而)?(?:要|將)?(?:停藥|停止))$/u.test(value);
+    return establishedTreatmentEnding(proposed) && establishedTreatmentEnding(original);
+  };
   const originals = quotes.flatMap(prohibitions);
   for (const proposed of prohibitions(text)) {
-    if (!gate(proposed.prefix)) continue;
+    const proposedCondition = gate(proposed.prefix);
+    if (!proposedCondition) continue;
     for (const original of originals) {
       const sameAction = proposed.parts.some((part) =>
         original.parts.some((source) => source.length >= 2 && part === source),
@@ -396,6 +431,18 @@ export function sourceActionConditionsExplicit(text: string, quotes: string[], q
         ? gate(original.prefix) || /(?:如下|下列|以下|情形|情況|者|的人|患者)/u.test(original.prefix)
         : /(?:如果|一旦|只有|僅在|若|當|如下|下列|以下|情形|情況|者|時|後|才)/u.test(original.prefix))
         continue;
+      const inherited = questionScenario ? adjacentTemporalCondition(original.before) : undefined;
+      if (inherited && sameEstablishedTreatmentEnding(proposedCondition, inherited)) {
+        // This new allowance requires every same-action command to have the
+        // same verifiable condition. An unresolved heading or ordinary treatment
+        // prefix is not evidence of that condition, even if the old fallback skips it.
+        const conflictingCommand = originals.some((candidate) => {
+          if (!proposed.parts.some((part) => candidate.parts.includes(part))) return false;
+          const condition = gate(candidate.prefix) || adjacentTemporalCondition(candidate.before);
+          return !condition || !sameEstablishedTreatmentEnding(proposedCondition, condition);
+        });
+        if (!conflictingCommand) continue;
+      }
       return false;
     }
   }
@@ -969,8 +1016,8 @@ export function sourceQuizScenarioExplicit(
     .flatMap((match)=>match[1].split(/或|以及|及|、/u).map(compactSource)))
     .filter((action)=>action.length>=2 && compactSource(correct).includes(action));
   return scenarios.every((scenario) =>
-    sourceActionConditionsExplicit(scenario + "，" + correct, quotes, true) &&
-    literalActions.every((action)=>sourceActionConditionsExplicit(scenario+"，勿"+action,quotes,true)),
+    sourceActionConditionsExplicit(scenario + "，" + correct, quotes, true, correct) &&
+    literalActions.every((action)=>sourceActionConditionsExplicit(scenario+"，勿"+action,quotes,true,correct)),
   );
 }
 

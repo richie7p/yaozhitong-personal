@@ -743,6 +743,127 @@ describe("Tab session commit and interrupted Google authentication", () => {
     } as unknown as Auth;
   }
 
+  function pageLifecycle() {
+    const target = new EventTarget();
+    const added = vi.spyOn(target, "addEventListener");
+    const removed = vi.spyOn(target, "removeEventListener");
+    vi.stubGlobal("window", target);
+    return {
+      hide: () => target.dispatchEvent(new Event("pagehide")),
+      beforeUnload: () => {
+        const event = new Event("beforeunload", { cancelable: true });
+        target.dispatchEvent(event);
+        return event;
+      },
+      added,
+      removed,
+    };
+  }
+
+  it("keeps the quarantine when pagehide cancels an unfinished Google profile request", async () => {
+    const lifecycle = pageLifecycle();
+    let rejectProfile!: (reason: unknown) => void;
+    fetchMock.mockReturnValueOnce(new Promise<Response>((_resolve, reject) => {
+      rejectProfile = reject;
+    }));
+    const outcome = signInGoogleCredential(auth, "synthetic-google-token").catch(error => error);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    lifecycle.hide();
+    rejectProfile(new TypeError("Synthetic navigation-cancelled fetch"));
+    expect(await outcome).toMatchObject({ code: "identity_changed" });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    expect(auth.currentUser).toBeNull();
+    expect(user.reload).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await expect(finishGoogleRedirect(restoredAuth(), true)).rejects.toThrow(
+      "上次 Google 登入未完成",
+    );
+    expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("preserves pending when beforeunload precedes fetch rejection and pagehide arrives after cleanup", async () => {
+    const lifecycle = pageLifecycle();
+    let rejectProfile!: (reason: unknown) => void;
+    fetchMock.mockReturnValueOnce(new Promise<Response>((_resolve, reject) => {
+      rejectProfile = reject;
+    }));
+    const outcome = signInGoogleCredential(auth, "synthetic-google-token").catch(error => error);
+    await vi.advanceTimersByTimeAsync(0);
+    const leaving = lifecycle.beforeUnload();
+    expect(leaving.defaultPrevented).toBe(false);
+    rejectProfile(new TypeError("Synthetic navigation-cancelled fetch"));
+    expect(await outcome).toMatchObject({ code: "identity_changed" });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    expect(lifecycle.removed).toHaveBeenCalledWith("beforeunload", expect.any(Function));
+    expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    lifecycle.hide();
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    expect(auth.currentUser).toBeNull();
+    expect(user.reload).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await expect(finishGoogleRedirect(restoredAuth(), true)).rejects.toThrow(
+      "上次 Google 登入未完成",
+    );
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("cannot restore a credential that arrives after pagehide", async () => {
+    const lifecycle = pageLifecycle();
+    const result = deferred<UserCredential>();
+    vi.mocked(signInWithCredential).mockReturnValueOnce(result.promise);
+    const outcome = signInGoogleCredential(auth, "synthetic-google-token").catch(error => error);
+    await vi.advanceTimersByTimeAsync(0);
+    lifecycle.hide();
+    await vi.advanceTimersByTimeAsync(0);
+    Object.assign(auth, { currentUser: user });
+    result.resolve({ user } as UserCredential);
+    expect(await outcome).toMatchObject({ code: "identity_changed" });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(auth.currentUser).toBeNull();
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("still clears an ordinary network failure on the visible page and removes its pagehide listener", async () => {
+    const lifecycle = pageLifecycle();
+    fetchMock.mockRejectedValueOnce(new TypeError("Synthetic visible-page network failure"));
+    await expect(signInGoogleCredential(auth, "synthetic-google-token")).rejects.toMatchObject({
+      code: "network_error",
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(storage.has(key)).toBe(false);
+    expect(firebaseSessionNeedsReload(auth)).toBe(false);
+    expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    const signOutCalls = vi.mocked(signOut).mock.calls.length;
+    expect(lifecycle.beforeUnload().defaultPrevented).toBe(false);
+    lifecycle.hide();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(storage.has(key)).toBe(false);
+    expect(signOut).toHaveBeenCalledTimes(signOutCalls);
+  });
+
+  it("does not quarantine an already committed credential session when the page later hides", async () => {
+    const lifecycle = pageLifecycle();
+    await signInGoogleCredential(auth, "synthetic-google-token");
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "ready", uid: user.uid });
+    expect(lifecycle.added).toHaveBeenCalledWith("pagehide", expect.any(Function), { once: true });
+    expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    expect(lifecycle.beforeUnload().defaultPrevented).toBe(false);
+    lifecycle.hide();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "ready", uid: user.uid });
+    expect(auth.currentUser).toBe(user);
+    expect(signOut).not.toHaveBeenCalled();
+    expect(firebaseSessionNeedsReload(auth)).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("writes a quarantine before credential exchange and commits only after the authenticated /me read", async () => {
     const response = deferred<Response>();
     fetchMock

@@ -458,6 +458,13 @@ test("logout immediately stops speech and clears chat while device cleanup is pe
     sessionStorage.setItem("yzt-device-id", "synthetic-device");
     const probe = { speaking: false, cancellations: 0 };
     Object.assign(window, { syntheticSpeechProbe: probe });
+    if (typeof window.SpeechSynthesisUtterance !== "function") {
+      Object.defineProperty(window, "SpeechSynthesisUtterance", {
+        value: class {
+          constructor(public text: string) {}
+        },
+      });
+    }
     Object.defineProperty(window, "speechSynthesis", {
       value: {
         speak: () => {

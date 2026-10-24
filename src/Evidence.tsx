@@ -17,11 +17,12 @@ import { Frequency } from "./medication-presentation";
 import { SourceReviewNotice } from "./SourceReviewNotice";
 import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { SourceReadingNotice } from "./SourceReadingNotice";
+import { sharedQuizPresentation } from "./quiz-presentation";
 
 export const learningStateLabels: Record<LearningProgress["status"], string> = {
   not_started: "未開始",
   in_progress: "進行中",
-  completed: "已完成",
+  completed: "測驗已完成",
   unavailable: "尚無測驗",
 };
 
@@ -143,6 +144,7 @@ function UnderstandingQuiz({
   ) => void;
 }) {
   const radioName = useId();
+  const sharedContextId = useId();
   const [answers, setAnswers] = useState(() =>
     validAnswers(result.quiz, initialAnswers),
   );
@@ -178,6 +180,7 @@ function UnderstandingQuiz({
   }, [progress.passed, reviewing]);
   const q = result.quiz[index];
   if (!q) return null;
+  const presentation = sharedQuizPresentation(q);
   const selected = selection ?? answers[q.id];
   const grade = progress.results[index];
   const move = (next: number) => {
@@ -250,17 +253,30 @@ function UnderstandingQuiz({
         </div>
       ) : (
         <>
-          <fieldset disabled={saving} className="question-fieldset">
+          <fieldset disabled={saving} className="question-fieldset" aria-describedby={presentation ? sharedContextId : undefined}>
             <legend ref={questionRef} tabIndex={-1}>
               <span className="question-position">
                 第 {index + 1}／{progress.total} 題：
               </span>
-              <span className="question-text">{q.q}</span>
+              <span className="question-text">{presentation?.question || q.q}</span>
             </legend>
             {q.learningObjective === "warning" && (
               <p className="muted">
                 警語理解：{q.sourceSection}（抽查一個重點）
               </p>
+            )}
+            {presentation && (
+              <div className="quiz-shared-context" id={sharedContextId}>
+                <h4>先看共同內容</h4>
+                <p>兩個選項都包含以下內容；請再比較下方的完整說法。</p>
+                <div className="quiz-shared-text">{presentation.contextBefore}</div>
+                <p className="fine">最後提到的情況，會在下方選項中完整列出。</p>
+                {presentation.contextAfter && (
+                  <div className="quiz-shared-text">
+                    <strong>兩個選項也都包含：</strong>{presentation.contextAfter}
+                  </div>
+                )}
+              </div>
             )}
             {q.options.map((option, i) => (
               <label className="choice" key={i}>
@@ -271,9 +287,16 @@ function UnderstandingQuiz({
                   checked={selected === i}
                   onChange={() => setSelection(i)}
                 />
-                {option}
+                <span className="quiz-option-text">{presentation?.options[i] || option}</span>
               </label>
             ))}
+            {presentation && (
+              <details className="question-original">
+                <summary>查看完整題目與選項</summary>
+                <p>{q.q}</p>
+                <ol>{q.options.map((option, i) => <li key={i}>{option}</li>)}</ol>
+              </details>
+            )}
           </fieldset>
           {grade.state !== "unanswered" && (
             <div className="quiz-feedback">
@@ -546,7 +569,7 @@ export function Evidence({
               type="button"
               onClick={() => focusReadingTarget(warningsRef.current)}
             >
-              {sourceReading ? "警語與原文" : "完整警語"}
+              警語與注意事項
             </button>
             {hasQuiz && (
               <button type="button" onClick={goToQuiz}>
@@ -560,7 +583,7 @@ export function Evidence({
                 <span className="reading-kicker">閱讀之後 · 理解測驗</span>
                 <p>
                   共 {progress.total} 題 · 已答對 {progress.correct}{" "}
-                  題。可隨時回來閱讀完整警語。
+                  題。可隨時回來對照警語與原文。
                 </p>
               </div>
               <Button onClick={goToQuiz}>
@@ -611,12 +634,12 @@ export function Evidence({
               <span className="reading-step reading-kicker">02</span>
               <div>
                 <h3 id={sectionName + "-warnings"}>
-                  {sourceReading ? "警語與原文" : "完整警語"}
+                  警語與注意事項
                 </h3>
                 <p>
                   {sourceReading
                     ? "部分欄位尚未提供 AI 說明，請展開上方完整仿單原文查閱。"
-                    : "保留已整理的警語全文；每項都可以展開對照自己的仿單依據。"}
+                    : "下方列出本次已整理的警語與注意事項；未整理的內容，請對照完整仿單原文。"}
                 </p>
               </div>
             </div>

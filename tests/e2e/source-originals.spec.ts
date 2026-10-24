@@ -116,7 +116,7 @@ test("a known source hold shows the free original instead of a missing AI job or
   await page.goto("/#medications");
   await page.getByRole("button", { name: "仿單說明", exact: true }).click();
   await verifyOriginal(page);
-  await expect(page.getByRole("alert")).toContainText("未建立任務或使用額度");
+  await expect(page.getByRole("alert")).toContainText("來源狀態與可用原文");
   expect(
     state.requests
       .filter((row) => row.method === "POST")

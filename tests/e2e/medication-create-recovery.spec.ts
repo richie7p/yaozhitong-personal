@@ -51,7 +51,7 @@ for (const entry of ["manual", "search", "manual-retake"] as const) {
       .getByRole("button", { name: "保存待核對資料", exact: true })
       .click();
     await expect(
-      page.getByRole("alert").filter({ hasText: "無法連線到服務" }),
+      page.getByRole("alert").filter({ hasText: "目前無法連線" }),
     ).toBeVisible();
     if (entry === "manual-retake") {
       await page

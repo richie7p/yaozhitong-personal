@@ -175,7 +175,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await page.locator("textarea").fill(question);
   await page.getByRole("button", { name: "送出", exact: true }).click();
   await expect(
-    page.getByText("AI 輸出格式無法驗證，請重試。", { exact: true }),
+    page.getByText("系統這次沒能整理出可用內容。請到「處理紀錄與恢復」查看狀態及可用操作。", { exact: true }),
   ).toBeVisible({ timeout: 20000 });
   await expect(page.locator("textarea")).toHaveValue(question);
   await page.goto("/#jobs");

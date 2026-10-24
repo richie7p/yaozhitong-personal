@@ -15,7 +15,7 @@ describe("API failures that can interrupt a demonstration", () => {
     );
     await expect(api("/medications")).rejects.toMatchObject({
       code: "network_error",
-      message: expect.stringContaining("藥智通服務已啟動"),
+      message: expect.stringContaining("請確認網路"),
     });
   });
 
@@ -32,7 +32,7 @@ describe("API failures that can interrupt a demonstration", () => {
     await expect(api("/medications")).rejects.toMatchObject({
       code: "invalid_response",
       requestId: "request-for-support",
-      message: "服務暫時無法回應，請稍後重試。",
+      message: "這次回應無法讀取。若剛送出資料，請先查看相關紀錄；仍無法操作時，請聯絡管理員。",
     });
   });
 
@@ -56,6 +56,15 @@ describe("API failures that can interrupt a demonstration", () => {
       code: "stale_content",
       message: "資料已更新",
       requestId: "r1",
+    });
+  });
+
+  it("changes only public wording while preserving a structured provider error identity", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+      code: "ai_auth_error", message: "AI 金鑰或帳號權限無法使用，請檢查後端設定。", requestId: "support-request-id",
+    }, { status: 503 })));
+    await expect(api("/learning", "POST", {})).rejects.toMatchObject({
+      code: "ai_auth_error", status: 503, requestId: "support-request-id", message: expect.stringContaining("問題回報"),
     });
   });
 

@@ -117,7 +117,7 @@ async function expectPendingSource(container: Locator, page: Page) {
   await expect(container).toContainText(pendingMessage);
   await expect(container.locator(".quiz, .claim, blockquote")).toHaveCount(0);
   await expect(
-    container.getByRole("heading", { name: "完整警語", exact: true }),
+    container.getByRole("heading", { name: "警語與注意事項", exact: true }),
   ).toHaveCount(0);
   const summary = container.getByText("查看官方仿單原文", { exact: true });
   await expect(summary).toBeVisible();
@@ -143,7 +143,7 @@ test("saved pending learning survives reload with official source access and no 
   await expect(record.getByText("尚無測驗", { exact: true })).toBeVisible();
   await expectPendingSource(record, page);
   await expect(record.getByRole("radio")).toHaveCount(0);
-  await expect(record.getByText("已完成", { exact: true })).toHaveCount(0);
+  await expect(record.getByText("測驗已完成", { exact: true })).toHaveCount(0);
   await page.reload();
   await expectPendingSource(record, page);
   await expect(record.getByText("尚無測驗", { exact: true })).toBeVisible();
@@ -153,7 +153,7 @@ test("saved pending learning survives reload with official source access and no 
     `.learning-index-card[data-learning-id="${recordId}"]`,
   );
   await expect(directory).toContainText("尚無測驗");
-  await expect(directory.getByText("已完成", { exact: true })).toHaveCount(0);
+  await expect(directory.getByText("測驗已完成", { exact: true })).toHaveCount(0);
   expect(unexpected).toEqual([]);
 });
 

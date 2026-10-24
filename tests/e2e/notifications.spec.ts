@@ -395,7 +395,7 @@ test.describe("notification history route fixtures", () => {
     await expect(page.getByRole("status")).toHaveText("正在讀取通知紀錄…");
     await page.clock.fastForward(30_000);
     await expect(page.getByRole("status")).toHaveCount(0);
-    await expect(page.getByRole("alert")).toContainText("連線等待過久");
+    await expect(page.getByRole("alert")).toContainText("等候回應超過時間");
     const retry = page.getByRole("button", { name: "重新載入", exact: true });
     await expect(retry).toBeEnabled();
     expect(reads).toBe(2);

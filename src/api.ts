@@ -1,5 +1,6 @@
 import { jobFingerprint, PendingJobs, type PendingJob } from "./pending-jobs";
 import { setChatDraftIdentity } from "./chat-draft";
+import { publicApiErrorMessage } from "./api-error-messages";
 
 let tokenProvider: () => Promise<string> = async () => "";
 export function setTokenProvider(fn: () => Promise<string>) {
@@ -12,7 +13,7 @@ export class ApiError extends Error {
     public requestId = "",
     public status = 0,
   ) {
-    super(message);
+    super(publicApiErrorMessage(code, message, status));
   }
   phase?: "token" | "headers" | "body";
   attempts?: number;

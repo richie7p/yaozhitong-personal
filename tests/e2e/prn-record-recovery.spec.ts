@@ -101,7 +101,7 @@ test("PRN lost successful response retries the same operation before a later dos
     else await route.fulfill({ response });
   });
   await card(0).getByRole("button", { name: "記錄服用", exact: true }).click();
-  await expect(page.getByText(/無法連線到服務/)).toBeVisible();
+  await expect(page.getByText(/目前無法連線/)).toBeVisible();
   await expect(
     card(0).getByRole("button", { name: "記錄服用", exact: true }),
   ).toBeEnabled();

@@ -146,7 +146,7 @@ test("storage answers show every returned claim and keyboard-expandable citation
       ".reading-sections, .reading-use, .reading-warnings, .quiz, .confirmed-usage",
     ),
   ).toHaveCount(0);
-  for (const label of ["用途與用法", "藥品用途", "完整警語"])
+  for (const label of ["用途與用法", "藥品用途", "警語與注意事項"])
     await expect(answer.getByText(label, { exact: true })).toHaveCount(0);
   await expect(answer.getByText(/目前沒有可引用的用途說明/)).toHaveCount(0);
   await expect(

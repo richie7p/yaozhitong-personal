@@ -45,6 +45,7 @@ import {
 import { ScheduleForm } from "./ScheduleForm";
 import { ChatAnswer } from "./ChatAnswer";
 import { TeachingCompletionAction } from "./TeachingCompletionAction";
+import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { OfficialSourceLinks } from "./OfficialSourceLinks";
 import type { MedicationSourceInfo } from "../shared/source-availability";
 import {
@@ -1675,6 +1676,7 @@ export function Learning() {
                     已作答 {progress.answered}／{progress.total} 題 · 已答對{" "}
                     {progress.correct} 題
                   </p>
+                  <PlainLanguageStatus result={r.result} compact />
                 </div>
                 <div className="row wrap learning-directory-actions">
                   <a

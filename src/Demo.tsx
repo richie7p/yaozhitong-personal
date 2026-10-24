@@ -148,7 +148,8 @@ export function Demo() {
               <span>{record.result.quiz.length} 題理解測驗</span>
               {progress && (
                 <span>
-                  測驗{learningStateLabels[progress.status]} · 已答對{" "}
+                  {progress.status !== "completed" && "測驗"}
+                  {learningStateLabels[progress.status]} · 已答對{" "}
                   {progress.correct} 題
                 </span>
               )}
