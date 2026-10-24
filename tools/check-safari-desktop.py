@@ -42,7 +42,7 @@ class WebDriver:
         # Record command type/timing, never request bodies, auth/session tokens or model input.
         route = path.replace(self.session, "<session>") if self.session else path
         self.commands.append({"method": method, "path": route, "http_status": status, "duration_ms": round((time.monotonic()-began)*1000)})
-        if isinstance(value, dict) and value.get("error"):
+        if status >= 400 and isinstance(value, dict) and value.get("error"):
             raise DriverError(str(value["error"]), str(value.get("message", "WebDriver command failed"))[:1200])
         if status >= 400: raise DriverError("http_error", "WebDriver HTTP " + str(status))
         return value
@@ -150,7 +150,7 @@ def snapshot(driver, out: Path, label: str, required=True):
 
 def upload(driver, path: Path, checks, out: Path):
     element = wait(lambda: driver.find('input[type="file"]'), "photo input")
-    diagnostic={"native_sendkeys":"not_run","native_read":None,"native_preview":False,"os_picker_tested":False}
+    diagnostic={"native_sendkeys":"not_run","native_read":None,"native_file_reader":None,"native_preview":False,"os_picker_tested":False}
     driver.diagnostics["synthetic_file_readability"]=diagnostic
     # Preserve just the selected synthetic File reference before the app may clear
     # an unreadable input. The observer does not cancel/change the app's event.
@@ -176,9 +176,26 @@ file.slice(0,8).arrayBuffer().then(b=>finish({ok:true,metadata:meta,header:Array
     except (DriverError,AssertionError) as exc:
         # This fallback remains a distinct coverage claim, never native file picker coverage.
         diagnostic["native_failure"]={"type":type(exc).__name__,"code":getattr(exc,"code",None),"message":str(exc)[:1200]}
+        if diagnostic["native_sendkeys"]=="accepted" and not (diagnostic["native_read"] or {}).get("ok"):
+            # Read the same captured synthetic File slice via the alternate native
+            # browser API. This diagnostic is not an app/fallback upload pass.
+            diagnostic["native_file_reader"]=driver.execute_async("""
+const input=arguments[0],done=arguments[arguments.length-1],file=window.__nativeSafariSelectedFile||(input.files&&input.files[0]);
+const metadata=file?{name:file.name,type:file.type,size:file.size,lastModified:file.lastModified}:null;
+let ended=false;const finish=x=>{if(!ended){ended=true;done(x);}};
+if(!file){finish({ok:false,metadata,error:'no-file-for-FileReader-control'});return;}
+const reader=new FileReader();
+setTimeout(()=>{finish({ok:false,metadata,error:'FileReader-read-timeout'});try{reader.abort();}catch{}},8000);
+reader.onload=()=>finish({ok:true,metadata,header:Array.from(new Uint8Array(reader.result))});
+reader.onerror=()=>finish({ok:false,metadata,error:String(reader.error?.name)+': '+String(reader.error?.message)});
+reader.onabort=()=>finish({ok:false,metadata,error:'FileReader-aborted'});
+try{reader.readAsArrayBuffer(file.slice(0,8));}catch(e){finish({ok:false,metadata,error:String(e.name)+': '+String(e.message)});}
+""",[element])
+            diagnostic["requires_product_api_compatibility_review"]=bool(diagnostic["native_file_reader"].get("ok"))
+            diagnostic["readability_interpretation"]=("arrayBuffer failed but FileReader could read the same synthetic file; investigate product API compatibility before release" if diagnostic["requires_product_api_compatibility_review"] else "Both diagnostic paths did not establish a readable native-selected file; cause remains undetermined")
         diagnostic["native_visible_alerts"]=driver.execute("return Array.from(document.querySelectorAll('[role=alert]')).map(e=>e.innerText);")
         snapshot(driver,out,"native-file-limitation",required=False)
-        checks.append({"id":"native-file-input","status":"driver-limited","detail":diagnostic["native_failure"],"scope":"Native readable file selection did not pass; frontend in-memory fallback tested separately"})
+        checks.append({"id":"native-file-input","status":"file-read-limited","detail":diagnostic["native_failure"],"scope":"Native file selection/read/preview did not pass; cause undetermined. Frontend in-memory fallback tested separately; FileReader diagnostic alone is not an app pass."})
         element = wait(lambda: driver.find('input[type="file"]'), "fallback photo input")
         driver.execute("arguments[0].removeEventListener('change',window.__nativeSafariFileObserver,true);delete window.__nativeSafariFileObserver;delete window.__nativeSafariSelectedFile;",[element])
         driver.execute("const input=arguments[0],bytes=new Uint8Array(arguments[1]);const dt=new DataTransfer();dt.items.add(new File([bytes],'synthetic-safari.png',{type:'image/png'}));input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));", [element, list(path.read_bytes())])

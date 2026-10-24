@@ -748,7 +748,16 @@ describe("Tab session commit and interrupted Google authentication", () => {
     const added = vi.spyOn(target, "addEventListener");
     const removed = vi.spyOn(target, "removeEventListener");
     vi.stubGlobal("window", target);
-    return { hide: () => target.dispatchEvent(new Event("pagehide")), added, removed };
+    return {
+      hide: () => target.dispatchEvent(new Event("pagehide")),
+      beforeUnload: () => {
+        const event = new Event("beforeunload", { cancelable: true });
+        target.dispatchEvent(event);
+        return event;
+      },
+      added,
+      removed,
+    };
   }
 
   it("keeps the quarantine when pagehide cancels an unfinished Google profile request", async () => {
@@ -772,6 +781,33 @@ describe("Tab session commit and interrupted Google authentication", () => {
       "上次 Google 登入未完成",
     );
     expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("preserves pending when beforeunload precedes fetch rejection and pagehide arrives after cleanup", async () => {
+    const lifecycle = pageLifecycle();
+    let rejectProfile!: (reason: unknown) => void;
+    fetchMock.mockReturnValueOnce(new Promise<Response>((_resolve, reject) => {
+      rejectProfile = reject;
+    }));
+    const outcome = signInGoogleCredential(auth, "synthetic-google-token").catch(error => error);
+    await vi.advanceTimersByTimeAsync(0);
+    const leaving = lifecycle.beforeUnload();
+    expect(leaving.defaultPrevented).toBe(false);
+    rejectProfile(new TypeError("Synthetic navigation-cancelled fetch"));
+    expect(await outcome).toMatchObject({ code: "identity_changed" });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    expect(lifecycle.removed).toHaveBeenCalledWith("beforeunload", expect.any(Function));
+    expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    lifecycle.hide();
+    expect(JSON.parse(storage.get(key)!)).toEqual({ status: "pending" });
+    expect(auth.currentUser).toBeNull();
+    expect(user.reload).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await expect(finishGoogleRedirect(restoredAuth(), true)).rejects.toThrow(
+      "上次 Google 登入未完成",
+    );
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -805,6 +841,7 @@ describe("Tab session commit and interrupted Google authentication", () => {
     expect(firebaseSessionNeedsReload(auth)).toBe(false);
     expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
     const signOutCalls = vi.mocked(signOut).mock.calls.length;
+    expect(lifecycle.beforeUnload().defaultPrevented).toBe(false);
     lifecycle.hide();
     await vi.advanceTimersByTimeAsync(0);
     expect(storage.has(key)).toBe(false);
@@ -817,6 +854,7 @@ describe("Tab session commit and interrupted Google authentication", () => {
     expect(JSON.parse(storage.get(key)!)).toEqual({ status: "ready", uid: user.uid });
     expect(lifecycle.added).toHaveBeenCalledWith("pagehide", expect.any(Function), { once: true });
     expect(lifecycle.removed).toHaveBeenCalledWith("pagehide", expect.any(Function));
+    expect(lifecycle.beforeUnload().defaultPrevented).toBe(false);
     lifecycle.hide();
     await vi.advanceTimersByTimeAsync(0);
     expect(JSON.parse(storage.get(key)!)).toEqual({ status: "ready", uid: user.uid });

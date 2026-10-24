@@ -309,10 +309,10 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
   activeCredentialAttempts.set(auth, attempt);
   configureFirebaseTokenProvider(auth);
   const page = typeof window === "undefined" ? undefined : window;
-  const pageHide = () => {
-    // Navigation can reject the old page's pending profile fetch before its
-    // context is destroyed. Keep that cleanup from erasing the quarantine
-    // needed by the next page, and reject any credential that arrives later.
+  const leavePage = () => {
+    // Navigation can reject the profile fetch before pagehide. Quarantine at
+    // beforeunload first, with pagehide as a fallback; never request a prompt.
+    // Late cleanup must not erase the marker needed by the next page.
     invalidateReturn(
       auth,
       attempt,
@@ -321,7 +321,8 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
       }),
     );
   };
-  page?.addEventListener("pagehide", pageHide, { once: true });
+  page?.addEventListener("beforeunload", leavePage, { once: true });
+  page?.addEventListener("pagehide", leavePage, { once: true });
   const completion = withinDeadline(auth, attempt, async (check) => {
     check();
     if (!googleIdToken)
@@ -347,7 +348,8 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
     current();
     return next;
   }).finally(() => {
-    page?.removeEventListener("pagehide", pageHide);
+    page?.removeEventListener("beforeunload", leavePage);
+    page?.removeEventListener("pagehide", leavePage);
     credentialTransitions.delete(auth);
     credentialAttempts.delete(auth);
     activeCredentialAttempts.delete(auth);
