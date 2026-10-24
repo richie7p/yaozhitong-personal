@@ -1,125 +1,37 @@
-name: desktop-browser-validation
+name: isolated-safari-synthetic-file-fixture
 
 on:
   push:
+    branches:
+      - codex/safari-file-fixture-20261024
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  desktop-engines:
-    name: ${{ matrix.project }} on ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - project: firefox-desktop
-            browser: firefox
-            os: ubuntu-latest
-          - project: webkit-desktop
-            browser: webkit
-            os: macos-15
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 25
-    env:
-      YZT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      BROWSER_TYPE: ${{ matrix.browser }}
-      PLAYWRIGHT_PROJECT: ${{ matrix.project }}
-      PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/desktop/${{ matrix.project }}/results.json
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: pip
-          cache-dependency-path: tools/requirements-tfda.txt
-      - run: python -m pip install -r tools/requirements-tfda.txt
-      - run: npm ci
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
-      - name: Record actual browser identity
-        run: |
-          mkdir -p "artifacts/desktop/$PLAYWRIGHT_PROJECT"
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import os from 'node:os';
-          import { firefox, webkit } from 'playwright';
-          const engine = { firefox, webkit }[process.env.BROWSER_TYPE];
-          if (!engine) throw new Error('Unexpected browser');
-          const browser = await engine.launch();
-          const result = { source_sha: process.env.YZT_SOURCE_SHA, engine: process.env.BROWSER_TYPE,
-            browser_version: browser.version(), executable: engine.executablePath(),
-            platform: os.platform(), release: os.release(), arch: os.arch(),
-            coverage: 'Playwright browser engine; WebKit is not branded Safari' };
-          fs.writeFileSync(`artifacts/desktop/${process.env.PLAYWRIGHT_PROJECT}/environment.json`, JSON.stringify(result, null, 2));
-          await browser.close();
-          NODE
-      - name: Run every desktop workflow without retries or skipped failures
-        env:
-          NODE_OPTIONS: --require=${{ github.workspace }}/tests/support/loopback-network-guard.cjs
-          YZT_BATCH2_NETWORK_LOG: ${{ github.workspace }}/artifacts/desktop/${{ matrix.project }}/node-network.jsonl
-          YZT_BROWSER_PROXY_URL: http://127.0.0.1:5299
-          YZT_BROWSER_PROXY_LOG: ${{ github.workspace }}/artifacts/desktop/${{ matrix.project }}/browser-network.jsonl
-        run: |
-          set -euo pipefail
-          node tests/support/loopback-browser-proxy.cjs > "artifacts/desktop/$PLAYWRIGHT_PROJECT/browser-proxy.log" 2>&1 &
-          proxy_pid=$!
-          trap 'kill "$proxy_pid" 2>/dev/null || true' EXIT
-          for attempt in {1..50}; do
-            if grep -q 'Browser deny proxy ready' "artifacts/desktop/$PLAYWRIGHT_PROJECT/browser-proxy.log"; then break; fi
-            kill -0 "$proxy_pid"
-            sleep 0.1
-          done
-          grep -q 'Browser deny proxy ready' "artifacts/desktop/$PLAYWRIGHT_PROJECT/browser-proxy.log"
-          node node_modules/@playwright/test/cli.js test --config playwright.desktop.config.ts --project "$PLAYWRIGHT_PROJECT"
-      - name: Assert all 135 workflows executed and passed
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          const r = JSON.parse(fs.readFileSync(process.env.PLAYWRIGHT_JSON_OUTPUT_NAME, 'utf8'));
-          if (r.stats.expected !== 135 || r.stats.unexpected || r.stats.flaky || r.stats.skipped || r.errors.length)
-            throw new Error('Incomplete or failed desktop coverage');
-          const network = `artifacts/desktop/${process.env.PLAYWRIGHT_PROJECT}/node-network.jsonl`;
-          if (fs.existsSync(network) && fs.readFileSync(network, 'utf8').trim())
-            throw new Error('Application attempted non-loopback network access');
-          const browserNetwork = `artifacts/desktop/${process.env.PLAYWRIGHT_PROJECT}/browser-network.jsonl`;
-          if (!fs.existsSync(browserNetwork) || fs.readFileSync(browserNetwork, 'utf8').trim())
-            throw new Error('Browser network guard missing or external access attempted');
-          NODE
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: desktop-${{ matrix.project }}-${{ github.sha }}-${{ github.run_id }}
-          path: |
-            artifacts/desktop/${{ matrix.project }}/
-            test-results/
-          if-no-files-found: error
-
-  native-safari:
-    name: Native Safari on macOS
+  synthetic-file-matrix:
+    name: Native Safari synthetic file controls
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 20
     env:
       APP_MODE: local
       AI_PROVIDER: nvidia
       OPENAI_API_KEY: ''
       NVIDIA_API_KEY: ''
       PORT: '5190'
-      LOCAL_DATA_PATH: .local/e2e-run-native-safari
-      SAFARI_OUTPUT: artifacts/native-safari
-      YZT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      LOCAL_DATA_PATH: .local/e2e-run-safari-file-fixture
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SAFARI_OUTPUT: artifacts/safari-file-fixture
+      APPLICATION_BASE_SHA: 7ffee6529b1a463ded6d229b8f45771de22af52f
+      PROBE_SOURCE_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -127,24 +39,46 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: npm ci
-      - run: npm run build
-      - name: Record native platform and Safari identity
+      - name: Verify isolated probe source and parent
         run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PROBE_SOURCE_SHA"
+          test "$(git rev-parse HEAD^)" = "$APPLICATION_BASE_SHA"
+          python3 - <<'PY'
+          import os, subprocess
+          base = os.environ["APPLICATION_BASE_SHA"]
+          paths = set(subprocess.check_output(["git", "diff", "--name-only", base, "HEAD"], text=True).splitlines())
+          expected = {"tools/check-safari-file-fixture.py", ".github/workflows/desktop-browsers.yml"}
+          if paths != expected:
+              raise SystemExit("Probe source must replace only its existing QA workflow and add its diagnostic tool")
+          PY
+      - run: npm ci
+      - name: Build unchanged application with Node egress guard
+        env:
+          NODE_OPTIONS: --require=${{ github.workspace }}/tests/support/loopback-network-guard.cjs
+          YZT_BATCH2_NETWORK_LOG: ${{ github.workspace }}/artifacts/safari-file-fixture/node-network.jsonl
+        run: |
+          set -euo pipefail
           mkdir -p "$SAFARI_OUTPUT"
+          npm run build
+          if [ -s "$YZT_BATCH2_NETWORK_LOG" ]; then
+            echo 'Application build attempted non-loopback network access'
+            exit 1
+          fi
+      - name: Record native platform identity
+        run: |
           {
             sw_vers
             uname -m
             /usr/bin/safaridriver --version
             /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /Applications/Safari.app/Contents/Info.plist
-            printf 'source_sha=%s\n' "$YZT_SOURCE_SHA"
           } > "$SAFARI_OUTPUT/platform.txt"
-      - name: Enable native Safari WebDriver in this ephemeral runner
+      - name: Enable WebDriver only in this ephemeral macOS runner
         run: sudo /usr/bin/safaridriver --enable
-      - name: Verify native Safari core workflows against isolated synthetic application
+      - name: Run bounded native file matrix without fallback or AI
         env:
           NODE_OPTIONS: --require=${{ github.workspace }}/tests/support/loopback-network-guard.cjs
-          YZT_BATCH2_NETWORK_LOG: ${{ github.workspace }}/artifacts/native-safari/node-network.jsonl
+          YZT_BATCH2_NETWORK_LOG: ${{ github.workspace }}/artifacts/safari-file-fixture/node-network.jsonl
         run: |
           set -euo pipefail
           node --import tsx tests/support/e2e-server.ts > "$SAFARI_OUTPUT/application.log" 2>&1 &
@@ -152,21 +86,19 @@ jobs:
           /usr/bin/safaridriver -p 9515 > "$SAFARI_OUTPUT/driver.log" 2>&1 &
           driver_pid=$!
           trap 'kill "$app_pid" "$driver_pid" 2>/dev/null || true' EXIT
-          python3 tools/check-safari-desktop.py --mode core --base-url http://127.0.0.1:5190 --driver-url http://127.0.0.1:9515 --output "$SAFARI_OUTPUT" --source-sha "$YZT_SOURCE_SHA"
+          set +e
+          python3 tools/check-safari-file-fixture.py --base-url http://127.0.0.1:5190 --driver-url http://127.0.0.1:9515 --source-sha "$PROBE_SOURCE_SHA" --output "$SAFARI_OUTPUT"
+          probe_status=$?
+          set -e
           if [ -s "$YZT_BATCH2_NETWORK_LOG" ]; then
             echo 'Application attempted non-loopback network access'
             exit 1
           fi
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          const r = JSON.parse(fs.readFileSync(`${process.env.SAFARI_OUTPUT}/receipt.json`, 'utf8'));
-          if (!r.passed || r.source_sha !== process.env.YZT_SOURCE_SHA ||
-              r.diagnostics?.synthetic_file_readability?.requires_product_api_compatibility_review)
-            throw new Error('Native Safari core or file API compatibility requires review');
-          NODE
+          exit "$probe_status"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-safari-${{ github.sha }}-${{ github.run_id }}
-          path: artifacts/native-safari/
+          name: safari-file-fixture-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/safari-file-fixture/
           if-no-files-found: error
+
