@@ -210,7 +210,7 @@ test("learning index, one record and saved demo deep links retain the selected c
   });
   for (const [section, label] of [
     ["reading", "用途與用法"],
-    ["warnings", "完整警語"],
+    ["warnings", "警語與注意事項"],
     ["quiz", "理解測驗"],
   ]) {
     await readingNav.getByRole("button", { name: new RegExp(label) }).click();

@@ -187,6 +187,14 @@ test("personal education, one-question feedback, saved progress and keyboard ope
     })
     .click();
   await expect(directoryRow).toContainText("已作答 2／2 題 · 已答對 2 題");
+  await expect(
+    directoryRow.getByText("測驗已完成", { exact: true }),
+  ).toBeVisible();
+  const coverage = directoryRow.getByRole("complementary", {
+    name: "白話說明與測驗範圍",
+  });
+  await expect(coverage).toContainText("本次白話整理：0／1 個來源欄位完成");
+  await expect(coverage).toContainText("尚未完整整理：注意事項");
   await directoryRow
     .getByRole("link", { name: "重新複習", exact: true })
     .click();
