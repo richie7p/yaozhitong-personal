@@ -8,6 +8,7 @@ import {
   SOURCE_TEACHING_VERSION,
   sourceInterpretationExplicit,
   sourceQuizInterpretationExplicit,
+  sourceQuizScenarioExplicit,
 } from "../server/source-teaching.js";
 import type { GroundedResult } from "../shared/schema.js";
 
@@ -118,5 +119,74 @@ describe("recorded prohibitions do not acquire new symptom thresholds", () => {
     expect(result.quiz).toEqual([]);
     expect(result.coverage?.fields[0].status).toBe("unavailable");
     expect(calls).toBe(0);
+  });
+});
+
+
+describe("explicit adjacent 此時 source references", () => {
+  const antecedent = "13.自已經建立之療法上停藥時，劑量須逐漸減低，至少三天，一般為二星期以上。";
+  const reference = "此時，病人應避免激烈身體活動。";
+  const question = "依「注意事項」，若治療已建立而要停止，哪一項符合仿單？";
+  const correct = "劑量逐漸減低，至少三天，一般為二星期以上；期間避免激烈身體活動。";
+
+  it("retains the recorded public-source question without changing its evidence", () => {
+    const rows = JSON.parse(readFileSync(new URL("./fixtures/cross-page-source-fields.json", import.meta.url), "utf8"));
+    const row = rows.find((item: {licenseNo: string}) => item.licenseNo === "衛署藥製字第010332號");
+    const quotes = row.chunks.filter((chunk: {page: number}) => chunk.page === 2 || chunk.page === 3).map((chunk: {text: string}) => chunk.text);
+    expect(quotes[0]).toContain(antecedent + "\n" + reference);
+    expect(sourceQuizScenarioExplicit(question, correct, quotes)).toBe(true);
+    expect(sourceActionResultOutdated({ claims: [], quiz: [{ id: "public-adjacent-reference", q: question, options: [correct, "突然停用。"], answer: 0, explain: "對照來源。", citations: quotes.map((quote: string) => ({chunkId: "public-source", quote})) }] } as unknown as GroundedResult)).toBe(false);
+  });
+
+  it("normalizes only the complete established-treatment cessation construction", () => {
+    const quote = antecedent + "\n" + reference;
+    for (const scenario of ["若治療已建立而要停止", "自已經建立之療法上停藥時", "若療法已經建立而將停藥"])
+      expect(sourceQuizScenarioExplicit(scenario + "，應注意什麼？", correct, [quote])).toBe(true);
+    for (const scenario of ["若要停藥", "若治療已建立", "若治療尚未建立而要停止", "若治療已建立而不停止", "若治療已建立且出現頭暈而要停止", "若治療已建立且出現皮疹而要停止", "若其他治療已建立而要停止"])
+      expect(sourceQuizScenarioExplicit(scenario + "，應注意什麼？", correct, [quote])).toBe(false);
+  });
+
+  it("keeps other literal conditions conservative instead of resolving general references", () => {
+    expect(sourceQuizScenarioExplicit("若需停藥，應注意什麼？", "避免激烈身體活動。", ["若需停藥，請先諮詢。\n此時，病人應避免激烈身體活動。"])).toBe(false);
+    expect(sourceQuizScenarioExplicit("若感到頭暈，應注意什麼？", correct, [antecedent + "\n" + reference])).toBe(false);
+    expect(sourceQuizScenarioExplicit(question, "避免激烈身體活動。", [antecedent + "\n" + reference])).toBe(false);
+  });
+
+  it.each([
+    ["missing antecedent", reference],
+    ["unqualified preceding sentence", "本藥可能引起頭暈。" + reference],
+    ["blank paragraph", antecedent + "\n \n" + reference],
+    ["new numbered item", antecedent + "\n14." + reference],
+    ["new bullet", antecedent + "\n•" + reference],
+    ["new heading", antecedent + "\n【其他事項】" + reference],
+    ["unrelated conditional antecedent", "若感到頭暈，請先諮詢。" + reference],
+    ["negated source condition", antecedent.replace("已經建立", "未建立") + reference],
+    ["intervening sentence", antecedent + "每次應記錄日期。" + reference],
+    ["no explicit reference", antecedent + "病人應避免激烈身體活動。"],
+  ])("does not inherit across %s", (_name, quote) => {
+    expect(sourceQuizScenarioExplicit(question, correct, [quote])).toBe(false);
+  });
+
+  it("does not link separate citations or add a symptom threshold to a plain source action", () => {
+    expect(sourceQuizScenarioExplicit(question, correct, [antecedent, reference])).toBe(false);
+    expect(sourceQuizScenarioExplicit("若感到頭暈，應注意什麼？", "避免激烈身體活動。", ["本藥可能引起頭暈。此時，病人應避免激烈身體活動。"])).toBe(false);
+    expect(sourceQuizScenarioExplicit("若感到嗜睡，應注意什麼？", "勿駕車。", [source])).toBe(false);
+    expect(sourceQuizScenarioExplicit("若同其他療法，應注意什麼？", "避免激烈身體活動。", ["如同其他療法，需小心。此時，病人應避免激烈身體活動。"])).toBe(false);
+  });
+
+  it.each(["若出現頭暈，", "除非醫師另有指示，"])("does not drop an additional source disposition condition: %s", (extra) => {
+    const quote = antecedent.replace("，劑量", "，" + extra + "劑量") + "\n" + reference;
+    expect(sourceQuizScenarioExplicit(question, correct, [quote])).toBe(false);
+  });
+
+  it.each(["此時", "在此時", "若此時", "同時", "目前時", "在那一個時間時", "若這個時候", "若那天", "若隔天"])("does not use a deictic preceding sentence as an antecedent: %s", (time) => {
+    expect(sourceQuizScenarioExplicit(time + "，應注意什麼？", "避免激烈身體活動。", [time + "，病人應休息。此時，病人應避免激烈身體活動。"])).toBe(false);
+  });
+
+  it("still rejects a new gate when the same quote also gives an unconditional command", () => {
+    expect(sourceQuizScenarioExplicit(question, correct, [antecedent + reference + "病人應避免激烈身體活動。"])).toBe(false);
+    expect(sourceQuizScenarioExplicit(question, correct, [antecedent + reference + "患者應避免激烈身體活動。"])).toBe(false);
+    expect(sourceQuizScenarioExplicit(question, correct, [antecedent + reference + "用藥期間，患者應避免激烈身體活動。"])).toBe(false);
+    expect(sourceQuizScenarioExplicit(question, correct, [antecedent + reference + "下列患者，應避免激烈身體活動。"])).toBe(false);
   });
 });
