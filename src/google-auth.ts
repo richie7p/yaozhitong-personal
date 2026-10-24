@@ -308,6 +308,20 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
   credentialTransitions.add(auth);
   activeCredentialAttempts.set(auth, attempt);
   configureFirebaseTokenProvider(auth);
+  const page = typeof window === "undefined" ? undefined : window;
+  const pageHide = () => {
+    // Navigation can reject the old page's pending profile fetch before its
+    // context is destroyed. Keep that cleanup from erasing the quarantine
+    // needed by the next page, and reject any credential that arrives later.
+    invalidateReturn(
+      auth,
+      attempt,
+      Object.assign(new Error("登入狀態已變更，請重新登入。"), {
+        code: "identity_changed",
+      }),
+    );
+  };
+  page?.addEventListener("pagehide", pageHide, { once: true });
   const completion = withinDeadline(auth, attempt, async (check) => {
     check();
     if (!googleIdToken)
@@ -333,6 +347,7 @@ export function signInGoogleCredential(auth: Auth, googleIdToken: string) {
     current();
     return next;
   }).finally(() => {
+    page?.removeEventListener("pagehide", pageHide);
     credentialTransitions.delete(auth);
     credentialAttempts.delete(auth);
     activeCredentialAttempts.delete(auth);

@@ -65,7 +65,20 @@ jobs:
         env:
           NODE_OPTIONS: --require=${{ github.workspace }}/tests/support/loopback-network-guard.cjs
           YZT_BATCH2_NETWORK_LOG: ${{ github.workspace }}/artifacts/desktop/${{ matrix.project }}/node-network.jsonl
-        run: node node_modules/@playwright/test/cli.js test --config playwright.desktop.config.ts --project "$PLAYWRIGHT_PROJECT"
+          YZT_BROWSER_PROXY_URL: http://127.0.0.1:5299
+          YZT_BROWSER_PROXY_LOG: ${{ github.workspace }}/artifacts/desktop/${{ matrix.project }}/browser-network.jsonl
+        run: |
+          set -euo pipefail
+          node tests/support/loopback-browser-proxy.cjs > "artifacts/desktop/$PLAYWRIGHT_PROJECT/browser-proxy.log" 2>&1 &
+          proxy_pid=$!
+          trap 'kill "$proxy_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if grep -q 'Browser deny proxy ready' "artifacts/desktop/$PLAYWRIGHT_PROJECT/browser-proxy.log"; then break; fi
+            kill -0 "$proxy_pid"
+            sleep 0.1
+          done
+          grep -q 'Browser deny proxy ready' "artifacts/desktop/$PLAYWRIGHT_PROJECT/browser-proxy.log"
+          node node_modules/@playwright/test/cli.js test --config playwright.desktop.config.ts --project "$PLAYWRIGHT_PROJECT"
       - name: Assert all 135 workflows executed and passed
         run: |
           node --input-type=module <<'NODE'
@@ -76,6 +89,9 @@ jobs:
           const network = `artifacts/desktop/${process.env.PLAYWRIGHT_PROJECT}/node-network.jsonl`;
           if (fs.existsSync(network) && fs.readFileSync(network, 'utf8').trim())
             throw new Error('Application attempted non-loopback network access');
+          const browserNetwork = `artifacts/desktop/${process.env.PLAYWRIGHT_PROJECT}/browser-network.jsonl`;
+          if (!fs.existsSync(browserNetwork) || fs.readFileSync(browserNetwork, 'utf8').trim())
+            throw new Error('Browser network guard missing or external access attempted');
           NODE
       - uses: actions/upload-artifact@v4
         if: always()
@@ -125,7 +141,7 @@ jobs:
           } > "$SAFARI_OUTPUT/platform.txt"
       - name: Enable native Safari WebDriver in this ephemeral runner
         run: sudo /usr/bin/safaridriver --enable
-      - name: Probe native Safari against isolated synthetic application
+      - name: Verify native Safari core workflows against isolated synthetic application
         env:
           NODE_OPTIONS: --require=${{ github.workspace }}/tests/support/loopback-network-guard.cjs
           YZT_BATCH2_NETWORK_LOG: ${{ github.workspace }}/artifacts/native-safari/node-network.jsonl
@@ -136,7 +152,11 @@ jobs:
           /usr/bin/safaridriver -p 9515 > "$SAFARI_OUTPUT/driver.log" 2>&1 &
           driver_pid=$!
           trap 'kill "$app_pid" "$driver_pid" 2>/dev/null || true' EXIT
-          python3 tools/check-safari-desktop.py --mode probe --base-url http://127.0.0.1:5190 --driver-url http://127.0.0.1:9515 --output "$SAFARI_OUTPUT" --source-sha "$YZT_SOURCE_SHA"
+          python3 tools/check-safari-desktop.py --mode core --base-url http://127.0.0.1:5190 --driver-url http://127.0.0.1:9515 --output "$SAFARI_OUTPUT" --source-sha "$YZT_SOURCE_SHA"
+          if [ -s "$YZT_BATCH2_NETWORK_LOG" ]; then
+            echo 'Application attempted non-loopback network access'
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
