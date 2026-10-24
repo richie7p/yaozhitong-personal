@@ -1653,3 +1653,22 @@ details summary {
     grid-template-columns: 1fr;
   }
 }
+
+.quiz-shared-context {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #cbd7bd;
+  border-radius: 12px;
+  background: #f4f7ef;
+}
+.quiz-shared-context h4 { margin: 0 0 8px; }
+.quiz-shared-text,
+.quiz .quiz-option-text,
+.question-original p,
+.question-original li {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.quiz .quiz-option-text { min-width: 0; }
+.question-original { margin-top: 14px; }
+.question-original li { margin: 10px 0; line-height: 1.7; }

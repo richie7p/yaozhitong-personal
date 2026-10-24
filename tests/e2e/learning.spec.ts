@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { learningProgress } from "../../shared/learning";
+import type { GroundedResult } from "../../shared/schema";
 
 test("personal education, one-question feedback, saved progress and keyboard operation", async ({
   page,
@@ -380,4 +383,75 @@ test("literal source mentions explain the limited match while the saved quiz rem
     path: "test-results/source-mention-" + info.project.name + ".png",
     fullPage: true,
   });
+});
+
+
+test("an existing saved long source question keeps complete item choices, original text and saved answer indexes", async ({ page }, info) => {
+  const fixture = JSON.parse(readFileSync(new URL("../fixtures/quiz-presentation-saved-source.json", import.meta.url), "utf8"));
+  const questionId = "synthetic-existing-long-question";
+  const recordId = "synthetic-existing-long-record";
+  const citation = { chunkId: "public-wording-synthetic-binding", quote: fixture.options[1] };
+  const result: GroundedResult = {
+    status: "supported", claims: [{ text: fixture.options[1], kind: "source_exact_safety", category: "warning", citations: [citation] }],
+    chunks: [{ id: citation.chunkId, licenseNo: "SYNTHETIC-PRESENTATION", version: "public-text-fixture", page: 2, start: 0, text: citation.quote }],
+    quiz: [{ ...fixture, id: questionId, answer: 1, explain: fixture.options[1], citations: [citation] }],
+    followups: [], rejectedCount: 0, sourceVersions: {}, verification: "model_assisted",
+  };
+  const originalResult = JSON.stringify(result);
+  const record = { id: recordId, ownerId: "synthetic-presentation-owner", medicationIds: [], medicationRevisions: [], profileVersion: 0, result, answers: { [questionId]: 0 }, createdAt: "2026-10-24T00:00:00Z" };
+  const origin = new URL(info.project.use.baseURL as string).origin;
+  const unexpected: string[] = [], writes: unknown[] = [];
+  await page.addInitScript(() => sessionStorage.setItem("yzt-local-token", "synthetic-presentation-only"));
+  await page.route("**/*", async route => {
+    const request = route.request(), url = new URL(request.url());
+    if (url.origin !== origin) { unexpected.push(request.method() + " " + url.origin); await route.abort(); return; }
+    if (!url.pathname.startsWith("/api/v1/")) { await route.continue(); return; }
+    if (request.method() === "POST" && url.pathname === "/api/v1/learning/" + recordId + "/answers") {
+      const body = request.postDataJSON(); writes.push(body);
+      record.answers = { ...record.answers, ...body.answers };
+      await route.fulfill({ json: { answers: record.answers, progress: learningProgress(result.quiz, record.answers) } }); return;
+    }
+    const reads: Record<string, unknown> = {
+      "/api/v1/config": { mode: "local", ai: false },
+      "/api/v1/me": { account: { id: record.ownerId, displayName: "合成閱讀測試", eligible: true, admin: false }, profile: {} },
+      "/api/v1/medications": { items: [] }, "/api/v1/learning": { items: [record] }, "/api/v1/chat": { items: [] }, "/api/v1/jobs": { items: [] },
+    };
+    if (request.method() === "GET" && url.pathname in reads) { await route.fulfill({ json: reads[url.pathname] }); return; }
+    unexpected.push(request.method() + " " + url.pathname); await route.abort();
+  });
+  const url = "/#learning?record=" + recordId + "&section=quiz";
+  await page.goto(url);
+  const quiz = page.locator(".quiz"), choices = quiz.locator(".quiz-option-text");
+  await expect(quiz.locator(".question-text")).toHaveText("依仿單「注意事項」欄，以下哪項與原文相符？");
+  const topic = fixture.q.match(/關於「(.+)」，以下/u)[1];
+  await expect(quiz.locator(".quiz-shared-context")).toContainText(topic);
+  await expect(quiz.locator(".quiz-shared-context")).toContainText("六、本藥不得與含酒精飲料併服。");
+  for (let i = 0; i < 2; i++) {
+    await expect(choices.nth(i)).toContainText("五、服藥後若有不適情況發生,");
+    await expect(choices.nth(i)).not.toContainText("四、");
+    await expect(quiz.getByRole("radio").nth(i)).toHaveAccessibleName(/五、服藥後若有不適情況發生/);
+  }
+  await expect(quiz.getByRole("radio").nth(0)).toBeChecked();
+  await expect(quiz.locator(".quiz-feedback blockquote")).toHaveText(new RegExp("為防止兒童誤食"));
+  await quiz.getByText("查看完整題目與選項", { exact: true }).click();
+  expect(await quiz.locator(".question-original p").textContent()).toBe(fixture.q);
+  for (let i = 0; i < 2; i++) expect(await quiz.locator(".question-original li").nth(i).textContent()).toBe(fixture.options[i]);
+  await quiz.getByText("查看完整題目與選項", { exact: true }).click();
+  await expect(quiz.getByRole("radio").nth(0)).toBeChecked();
+  await quiz.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath("existing-long-question-viewport.png"), fullPage: false });
+  await quiz.screenshot({ path: info.outputPath("existing-long-question.png") });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await quiz.getByRole("radio").nth(1).check();
+  await quiz.getByRole("button", { name: "檢查答案", exact: true }).click();
+  await expect(quiz.getByRole("group", { name: "理解測驗完成", exact: true })).toBeVisible();
+  expect(writes).toEqual([{ answers: { [questionId]: 1 } }]);
+  expect(JSON.stringify(result)).toBe(originalResult);
+  await page.reload();
+  await expect(quiz.getByRole("group", { name: "理解測驗完成", exact: true })).toBeVisible();
+  await quiz.getByRole("button", { name: "重新複習", exact: true }).click();
+  await expect(quiz.getByRole("radio").nth(1)).toBeChecked();
+  await expect(quiz.locator(".quiz-progress")).toContainText("已作答 1／1 題 · 已答對 1 題");
+  expect(writes).toHaveLength(1);
+  expect(unexpected).toEqual([]);
 });

@@ -17,6 +17,7 @@ import { Frequency } from "./medication-presentation";
 import { SourceReviewNotice } from "./SourceReviewNotice";
 import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { SourceReadingNotice } from "./SourceReadingNotice";
+import { sharedQuizPresentation } from "./quiz-presentation";
 
 export const learningStateLabels: Record<LearningProgress["status"], string> = {
   not_started: "未開始",
@@ -143,6 +144,7 @@ function UnderstandingQuiz({
   ) => void;
 }) {
   const radioName = useId();
+  const sharedContextId = useId();
   const [answers, setAnswers] = useState(() =>
     validAnswers(result.quiz, initialAnswers),
   );
@@ -178,6 +180,7 @@ function UnderstandingQuiz({
   }, [progress.passed, reviewing]);
   const q = result.quiz[index];
   if (!q) return null;
+  const presentation = sharedQuizPresentation(q);
   const selected = selection ?? answers[q.id];
   const grade = progress.results[index];
   const move = (next: number) => {
@@ -250,17 +253,30 @@ function UnderstandingQuiz({
         </div>
       ) : (
         <>
-          <fieldset disabled={saving} className="question-fieldset">
+          <fieldset disabled={saving} className="question-fieldset" aria-describedby={presentation ? sharedContextId : undefined}>
             <legend ref={questionRef} tabIndex={-1}>
               <span className="question-position">
                 第 {index + 1}／{progress.total} 題：
               </span>
-              <span className="question-text">{q.q}</span>
+              <span className="question-text">{presentation?.question || q.q}</span>
             </legend>
             {q.learningObjective === "warning" && (
               <p className="muted">
                 警語理解：{q.sourceSection}（抽查一個重點）
               </p>
+            )}
+            {presentation && (
+              <div className="quiz-shared-context" id={sharedContextId}>
+                <h4>先看共同內容</h4>
+                <p>兩個選項都包含以下內容；請再比較下方的完整說法。</p>
+                <div className="quiz-shared-text">{presentation.contextBefore}</div>
+                <p className="fine">最後提到的情況，會在下方選項中完整列出。</p>
+                {presentation.contextAfter && (
+                  <div className="quiz-shared-text">
+                    <strong>兩個選項也都包含：</strong>{presentation.contextAfter}
+                  </div>
+                )}
+              </div>
             )}
             {q.options.map((option, i) => (
               <label className="choice" key={i}>
@@ -271,9 +287,16 @@ function UnderstandingQuiz({
                   checked={selected === i}
                   onChange={() => setSelection(i)}
                 />
-                {option}
+                <span className="quiz-option-text">{presentation?.options[i] || option}</span>
               </label>
             ))}
+            {presentation && (
+              <details className="question-original">
+                <summary>查看完整題目與選項</summary>
+                <p>{q.q}</p>
+                <ol>{q.options.map((option, i) => <li key={i}>{option}</li>)}</ol>
+              </details>
+            )}
           </fieldset>
           {grade.state !== "unanswered" && (
             <div className="quiz-feedback">
