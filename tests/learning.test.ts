@@ -809,6 +809,7 @@ describe("question scope and the three acceptance counterexamples", () => {
     expect(r.quiz.filter((q) => q.id.startsWith("q"))).toEqual([]);
     expect(r.quiz.some((q) => q.q.includes("對於氣喘病人"))).toBe(false);
     expectReadCompatibleWithoutRejectedFallback(r);
+    const norm = (value: string) => value.normalize("NFKC").replace(/\s/gu, "");
     expect(r.claims.some((claim) =>
       norm(claim.text).includes(norm("所引起之咳嗽")) &&
       claim.citations.some((citation) => norm(citation.quote) === norm(warningQuote)),
