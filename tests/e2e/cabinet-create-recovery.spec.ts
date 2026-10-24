@@ -93,7 +93,7 @@ test("cabinet lost successful response preserves the form and retries one stored
     else await route.fulfill({ response });
   });
   await page.getByRole("button", { name: "儲存", exact: true }).click();
-  await expect(page.getByText(/無法連線到服務/)).toBeVisible();
+  await expect(page.getByText(/目前無法連線/)).toBeVisible();
   await expect(
     page.getByRole("button", { name: "儲存", exact: true }),
   ).toBeEnabled();

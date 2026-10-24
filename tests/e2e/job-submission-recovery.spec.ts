@@ -74,7 +74,7 @@ test("lost recognition creation response survives reload without a second job, A
   await page.locator('input[type="file"]').setInputFiles(photo);
   await page.getByRole("button", { name: "開始辨識", exact: true }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "無法連線到服務" }),
+    page.getByRole("alert").filter({ hasText: "目前無法連線" }),
   ).toBeVisible();
 
   await page.reload();
@@ -164,7 +164,7 @@ test("interrupted polling resumes the known job after reload and never posts a d
   await page.locator("textarea").fill(question);
   await page.getByRole("button", { name: "送出", exact: true }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "無法連線到服務" }),
+    page.getByRole("alert").filter({ hasText: "目前無法連線" }),
   ).toBeVisible();
   expect(jobId).toBeTruthy();
   expect(dropPoll).toBe(0);
