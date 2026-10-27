@@ -238,8 +238,13 @@ function sourceHeadings(text: string) {
     "gu",
   );
   let activeRegularSection: string | undefined;
-  const regular = [...text.matchAll(expression)]
+  const matches = [...text.matchAll(expression)];
+  const nonReferences = new Set(withoutParentheticalReferences(text,
+    matches.map((match) => ({index:match.index!,section:""})),
+  ).map((mark) => mark.index));
+  const regular = matches
     .filter((match) => {
+      if (!nonReferences.has(match.index!)) return false;
       if (numberedDocument && match[3]) return false;
       const prefix = text.slice(0, match.index!);
       const linePrefix = prefix.split(/\r?\n/u).at(-1)!;

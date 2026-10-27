@@ -74,25 +74,42 @@ function literalUnavailable(text: string, extended = false) {
     extended ? "iu" : "u",
   ).test(text);
 }
-function parentheticalReference(text: string, index: number) {
-  // A balanced, explicit cross-reference is part of its containing field, not
-  // another heading. Keep every original character; do not repair unmatched
-  // parentheses or treat an ordinary bracketed heading as a reference.
-  const prefix = text
-    .slice(0, index)
-    .match(/([（(])\s*(?:請)?(?:參見|參閱|參考|詳見)\s*$/u);
+const referenceLabel = "【[^【】\\r\\n]{1,40}】";
+const referenceJoin = "(?:以及|及|和|與|或|、|[，,]\\s*(?:以及)?)";
+const referenceDirective = "(?:請)?(?:參見|參閱|參考|詳見)";
+const referenceList = `${referenceLabel}(?:\\s*${referenceJoin}\\s*${referenceLabel})*`;
+const referencePrefix = new RegExp(`${referenceDirective}\\s*(?:${referenceLabel}\\s*${referenceJoin}\\s*)*$`, "u");
+const referenceBody = new RegExp(`^${referenceDirective}\\s*${referenceList}`, "u");
+const referenceContainer = new RegExp(`^([（(])\\s*${referenceDirective}\\s*${referenceList}\\s*([)）])`, "u");
+function explicitReference(text: string, index: number) {
+  // Only explicit reference wording establishes scope. Preserve each original
+  // character, including compound references, and never repair parentheses.
+  const prefix = text.slice(0, index).match(referencePrefix);
   if (!prefix) return false;
-  const suffix = text.slice(index).match(/^【[^【】\r\n]{1,40}】\s*([)）])/u);
-  return (
-    !!suffix &&
-    ((prefix[1] === "(" && suffix[1] === ")") ||
-      (prefix[1] === "（" && suffix[1] === "）"))
-  );
+  const start = prefix.index!;
+  const before = text.slice(0, start);
+  const opening = before.match(/([（(])\s*$/u);
+  if (opening) {
+    const container = text.slice(opening.index!).match(referenceContainer);
+    return !!container &&
+      ((container[1] === "(" && container[2] === ")") ||
+        (container[1] === "（" && container[2] === "）"));
+  }
+  // An unrecognized/unclosed containing parenthesis cannot become an inline
+  // reference merely by dropping its opening delimiter.
+  const line = before.split(/[\r\n]/u).at(-1) || "";
+  if (Math.max(line.lastIndexOf("("), line.lastIndexOf("（")) >
+      Math.max(line.lastIndexOf(")"), line.lastIndexOf("）"))) return false;
+  // Unlike a balanced container, a bare reference cannot establish scope
+  // across a physical line/page boundary over the next genuine heading.
+  if (/[\r\n]/u.test(text.slice(start, index))) return false;
+  const body = text.slice(start).split(/[\r\n]/u)[0].match(referenceBody);
+  return !!body && index < start + body[0].length;
 }
 export function withoutParentheticalReferences<
   T extends { index: number; section: string },
 >(text: string, marks: T[]): T[] {
-  return marks.filter((mark) => !parentheticalReference(text, mark.index));
+  return marks.filter((mark) => !explicitReference(text, mark.index));
 }
 function nestedStructuralHeading(quote: string, body: string, section: string) {
   // The official numbered warning container can contain its synonymous child
