@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-21",
+  "timezone": "Asia/Taipei",
+  "scope": "Demonstration UI bug fixes on the existing v13 server and saved sources",
+  "workflowStatus": "passed",
+  "independentHumanContentReview": "pending",
+  "baselineCommit": "1ac3dc3d5727bddafa04ec22ab9c890bbe177b44",
+  "fixes": [
+    "Explain missing, unconfirmed and unselected medications beside the chat input",
+    "Keep unsent questions, medication selection and in-flight chat state across in-app navigation",
+    "Preserve retry input and distinguish a successful send from a failed history refresh",
+    "Reset memory-only chat state across account changes and reject old asynchronous callbacks",
+    "Ignore stale data responses after a newer request, route change or unmount",
+    "Restore saved quiz answers together with progress when returning from the learning directory",
+    "Cancel delayed page-title focus when the user has already focused or interacted",
+    "Allow the local launcher to use a validated release while research changes remain separate"
+  ],
+  "checks": {
+    "buildAndTypecheck": "passed",
+    "unit": { "passed": 684, "total": 684, "files": 43 },
+    "browser": { "passed": 88, "total": 88, "viewports": ["desktop", "mobile-size"], "ai": "mocked" },
+    "recovery": { "passed": 10, "total": 10, "ai": "mocked", "network": "loopback", "includes": ["worker termination", "timeout", "retry", "saved data"] },
+    "realAiBrowserFlow": {
+      "passedSteps": 18,
+      "totalSteps": 18,
+      "jobs": 4,
+      "recognitions": 1,
+      "recognitionImage": "synthetic two-medication bag",
+      "leafletBundles": 2,
+      "chatJobs": 1,
+      "providerRequests": 7,
+      "http200": 7,
+      "retries": 0,
+      "reportedInputTokens": 13400,
+      "reportedOutputTokens": 1066,
+      "reportedTotalTokens": 14466,
+      "viewports": ["desktop", "375px"],
+      "includes": ["recognize and confirm", "original citations", "wrong and corrected quiz answers", "directory return", "refresh and relogin", "chat history"]
+    },
+    "cloudBrowserChat": {
+      "status": "passed",
+      "account": "synthetic ordinary member",
+      "newChatRecords": 1,
+      "attempts": 1,
+      "latencyMs": 5190,
+      "providerRequests": 2,
+      "http200": 2,
+      "reportedTotalTokens": 3781,
+      "citationCount": 1,
+      "includes": ["question and selection retained across navigation", "send once and navigate away", "answer after return", "open original quote", "refresh and relogin history"],
+      "existingMedicationsPreserved": 5,
+      "existingLearningRecordsPreserved": 5,
+      "preservationCheck": "Existing medication and learning record hashes unchanged"
+    },
+    "localServiceRestart": {
+      "status": "passed",
+      "originalDataUnchanged": true,
+      "savedLearningRecords": 8,
+      "savedQuizQuestions": 25,
+      "newAiCalls": 0,
+      "osReboot": false
+    }
+  },
+  "model": {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "reasoningEffort": "none",
+    "groundingVersion": "grounded-v13-complete-safety-literal-recognition"
+  },
+  "cloud": {
+    "url": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+    "region": "asia-east1",
+    "imageTag": "20261021-demo-ui-fixes",
+    "imageDigest": "sha256:c6e2885fa703bbb72887a38c582e9d45a1786555f05684db4911a4e5f00f2f33",
+    "buildId": "d16d1dba-ce2a-48e8-bfc1-f2e8fb9670d9",
+    "buildStatus": "SUCCESS",
+    "services": [
+      { "name": "yzt-test-web", "revision": "yzt-test-web-00010-chd", "trafficPercent": 100 },
+      { "name": "yzt-test-worker", "revision": "yzt-test-worker-00010-j75", "trafficPercent": 100 }
+    ],
+    "environmentUnchanged": true,
+    "scalingUnchanged": true,
+    "secretsUnchanged": true
+  },
+  "priorFailures": [
+    "An earlier working-tree browser run passed 81/82; mobile keyboard notification navigation exposed delayed page-title autofocus. Fixed and covered by the final 88/88 release run.",
+    "Two recovery harness launches failed before product startup because the harness expected a relative fixture database. The private harness path was corrected before the final 10/10 run."
+  ],
+  "limits": [
+    "Cloud authentication remains memory-only: reload requires signing back into the same account; saved records persist.",
+    "Unsent questions are memory-only and clear on reload or logout.",
+    "This run used a synthetic recognition image. Existing public-photo evaluation and unfinished v14 research were not deployed.",
+    "Cloud currently publishes one leaflet source; the local saved showcase has eight. Unavailable sources return insufficient data.",
+    "Six claims and five questions were separately checked against frozen sources with AI assistance. Independent human content review remains pending.",
+    "No new Android device camera or push trial was performed in this stage; earlier user-confirmed results remain historical evidence.",
+    "No operating-system reboot or production public launch was performed."
+  ],
+  "evidencePolicy": "Raw reports, source hashes, synthetic credentials, traces and screenshots remain in ignored local acceptance directories; this summary contains no credentials or individual health records."
+}

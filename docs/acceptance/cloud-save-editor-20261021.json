@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-21",
+  "timezone": "Asia/Taipei",
+  "workflowStatus": "passed",
+  "baselineCommit": "934c3caf86d8dccac920cbc42a3f65037d77c2bd",
+  "scope": "Real cloud confirmation/save acceptance and medication editor visibility fix",
+  "account": "Existing independent synthetic ordinary member; no owner account data changed",
+  "realCloudWorkflow": {
+    "revision": "yzt-test-web-00010-chd",
+    "image": "synthetic two-medication bag",
+    "newMedications": 2,
+    "enzyme": { "strength": "not printed; left blank", "dose": "1 capsule", "frequency": "TID", "route": "oral", "durationDays": 7, "prn": false, "confirmed": true },
+    "coughTablet": { "strength": "200mg", "dose": "1 tablet", "frequency": "PRN", "route": "oral", "durationDays": null, "prn": true, "confirmed": true, "fixedScheduleControl": false },
+    "partialSaveRetainsRemainingRow": true,
+    "savedFieldsReadBack": true,
+    "leafletOriginalQuotesOpened": true,
+    "quiz": { "total": 4, "correct": 4, "wrongAnswerFeedback": true, "wrongAnswerRetainedAcrossNavigation": true, "correctedAnswerSaved": true, "directoryAndReloginPreservedProgress": true },
+    "chat": { "status": "succeeded", "newRecords": 1, "sourceQuoteOpened": true, "reloginPreservedHistory": true },
+    "jobs": [
+      { "kind": "recognition", "status": "succeeded", "attempts": 1, "latencyMs": 4867, "reportedTokens": 2726 },
+      { "kind": "bundle", "status": "succeeded", "attempts": 1, "latencyMs": 8616, "reportedTokens": 4482 },
+      { "kind": "chat", "status": "succeeded", "attempts": 1, "latencyMs": 6351, "reportedTokens": 3747 }
+    ],
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "providerRequests": 5,
+    "http200": 5,
+    "retries": 0,
+    "reportedTotalTokens": 10955,
+    "existingRecordsPreserved": { "medications": 5, "learning": 5, "chat": 1, "method": "Per-record hashes compared before and after" }
+  },
+  "editorFix": {
+    "problem": "On a long medication list, opening the editor appended it below the visible screen without moving focus or scrolling",
+    "change": "Focus and reveal the editor heading when opening, switching or reopening; preserve unsaved values for the same medication",
+    "oldCodeRegressionReproduced": true,
+    "targetedMockTests": { "passed": 7, "total": 7 },
+    "releaseUnitTests": { "passed": 684, "total": 684 },
+    "releaseBrowserTests": { "passed": 90, "total": 90 },
+    "buildAndTypecheck": "passed",
+    "postDeploymentBrowserFocusAndVisibleForm": "passed"
+  },
+  "cloud": {
+    "url": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+    "imageTag": "20261021-editor-focus",
+    "imageDigest": "sha256:d86eb5a06bcdd32f3fed4a0998f7359e6693d4f6d728043f93b95ff417eea2cc",
+    "buildId": "c8c07317-6128-4e7f-875a-1dcf879b08df",
+    "buildStatus": "SUCCESS",
+    "services": [
+      { "name": "yzt-test-web", "revision": "yzt-test-web-00011-9gc", "trafficPercent": 100 },
+      { "name": "yzt-test-worker", "revision": "yzt-test-worker-00011-6sd", "trafficPercent": 100 }
+    ],
+    "environmentUnchanged": true,
+    "scalingUnchanged": true,
+    "secretsUnchanged": true
+  },
+  "localService": { "url": "http://127.0.0.1:8085", "updated": true, "originalEightSourceDataUnchanged": true, "newAiCalls": 0, "osReboot": false },
+  "scopeNotes": [
+    "The three real AI jobs ran before the editor-only deployment. The deployed editor visibility and saved data were then checked without generating more AI content.",
+    "The released server remains grounded-v13-complete-safety-literal-recognition. Unfinished v14 research changes remain separate.",
+    "This stage used a synthetic photo and browser mobile layout; it adds no new physical Android camera or push evidence.",
+    "Cloud authentication remains memory-only. Reload requires logging back into the same account; saved records persist.",
+    "Cloud publishes one leaflet source and the local saved showcase has eight; independent human content evaluation remains separate."
+  ],
+  "evidencePolicy": "Raw test accounts, traces, snapshots and screenshots remain in ignored local acceptance directories. No credentials or individual health data are published."
+}

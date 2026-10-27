@@ -1,0 +1,3 @@
+# Independent, local PDF extraction for the TFDA ingestion tools and offline tests.
+pypdf==6.10.0
+pdfplumber==0.11.9

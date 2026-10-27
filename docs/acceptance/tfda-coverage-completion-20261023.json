@@ -1,0 +1,137 @@
+{
+  "schema": "tfda-coverage-completion-20261023/v1",
+  "at": "2026-10-23T12:16:30.320913+00:00",
+  "status": "source_publication_exact_readback_and_full_reader_replay_complete",
+  "freshSnapshot": {
+    "date": "2026-10-23",
+    "activeLicenses": 21245,
+    "withOfficialSourceLinks": 18188,
+    "withoutOfficialSourceLinks": 3057,
+    "publishedAfter": 3661,
+    "withLinksUnpublishedAfter": 14527,
+    "previousSnapshotDate": "2026-10-22",
+    "previousActiveLicenses": 21247,
+    "previousWithoutLinks": 3059,
+    "sourceBearingLicenseSetsAndAllOrderedUrlsUnchanged": true,
+    "allPreviouslyPublishedLicensesStillActive": true,
+    "reconciliationSha256": "897fe3d98806554be333cccbdfa2efd23318e5b88c8991515ea71ddcad5db88c"
+  },
+  "sourcePublication": {
+    "assessed": 69,
+    "published": 68,
+    "held": 1,
+    "before": 3593,
+    "after": 3661,
+    "knownSourceDocumentsAfter": 3664,
+    "rawObjectsAfter": 3673,
+    "batches": [
+      50,
+      18
+    ],
+    "firestoreCreates": 204,
+    "rawObjectCreates": 68,
+    "replacements": 0,
+    "deleted": 0,
+    "heldSources": [
+      {
+        "licenseNo": "衛署藥輸字第024979號",
+        "rawSha256": "338c254c5c392b011d95e7ad061be053a0f5114dbfc5f2fc7f78ed852e3b5389",
+        "reason": "HTTP 200 HTML did not contain current product identity or leaflet body; script challenge was not executed."
+      }
+    ],
+    "offlineVerification": {
+      "rawDomV4": 61,
+      "rawRectangularOutlineV2": 7,
+      "allSourceBytesAndCandidateHashesVerified": true,
+      "sha256": "34f58e624b0bce41d1980b217db78d74006f7c341f3f43ea172207f55c012c38"
+    },
+    "manifests": [
+      {
+        "sha256": "80ef654861cd8fb84a7a43b4ac379e2624d196eecac876b6f65a9e0dff7cdec2",
+        "items": 50
+      },
+      {
+        "sha256": "96c653775219ecb57eabbf6911481028ef4e4fce05d2e5a5a5af5a7c2766e90d",
+        "items": 18
+      }
+    ],
+    "baselineSha256": "780c85278448514e2e653f63bc0db52828c07c9578d66a4043cb2d0b60a639eb",
+    "inspectReceiptSha256": "2129a33de1f675a973993bb42bd332de584b5a8a6c9be4de0b029eac18b3923d",
+    "applyReceiptSha256": "9643dce99b654ce99eeac399c51be4d828eb9616e248fffb698a7fa711d9323f",
+    "readbackSha256": "9fe8e63538a470d5ebd93f4f773feeae535a011acb788cd191398b30c72b289c"
+  },
+  "preservation": {
+    "oldPublishedPointersExact": 3593,
+    "oldKnownSourceDocumentsFullMetadataExact": 3596,
+    "oldRawObjectGenerationAndFullMetadataExact": 3605,
+    "newRawObjectFullBytesExact": 68,
+    "newCanonicalTextChunksIdentityAndIndependentProofExact": 68,
+    "unrelatedPostSnapshotObjects": 0,
+    "publicConfigIncluding20And1000Exact": true
+  },
+  "preparationChange": {
+    "defaultHtmlMode": "auto",
+    "rule": "Prefer existing complete simple-DOM proof; otherwise independently reparse using existing rectangular-outline grammar. Each format keeps its own complete validation and marker. Unsupported content stays held.",
+    "sameBatchSimpleMode": 61,
+    "sameBatchRectangularMode": 8,
+    "rectangularEligible": 7,
+    "sourceTextChanged": false,
+    "identityOrProofGatesRelaxed": false,
+    "relatedVitestTestsPassed": 225,
+    "typecheckPassed": true
+  },
+  "new68ReaderPreliminary": {
+    "scope": "offline deterministic literal source reading; not AI explanation accuracy",
+    "accepted": 52,
+    "held": 16,
+    "allCitationsLiteral": true,
+    "aiSha256": "04ca1247d369d3cb8b9f0fb4342c4612fa8a7e0f249806a7456bede80b9a8edf",
+    "receiptSha256": "5aab2759ad4b7bcd04e22be3e08932fb3b529a4c5038c300a0eb1c82f90b33e0",
+    "finalVersion": false
+  },
+  "fullReaderFinal": {
+    "sources": 3661,
+    "counts": {
+      "existing": 3593,
+      "new": 68,
+      "oldAccepted": 2847,
+      "oldHeld": 746,
+      "existingAccepted": 2847,
+      "existingHeld": 746,
+      "newAccepted": 52,
+      "newHeld": 16,
+      "recovered": 0,
+      "regressions": 0
+    },
+    "accepted": 2899,
+    "held": 762,
+    "allCitationsLiteral": true,
+    "codePins": {
+      "server/ai.ts": "2133473857c33ca12b1d4cb661268366e6af5806afdea883860c759157e81937",
+      "server/source-field-spans.ts": "18de1d88f9c183bcd8f0618097f71adf16fd6eb3eb789d44a6a0d2c0c3fbacd1",
+      "server/source-teaching.ts": "b293d775b3f8c0f3536f7d54f8f551307c975448e72c8026489b52c4b4056f5e",
+      "server/teaching-completion.ts": "2e3b69cdc389a3e2e112500776a16219f2673212a8b88964e621339332c9057e",
+      "server/source-boundary.ts": "00696c59899f25061655e80f072535adde8dba43e62d6b6d9bf1fbcbd9ab8dd1",
+      "server/safety-learning.ts": "5b7768c78045240b5b80f5805c05f24deb95aa37e16e08b8b2edf220e1be1376",
+      "shared/source.ts": "bad43d5716bb1a24df0f620770dd6c3b2cf4cb479654b8f2ff43a88a0b7cfa63",
+      "shared/learning.ts": "04e537c908a3e51e8f7744cd8b0f8fff26616053444fd28fd10bc8b101eed634"
+    },
+    "receiptSha256": "5de98cdc5a11114a6cf893c36c674453f1ee38aac9a6d1a56ee03ab573ca1ed5"
+  },
+  "verificationScope": {
+    "sourceCoverageIsNotGeneratedContentAccuracy": true,
+    "cloudAiJobsCreated": 0,
+    "paidProviderCalls": 0,
+    "productQuotaCharges": 0,
+    "accountsCreatedOrModified": 0,
+    "quotasModified": false,
+    "modelChanged": false,
+    "humanClinicalReview": false
+  },
+  "remainingGaps": [
+    "14,527 source-linked licenses remain unpublished; complex layouts, scans, source identity and extraction evidence still need resolution.",
+    "3,057 active licenses lack official source links in the 2026-10-23 snapshot.",
+    "Some published sources remain held by the deterministic reader; final full-cohort counts are reported separately.",
+    "Source publication does not establish complete plain-language teaching, quiz coverage, clinical validity or user comprehension."
+  ]
+}

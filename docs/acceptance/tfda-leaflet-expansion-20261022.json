@@ -1,0 +1,348 @@
+{
+  "schema": "tfda-leaflet-expansion-acceptance/v1",
+  "date": "2026-10-22",
+  "timezone": "Asia/Taipei",
+  "status": "qualified_batches_published_source_checks_complete_ui_safe_paths_verified_with_explanation_gap",
+  "scope": "現行官方索引來源之技術匯入與雲端來源核對；以完整許可字號、網址及儲存物件分別計數。",
+  "units": {
+    "publishedLeaflet": "一個不同完整 TFDA 許可字號的現行發布來源，保留前綴與重發 R。",
+    "rawUrl": "一個不同現行索引來源網址，可由多個許可字號共用。",
+    "rawObject": "一個已下載核對的雲端原始物件；七份紙本來源各另有一份官方父頁物件。",
+    "reasonOccurrence": "單一資料可有多項保留原因，原因次數不得相加為藥品數。"
+  },
+  "officialInventory": {
+    "asOf": "2026-10-21",
+    "activeFullLicenses": 21233,
+    "withIndexedSourceUrl": 18183,
+    "withoutIndexedSourceUrl": 3050,
+    "withoutInfo39Row": 1267,
+    "info39RowWithoutSourceUrl": 1783,
+    "activeInventoryIncludesRawMaterialLicenses": true,
+    "publishedIntersectionWithIndexedActive": 2025,
+    "unpublishedIndexedActiveFullLicenses": 16158,
+    "publishedOutsideIndexedActive": 0
+  },
+  "publication": {
+    "baselinePublishedFullLicenses": 1804,
+    "actualPublishedFullLicenses": 2025,
+    "netAddedFullLicenses": 221,
+    "newDirectHtml": 207,
+    "newDirectPdf": 7,
+    "newParentAssociatedPdf": 7,
+    "technicalImportedSourcesTotal": 2017,
+    "preservedOriginalSources": 8,
+    "parentAssociatedSourcesTotal": 7,
+    "retiredRawMaterialSources": 3,
+    "retiredSourcePointersAbsent": 3,
+    "originalEightExact": 8
+  },
+  "activeIndexedRawAcquisition": {
+    "uniqueUrls": 20746,
+    "rawAvailableUrls": 20743,
+    "rawUnavailableEmptyResponses": 2,
+    "unresolvedPlaceholderUrls": 1,
+    "activePendingUrls": 0,
+    "originalMainFailedStatusCountPreserved": 116,
+    "recoveredRawElsewhereForOriginalMainFailures": 114,
+    "availabilityIsRawReceiptCount": true,
+    "nestedAttachmentAvailabilityNotIncludedInThisDenominator": true
+  },
+  "sourceReadback": {
+    "readbackStartedAt": "2026-10-22T10:52:38.941Z",
+    "readbackCompletedAt": "2026-10-22T10:59:20.593Z",
+    "originalStatus": "completed_with_discrepancies_for_root_no_automatic_corrections",
+    "originalNativeExitCode": 1,
+    "originalFullyVerifiedSourceCount": 2023,
+    "originalTitleFlagCount": 2,
+    "originalTitleFlags": [
+      {
+        "licenseNo": "衛署藥製字第026087號",
+        "pointerId": "aeb798e0e86521a7fa1196d25c7799aad7773ed724bfcac88bedf3bb9b4697a6",
+        "code": "original_source_current_complete_product_name_not_found"
+      },
+      {
+        "licenseNo": "衛署藥製字第040161號",
+        "pointerId": "bd3f691b1910acee3209af34d285753aec1ef282968a887f9360d384262231a4",
+        "code": "original_source_current_complete_product_name_not_found"
+      }
+    ],
+    "originalIssueHistoryPreserved": true,
+    "verifiedRawObjects": 2032,
+    "uniqueVerifiedRawHashes": 2032,
+    "rawMetadataReads": 4064,
+    "downloadedRawBytes": 260342738,
+    "allRawObjectsHaveGenerationPinnedCrcAndLocalSha256Verification": true,
+    "originalEightExact": 8,
+    "retiredThreePointersAbsent": true,
+    "supplementaryTitleReconciliation": {
+      "status": "two_original_current_name_flags_reconciled_by_strict_literal_bilingual_title_layout_and_pinned_current_raw_bindings",
+      "executedAt": "2026-10-22T11:25:52.726Z",
+      "strictlyReconciledOriginalTitleFlags": 2,
+      "remainingUnreconciledOriginalTitleFlags": 0,
+      "verifiedSourcesWithinOriginalReadbackTimeScope": 2025,
+      "method": "原始第一頁版面與現行完整中英文品名逐字、順序核對，綁定官方索引及相同原始檔雜湊；兩筆中英文投影皆從 offset 0 完整匹配。",
+      "originalReportModified": false,
+      "newSourceEligibilityEstablishedBySupplement": false,
+      "sourceWrites": 0,
+      "cloudWrites": 0,
+      "aiCalls": 0,
+      "humanReviewed": false,
+      "clinicalReviewed": false
+    }
+  },
+  "cloudAiAcceptance": {
+    "status": "functional_paths_verified_with_pdf_chat_explanation_gap",
+    "site": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+    "syntheticMedicationRows": 3,
+    "existingOrdinaryVerifiedAccount": true,
+    "newAccounts": 0,
+    "sourceBackedProductsSampled": 2,
+    "sampleIsPerProductEvaluationOfNew221OrAll2025": false,
+    "logicalJobs": 5,
+    "modelHttpRequests": 7,
+    "recordedTokens": 20807,
+    "aiTimeoutsObserved": 0,
+    "allOriginalJobsAttempts": 1,
+    "allModelRequestsHttp200AndStoppedNormally": true,
+    "desktopWidth": 1440,
+    "mobileViewportWidth": 375,
+    "physicalMobileHardwareRetested": false,
+    "photoRecognitionRetested": false,
+    "cases": [
+      {
+        "operation": "html-oral:bundle",
+        "licenseNo": "衛署藥製字第002904號",
+        "format": "html",
+        "jobStatus": "succeeded",
+        "resultStatus": "supported",
+        "claims": 6,
+        "actualQuizQuestions": 6,
+        "attempts": 1,
+        "modelHttpRequests": 2,
+        "recordedTokens": 5186,
+        "workerLatencyMs": 7169,
+        "allActualQuestionsAnsweredInUi": true,
+        "allAnswersAndProgressPersistedAfterReload": true
+      },
+      {
+        "operation": "html-oral:chat",
+        "licenseNo": "衛署藥製字第002904號",
+        "format": "html",
+        "jobStatus": "succeeded",
+        "resultStatus": "supported",
+        "claims": 2,
+        "actualQuizQuestions": 0,
+        "attempts": 1,
+        "modelHttpRequests": 2,
+        "recordedTokens": 4883,
+        "workerLatencyMs": 5687,
+        "actualPersistedQuestionMatchesPlan": true,
+        "selectedMedicationAndResultMatchHistory": true
+      },
+      {
+        "operation": "pdf-topical:bundle",
+        "licenseNo": "衛署藥製字第048067號",
+        "format": "pdf",
+        "jobStatus": "succeeded",
+        "resultStatus": "supported",
+        "claims": 4,
+        "actualQuizQuestions": 4,
+        "attempts": 1,
+        "modelHttpRequests": 2,
+        "recordedTokens": 7120,
+        "workerLatencyMs": 7856,
+        "allActualQuestionsAnsweredInUi": true,
+        "allAnswersAndProgressPersistedAfterReload": true
+      },
+      {
+        "operation": "pdf-topical:chat",
+        "licenseNo": "衛署藥製字第048067號",
+        "format": "pdf",
+        "jobStatus": "succeeded",
+        "resultStatus": "refused",
+        "claims": 0,
+        "actualQuizQuestions": 0,
+        "attempts": 1,
+        "modelHttpRequests": 1,
+        "recordedTokens": 3618,
+        "workerLatencyMs": 1904,
+        "actualPersistedQuestionMatchesPlan": true,
+        "selectedMedicationAndResultMatchHistory": true,
+        "classification": "safe_refusal_not_full_explanation",
+        "originalContradictionExplanationRubricSatisfied": false
+      },
+      {
+        "operation": "missing-source:bundle",
+        "licenseNo": "衛署藥製字第012488號",
+        "format": null,
+        "jobStatus": "succeeded",
+        "resultStatus": "insufficient_data",
+        "claims": 0,
+        "actualQuizQuestions": 0,
+        "attempts": 1,
+        "modelHttpRequests": 0,
+        "recordedTokens": 0,
+        "workerLatencyMs": 229
+      }
+    ],
+    "rootTextualReview": {
+      "claimsReviewed": 12,
+      "questionsOptionsAnswersAndExplanationsReviewed": 10,
+      "scope": "Textual entailment against own source and named section, not clinical adjudication.",
+      "humanReviewed": false,
+      "clinicalReviewed": false,
+      "allOriginalPlanExplanationRubricsSatisfied": false,
+      "heuristicFlagsPreservedAndAdjudicated": [
+        {
+          "operation": "html-oral:chat",
+          "flag": "unknown_information_misrepresented_as_no_contraindications",
+          "disposition": "false_positive_explicit_negation_says_not_equivalent_to_no_risk"
+        },
+        {
+          "operation": "pdf-topical:chat",
+          "flag": "result_complete_source_chunks_changed",
+          "disposition": "expected_empty_chunks_in_exact_preserved_refusal_not_a_supported_explanation"
+        }
+      ]
+    },
+    "uiHistoryAndRenderedRefusalNoticeVerified": true,
+    "renderedMissingSourceNoticeVerified": true,
+    "missingSourceModelRequests": 0,
+    "existingMedicationRowsUnchanged": 19,
+    "seatCountBefore": 4,
+    "seatCountAfter": 4,
+    "userDailyUsageBefore": 0,
+    "userDailyUsageAfter": 5,
+    "globalDailyUsageBefore": 0,
+    "globalDailyUsageAfter": 5,
+    "lastVisibilityReadbackNewLogicalJobs": 0,
+    "lastVisibilityReadbackNewMedicationRows": 0,
+    "lastVisibilityReadbackNewModelRequests": 0,
+    "pageErrors": 0,
+    "blockedUnexpectedWrites": 0,
+    "applicationDeploymentChanged": false
+  },
+  "costControls": {
+    "ingestionAiCalls": 0,
+    "userDailyAiLimit": 20,
+    "globalDailyAiLimit": 200,
+    "trialSeatLimit": 50,
+    "quotaSettingsChanged": false,
+    "ingestionAppDeploymentChanged": false,
+    "ingestionAccountSettingsChanged": false
+  },
+  "sourceReview": {
+    "humanReviewed": false,
+    "clinicalReviewed": false,
+    "rawMaterialSourcesExcludedFromNewPatientPublications": true
+  },
+  "remaining": {
+    "withoutIndexedSourceUrlFullLicenses": 3050,
+    "heldSourceClasses": [
+      "掃描圖片或未驗證圖片",
+      "多欄與複雜表格版面",
+      "獨立引擎抽取結果不一致或正文不足",
+      "完整現行品名、字號或多來源關聯待釐清",
+      "超過全文、原檔或發布文件大小預算"
+    ],
+    "unclassifiedOperationFailures": {
+      "sourceKeys": 11,
+      "boundedRetryInvocations": 1,
+      "newEligibleFromRetry": 0,
+      "diagnosis": "generic UNKNOWN；未確定失敗階段，未據此判定原檔品質。"
+    },
+    "inactiveArchive": {
+      "pendingUrls": 8513,
+      "failedUrls": 27,
+      "status": "deferred_preserved_not_complete",
+      "scope": "現行有效來源網址集合以外的頂層主隊列網址"
+    },
+    "separateNestedCurrentSource": {
+      "fullLicense": "衛署藥製字第021953號",
+      "failure": "empty_response_after_bounded_attempts",
+      "outsideTopLevelRawUrlDenominator": true
+    },
+    "unpublishedIndexedActiveFullLicenses": 16158,
+    "unpublishedSetIncludesArchiveOnlyRawMaterials": true,
+    "generatedContentQuality": [
+      "PDF chat did not explain both conflicting passages or satisfy the original explanation rubric.",
+      "Some source-template quiz distractors are awkward; textual answer validity is distinct from learner readability.",
+      "No per-product generated-content evaluation of all 2025 published sources."
+    ]
+  },
+  "evidenceReferences": [
+    {
+      "label": "private-evidence/finalParentNativePublication.json",
+      "sha256": "5ef41eed21fc930a6650d153a7fbff3cfbc633f3781e5bd57ad21ac8fdedd5d2",
+      "bytes": 3966,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/finalAllPublishedReadback.json",
+      "sha256": "d9eaacdef69de7db7555d09f447c57333456e571fe30c41d4314bb31ef0eece5",
+      "bytes": 7046,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/finalAllPublishedReadbackSources.ndjson",
+      "sha256": "0acb9205979ed56524b3f5962a8a3b73729f4a588c45569c28ee96deefbf5611",
+      "bytes": 2674121,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/html-native-publication-completion.json",
+      "sha256": "6d77097d868fe24d4ffd81f8016101531ad29e3ad49f8a7d37728b2c8fa87bf9",
+      "bytes": 61080,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/pdf-native-publication-completion.json",
+      "sha256": "6b7a71a74e6e5bd9a82d0a0bf3bb135b296ad9de8a14eed6940f83010c51f22c",
+      "bytes": 1627,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/legacy-title-supplementary-reconciliation.json",
+      "sha256": "223077fe8d0cb454e5c8919703032405241c0b54e70bea9d22e543b44c40d8e9",
+      "bytes": 15522,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/indexed-active-published-set-difference.json",
+      "sha256": "3ff5987fc0b3db59eb5a0d6d30199f8331807153eac6d3225f40d7fdaba182ea",
+      "bytes": 4047,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/actual-ui-report.json",
+      "sha256": "c5c19164fd40b8ca945c2e6ba6ceefebf5428abd030b0c7d89df5ddfc4d433b3",
+      "bytes": 14239,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/actual-ui-checkpoint.json",
+      "sha256": "2713b5c2a48cb849b6d4dfbdf22c15240d5205e8838b8eac16c243d90f515c66",
+      "bytes": 17617,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/actual-ui-complete-results-and-chat-history.json",
+      "sha256": "c5bc9bc4cfd729861fe8e4cbf775da64f71c5b88c5d26701f13c0eb70c4a5c0c",
+      "bytes": 137006,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/root-textual-review.json",
+      "sha256": "7536db5bc169f11d3ab38334385de64fdfbea9f51024f034526e6b63bf0000b6",
+      "bytes": 3772,
+      "availability": "private_evidence_retained_locally_not_committed"
+    },
+    {
+      "label": "private-evidence/missing-source-rendered.png",
+      "sha256": "6224e5b33510df1d1acc122466d5f041a8918514a78614b31424bacf9943d6b3",
+      "bytes": 164168,
+      "availability": "private_evidence_retained_locally_not_committed"
+    }
+  ],
+  "checkedAt": "2026-10-22T11:56:46.399413+00:00"
+}

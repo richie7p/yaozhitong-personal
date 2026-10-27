@@ -1,0 +1,1060 @@
+{
+  "source": "https://data.fda.gov.tw/opendata/exportDataList.do?method=ExportData&InfoId=39&logType=5",
+  "collected": 30,
+  "requested": 30,
+  "items": [
+    {
+      "licenseNo": "內衛成製字第000075號",
+      "name": "\"福元\"蘇打錠500毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_00cfcf5c-d586-48c2-85b6-51133a59a9d1?c=2",
+      "id": "9bec31c959afc866bc7604176c52e12387e194cf1c8a31b6b75d840a8ce40b02",
+      "version": "21125e5c192f894d",
+      "characters": 1454,
+      "chunks": 2,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "內衛成製字第000141號",
+      "name": "益風糖衣錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_1ab12548-82ff-4122-b5e5-858d3ea668d1?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "內衛成製字第000154號",
+      "name": "正腸錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_bc031e1e-610e-4c58-a6c0-2cd627267d2e?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "內衛成製字第000544號",
+      "name": "酵素膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_f40e32b3-ee73-4d87-b900-b06b059e00d9?c=2",
+      "id": "e9c0bbe6d525934b14ff4f620e6869000e0bf432c50157fc2ade80634bd212e7",
+      "version": "08ade0a0c8bb0a18",
+      "characters": 1070,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026668號",
+      "name": "樂途達錠40毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026668號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026671號",
+      "name": "健安心200毫克膜衣錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026671號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026675號",
+      "name": "夏奉寧膜衣錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_f1076cbf-65bd-4189-8284-54ac478be4b2?c=2",
+      "id": "9318a46080de3b7c077f762dae1999a2bbeff0b940110def9cb18c10f2d0488e",
+      "version": "92f4f29b382c011d",
+      "characters": 68356,
+      "chunks": 70,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026685號",
+      "name": "能適糖膜衣錠12.5毫克/1000毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026685號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026700號",
+      "name": "耐比洛錠5毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026700號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026701號",
+      "name": "福樂星膜衣錠400毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026701號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026714號",
+      "name": "往剋毒膜衣錠450毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026714號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026719號",
+      "name": "樂途達錠20毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026719號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026752號",
+      "name": "憶寶膜衣錠10毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_f9529fcc-68e8-411f-8be9-3ab43d58b2ac?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026784號",
+      "name": "安度孕陰道錠100毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026784號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026791號",
+      "name": "易美舒膜衣錠25毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_e181c2fa-6bac-46ac-8ca2-43d666b875a7?c=2",
+      "id": "e07157d545138cdc4f2bed1560c921e60a9dc76b3eb50c88460f438cc210008c",
+      "version": "c6006b947d978a68",
+      "characters": 10898,
+      "chunks": 12,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026800號",
+      "name": "拉滅滋諾膜衣錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026800號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026817號",
+      "name": "麥欣霓膜衣錠0.5毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026817號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026819號",
+      "name": "愛可舒痰發泡錠200毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026819號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026820號",
+      "name": "特釋壓膜衣錠50毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_dfec555c-3b36-4f23-ba33-17bd58dcf8e9?c=2",
+      "id": "fdfb91f7760a053465c3e9ef99d9a762080eeda1bf5edcdd23957ee07473e780",
+      "version": "503b885b8e51d871",
+      "characters": 13916,
+      "chunks": 15,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026822號",
+      "name": "派來福錠500毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026822號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026842號",
+      "name": "鉑美特膠囊1毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛部藥輸字第026842號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026848號",
+      "name": "釋通緩釋錠16毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_0a8cee57-aa24-4ab2-ba4b-b76abe0972b2?c=2",
+      "id": "2a69bdcc32e9c78c85dbba6a8eb70bc6f6f557497c33d0e999465fbb68e748ad",
+      "version": "a4ad565db5b5b1cf",
+      "characters": 23414,
+      "chunks": 24,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026849號",
+      "name": "釋通緩釋錠32毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_10f4a5f9-b618-44a8-a146-dade3226b891?c=2",
+      "id": "09a33a1954d67e65643df8c5f41edc40ffbeffe29c458544d612949616a1c9a6",
+      "version": "a4ad565db5b5b1cf",
+      "characters": 23414,
+      "chunks": 24,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛部藥輸字第026850號",
+      "name": "釋通緩釋錠64毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_1af3eea9-db44-4366-8aa3-02087c2d0eea?c=2",
+      "id": "9ddf5dac029a907cd3c44ec36457345c9e94b306ffde14a7ebf207c3826d1072",
+      "version": "a4ad565db5b5b1cf",
+      "characters": 23414,
+      "chunks": 24,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第025997號",
+      "name": "穩濕健膠囊25毫克(待克菲那)",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_33d780fb-06e3-49c5-b797-325a63f6f55a?c=2",
+      "id": "cde1674765ffbca9186e0bc9020ca0087bd52bfe121dce0a3ccb15ad90b2c1b6",
+      "version": "244eb06eebc937f4",
+      "characters": 7114,
+      "chunks": 8,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026002號",
+      "name": "咳涕敏膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_07a0bef1-feaf-4f73-a810-55a568974e17?c=2",
+      "id": "7f63f4bf6baad18684e75b50f263958a3838d0404985a0a914a3af6dc414a8c2",
+      "version": "6033868b91c2775e",
+      "characters": 1995,
+      "chunks": 3,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026007號",
+      "name": "\"永信\"化炎錠９０公絲（來縮酵素）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026007號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026010號",
+      "name": "康利舒冒利鼻樂膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026010號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026013號",
+      "name": "\"歐業\"保爾康錠１０公絲（維生素Ｂ２）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026013號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026025號",
+      "name": "鼻寧膜衣錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_cb71e3dc-20d6-4463-8f93-bef517eb20c5?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026026號",
+      "name": "\"成大\"舒血敏膠囊２５０毫克（妥內散敏）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026026號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026031號",
+      "name": "〝應元〞仰咳錠30公絲（伊普拉辛隆）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026031號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026032號",
+      "name": "“聯邦”壓美寧錠２５０毫克（甲羥苯丙胺酸）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_5929f0cc-209f-4965-81d7-e0e81fc35ef7?c=2",
+      "id": "3242a0b37cda64f4db00d13d010f5ffaba0373fbe8675c06faf4d562e0469b1b",
+      "version": "4c0b30c8cc7dbd0f",
+      "characters": 1911,
+      "chunks": 3,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026033號",
+      "name": "\"利達\"嗽寧錠２０毫克（伊普拉辛隆）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026033號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026035號",
+      "name": "耐斯特淨膠囊５００，０００國際單位（耐斯菌素）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_084bc4fd-3da9-470b-a6d3-fb5eb9e1dc62?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026039號",
+      "name": "樂不拉邁膠囊2毫克(樂必寧）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_644d667d-16cc-4779-b0ac-fef23269d8d1?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026073號",
+      "name": "克菌錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026073號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026085號",
+      "name": "\"優良\"平胃痛錠5毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_91d9c071-ac0f-490b-bcae-446cf502e8e8?c=2",
+      "id": "bebadb7438ef8b1fa437484bc32300272f6e28834c970b4fcdc848254cee5f15",
+      "version": "9a3380fac4f6a41e",
+      "characters": 1291,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026087號",
+      "name": "\"生達\"咳服錠200毫克(呱芬那辛)",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_cad3e83d-071a-46dd-b875-e6aaf45b50ff?c=2",
+      "id": "553a71ac6af8b49791d957058ab128d505f871f582a67e875c8f177abd18ab0b",
+      "version": "355931af34ccb199",
+      "characters": 1063,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026089號",
+      "name": "適婦樂錠５００公絲（梯尼達諾）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_734ae2dd-f037-479e-b910-c1262f9d9817?c=2",
+      "id": "64f10e95d9ad4e343ee00c859d0aee9595cbd00b4562fe4069941c84ee0f5ddb",
+      "version": "53e12c4c545c28be",
+      "characters": 935,
+      "chunks": 1,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026090號",
+      "name": "\"新喜\"愛克炎錠250毫克(那普洛先)",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_6948bb25-c139-4027-a412-9e40ec1beb81?c=2",
+      "id": "950c75aeb6e48aa80e0f88312e3e1f70cc0de450a8c07c50fb3d30a89a76a579",
+      "version": "b3a4ed3d089ac09c",
+      "characters": 2758,
+      "chunks": 3,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026093號",
+      "name": "\"嘉林\"傳美酸錠５００毫克（妥內散敏）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026093號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026100號",
+      "name": "\"利達\"舒敏錠２．５毫克（普洛利定）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_19127f33-74d1-4c8c-91a0-278c1b4ec0b5?c=2",
+      "id": "7a8b2b466e59838df90442184e19ca24ec00c422ca17d76f2f8ee3879f9cacf4",
+      "version": "62083271b09b5b59",
+      "characters": 1357,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026102號",
+      "name": "\"國信\"伊不炎膠囊２００公絲（伊普）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026102號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026114號",
+      "name": "痢邁寧膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026114號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026120號",
+      "name": "鼻速克錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_e8403015-de9c-4679-bc01-f11087168754?c=2",
+      "id": "a86a327b2d259c774658e852849e5036c357da5bcd7d5a95042aa26ca61cb464",
+      "version": "cde0e500d734481b",
+      "characters": 1358,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026121號",
+      "name": "\"優生\"感必舒錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026121號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026124號",
+      "name": "\"優生\" 佳胃錠２００公絲（希每得定）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026124號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026133號",
+      "name": "\"皇佳\"舒克潰錠５００毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026133號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026138號",
+      "name": "\"十全\" 妥彼鬆錠１００毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026138號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026153號",
+      "name": "優莫瀉膠囊２毫克（樂必寧）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_4c6c05d5-1084-4c69-92a1-68686ebfa68f?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026154號",
+      "name": "\"成大\"普利腫錠1毫克(布米他奈)",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026154號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026159號",
+      "name": "\"福元\" 保胃健錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026159號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026162號",
+      "name": "理血炎膠囊２５０公絲（妥內散敏）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_a845e0c9-71dc-4902-973c-76e92c4ee0ce?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026164號",
+      "name": "阿斯匹寧－咖啡因錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_2d9593c8-0d5f-465d-be3c-ab1865b4ceb2?c=2",
+      "id": "ee028dc9c4525bfa6b980d4e2662800e245495577926dcbd2dca6980d2ae6aa5",
+      "version": "861769c272ead337",
+      "characters": 1427,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026167號",
+      "name": "欣普列錠４毫克（甲基培尼皮質醇）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_1afb386b-ae0b-45e6-b53e-1dd2cd9cbc37?c=2",
+      "id": "669b5a43328f7876ba28f79a27ab7895c15470ff318f1dc8ca3e1340d490b82c",
+      "version": "9625bb811b388b27",
+      "characters": 2304,
+      "chunks": 3,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026184號",
+      "name": "健鼻膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_430013be-2da2-4f0e-bf52-b5088edbad8e?c=2",
+      "id": "d5d66e01f0653afdcbbf0ed5e87d2eeea8c586e8a572be0cc21b1cccab3f7df0",
+      "version": "ccfd661aeff22809",
+      "characters": 1374,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026185號",
+      "name": "易使普諾錠５００公絲（每艾普林諾）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_fbf6cdaf-6d1b-4017-97c0-852314366ff8?c=2",
+      "id": "c7f5fe9249f119fb65817b0ea9ab7d204e3d93152ef8e18415a06e0437b3a393",
+      "version": "596ba352d742831b",
+      "characters": 1507,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026272號",
+      "name": "痛定膜衣錠30毫克(尼夫平)",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026272號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026199號",
+      "name": "理壓錠２５０公絲（甲羥苯丙胺酸）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_188310a5-401b-45d7-9995-ba30b39e8f4d?c=2",
+      "id": "facf76afa348339e1d1ec5ab7c53f710ba7dbc00678905ae357d776ccda6212d",
+      "version": "3665fa54ccf83bf6",
+      "characters": 1284,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026201號",
+      "name": "\"東洲\"益咳鎮錠２０公絲（伊普拉辛隆）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026201號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026203號",
+      "name": "拆風鈴膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_aad95e2f-6003-46fd-8d85-68a90be10f5d?c=2",
+      "id": "f969536e1652040c5546c4642380d06932f0e61feca51f809f2558e176b9ab71",
+      "version": "4415353c5b5b46f4",
+      "characters": 6299,
+      "chunks": 8,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026205號",
+      "name": "\"信隆\"美坐磺胺錠５００公絲",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026205號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026233號",
+      "name": "\"南光\"復腦通膠囊５毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026233號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026234號",
+      "name": "\"瑞士\"康得淨膣錠100毫克（克催瑪汝）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026234號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026239號",
+      "name": "風走膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_9c712b8f-e866-401f-9d25-9ebf8fcca8cd?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026256號",
+      "name": "弗痛腸溶錠２５毫克（待克菲那）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026256號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026259號",
+      "name": "\"十全\"滴寧錠５００公絲（梯尼達諾）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_6d15c93f-143f-464b-a5f3-e52d3057c2f6?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026261號",
+      "name": "\"黃氏\"舒伏康錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_1a8aa1bf-5a68-4449-ba21-1f514c1e3035?c=2",
+      "id": "593fa58b5a2a6a7cb0dcac6cc814f1d756105dba1c9d2d076cfac544f2ddeed3",
+      "version": "4942441f1aacab77",
+      "characters": 1384,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026263號",
+      "name": "\"皇佳\" 惠治樂錠５００公絲（每艾普林諾）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026263號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026276號",
+      "name": "\"大豐\"利舒淨膠囊90毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026276號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026277號",
+      "name": "滅息痛錠250毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_a2ddb4de-50c5-4ec8-a79c-a7770dd29708?c=2",
+      "id": "7b4da0ed4795b4caf9b383099e94914b38e65b9469f1d76aee050d00531087be",
+      "version": "8cc5d93571de484d",
+      "characters": 3862,
+      "chunks": 4,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026280號",
+      "name": "\"新喜\" 抑咳錠20毫克（伊普拉辛隆）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026280號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026282號",
+      "name": "拆風鈴優膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_34241b55-f615-410d-8064-fd1ad6f8d325?c=2",
+      "id": "a47f16d6a9c5a7b7b2f1fab3fe01bb57d6023198ad1bef937830b8026a287430",
+      "version": "0aaef605146d741f",
+      "characters": 2506,
+      "chunks": 4,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026284號",
+      "name": "\"信隆\"諧平錠25毫克(敵芬尼朵)",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026284號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026289號",
+      "name": "必克風膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026289號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026298號",
+      "name": "\"應元\"氫氧化鎂錠350毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026298號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026299號",
+      "name": "除風樂錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_e7f74965-da2a-4278-a69b-cd703e8f8e16?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026303號",
+      "name": "\"利達\" 止血寧錠250毫克（妥內散敏）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026303號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026323號",
+      "name": "\"優生\"安好不痛錠500毫克",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026323號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026324號",
+      "name": "\"明大\"必樂康膠囊１０毫克（匹洛西卡）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026324號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026329號",
+      "name": "\"華盛頓\"氯化銨腸溶膜衣錠５００公絲",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_7c34b529-7d90-4c42-bdf1-ec7c4c1b1f78?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026330號",
+      "name": "\"強生\"得抑血錠２５０毫克（妥內散敏）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026330號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026346號",
+      "name": "\"陽生\" 鼻敏寧錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026346號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026363號",
+      "name": "肌舒康錠５０公絲（妥配頌）",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026363號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026377號",
+      "name": "\"美西\"咳痛錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_ad1ec9f6-1936-41d9-b5fb-76226d3d361f?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026390號",
+      "name": "瑞化鎮咳錠２０公絲（伊普拉辛隆）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_515b66ca-5bb7-4756-a0a7-3b324d672111?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026404號",
+      "name": "\"應元\"胃康錠80毫克(聚甲矽康)",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_8b087de9-8675-41fe-ae55-896d44e7a76b?c=2",
+      "id": "63ca1769a1271e93c726915ad355b2d06a96e88447dd2610866e7f07baa75893",
+      "version": "5378cc355c3fbb51",
+      "characters": 768,
+      "chunks": 1,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026405號",
+      "name": "\"十全\" 瑞利淨錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026405號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026425號",
+      "name": "\"優生\" 怡寧錠２毫克（哈泊度）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_35cf2c7e-26bb-49e1-86ac-bb91c2e02441?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026430號",
+      "name": "\"國信\"滅治咳－複合膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026430號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026442號",
+      "name": "炎平膠囊15毫克(施普樂)",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_1d6ca96f-b4fb-4311-b3fd-42997061b208?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026454號",
+      "name": "制喘錠２．５公絲（菲諾特洛）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_394ad86f-81b2-43e6-85a6-0825a939d4b4?c=2",
+      "id": "daf4d40dfe9fb95f9556bb5f40c6ea2c1698c709bc094596acaa5a8670b96a0b",
+      "version": "ffb5c462f57899cb",
+      "characters": 1761,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026472號",
+      "name": "\"葡萄王\"復炎膠囊20毫克(匹若卡)",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026472號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026473號",
+      "name": "阿西他米諾錠５００毫克（乙醯胺酚）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_57be4fd3-db3c-4db3-8c87-87a2d7f269c3?c=2",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026478號",
+      "name": "\"美西\" 清鼻通膠囊",
+      "sourceUrl": "https://mcp.fda.gov.tw/exportpdf/衛署藥製字第026478號",
+      "status": "failed",
+      "reason": "invalid_pdf"
+    },
+    {
+      "licenseNo": "衛署藥製字第026484號",
+      "name": "\"美西\"舒筋錠",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_3031c752-f34b-4f63-84a9-ece6dea658b9?c=2",
+      "status": "failed",
+      "reason": "text_quality_requires_manual_extraction"
+    },
+    {
+      "licenseNo": "衛署藥製字第026487號",
+      "name": "榮富多信膠囊２５０公絲（西華杜西）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_c7e9c7d6-e0c5-469f-ba77-a5183877b38e?c=2",
+      "id": "d367d96e89d835a9ae17a8904709b8f5e5d6178fde529305b18deb94e4119e76",
+      "version": "268830401d3b2917",
+      "characters": 2330,
+      "chunks": 3,
+      "pages": 2,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    },
+    {
+      "licenseNo": "衛署藥製字第026491號",
+      "name": "僻痛膠囊１０公絲（匹洛卡）",
+      "sourceUrl": "https://mcp.fda.gov.tw/insert/pdfcasefile/i_8ba8b5c1-26f1-4dbd-95a2-7f2d6362551d?c=2",
+      "id": "7eccfb5903f7ee2beb70161a6cd8b69a2f2230bce2c3a291f9fcc38b9945c4cf",
+      "version": "7587a35246f1efa6",
+      "characters": 1873,
+      "chunks": 2,
+      "pages": 1,
+      "status": "draft",
+      "checks": {
+        "officialIndexMatch": true,
+        "pdfMagic": true,
+        "hashRecorded": true,
+        "hasChineseText": true,
+        "noReplacementCharacters": true
+      },
+      "review": "pending_source_text_review"
+    }
+  ]
+}

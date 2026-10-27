@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-20T01:43:12.295Z",
+  "status": "workflow_and_published_content_passed_with_remaining_limits",
+  "scope": "Seminar software workflow and source-supported published content. This is not clinical validation or complete leaflet-warning coverage.",
+  "groundingVersion": "grounded-v11-whole-warning-source-sections",
+  "provider": "openai",
+  "textModel": "gpt-6-luna",
+  "visionModel": "gpt-6-luna",
+  "reasoningEffort": "none",
+  "fixedCurrentWorkflow": {
+    "passed": 9,
+    "total": 9,
+    "manualNewDrugFlows": 6,
+    "publicBubdelPhotoFlows": 2,
+    "syntheticTwoDrugFlow": 1,
+    "jobs": 13,
+    "hostedRequests": 23,
+    "timeouts": 0,
+    "retries": 0,
+    "fallbacks": 0,
+    "reportedTokens": 63613
+  },
+  "checks": {
+    "unitTests": 328,
+    "desktopMobileE2E": 36,
+    "controlledRecovery": 10,
+    "savedResultsServiceRestartSteps": 22,
+    "secondContentReview": {
+      "learning": 6,
+      "claims": 14,
+      "questions": 7
+    },
+    "newAiCallsDuringSavedResultsCheck": 0,
+    "wholeComputerReboot": true,
+    "postbootUiSteps": 14
+  },
+  "demonstrationCounts": {
+    "medications": 6,
+    "learning": 6,
+    "jobs": 8,
+    "generated": 6,
+    "questions": 7,
+    "recognitionJobs": 2
+  },
+  "serviceRestart": {
+    "verifiedNewProcess": true,
+    "savedResultUiSteps": 22,
+    "newAiCalls": 0
+  },
+  "osReboot": {
+    "verified": true,
+    "status": "passed",
+    "performedBy": "user_manual_reboot",
+    "dataCollectionsUnchanged": true,
+    "postbootUiSteps": 14,
+    "realAiCallsDuringPostbootCheck": 0,
+    "savedContentAndFinalAnswersUnchanged": true
+  },
+  "remainingLimits": [
+    "Short explanations do not cover all leaflet warnings: Anti-phen omits the separate precautions/overdose fields; the selected Bubdel explanation summarizes only part of usage precautions. Full cited text and the original leaflet remain available.",
+    "Only one of the six selected learning records includes a warning quiz; the other five assess purpose only.",
+    "Secorine public-photo transcription was checked, but flavor/variant identity and official multi-column text remain unresolved; its full explanation/quiz flow is not accepted.",
+    "Only two original public historical photographs were used. Physical phones, new lighting/blur conditions and HEIC images are not covered. HEIC is explicitly rejected.",
+    "Bubdel uses a fully reviewed manual transcription; automatic scanned/multi-column leaflet extraction is not generally solved."
+  ],
+  "evidencePolicy": "Sanitized aggregate only. Raw reports, local account and medication records, photos, downloaded PDFs, environment files and credentials are excluded from Git. Original evidence remains in the tested workspace; this summary alone does not independently reproduce it.",
+  "localEvidenceSha256": {
+    "acceptanceReport": "6613468cdb33ac222b12e1dc4a60c596170c8b3599014b3a9e37210151378094",
+    "postbootSummary": "8e3d720e620bb078683b3ecb0c462a7ff086995bb80d0d68c65529999b41039b"
+  }
+}

@@ -1,0 +1,731 @@
+{
+  "schema": "yzt-public-access-learning-candidate-acceptance/v1",
+  "date": "2026-10-23",
+  "recordedAtUtc": "2026-10-22T22:06:36.028506+00:00",
+  "overallStatus": "deployed_ci_and_bounded_cloud_acceptance_passed",
+  "scope": "Sanitized deployed release record. Program regressions, real cloud behavior, source-content review, and remaining operational limits retain separate scopes.",
+  "candidate": {
+    "id": "public-access-learning-v18-v10.3-20261023",
+    "groundingVersion": "grounded-v18-whole-field-plain-language",
+    "baseCommit": "13c89f33f76f9a8d4745a70d9617465387a2b94d",
+    "finalCommit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+    "commitStatus": "pushed_to_master",
+    "preparedReleaseFileCountBeforeThisReport": 52,
+    "finalReleaseFileCount": 56,
+    "coreFilePinsSha256": {
+      "server/ai.ts": "2744d3158bcfdccf4f48a89909f279cffb4686851279be6c298716af73b429f3",
+      "server/chat-source-coverage.ts": "f4509484d2343584cc3a0070ca27e09a65c37d25fbc564d4c7e22e432154f4c6",
+      "server/safety-learning.ts": "5b7768c78045240b5b80f5805c05f24deb95aa37e16e08b8b2edf220e1be1376",
+      "server/source-teaching.ts": "36c4c86cb50558dff15ddc739aff604d91238a3c94c5afbadf50324280d077b6",
+      "shared/schema.ts": "557b7c2e5b07f4c3b8dd581a68ad06872b7dda2a67b15f78b126d9689f440155",
+      "server/config.ts": "4d412bd17273387cfcc183d4d6fa857b1bdbbdb201c66b2e2fcf065fad0c7fc9",
+      "server/llm.ts": "1473b91351d5336d9a0695107d7a87b24d0a8966bf7268af1c0fb06cd5496159",
+      "server/domain.ts": "eed1aab33955eda077a47be7edbe7154d97e731f531f3d6a249206e376e0e373",
+      "server/app.ts": "a0d4c24d59ff6ce984ef0a965b53a5265dae21d12f7d9d7d0dbfd49f8ba14ef8",
+      "server/support.ts": "bd84bff92f6c67bb6c06cf9d742c27d816a6ff3781225531acde38d83173483c",
+      "server/job-telemetry.ts": "15ef7f6628cc16d20232e0ce6b19470ea005e89ef69d7671a1a7e05f88db2af6",
+      "src/Support.tsx": "80aa417f29ede97029c798ce0b124af97e12b59f56d97387f7192fd739356ada",
+      "src/PlainLanguageStatus.tsx": "d832d64412ffb99f060d87bb04b7f56b49fe38cf700db60c622254941738be03",
+      "infra/deploy-config.ps1": "448a5dadb8985c5848873f55b82ad3615a0f0676daf6fd90c49cb78138fdb99b",
+      "infra/deploy.ps1": "4804c5ff993e38b8719bc3a70684a1f6560134a70a72ceeae8b132890093a6f3",
+      "infra/monitoring-alerts.json": "2503b9effcf4327dcd38eb59aed387d35f8252b94fc3e8f2971a551a118a22d6",
+      "src/Home.tsx": "b75d482972353d10e42e26d03d249f8d5cb06b53c3f2cc936bac067ec97c909c",
+      "src/ScheduleForm.tsx": "8748b792908fa494fd13541edfaafc2b35645a17a8bb919f3d44e9dc32b90dad",
+      "tests/e2e/flows.spec.ts": "c8b34d34f8d8ab11cfb159f78bf4613771239fd16e2981ace8e7dc1bc50e7fee"
+    },
+    "coreFileSetSha256": "ad1c36b192b828cc2c2fc14272529ca89e5102a1703b29657a14e1e367ad0337",
+    "coreFileSetHashMethod": "SHA256 of LF-normalized committed text bytes; set SHA256 uses sorted compact UTF-8 JSON map and excludes this report.",
+    "deploymentStatus": "both_exact_revisions_ready_serving_100_percent"
+  },
+  "intendedPublicPolicy": {
+    "access": "all_verified_ordinary_accounts",
+    "manualApprovalRequired": false,
+    "aiSeatCap": null,
+    "legacySeatRegistryModified": false,
+    "dailyAiJobsPerPerson": 20,
+    "dailyAiJobsSiteWide": 1000,
+    "quotaTimezone": "Asia/Taipei",
+    "accountDisabledAndDeletionGatesRetained": true,
+    "support": "private_onsite_form_owner_and_administrator_only",
+    "publicContactAddressPublished": false,
+    "supportMaxCharacters": 1200,
+    "supportReportsPerPersonPerDay": 5,
+    "supportCooldownSeconds": 60,
+    "supportPageSize": 50
+  },
+  "aiRuntimeCandidate": {
+    "provider": "openai",
+    "textModel": "gpt-6-luna",
+    "visionModel": "gpt-6-luna",
+    "crossProviderFallback": false,
+    "candidateDefaultTextEffort": "medium",
+    "finalChosenTextEffort": "medium",
+    "finalChoiceStatus": "chosen_after_fresh_same_candidate_comparison",
+    "mediumProfile": {
+      "textMaxCompletionTokens": 12000,
+      "textRequestTimeoutMs": 90000,
+      "logicalJobTimeoutMs": 240000
+    },
+    "highProfile": {
+      "textMaxCompletionTokens": 25000,
+      "textRequestTimeoutMs": 120000,
+      "logicalJobTimeoutMs": 300000
+    },
+    "visionProfile": {
+      "effort": "none",
+      "maxCompletionTokens": 2600,
+      "requestTimeoutMs": 45000
+    },
+    "reasoningTokensShareCompletionBudget": true,
+    "sourceAndQuizSemanticApprovalIsSeparateFromTransportSuccess": true
+  },
+  "programValidation": {
+    "cleanCandidateUnit": {
+      "status": "passed",
+      "candidate": "v10.3",
+      "testsPassed": 1581,
+      "testFilesPassed": 80
+    },
+    "cleanCandidateTypecheck": {
+      "status": "passed",
+      "candidate": "v10.3"
+    },
+    "mergedWorkingChangesUnit": {
+      "status": "passed",
+      "candidate": "v10.3_with_preserved_unpublished_working_changes",
+      "testsPassed": 1726,
+      "testFilesPassed": 85,
+      "unpublishedWorkingChangesIncludedInRelease": false
+    },
+    "mergedWorkingChangesTypecheck": {
+      "status": "passed",
+      "candidate": "v10.3_with_preserved_unpublished_working_changes"
+    },
+    "browserRegression": {
+      "status": "passed_final_full_ci",
+      "testedCandidate": "v10.3_with_schedule_completion_refresh",
+      "exactFinalCandidateStatus": "passed_202_final_ci",
+      "priorFullBeforeFix": {
+        "passed": 199,
+        "failed": 1,
+        "surfaces": [
+          "desktop",
+          "mobile_375px"
+        ],
+        "failure": "The original test mistook the renamed busy button for a completed save. Its trace also exposed a real navigation-before-save agenda invalidation gap."
+      },
+      "targetedAfterFix": {
+        "passed": 36,
+        "failed": 0,
+        "suites": [
+          "flows",
+          "reminder-input",
+          "auth-session"
+        ],
+        "surfaces": [
+          "desktop",
+          "mobile_375px"
+        ],
+        "typecheck": "passed"
+      },
+      "newDelayedSaveRegressionFailedOnOldUi": true,
+      "newDelayedSaveRegressionPassedOnFixedUi": true,
+      "correction": "Schedule completion emits a payload-free invalidation event; the currently mounted home view reloads its own session agenda. The ordinary save flow waits for actual form closure.",
+      "fixReceiptSha256": "abf797505eb0848ed445a1da052099b584acd0fdc70e3a6c0d8e2bd7528a4c02",
+      "provider": "isolated_synthetic_upstream",
+      "realModelAcceptance": false,
+      "testsPassed": 202,
+      "ciRunId": 39857376379
+    },
+    "localLifecycle": {
+      "status": "passed",
+      "exactFinalCandidateStatus": "passed_v10.3",
+      "medicationCount": 12,
+      "checked": [
+        "profile_persistence",
+        "invalid_token_rejection",
+        "queued_job_recovery",
+        "expired_running_job_recovery",
+        "account_deletion"
+      ],
+      "providerCalls": 0
+    },
+    "deploymentConfigurationMocks": {
+      "status": "passed",
+      "scenarios": 79,
+      "cloudCalls": 0,
+      "actualDeployment": false
+    },
+    "hostingConfigurationMocks": {
+      "status": "passed",
+      "scenarios": 17,
+      "cloudCalls": 0,
+      "actualDeployment": false
+    },
+    "pythonSourceTooling": {
+      "status": "passed",
+      "testsPassed": 173,
+      "networkCalls": 0
+    },
+    "sourceParserCorpus": {
+      "status": "passed_classification_and_integrity_only",
+      "candidate": "v10.3",
+      "sources": 3521,
+      "accepted": 2764,
+      "needsReview": 757,
+      "otherErrors": 0,
+      "receiptSha256": "cdef38d7aa90a242064b92d5a944262479b5abbaabaa5a35ea121a6bfbdae6fb",
+      "modulePinsCheckedBeforeAndAfter": 40,
+      "providerCalls": 0,
+      "cloudCalls": 0,
+      "clinicalOrAiAccuracyEvaluation": false
+    }
+  },
+  "boundedRuntimeReview": {
+    "status": "passed_bounded_review",
+    "candidate": "v10.3",
+    "receiptSha256": "6c3d696a2d97243a40520646db323469d507d0868697d9099d78dc4317b0de17",
+    "reviewedFileCount": 23,
+    "newActionableP1P2Findings": 0,
+    "isolatedMemoryProbe": {
+      "syntheticOrdinaryAccounts": 51,
+      "realAuthAccountsCreated": 0,
+      "legacyRegistryEntries": 50,
+      "fiftyFirstVerifiedAccountAdmitted": true,
+      "legacyRegistryUnchanged": true,
+      "unverifiedRejected": true,
+      "sameOperationReusesJobWithoutAnotherQuotaCharge": true,
+      "global999ConcurrentRequestsAccepted": 1,
+      "globalCountAfterBoundaryProbe": 1000,
+      "networkCalls": 0,
+      "providerCalls": 0,
+      "cloudWrites": 0
+    },
+    "deadlineCompatibility": {
+      "frontendPollSleepBudgetMs": 360000,
+      "workerLeaseMs": 540000,
+      "cloudTasksDispatchDeadlineMs": 600000,
+      "workerRuntimeSeconds": 600,
+      "mediumAndHighProfilesFit": true
+    },
+    "otherReviewedBoundaries": [
+      "support_owner_admin_privacy",
+      "account_switch_and_late_response_isolation",
+      "support_create_and_reply_idempotency",
+      "allowlisted_failure_telemetry",
+      "worker_alert_filter_excludes_explicit_expected_4xx"
+    ],
+    "semanticOrCloudDeploymentApproval": false
+  },
+  "completedLiveOperations": {
+    "evidenceDocument": "public-operations-20261023.json",
+    "evidenceDocumentSha256": "eb87ca320a40ba4920260f0ac5a30c242949494634d9e1068915f98c4d4d9e19",
+    "firestoreRestore": {
+      "status": "passed_isolated_drill",
+      "documents": 5606,
+      "collections": 12,
+      "unchangedDocumentHashMatches": 5605,
+      "postSnapshotChangedDocuments": 1,
+      "unexpectedMissingDocuments": 0,
+      "unexpectedHashMismatches": 0,
+      "drillDatabaseDeleted": true,
+      "originalDatabaseUidUnchanged": true
+    },
+    "monitoring": {
+      "status": "rules_created_and_read_back",
+      "enabledPolicies": 3,
+      "notificationChannels": 0,
+      "emailsSent": 0,
+      "offlineThresholdVectorsPassed": 15,
+      "liveIncidentTransitionExercised": false
+    },
+    "authenticationPasswordPolicy": {
+      "status": "server_policy_applied_and_checked",
+      "minimumLength": 8,
+      "enforcement": "ENFORCE",
+      "realSevenCharacterSignupRejected": true,
+      "weakAccountsCreated": 0,
+      "emailsSentForPolicyCheck": 0,
+      "forceExistingPasswordUpgradeOnSignin": false
+    }
+  },
+  "limitations": [
+    "The exact code and image passed CI and bounded real cloud acceptance. Three preconfirmed official-source flows and one real-photo pending-identity flow were exercised separately; the incomplete photo was not matched to a leaflet.",
+    "Unit tests and synthetic browser fixtures validate program behavior; they do not establish medical content accuracy or population-wide model performance.",
+    "Some safety fields remain partial, held or original-reading-only. A complete citation or successful job does not prove correct medical scope or full teaching coverage.",
+    "The deployed 3,521-source parser pass classified 2,764 accepted and 757 needing source review. Scanned pages, complex layout and unresolved provenance remain coverage gaps; parser acceptance alone does not establish medical accuracy.",
+    "Firestore restore does not restore Firebase Authentication or Cloud Storage. Relationship recovery was not exercised because the restored snapshot had zero relationship documents.",
+    "Monitoring rules have no delivery channels by user choice; no live fault was injected to exercise an incident transition.",
+    "Large public-traffic load, full cross-service disaster recovery and clinical decision suitability have not been established.",
+    "Queue delay or a crashed worker can outlast initial frontend polling; persisted job identifiers and history recovery remain necessary."
+  ],
+  "reportPreparation": {
+    "source": "pinned_deployed_receipt_actual_cloud_records_and_independent_bounded_review",
+    "providerCalls": 0,
+    "cloudCalls": 0,
+    "cloudMutations": 0
+  },
+  "finalChecks": {
+    "freshCandidateSemantic": {
+      "status": "passed_bounded_content_review",
+      "candidate": "v18-v10.3",
+      "freshLogicalCases": 12,
+      "providerHttp": 36,
+      "planSha256": "ad492a5499abf6caeadee6523ce91449e6bc3fb23bf4c70990e35f4b94410407",
+      "receiptSha256": "2574d05da90286fb7ef1de7abed743880407e56a23821523f7319868554ef77e",
+      "independentSemanticReviewSha256": "1a485381d8906822376213c288204f7bf3ac83ed4b213b137f9637f772c54dc5",
+      "sameSourceThreeByTwoModesByTwoProfiles": true,
+      "controlledEffortOnlyAblation": false,
+      "nativeProductionConfigAndTransport": true,
+      "chosenTextEffort": "medium",
+      "effortSummary": {
+        "medium": {
+          "caseCount": 6,
+          "medianElapsedMs": 45152.5,
+          "maxElapsedMs": 62653,
+          "promptTokens": 109236,
+          "completionTokensIncludingReasoning": 39569,
+          "reasoningTokensIncludedInCompletion": 19938,
+          "estimatedStandardCostMicroUsd": 30708,
+          "safetyQuestionsAcrossThreeBundles": 8,
+          "transportErrors": 0,
+          "truncations": 0,
+          "automaticRetries": 0
+        },
+        "high": {
+          "caseCount": 6,
+          "medianElapsedMs": 76396.0,
+          "maxElapsedMs": 114341,
+          "promptTokens": 111013,
+          "completionTokensIncludingReasoning": 69113,
+          "reasoningTokensIncludedInCompletion": 48672,
+          "estimatedStandardCostMicroUsd": 45658,
+          "safetyQuestionsAcrossThreeBundles": 10,
+          "transportErrors": 0,
+          "truncations": 0,
+          "automaticRetries": 0
+        }
+      },
+      "cases": [
+        {
+          "id": "051528-bundle-medium",
+          "caseSha256": "bf85f4e896d514954546d347c8c4234af1d1692b24e749ea15ac5aaeb560177d",
+          "kind": "bundle",
+          "effort": "medium",
+          "elapsedMs": 35103,
+          "providerHttp": 3,
+          "promptTokens": 14472,
+          "completionTokensIncludingReasoning": 4995,
+          "reasoningTokensIncludedInCompletion": 2339,
+          "estimatedStandardCostMicroUsd": 3944,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 13,
+          "safetyQuestions": 1
+        },
+        {
+          "id": "051528-chat-medium",
+          "caseSha256": "2664b51ce7c608e9f44990205ff0266c275546c9e718f3f0a9ad866d6edcedea",
+          "kind": "chat",
+          "effort": "medium",
+          "elapsedMs": 29705,
+          "providerHttp": 3,
+          "promptTokens": 15089,
+          "completionTokensIncludingReasoning": 3987,
+          "reasoningTokensIncludedInCompletion": 1753,
+          "estimatedStandardCostMicroUsd": 3502,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 14,
+          "safetyQuestions": 0
+        },
+        {
+          "id": "010332-bundle-medium",
+          "caseSha256": "264532b1fc3aee4940dda37aeef534dc1c3f04d3dff12f3b82686b3fbae54bfa",
+          "kind": "bundle",
+          "effort": "medium",
+          "elapsedMs": 62653,
+          "providerHttp": 3,
+          "promptTokens": 21954,
+          "completionTokensIncludingReasoning": 9434,
+          "reasoningTokensIncludedInCompletion": 4533,
+          "estimatedStandardCostMicroUsd": 6912,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 25,
+          "safetyQuestions": 5
+        },
+        {
+          "id": "010332-chat-medium",
+          "caseSha256": "f40d10fe775263d18f69a52a9231f05e4af4c7cfce8b8ff1390a9d150aac13c3",
+          "kind": "chat",
+          "effort": "medium",
+          "elapsedMs": 47079,
+          "providerHttp": 3,
+          "promptTokens": 20947,
+          "completionTokensIncludingReasoning": 6578,
+          "reasoningTokensIncludedInCompletion": 3356,
+          "estimatedStandardCostMicroUsd": 5384,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 22,
+          "safetyQuestions": 0
+        },
+        {
+          "id": "018498-bundle-medium",
+          "caseSha256": "a15ad9911e5c73049eac4669be895d1ec7a832e05f529cb095e0bf79571ccaeb",
+          "kind": "bundle",
+          "effort": "medium",
+          "elapsedMs": 51736,
+          "providerHttp": 3,
+          "promptTokens": 18581,
+          "completionTokensIncludingReasoning": 7911,
+          "reasoningTokensIncludedInCompletion": 4048,
+          "estimatedStandardCostMicroUsd": 5814,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 20,
+          "safetyQuestions": 2
+        },
+        {
+          "id": "018498-chat-medium",
+          "caseSha256": "f41be3227049a756491fb14a78a65e2223371bf7abf755ae67fae9e58cbbe8f2",
+          "kind": "chat",
+          "effort": "medium",
+          "elapsedMs": 43226,
+          "providerHttp": 3,
+          "promptTokens": 18193,
+          "completionTokensIncludingReasoning": 6664,
+          "reasoningTokensIncludedInCompletion": 3909,
+          "estimatedStandardCostMicroUsd": 5152,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 17,
+          "safetyQuestions": 0
+        },
+        {
+          "id": "051528-bundle-high",
+          "caseSha256": "18fa93ecdc34dc802329f67a2a9dd54060151c330795edda0218c6b439806036",
+          "kind": "bundle",
+          "effort": "high",
+          "elapsedMs": 65035,
+          "providerHttp": 3,
+          "promptTokens": 14565,
+          "completionTokensIncludingReasoning": 8866,
+          "reasoningTokensIncludedInCompletion": 6179,
+          "estimatedStandardCostMicroUsd": 5890,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 14,
+          "safetyQuestions": 1
+        },
+        {
+          "id": "051528-chat-high",
+          "caseSha256": "438a6c44dc76bc2ad6efe23a8a7565fb682c501d3d88c830b9231ded8a2d3346",
+          "kind": "chat",
+          "effort": "high",
+          "elapsedMs": 69237,
+          "providerHttp": 3,
+          "promptTokens": 15136,
+          "completionTokensIncludingReasoning": 8921,
+          "reasoningTokensIncludedInCompletion": 6645,
+          "estimatedStandardCostMicroUsd": 5974,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 12,
+          "safetyQuestions": 0
+        },
+        {
+          "id": "010332-bundle-high",
+          "caseSha256": "004d811e379f544119e20fba84fc4166582e8b73ecc5cdd6b35692b648b9f40d",
+          "kind": "bundle",
+          "effort": "high",
+          "elapsedMs": 114341,
+          "providerHttp": 3,
+          "promptTokens": 22379,
+          "completionTokensIncludingReasoning": 15435,
+          "reasoningTokensIncludedInCompletion": 10293,
+          "estimatedStandardCostMicroUsd": 9955,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 28,
+          "safetyQuestions": 5
+        },
+        {
+          "id": "010332-chat-high",
+          "caseSha256": "fa9dfb36d76f223b590574fad200632a4e82f8d2b6c3b25a233355f3df914e0a",
+          "kind": "chat",
+          "effort": "high",
+          "elapsedMs": 72863,
+          "providerHttp": 3,
+          "promptTokens": 21070,
+          "completionTokensIncludingReasoning": 9784,
+          "reasoningTokensIncludedInCompletion": 6496,
+          "estimatedStandardCostMicroUsd": 6999,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 22,
+          "safetyQuestions": 0
+        },
+        {
+          "id": "018498-bundle-high",
+          "caseSha256": "170d8d29f69d381efc4f48bc20b2fe93689fe99bfdbc158b88c66efdb3f0261c",
+          "kind": "bundle",
+          "effort": "high",
+          "elapsedMs": 106525,
+          "providerHttp": 3,
+          "promptTokens": 19406,
+          "completionTokensIncludingReasoning": 14955,
+          "reasoningTokensIncludedInCompletion": 10852,
+          "estimatedStandardCostMicroUsd": 9418,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 25,
+          "safetyQuestions": 4
+        },
+        {
+          "id": "018498-chat-high",
+          "caseSha256": "a7d0f490661a3b163d91efc0a81644ab7f572a9be4a392cbc819b97f26be7f43",
+          "kind": "chat",
+          "effort": "high",
+          "elapsedMs": 79929,
+          "providerHttp": 3,
+          "promptTokens": 18457,
+          "completionTokensIncludingReasoning": 11152,
+          "reasoningTokensIncludedInCompletion": 8207,
+          "estimatedStandardCostMicroUsd": 7422,
+          "aiPurposeClaims": 1,
+          "plainSafetyClaims": 20,
+          "safetyQuestions": 0
+        }
+      ],
+      "selectionReason": "Both reviewed profiles retained source-grounded useful explanations and safety questions. Medium substantially reduced first-result latency; high added some tail teaching and two more questions in one complex bundle, but did not resolve conservative source holds. Complete original fields remain available with explicit partial status.",
+      "knownUtilityLimits": [
+        "051528 faithful pregnancy/lactation and prior-drug-allergy exception drafts can be conservatively held.",
+        "018498 unresolved flattened chronic-cough subject is original-reading-only.",
+        "Some long-field tails and malformed source wording are not simplified or assessed."
+      ],
+      "costScope": "Standard token-rate estimate rounded per HTTP; no invoice claim, excludes all earlier prototypes, cloud costs and later cloud acceptance.",
+      "clinicalOrUniversalAccuracyProven": false
+    },
+    "gitHubCi": {
+      "status": "passed",
+      "commit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+      "runId": 39857376379,
+      "conclusion": "success",
+      "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39857376379",
+      "unitTests": 1581,
+      "unitFiles": 80,
+      "browserTests": 202,
+      "pythonTests": 173,
+      "deploymentMocks": 79,
+      "hostingMocks": 17,
+      "lifecycle": "passed"
+    },
+    "cloudDeployment": {
+      "status": "verified",
+      "commit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+      "imageDigest": "sha256:cfdad9fb21d517d88b6183f7d257fe74756eb26465f3b24c66acf0e18b8eb3ef",
+      "receiptSha256": "804efc8f406720f8ce74c29d066cd2eee461e9f238aec7db2c10913a7873fbe4",
+      "buildId": "349f7075-7591-4821-a910-290977c3470d",
+      "webRevision": "yzt-test-web-00022-82z",
+      "workerRevision": "yzt-test-worker-00022-brq",
+      "runtimeSettingsVerified": true,
+      "otherCapacitySettingsPreserved": true,
+      "secretReferencesPreserved": true,
+      "legacySeatRegistryUnchanged": true,
+      "quotaResets": 0,
+      "newAccounts": 0,
+      "webAndWorkerServingNewExactRevisionsPercent": 100,
+      "authorizedEnvironmentChanges": [
+        "DAILY_GLOBAL_LIMIT=1000",
+        "PUBLIC_ACCESS_MODE=verified",
+        "AI_TEXT_REASONING_EFFORT=medium",
+        "AI_TEXT_MAX_TOKENS=12000",
+        "AI_TEXT_REQUEST_TIMEOUT_MS=90000",
+        "AI_JOB_TIMEOUT_MS=240000"
+      ]
+    },
+    "cloudUserFlow": {
+      "status": "passed_bounded_user_and_content_acceptance",
+      "receiptSha256": "df32bc574db196b8a5023167e4ad2fe05a5c54813cd29de300371a2206fdc61e",
+      "readOnlyHistorySourceMetricsReceiptSha256": "dc28b36b2b2eef06d5b67f8833d3a10617104dbaba539f42bfcd3159757f6b4c",
+      "independentContentReviewSha256": "260813d517dcc76386c6b2d329a66cf86d5fcf13fc5983ae96a3ac0300aa84d7",
+      "pendingPhotoSaveReceiptSha256": "c90141381ffca439648bd73bff22985ecba705b710ab83d19e2b590e12ad3dea",
+      "originalPlanSha256": "5fa0d7879c475f1dc4d53fc1cfdd8b7bed7d15641a294f3b3620a20168e7a1a7",
+      "finalContinuationPlanSha256": "bc08fda3afca494000c10e9bdf024e99243a0999f427e4ed67db83008cda285e",
+      "freshLogicalJobs": 8,
+      "providerHttp": 19,
+      "actualTokensIncludingReasoning": 149262,
+      "automaticRetries": 0,
+      "jobErrors": 0,
+      "browserPageErrors": 0,
+      "existingOrdinaryAccountsUsed": 1,
+      "newAccounts": 0,
+      "quotaResets": 0,
+      "quotaBeforeAndAfter": {
+        "timezone": "Asia/Taipei",
+        "perPersonLimit": 20,
+        "siteWideLimit": 1000,
+        "ownerBefore": 11,
+        "ownerAfter": 19,
+        "siteBefore": 11,
+        "siteAfter": 19
+      },
+      "textContentLatencyMs": {
+        "cases": 6,
+        "minimum": 36239,
+        "median": 45294,
+        "maximum": 52356
+      },
+      "steps": {
+        "photoUploadRecognition": "passed_one_public_masked_real_photo_independently_compared_to_original_pixels",
+        "identityReviewAndSave": "passed_one_pending_identity_save_unknown_fields_retained_reload_same_record",
+        "leafletExplanation": "passed_three_preconfirmed_official_source_records",
+        "comprehensionQuizAndSavedProgress": "passed_all_fourteen_actual_questions_wrong_then_correct_and_reload",
+        "medicationQuestions": "passed_three_source_grounded_responses_with_explicit_partial_status",
+        "sourceReviewPending": "passed_one_hold_without_provider_call",
+        "privateSupport": "passed_one_owner_report_submission_and_readback_without_email",
+        "offlineAndReloadRecovery": "passed_no_new_ai_jobs_offline_or_when_reopening_saved_results",
+        "mobile375": "passed"
+      },
+      "contentReview": {
+        "medicalLogicalOperations": 7,
+        "contentGenerationJobs": 6,
+        "sourcePendingJobs": 1,
+        "publishedClaims": 127,
+        "aiPurposeClaims": 6,
+        "plainSafetyClaims": 115,
+        "fullCanonicalSafetyClaims": 6,
+        "quizQuestions": 14,
+        "quizOptions": 28,
+        "warningObjectiveQuizQuestions": 11,
+        "medicalSafetyPointQuestions": 10,
+        "storageConditionQuestions": 1,
+        "claimAndQuizLiteralCitations": 204,
+        "readerLiteralCitations": 6,
+        "citationErrors": 0,
+        "confirmedPublishedMaterialContradictions": 0,
+        "medicalProviderHttp": 18,
+        "medicalActualTokens": 147592,
+        "contentLatencyMedianMs": 45294.0,
+        "contentLatencyMinMs": 36239,
+        "contentLatencyMaxMs": 52356
+      },
+      "quizInteraction": {
+        "questions": 14,
+        "optionsReviewed": 28,
+        "answerPosts": 28,
+        "allQuestionsWrongThenCorrect": true,
+        "explanationsAndCitationsChecked": true,
+        "answersPersistedAfterReload": true
+      },
+      "photo": {
+        "name": "Kentamin",
+        "publicRealPhoto": true,
+        "privacyMaskedWithoutDrugTextRedraw": true,
+        "latencyMs": 4710,
+        "ocrMatchedVisibleMedicationAndInstructions": true,
+        "licenseNoInferred": false,
+        "strengthInferred": false,
+        "identityAfterSave": "needs_information",
+        "savePosts": 1,
+        "additionalAiJobsForSave": 0,
+        "sameRecordAfterReload": true,
+        "leafletDisabledUntilIdentityReview": true,
+        "completeAiFlowFromThisPhotoClaimed": false
+      },
+      "sourceCoverage": {
+        "preconfirmedOfficialSourcesExercised": [
+          "051528",
+          "010332",
+          "018498"
+        ],
+        "sourceReviewHoldExercised": "060225",
+        "allCatalogOrPopulationAccuracyClaimed": false
+      },
+      "statePreservation": {
+        "existingMedicalJobResultsUnchanged": true,
+        "legacySeatRegistryUnchanged": true,
+        "officialSourceVersionsUnchanged": true,
+        "runtimeSettingsUnchangedDuringAcceptance": true
+      },
+      "harnessCorrections": "Archived continuations corrected jobId-only enqueue responses, native fetch response access, and support selectors. Read-only collection follows intentional post-success input clearing and validates canonical payload hashes plus persisted history. Original jobs were resumed without resubmitting AI operations.",
+      "cases": [
+        {
+          "operation": "html-source-review-hold:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "f556181c7d4afab8d7bce4e7dafc6590046ae1a9c8794fc81aee49f76336e6ff",
+          "latencyMs": 177,
+          "tokens": 0,
+          "providerHttp": 0,
+          "attempts": 1
+        },
+        {
+          "operation": "kentamin:recognition",
+          "kind": "recognition",
+          "actualRecordSha256": "64e0657379bbbd656238b304bbadfbe83b395b240975124c5b2726b48e3ed9a8",
+          "latencyMs": 4710,
+          "tokens": 1670,
+          "providerHttp": 1,
+          "attempts": 1
+        },
+        {
+          "operation": "html-literal-rectangular-subtable:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "ca4c9e1485cf1870f97e7bc36aeaabcc7f6a52dac22de59c96c19cc29d04919c",
+          "latencyMs": 52356,
+          "tokens": 26667,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "html-literal-rectangular-subtable:chat",
+          "kind": "chat",
+          "actualRecordSha256": "6c73910db3e758e8144ea4bfebbd0e8d38684153f7ebc48c7ef8e08e14e6bb48",
+          "latencyMs": 40047,
+          "tokens": 24367,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-propranolol-three-pages:chat",
+          "kind": "chat",
+          "actualRecordSha256": "181989b1d433a418d049aea793546a0a0dbabcab9d8209fb4eb4a91c65311b2d",
+          "latencyMs": 45748,
+          "tokens": 26961,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-acetaminophen-two-pages:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "8d9df533e87a97802c23efa18ece7afe90e85dccc673a3184a5ad9f3773bc9b5",
+          "latencyMs": 44840,
+          "tokens": 20428,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-propranolol-three-pages:bundle",
+          "kind": "bundle",
+          "actualRecordSha256": "a6caa13160b7fd39d6a04aaf8f82fc50d04f437f58bc708193705dfab677b999",
+          "latencyMs": 47730,
+          "tokens": 28786,
+          "providerHttp": 3,
+          "attempts": 1
+        },
+        {
+          "operation": "pdf-acetaminophen-two-pages:chat",
+          "kind": "chat",
+          "actualRecordSha256": "f4e640f158dabb92ce5871b2006fe7b6ae9d52561c77e3122f9481baaa7149e5",
+          "latencyMs": 36239,
+          "tokens": 20383,
+          "providerHttp": 3,
+          "attempts": 1
+        }
+      ],
+      "finalFindings": {
+        "newConfirmedMaterialSourceContradictionsInReviewedPublishedSubset": 0,
+        "allSafetyFieldsFullySimplified": false,
+        "clinicalApprovalOrUniversalAccuracyClaimed": false
+      }
+    },
+    "finalGitHubSynchronization": {
+      "status": "included_in_this_master_documentation_commit",
+      "codeCommit": "bafcf134655b41e01e6d0d9c66dfa5d80d342b0f",
+      "documentationCommitReference": "the_commit_containing_this_record",
+      "codeCiRunId": 39857376379,
+      "documentationOnlyCiSkipped": true
+    }
+  }
+}

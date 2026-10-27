@@ -1,0 +1,34 @@
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  display: grid;
+  gap: 16px;
+}
+.notification-item.card {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.notification-item .notification-message {
+  color: var(--ink);
+  font-size: calc(16px * var(--font-scale));
+}
+.notification-intro {
+  overflow-wrap: anywhere;
+}
+.notification-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: calc(13px * var(--font-scale));
+}
+.notification-meta dt {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.notification-meta dd {
+  margin: 0;
+}

@@ -1,0 +1,241 @@
+{
+  "schema": "teaching-fixed-repeat-acceptance-20261023/v1",
+  "date": "2026-10-23",
+  "status": "two_fixed_repeats_cover_recognized_safety_fields_with_one_question_stem_needing_wording_review",
+  "runtimeCommit": "ad76753014f249ca6474cba48768ec50273949c7",
+  "provider": "openai",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "medium",
+  "scope": "Native provider calls with frozen official source and final deterministic guard replay; coding-agent source-fidelity review. This is not a cloud-user end-to-end AI run or clinical evaluation.",
+  "source": {
+    "licenseNo": "衛部藥輸字第028248號",
+    "name": "新生安康綜合感冒顆粒",
+    "inputSha256": "2fad9f01767572515c5521f40d28126442eae7b95018238da7169e91022593f4"
+  },
+  "earlierDevelopmentAttempts": {
+    "report": "teaching-completion-20261023.json",
+    "reportSha256": "1cbac6211a21a9846c5658f522eb0fcd3329e1c9ff334f31afda5de43b8352b4",
+    "caseAttempts": 10,
+    "providerHttp": 37,
+    "tokens": 275393,
+    "applicationCaseErrors": 1,
+    "allAttemptsRetained": true,
+    "differentDevelopmentRoundsNotIdenticalTrials": true,
+    "selected028248WarningsRemainPartial": true,
+    "selected028248SourceResultSha256": "e7ca4c33a0cc2fa3f72304fb51dfc2dcdd8db41903d83caf854d3833437ce608",
+    "experimentFindingsRetained": [
+      {
+        "round": 1,
+        "id": "026558",
+        "finding": "rejected_experiment_changed_30_seconds_inclusive_boundary",
+        "publishedToCloud": false
+      },
+      {
+        "round": 2,
+        "id": "026558",
+        "finding": "complete_json_but_option_objects_rejected_by_string_schema",
+        "publishedToCloud": false
+      },
+      {
+        "round": 3,
+        "id": "023513",
+        "finding": "safe_source_reading_preserved_but_purpose_literal_grammar_and_question_heading_false_negative",
+        "publishedToCloud": false
+      },
+      {
+        "round": 4,
+        "id": "023513",
+        "finding": "unsupported_absence_comment_detected_by_full_text_review",
+        "publishedToCloud": false
+      },
+      {
+        "round": 4,
+        "id": "028248",
+        "finding": "overdose_scope_and_non_plain_repair_rejected_remaining_partial",
+        "publishedToCloud": false
+      }
+    ]
+  },
+  "fixedRepeatPlan": {
+    "planSha256": "0ca6b14e101960f6417071d93742fd1387782a92978a54539da2f9c25d8cc5ce",
+    "caseAttempts": 2,
+    "sameFrozenSourceAndRuntime": true,
+    "maxHttpPerCase": 5,
+    "maxProviderHttp": 10,
+    "jobTimeoutMs": 240000,
+    "requestTimeoutMs": 90000,
+    "noAutomaticRetry": true,
+    "noEarlyStopAfterSuccess": true,
+    "resultReceiptSha256": "57c901df5ee1e71c883cfce8a163d4e79a64945bbdb325ac1826578207fdac76"
+  },
+  "fixedRepeats": [
+    {
+      "id": "repeat-1",
+      "sourceResultSha256": "2a35ef8f999543f1a398b6b53f396740cacdb6d79d6cdefac2bbd43bd686cbdc",
+      "providerHttp": 3,
+      "tokens": 27353,
+      "elapsedMs": 71392,
+      "claims": 30,
+      "plainLanguageClaims": 27,
+      "quizQuestions": 4,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "sourceSpans": 3,
+          "explainedSpans": 3,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "sourceSpans": 3,
+          "explainedSpans": 3,
+          "quiz": 1
+        }
+      ],
+      "allRecognizedSafetyFieldsComplete": true,
+      "wholeLeafletTeachingComplete": false,
+      "allCorrectOptionsAndExplanationsSourceSupported": true,
+      "allQuestionStemsClearAndUnambiguous": true,
+      "questionStemsNeedingWordingReview": [],
+      "sourceFidelityReviewSha256": "3fcbf226cc598be47d197fc95d4d84bfcfb2f86d9467f0799c90b9822d89ce8b",
+      "reviewActor": "coding_agent",
+      "humanReview": false,
+      "clinicalReview": false,
+      "pharmacistReview": false,
+      "finalDeterministicReplay": {
+        "stages": 3,
+        "resultUnchanged": true,
+        "allCitationsLiteral": true,
+        "allCoverageIndicesValid": true
+      },
+      "rejectedCandidateNotPublished": {
+        "count": 1,
+        "reason": "ambiguous_quiz",
+        "notPublishedAsQuestion": true
+      }
+    },
+    {
+      "id": "repeat-2",
+      "sourceResultSha256": "3a5ad48665defaee12724399686a9d901b02bbd68aefd5c40483642749e4beef",
+      "providerHttp": 5,
+      "tokens": 54689,
+      "elapsedMs": 173202,
+      "claims": 34,
+      "plainLanguageClaims": 31,
+      "quizQuestions": 5,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "sourceSpans": 3,
+          "explainedSpans": 3,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "sourceSpans": 3,
+          "explainedSpans": 3,
+          "quiz": 2
+        }
+      ],
+      "allRecognizedSafetyFieldsComplete": true,
+      "wholeLeafletTeachingComplete": false,
+      "allCorrectOptionsAndExplanationsSourceSupported": true,
+      "allQuestionStemsClearAndUnambiguous": false,
+      "questionStemsNeedingWordingReview": [
+        2
+      ],
+      "sourceFidelityReviewSha256": "2b2c652374a86d829ae06bd8bed0292c63b4f9028efcbf64fc8e80400d2ecd37",
+      "reviewActor": "coding_agent",
+      "humanReview": false,
+      "clinicalReview": false,
+      "pharmacistReview": false,
+      "finalDeterministicReplay": {
+        "stages": 5,
+        "resultUnchanged": true,
+        "allCitationsLiteral": true,
+        "allCoverageIndicesValid": true
+      },
+      "rejectedCandidateNotPublished": null
+    }
+  ],
+  "fixedRepeatTotals": {
+    "caseAttempts": 2,
+    "providerHttp": 8,
+    "tokens": 82042,
+    "applicationCaseErrors": 0,
+    "casesWithAllRecognizedSafetyFieldsComplete": 2,
+    "recognizedFieldAssessmentsComplete": 4,
+    "recognizedFieldAssessmentsTotal": 4,
+    "claimsReviewed": 64,
+    "quizQuestionsReviewed": 9,
+    "optionsReviewed": 18,
+    "explanationsReviewed": 9,
+    "questionStemsNeedingWordingReview": 1,
+    "confirmedSourceContradictionsInCorrectOptionsOrExplanations": 0
+  },
+  "combinedAccounting": {
+    "caseAttempts": 12,
+    "providerHttp": 45,
+    "tokens": 357435,
+    "applicationCaseErrors": 1,
+    "allTwelveSuccessful": false,
+    "interpretation": "All development failures, partial outputs and rejected candidates remain in the denominator. The final two fixed repeats do not overwrite or turn the earlier ten attempts into successes."
+  },
+  "questionStemFinding": {
+    "caseId": "repeat-2",
+    "quizIndex": 2,
+    "quizId": "teach-field-e155bff7dc899877dfb1-q1",
+    "classification": "question_stem_ambiguity",
+    "status": "needs_wording_review",
+    "question": "關於「使用上注意事項」，服用本藥可能嗜睡時，哪項符合仿單提醒？",
+    "sourceQuote": "可能引起嗜睡，勿駕車或操作危險性機械。",
+    "correctOption": "勿駕車或操作危險性機械",
+    "correctOptionSourceFidelity": true,
+    "explanationSourceFidelity": true,
+    "clearUnambiguousQuestion": false,
+    "excludedFromDemonstration": true,
+    "writtenToCloudLearning": false,
+    "reviewNote": "The 時 wording can be read as a condition. The correct option and explanation preserve the unconditional prohibition and do not say to wait for actual drowsiness; source fidelity and question clarity are therefore recorded separately. No real-user interpretation study was performed."
+  },
+  "finalGuardReplay": {
+    "sha256": "35da6fa66a342b1731f06250fb5ec0f7b15ecd34f4a39e26ec5d35af616da9ad",
+    "cases": 2,
+    "stages": 8,
+    "allCitationsLiteral": true,
+    "allCoverageIndicesValid": true,
+    "resultsUnchanged": true,
+    "networkCalls": 0,
+    "freshProviderCalls": 0
+  },
+  "coverageLimits": [
+    "Complete means the two recognized safety fields 使用上注意事項 and 警語, each with three source spans; it does not mean every leaflet section.",
+    "Section 4 adult amount/frequency/timing and section 7 storage temperature remain in the full source rather than generated teaching or quizzes for this sample.",
+    "Quizzes assess selected key points, not every warning and not proven user comprehension.",
+    "The repeat-2 question with ambiguous wording is excluded from demonstration; none of these native results were written into cloud learning records.",
+    "Two fixed repeats of one source cannot establish population-wide AI accuracy, completeness for all 3,661 sources or clinical safety."
+  ],
+  "review": {
+    "kind": "coding_agent_source_fidelity_review",
+    "allClaimsOptionsExplanationsReviewed": true,
+    "modelVerdictsUsedAsIndependentProof": false,
+    "humanReview": false,
+    "clinicalReview": false,
+    "pharmacistReview": false
+  },
+  "websiteAiJobsCreated": 0,
+  "websiteQuotaCharges": 0,
+  "cloudApplicationWrites": 0,
+  "cloudLearningWrites": 0,
+  "newAccounts": 0,
+  "quotaChanges": 0,
+  "quotas": {
+    "personDaily": 20,
+    "siteDaily": 1000,
+    "changed": false
+  },
+  "priorFrozenReportsOrResultsOverwritten": false
+}

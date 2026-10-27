@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-21",
+  "baselineCommit": "8862e539b0461652f2d03df01e0b07010be3e694",
+  "scope": "Local synthetic user-experience regression; cloud release pending",
+  "changes": [
+    "Keep original frequency text and explain recognized abbreviations without inferring reminder times",
+    "Reveal the exact saved medication, preserve demonstration navigation, and search the existing list",
+    "Distinguish separate medication and learning records; save selected medication IDs in new chat records",
+    "Explain and validate manually entered reminder times; preserve drafts across failures and late responses",
+    "Present answers and citations without unrelated education sections; retain warnings and rejection notices",
+    "Coalesce concurrent identical submissions before asynchronous fingerprinting"
+  ],
+  "validation": {
+    "cleanSnapshotExcludedUnrelatedResearch": true,
+    "finalUnitTests": { "passed": 849, "failed": 0 },
+    "browserSuiteBeforeFinalSubmissionRaceFix": { "passed": 138, "failed": 0 },
+    "finalTargetedBrowserTests": {
+      "passed": 18,
+      "failed": 0,
+      "files": [
+        "tests/e2e/chat-answer-presentation.spec.ts",
+        "tests/e2e/extended.spec.ts",
+        "tests/e2e/job-submission-recovery.spec.ts"
+      ]
+    },
+    "submissionRace": {
+      "deterministicRegressionFailedBeforeFix": true,
+      "apiJobTestsAfterFix": 25,
+      "persistentRequestBodiesAdded": false
+    },
+    "visualReview": "Synthetic desktop 1280x900 and mobile 375x812 captures",
+    "modelRequests": "Mocked; no paid provider calls",
+    "finalFullSuite": "See the validate workflow for the containing commit"
+  },
+  "cloudDeploymentPerformed": false,
+  "accountOrQuotaChanges": false,
+  "realUserDataChanged": false,
+  "remainingVerification": [
+    "Release and acceptance on the deployed cloud origin",
+    "Real-model answer quality on additional photographs"
+  ]
+}

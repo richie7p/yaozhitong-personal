@@ -1,0 +1,621 @@
+{
+  "schema": "tfda-ingestion-acceptance/v1",
+  "checkedAt": "2026-10-21T16:51:56.410Z",
+  "status": "initial_cloud_batches_verified_full_inventory_job_running",
+  "cloud": {
+    "project": "project-b6fe4904-e687-4365-b2f",
+    "publishedBefore": 8,
+    "publishedAtReadback": 75,
+    "newPublished": 67,
+    "newRawAndFullTextReadbacksVerified": 67,
+    "newSourcesSearchableThroughWebApi": 67,
+    "protectedEightExactDocumentsAndPointersUnchanged": true,
+    "rawManufacturingMaterialNotPublished": true,
+    "applicationDeploymentChanged": false,
+    "accountSettingsChanged": false,
+    "quotasChanged": false
+  },
+  "inventory": {
+    "activeAsOf": "2026-10-21",
+    "catalogDistinctFullLicenses": 66512,
+    "leafletIndexRows": 29891,
+    "activeFullLicenses": 21233,
+    "activeWithOfficialHttpsSourceUrl": 18183,
+    "activeWithoutOfficialHttpsSourceUrl": 3050,
+    "allSourceCandidateFullLicenses": 27559,
+    "allSourceCandidateStateCounts": {
+      "active": 18183,
+      "revoked": 7839,
+      "expired": 876,
+      "index_only": 661
+    },
+    "allUniqueSourceUrlCountAcrossLicenses": 30910
+  },
+  "initialAcquisition": {
+    "attemptedUniqueSources": 2600,
+    "rawObjectsObtained": 2562,
+    "failedSources": 38,
+    "counts": {
+      "downloaded_html_draft": 204,
+      "downloaded_html_needs_review": 1073,
+      "downloaded_pdf_draft": 482,
+      "downloaded_pdf_needs_review": 803,
+      "failed": 38,
+      "pending": 18146
+    },
+    "rawBytesVerifiedBeforeCacheReuse": 1783233103
+  },
+  "independentHtmlSpotChecks": {
+    "products": 5,
+    "simpleTables": 118,
+    "cells": 534,
+    "allMatchedOriginalDom": true,
+    "method": "independent_lxml_DOM_and_literal_table_comparison"
+  },
+  "checks": {
+    "unitTests": 1054,
+    "pythonOfflineTests": 71,
+    "productionBuild": "passed",
+    "mobilePhotoSpecRegression": 25,
+    "desktopPhotoSpecRegression": 5
+  },
+  "sourceChecks": {
+    "htmlParser": "tfda-complete-dom-v4",
+    "pdfParser": "tfda-pdf-independent-v3",
+    "rawReplayBeforePublication": true,
+    "humanReviewed": false,
+    "clinicalReviewed": false
+  },
+  "costControls": {
+    "aiCallsForIngestion": 0,
+    "paidOcrCalls": 0,
+    "cloudResourcesOrScalingChanged": false,
+    "userDailyAiLimit": 20,
+    "globalDailyAiLimit": 200,
+    "testerSeatLimit": 50
+  },
+  "remaining": [
+    "Full all-index acquisition, extraction and publication batches are still running.",
+    "Missing official links, download size/time failures, scans, complex structures, old names and unresolved multiple sources remain pending.",
+    "Additional current paper and historical attachments discovered inside HTML are not all acquired by the top-level index queue.",
+    "Import checks do not establish AI explanation or quiz quality for every newly added product."
+  ],
+  "publishedSources": [
+    {
+      "fullLicense": "衛部藥製字第058030號",
+      "leafletId": "3f8b23ab9c289a863d3d59df92b21ca9455a88a36893f3fc1817621bd2072c6b",
+      "rawSha256": "cb31562b36e02d32298c55bdccad65f2f9f44a92fbdc07c19505fc87dddbb82a",
+      "canonicalTextSha256": "f5459e020ffdaf33e2a28dd7e59836d8af4c183113fe719516884c42c79af5ab",
+      "characters": 1044,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥製字第058033號",
+      "leafletId": "dd4c2c5c4426c1f784277da4db217e33a3b44a9ec18d018187e77ec3dd07df2b",
+      "rawSha256": "b1caa50b44d1f8c6dbf057f95dd66dfe5935c3f2e7b08bfa4fedf00f5c180ac5",
+      "canonicalTextSha256": "d6b2ec84bcb0ddf0e1c23ac59b8a985cb62be1955aab7b16922aa600273b6ca9",
+      "characters": 7997,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥製字第058099號",
+      "leafletId": "b2dacbac7004d7a2675649f08c059e72d698ac1866e2c87bd737040c6120b685",
+      "rawSha256": "52307848723ce4fa014a7682cd682f04eb672399a5e171dc481539a07fed36e4",
+      "canonicalTextSha256": "8668dc00ad7ebddf28ca7f5af2b04a247e0428672dbcd3f88c8f4ac90580a7fa",
+      "characters": 1568,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第027157號",
+      "leafletId": "07cef77d7ea4953454eee92650893d9f9354b21edde40651ab4fb56bb7b6f202",
+      "rawSha256": "760e0824c3d6e7a1b5615acba5b9aa09443efa3865dcc26db5e5f9e9704f30b5",
+      "canonicalTextSha256": "69d1e57a9c93cecff5f7e43a592276ccdadb9ea64a3b54abceeea6397855ac1a",
+      "characters": 3844,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第027175號",
+      "leafletId": "cc125fa79f510f66f9300b6c727e8f19fd7303bd2c412f569f7777f660181b39",
+      "rawSha256": "474033ea51edf8997307f8317e4647b481b4785a075d22e41328942f9d5b0ee4",
+      "canonicalTextSha256": "43ba5be650817192d8e6642476588d06c4ebd76d12c42a9df493dd83dffd61f6",
+      "characters": 17627,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第027176號",
+      "leafletId": "6762c1b9272ad6a23ddcad7e4de5db38387bf10e6e913c892e26c3268e905710",
+      "rawSha256": "8e84da06c349ad5156299e26f255b2309735e18762bde091d7093e17e7b9362a",
+      "canonicalTextSha256": "662d88f6ba69fee0409366eb57f48b68d08e1d3d3a10cbeefee6dd8ac63136b0",
+      "characters": 17620,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第002321號",
+      "leafletId": "2a0b4931d322597eeab71702b0bb70c8463dd28503666f4b75404bc3a2e0686a",
+      "rawSha256": "4413dfa01b9a026c60e06d93fb50f9952a6a0dbea50ccaa88a4b4abadaa78021",
+      "canonicalTextSha256": "70a9d2933595e8adb189ecda4213715b4b1ac6a1dc6311556e926b0516dbb76e",
+      "characters": 926,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第002394號",
+      "leafletId": "8b28086b82ae1f352dbc3a4c3d60785b7fd383d03451938351163d658ecd7742",
+      "rawSha256": "3c415e7d8260d30645d7aba3cf221ef8a79ae0e86d275bf90404db87c13a1db7",
+      "canonicalTextSha256": "77bf6e1fee190648355fc22f21dd23c2cf4845400d54c160c8174199f6dd6909",
+      "characters": 969,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第002845號",
+      "leafletId": "f2988c903e07a773033da3ab56e538e71336cd783f24c75329d6b882ea38f559",
+      "rawSha256": "6c2313514fa6a0abc3715336374f97c97cc38e522366c2d2a31d8aeefd650c58",
+      "canonicalTextSha256": "239b898c2f175ab3972f161b5e1c0c89f5206569ca19aabc194b69387e2f3397",
+      "characters": 486,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第012446號",
+      "leafletId": "706ace7fdb9836cdb118c8b5b709ab45f9a7e9337505a313c3e6dcfc6e39de80",
+      "rawSha256": "26bc8289ac648c4ac2687a8bf596c0888b350538b3c2699f3e5624fd589ac51e",
+      "canonicalTextSha256": "d8096647499c6792b2450382d63baf7af793cd401e1f1963389203a8eea77c71",
+      "characters": 1360,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第012447號",
+      "leafletId": "45516fbd969d58809d2ddaf1e48e6d97b7ad957b592e8ea14f831730bad4367d",
+      "rawSha256": "f21c648661d4603d3edf82071e987f34819b649d25075ad9e23e16f9897dc9ee",
+      "canonicalTextSha256": "307ac7709ab7fc68ae073ca0810e6101d9f92d1d899e71ce18ad6fa30ef32b1e",
+      "characters": 4301,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第012550號",
+      "leafletId": "a4146f1a413d70c6ca6c3ea29008468a41cb44104ac8fcdb81ec6e3d0764a0e6",
+      "rawSha256": "12705439ffb4cde92f73562ea21044fdf891f5a6cfdf45494c32ff1af375d70e",
+      "canonicalTextSha256": "cc26c9b3ebe2026b76c1e36d1c5d0d8803f69097a64061ad70c6c77491811e27",
+      "characters": 1073,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第018620號",
+      "leafletId": "9c18d7d798580513d4eb8474343a8b2dae47d275f8a724c4dab662bd6aa9868a",
+      "rawSha256": "0d62bc2de71023ca1d8d24ef5ad90ea0bd07e677911f3ef44989d6b159c85966",
+      "canonicalTextSha256": "b838ae21f063e921d985fe4f24813c5684fd3a22db5b70b966d90d1ef1ade5de",
+      "characters": 2319,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第023492號",
+      "leafletId": "3c9c5e4c42b4859942fe2e89195c6befc813f51f1884758c74c967236a3ca198",
+      "rawSha256": "2615c1f5066b99dc3bbb7e49445cf74add86d833b3fb22d85240a944c9af6494",
+      "canonicalTextSha256": "35f6a8bd9961b30cfa7cc0da94fb287aa13739b4464ea2e5e0f36c2c8aab8d5f",
+      "characters": 1110,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第023569號",
+      "leafletId": "ab82b803f0c483882ace7095463ec122f1139153b9b01a38647fcbe198a4fda7",
+      "rawSha256": "16ede8b66cb64fb2def99e8c65e2d853a2bcf3a38f8a1fa694fb88b669862639",
+      "canonicalTextSha256": "547544fc568b6fcb9b52866dd708f1efbac31a9e8a3cbcf78a43bf5e95ccb8ae",
+      "characters": 3445,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第037712號",
+      "leafletId": "8e315bee2bc9db080cdcf05df413b2748229b0b81706d79c5d35c937a75ce15b",
+      "rawSha256": "df198ed3b3411cc658dbfa24917741d408a341b88875095f19dc9829cefbc285",
+      "canonicalTextSha256": "a2b982cd1a52efcf7ebe16ce0ffc162b89aabed2dc986eafd08defda2de3c111",
+      "characters": 1362,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第037720號",
+      "leafletId": "8f9347c0409b639ab687a42d78fc1ed0201402d7d25f0a7d46a923ffde12db9f",
+      "rawSha256": "397571e2053265e92d3aa7de6301b7a8a827bdb64ad90b392de40acf17a78e03",
+      "canonicalTextSha256": "22edbd7aa994384c7b2e75eff0ba255ef04cad84d046d62cdfab17c250d33e15",
+      "characters": 1457,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第037740號",
+      "leafletId": "984367d6022beee5656d764035281461b825a24ccf770f05cdcdeecf4662666f",
+      "rawSha256": "6ac361da139e095ac79f393f81e88309d6e53a28c242dbde43336dd1eb39b2fc",
+      "canonicalTextSha256": "168aa7bd8ce57b7750e14a8c7dc742ba0057f7a285d850e46cd939b92d3b1abe",
+      "characters": 3206,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第038030號",
+      "leafletId": "8f04c0eff62256b7f7270ef6da6a809ab368f61680c8ef4568c4c664f0a709ec",
+      "rawSha256": "e78a233b1500dddc5638d44937593d69cc927d4be44931aa5c7886eca3c2f7c6",
+      "canonicalTextSha256": "7dc9bf353d1f5a1d5555ec3e7d6c36ef88154767eec107eee818a1f2c57111b3",
+      "characters": 1294,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第041987號",
+      "leafletId": "377cd5bdfdd9db3ddc54fcbcee187bc443388d3ce4f55495e9da3a7f92053cfd",
+      "rawSha256": "c0e7428f087db37da1e6e2fb20f85ea1c68b4dda5a4f7b51bf897741af60f56f",
+      "canonicalTextSha256": "4ebdd388d66a2ea0f2166e1a9e76ece409eea1adb3e6e26ceb54f0e28355a9b1",
+      "characters": 3525,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第042090號",
+      "leafletId": "976acfc39a06e90d14bebf732160b51100facf48a8490ac303a851b1417b10d8",
+      "rawSha256": "82bd581caa17786d86dde01c74b40b117364ca645d46a948567bafb3d768c469",
+      "canonicalTextSha256": "df7ba2b3488bf3927245b8363f7a2d7d317897035855cfa23de34802ce46edfe",
+      "characters": 1890,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第046461號",
+      "leafletId": "f9d35356eed6013716d586f10b5e59bc7923b1ea256f86676e6cbaacd2a24b44",
+      "rawSha256": "23cb297241d70d3c694905cc6da89b4ad3bc549b9dfc382862ade16039435e4c",
+      "canonicalTextSha256": "a624c9d7f95301170e4538c094c930c91620abe52305a10acb9f2215adfa452d",
+      "characters": 1887,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第046488號",
+      "leafletId": "8946e5debb4c719d78e31c97418a7a8491ca0954a548652ff1fa30eca02e2b7f",
+      "rawSha256": "8c43848105c030ff0d19f1823ac85b26d89d9dfdeb65d62f67a5598998c1bb8b",
+      "canonicalTextSha256": "2df30b2e9a9d51f2f09d78a3ddc4fbbc49bb7bed6bad99835622d09691da09b2",
+      "characters": 2752,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第046933號",
+      "leafletId": "cca751890b7c9bbed4cefc8039641394bc967453fcdb20c1e0b968c9998f5c9d",
+      "rawSha256": "82ee003ab87231225bb37a32684a95ea98dcf55a915b893c695bfa050e918811",
+      "canonicalTextSha256": "91c9f981230d060cdc7b432d9cb33a72615d8c04a22ffa7eeec38f13ce108b3a",
+      "characters": 3298,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第046937號",
+      "leafletId": "7101a0b54f4c55e072e797b029a92d28fba1cb441fc24e24bef42c164d1f8103",
+      "rawSha256": "925cd4e91b004fd3c73af9d79daedbbd82be3cbea2a51a50fc79cf70666413d1",
+      "canonicalTextSha256": "80d183295b7ede6a2ecc180745be9d989e97c1fdb75967737a1b40d54eae1b61",
+      "characters": 1150,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥輸字第021531號",
+      "leafletId": "d86c68e5b13c57c6fa6f380b6786bd2c82471bb328fe04577f9f65c69e14b423",
+      "rawSha256": "971537e8c4744d16026e83f736c01443c8029850effd0abc07f9af8cc011f3a8",
+      "canonicalTextSha256": "28b807b2557161ce9abeeb023924d9b877d7e8ea2d6d84da3795738ffaf1325b",
+      "characters": 9395,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥輸字第021545號",
+      "leafletId": "e1a0715c3b244eea3f9d01c6223d7beabb626e0054034deaed038e1f273f4cb8",
+      "rawSha256": "4b41517fa6650f006a3cee90cfa54f42de54ccb38c5b4562a9c9b4e4b75fa43a",
+      "canonicalTextSha256": "4e6cf49d578fa6ea84d9fa1273517597a139d612c5cae16e3947ee87dd22d8e8",
+      "characters": 5546,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥輸字第024791號",
+      "leafletId": "4707af6a67dec3a8da3a3baaf52360f8ec3d6bdab8501c0fc3e07c7eec550e2b",
+      "rawSha256": "58d13385ec78fcd4cd76faec447e9aaddd6f9013e01c179142b6fb92b0c71cba",
+      "canonicalTextSha256": "5d898afc63e7a2edd915f4766a2488bbe2f1a72023619bb542e62324b8fe5f96",
+      "characters": 12508,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥製字第058342號",
+      "leafletId": "7916de0ec1f824b664d2f1a66380c3156d927405796f5882eecb55ba1d14c94d",
+      "rawSha256": "e399644658eebcef51fd4ec54c51b7bdcfcec20048ccd94c7b5ec434bee772b1",
+      "canonicalTextSha256": "994b070c880961dcdc42a0df6f43545e35f006acd015a37c5ddc2c8f2f76209d",
+      "characters": 1112,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥製字第058519號",
+      "leafletId": "30e7da5c081ec3756e37e2f3ec6bf17ea16f4d20f5cba8dae280e163b3bea308",
+      "rawSha256": "b7fc28d7493bd180c5460fd49d6b3f067326c2809fceb927438cac8ba5277234",
+      "canonicalTextSha256": "531f0cb0def9d085006d4b945c984985ed58a10bbfe0e1dc3954f8e9c6274cd2",
+      "characters": 1683,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥製字第058534號",
+      "leafletId": "e8df8439769424840f92e21b10b4aef7ee2a64a03e46d871c390fcb2dbfce418",
+      "rawSha256": "18ec0c9f0264e93f9621dfac90e77a8c03f7b872c132508e3094475f600c86f7",
+      "canonicalTextSha256": "c72c2fe245778751a79d1465ef6b7585e55a82f39e99b6473372897a11501051",
+      "characters": 3182,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第028316號",
+      "leafletId": "be11bf8f5bb9271f7b9fef69005f0a47156253e559890b8ea20db91f99113cd3",
+      "rawSha256": "ad936d31fd99d52a9f3cd0ed7517ea3c56befe50e185b117fea00c92c112130c",
+      "canonicalTextSha256": "b327265272ecda97ae31c4b96b01ab5792d219ce282f18bf264d49a4579ec615",
+      "characters": 15326,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第003552號",
+      "leafletId": "01b77e6ef5fe96d31d5d34de9cb265aba0c3a8103ec6274b901c7e4f077accd1",
+      "rawSha256": "2bce700dae4a0d828ea0a251fd1c91b0bc816ec233e6a14bddc8309f2d0a1a91",
+      "canonicalTextSha256": "3fb7f57e544c982250e1d3bd547058a65ec39407608a3890f8f12dd8c991c71d",
+      "characters": 1999,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第024127號",
+      "leafletId": "64d067c8324e072f3060b93b23b7a9ef54d4be5ca520d8fa5b8bba91187d1cac",
+      "rawSha256": "e34ea905247476a32f67fff0507c183c7bbaae2406353fff6bf3a2e41dd38b3b",
+      "canonicalTextSha256": "bcd28706eac31358e0aba816246428e768ddeefa529c145ea451309a11fc159c",
+      "characters": 7787,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第024196號",
+      "leafletId": "070334fe5be03be5b87c7fac972001b32d243198a6bcdc9e36faeb8a417074ab",
+      "rawSha256": "ffe1fe96d789c1cf4fd42b74bb1eac5218df9115b1ea7ac4529e7c2ef0ae917e",
+      "canonicalTextSha256": "fb9b82f4d1934030f95165c1c6a2be2da9a482bd735258753838dea7f25c5ce7",
+      "characters": 3108,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第027850號",
+      "leafletId": "35de8327744bc12c8a0a1a965b1677966444068c7d7970e34d9e14e995a5df24",
+      "rawSha256": "32257112e38bc191a187a61550a3b7cc49648efc4d85c77d178e1fbc5c8d8fb2",
+      "canonicalTextSha256": "ba5c58a01f9aee9750537608da97e296886154039817cdcda3298b390e3f5f03",
+      "characters": 5375,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第030557號",
+      "leafletId": "aba082cfceb09f96dce3d22cd47918f399b7d36adb0f4ac9b5b590147323826a",
+      "rawSha256": "c37b575cf94c8d837d64ec75c51f7b07f954854f93625c8acf9b718f864d8517",
+      "canonicalTextSha256": "bf503c55d416537ce51f899aa34de02ce99f1070660113cd44212df79e327b0b",
+      "characters": 7956,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第030741號",
+      "leafletId": "d80f4da96aaa3402f6c89447f54aa859f9d28fd9094d8d2129d8bcd2a8245bab",
+      "rawSha256": "35e8f49ce1ed41c0def3f17ade90e0884b4f201444561faeed6d046ebc9b2cad",
+      "canonicalTextSha256": "37c8c4e68347e84897a1dd678b3366ddb2bd9fc55b518bf66741a69a79acb654",
+      "characters": 6313,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第034885號",
+      "leafletId": "c1b927695da861ddfdb0b18dcbc6fa50e92643d5bca250d30b94f24481ff061e",
+      "rawSha256": "a9c70a5c6fc184aeaa74fb506aeb0e2a919ffc154e08351151d49b67107cbacc",
+      "canonicalTextSha256": "5e37ed9ef73c2291d8fa20a2510f989f2fdbd547ed8db7110491e96792769a53",
+      "characters": 1643,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第034904號",
+      "leafletId": "dac8ce54fec1ad79cb38e1aa547012c73df742344e86898ba70f2a68dd98d47a",
+      "rawSha256": "20a4c07ef76c564e9b3b2fcc570e37c0660d78cba48fadff01ac2c36c5325814",
+      "canonicalTextSha256": "dc55dc43f20af25597d957ba4e188e793c7edb33e815ba6ac62076fd543a522d",
+      "characters": 3206,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第038460號",
+      "leafletId": "534c94dddce7e27040374f9d11aa74808fc159c8460e26fd0b9c5d39f6665867",
+      "rawSha256": "a4c031cf53c8cbfba4ef0d85b5fda801555e94a34229973e14253b1ffdf4cd42",
+      "canonicalTextSha256": "53737cbec3cb18021caee9027d15bc198dcfdeaf4c5cc1fb67b82fbc769a063b",
+      "characters": 3450,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第038498號",
+      "leafletId": "19bb4c6f5601a0f728bd9af7ade34e7aa40f2ae98bf4e50299eaf188e424e477",
+      "rawSha256": "f5757b838b6d87c1ec5e5c45860197d359e1c08a3544f3d69d714f4fc3490941",
+      "canonicalTextSha256": "5da5eb9ed5e76be560f42362a3d742bcda01cf448acc5a2e97c9618d4b4c3560",
+      "characters": 2758,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第038510號",
+      "leafletId": "368391459fa39e04d11b3483005640035c05db15cd9ac3932c3fca87c0821f3c",
+      "rawSha256": "55d21658888f2c6acd93c142f4579434236552f4cff22043c61f2f3a6e05f827",
+      "canonicalTextSha256": "bc6d8f9b4361550f72e4eabc49b78a2ef02e7d88b7e13e6f6f81680ffb32cc8e",
+      "characters": 2521,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第042199號",
+      "leafletId": "919be300882311ccb44bf84845a22530d436613169500308ad67874c17fa1a8e",
+      "rawSha256": "5df711448b529d1fbb98499ee4719fc3a8b3f7b1bcaef54896e8a9b6643807bc",
+      "canonicalTextSha256": "701195d0750ce3a5b9e29d24fb039d636faee4cd01770ba3d2c27954882eae31",
+      "characters": 3983,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第042362號",
+      "leafletId": "671382c71dc6ac1346cded89c6a8bfc7f0055ad6d30999ae3542793169e1f8cd",
+      "rawSha256": "df0fe110814ef3971d861c8d96cd7291728c44f26256845db7818ba6961a0744",
+      "canonicalTextSha256": "0c0b8a15fee239f3d05b733dfad1ca83cd05fca61275055b3cb1462fd836bd74",
+      "characters": 1330,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第042378號",
+      "leafletId": "492da84baa4466d9820e514d05e562d77a008f283e22ab6c3e3ef131ae275657",
+      "rawSha256": "91c6e450f590440f853e8e9671027d4add672767a39404a10e6231a07d1282d6",
+      "canonicalTextSha256": "009576497186516d67c529fd0e7ce875696554fbb1913c8fe7f5fc2f34716e4a",
+      "characters": 2728,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第055108號",
+      "leafletId": "f2d0df6123a43c8cedfad8a2de43c3c79551994f499adfe0174373b904e8775c",
+      "rawSha256": "70f2bb00148d7e4def79408e1cd67329616a6f6be4ff6eb04bc82cbe70d5127d",
+      "canonicalTextSha256": "536744344130bb69feaa27d15c5c512216625f2974331adfde2996f01f1709b7",
+      "characters": 1365,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第055238號",
+      "leafletId": "d761934649a877185b679e0349f4e08c36dbbaf906fae46fa81db9450ce46c16",
+      "rawSha256": "3098a52c7da1fc91e4405f3f8594e7000c766a9dd6e5cedf948f3b0e6ef5531b",
+      "canonicalTextSha256": "3de1c61b51aec7e0cecebccf74a48423ba516bdfcd70976a30f24d595f862963",
+      "characters": 1235,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第055290號",
+      "leafletId": "c71bde4f338ddccc45fcfb1abbd19153de3174d8caab4b872eec431d40cd0165",
+      "rawSha256": "05b0836a875091c69c0ce7f6fe177dc2e84db42e0217de94300bdcdfca0b303e",
+      "canonicalTextSha256": "5ea13b13160f182cc83217d8d3af1e2a6918af0f11576800ab2cc181b700f255",
+      "characters": 1931,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第055404號",
+      "leafletId": "ecc9f68a3c2c060337600c0781a616648a822b8f9edf651f5d0abec53206571b",
+      "rawSha256": "c7e740b5d369fecc249191329ce82313d8c419f0e3104e66a9e48b656c2288bf",
+      "canonicalTextSha256": "1766f1c5b9c4eb8487d46da11201dc8c3284b8b1187055795027aa8455e8dbe5",
+      "characters": 2138,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥輸字第022754號",
+      "leafletId": "4525c0be95b81dd3e1a8a456156bfff0b557da9a212ac8a88b34a71dfb7d7c23",
+      "rawSha256": "c97be64e9b858b3c8bbf9d76f068a94b41dca62e0e55e6aff5a440d76e05934f",
+      "canonicalTextSha256": "b56af5c3b77d6b369b744ed1cbceb4b4d9359977ef88e215deba4c41637aa48a",
+      "characters": 1990,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥輸字第025921號",
+      "leafletId": "a0af486b20d7f2d995f3764e4f68556b307593c521f4d9489378dc7b64854da6",
+      "rawSha256": "a93e4f38daa80b8590d1204ae58640a1223f70487c319b0727599991db8b7a03",
+      "canonicalTextSha256": "e0c2cf94356231c8be5b044c8dd6dd4a10f74fe2bbb149718334f223ca84c28a",
+      "characters": 1841,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "內衛藥製字第010222號",
+      "leafletId": "18cb3e5a0b56a3eb89f032ac33aeaa45742b8e8d1777c2669fe54ffc9048f66d",
+      "rawSha256": "efa58f83709d968f07aef3425546a2b8d62974ecc732aa6d7fe737c316b6ca4d",
+      "canonicalTextSha256": "3f3f007323729ca487677973d10545aadd0f8486afdf2a8723708b1d2f8016be",
+      "characters": 5015,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥製字第059009號",
+      "leafletId": "db4de286ce1a75f55801e8efc5fe851d4deb9105b8a488afd1d5ff1fe9d080fc",
+      "rawSha256": "9466dc196d699f52b5be3f8e9db312dd41e3c8b0d828a7e549955c81aacac213",
+      "canonicalTextSha256": "984a34a79ef0a2e887e9609f526a2216c111e35e4a3dc81403bba0aa7ba2d099",
+      "characters": 3753,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥製字第059245號",
+      "leafletId": "c08d2ef7bffc77c522933e1771fae3d48abeea535270377237b20f2374ca2ae6",
+      "rawSha256": "e8730c21614dd32439ccb853b95435044f57c89140d2b74012a85d9c845036a0",
+      "canonicalTextSha256": "26e967292794befc3dba298ae1ff71d15007fc975f7c6405c02711ece0383aa9",
+      "characters": 15609,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第026409號",
+      "leafletId": "05fc46040ef6d17af11bfae771f71000c21a32587ee8dbb13b453328f83161fb",
+      "rawSha256": "e0e846d83b681f0b4082688ef6561d0e81bf13b192834e70052bcbb2f9508ee0",
+      "canonicalTextSha256": "f8e34c04852bb55d4547f56652fde05ffe2c30b419f5c45d6f763b86c29f63b0",
+      "characters": 12764,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第027402號",
+      "leafletId": "0827c736465edda6837a1aff8e5b59978984e6af19b1cad4632099014a43ede6",
+      "rawSha256": "c7d0f2a1d382483394f5542db8970e7b64969d379215a8f3b895305022ca1328",
+      "canonicalTextSha256": "1ccdde637a55658c9692dd28e0cdf903c5adc1163cadf21abccb1119b2f5d51a",
+      "characters": 7561,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第028450號",
+      "leafletId": "abe4323b0c1264ecc29963a09044a867abfb3219e5516aeb0f13f42963d73c27",
+      "rawSha256": "edde8080ea31380c0868792d1b80a7798ff348587c5fc7b562cead35fefc7b26",
+      "canonicalTextSha256": "13510957657de4660d057334dbf0e01cd23c7fe6597ce92c499dddeb8316fb5d",
+      "characters": 12923,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛部藥輸字第028451號",
+      "leafletId": "268da0f01d470a6b9992a9031806cb5474343f7d42e73ab193df2118a18fb286",
+      "rawSha256": "2409e0269489f8960f85552f10c56ac82631561586ec103c0756e776d2930f7b",
+      "canonicalTextSha256": "b708edf19687096b8cb88fe94e14a03228210f096892ea5f7372f0d6d347e8db",
+      "characters": 12923,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署成製字第012812號",
+      "leafletId": "856b6fc03f7ee5cedd0f9d964f6c24bfb804cd415c22129558cf5255641a9ccb",
+      "rawSha256": "0710dec80460c3ec83d11cd9e4a67efcfd93a9a8b6b81c09172a298c23bea24e",
+      "canonicalTextSha256": "4aedcf308a09c4c3413033992d912dcff36057fa26de5c6473f0e9e6aca81fc3",
+      "characters": 822,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第024751號",
+      "leafletId": "f4d96a7fafc893871791d3d85a8c4c7971b4edfe635155f723abb98ab440e980",
+      "rawSha256": "8c07275d94cbfab432d502ffc0f4b1b7e6cda6d26ead5422472d451e9918d87e",
+      "canonicalTextSha256": "003cc96e18d963ee6afef75ded31314d2c6b8972926a8a721f374ca5f482cad4",
+      "characters": 2357,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第024754號",
+      "leafletId": "8331ba2961f0115c914e12f33e9df70f905d027f789b5b400c7f7231d64ece07",
+      "rawSha256": "6e5b2b9dab7543b2086fb671ad07a82f0b484770cfadc03f4a7267bbd9a077e3",
+      "canonicalTextSha256": "6d8fa9552cf5ad323830f099c8a5de5cdea28d9936dddbe6ed7b8649aab19af2",
+      "characters": 1384,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第024835號",
+      "leafletId": "79c150d2e9fc5d6fba12afb0d0b1ed2f7f3fde5a3195d4eacf4e26affeccfd33",
+      "rawSha256": "2a7fa29fb189af21eec8518ebdca6f7f7ca92c8aa1802c3af1816d8a7bd993d6",
+      "canonicalTextSha256": "29a0d273586aacf25fe2f915cf809db3ddd94f92a7af44ca3a088b9da5246d54",
+      "characters": 2673,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第024841號",
+      "leafletId": "17c91b9f92169f64552568c84ea01cd8ecd9890b038f0dff06e2aae3e9a1d7b6",
+      "rawSha256": "d7d5a33cd36919372b16504a0ffb56fcf71a75005a9f00e7a680fb719fdd1a0f",
+      "canonicalTextSha256": "292d1c565523b32c49aaa620d624634d4e8dab9d6454ee9667a09e51e249dd6c",
+      "characters": 1780,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第024843號",
+      "leafletId": "5cf51a4b6cc62f852588b6a632c3eedf31e1536a25c83ab3fa586da1f6f2828d",
+      "rawSha256": "5ba1f67b944af0e875820847e7b13f73e286581482c2ef5e16a98517e11be838",
+      "canonicalTextSha256": "9f8f508e8894cc85c45dd138302e862daaff6251f68ee6ca3c37f60385a7bdf5",
+      "characters": 1023,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第028014號",
+      "leafletId": "369f93a56d7cbed4960b58dae4cb876d4a9d19a73264c404c9d141f26354a83a",
+      "rawSha256": "26a546bbe7d47336f715b0869a293e1fc5b2b3e5958139c489e0b9289c673a52",
+      "canonicalTextSha256": "43c88acb57f44928b6680b9fb1cc41a8b39871d84f09b21060623495390e885c",
+      "characters": 3307,
+      "sourceFormat": "html"
+    },
+    {
+      "fullLicense": "衛署藥製字第033531號",
+      "leafletId": "578abb2ca5b7a4dde9c76796c34ad031e22b9b2cfa817d87200f773132efde3e",
+      "rawSha256": "9796abc2c38e93f5bb7b939fef1b5186a29886d2d899c36ae2ee32ce3de2f6ec",
+      "canonicalTextSha256": "b54bc916829d1f9632263582f681c540196bf11a74495b856e8a5e17d5faacd1",
+      "characters": 945,
+      "sourceFormat": "html"
+    }
+  ]
+}

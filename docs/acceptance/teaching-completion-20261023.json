@@ -1,0 +1,700 @@
+{
+  "schema": "teaching-completion-acceptance/v1",
+  "date": "2026-10-23",
+  "status": "bounded_improvement_verified_with_one_remaining_partial_safety_field",
+  "provider": "openai",
+  "model": "gpt-6-luna",
+  "reasoningEffort": "medium",
+  "scope": "offline_native_provider_evaluation_plus_final_deterministic_replay_and_source_fidelity_review",
+  "cases": [
+    {
+      "id": "026558",
+      "sourceResultSha256": "1c149c97786023b9225a000ab25a8d343c58bbaafa8ccdc352e4cddfadaccf30",
+      "stagesReplayed": 5,
+      "resultUnchangedUnderFinalGuards": true,
+      "allCitationsLiteral": true,
+      "allCoverageIndicesValid": true,
+      "status": "supported",
+      "claims": 23,
+      "aiPlainLanguageClaims": 20,
+      "quiz": 9,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "sourceSpans": 3,
+          "explainedSpans": 3,
+          "quiz": 2
+        },
+        {
+          "section": "用法用量",
+          "status": "complete",
+          "sourceSpans": 1,
+          "explainedSpans": 1,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "sourceSpans": 1,
+          "explainedSpans": 1,
+          "quiz": 2
+        },
+        {
+          "section": "使用方法",
+          "status": "complete",
+          "sourceSpans": 1,
+          "explainedSpans": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttp": 5,
+      "tokens": 35297,
+      "elapsedMs": 84021,
+      "before": {
+        "claims": 17,
+        "quiz": 5,
+        "coverage": [
+          {
+            "sourceSection": "使用上注意事項",
+            "status": "partial",
+            "sourceSpanCount": 3,
+            "explainedSpanCount": 0
+          },
+          {
+            "sourceSection": "警語",
+            "status": "partial",
+            "sourceSpanCount": 1,
+            "explainedSpanCount": 0
+          }
+        ]
+      },
+      "semanticReview": {
+        "claimsReviewed": 23,
+        "questionsReviewed": 9,
+        "optionsReviewed": 18,
+        "explanationsReviewed": 9,
+        "sourceFidelityVerdict": "recognized_fields_supported_and_complete",
+        "notes": [
+          "逐條核對一般禁用、醫師診治/諮詢群組、25℃以下、28天後停用及污染防止。",
+          "核對隱形眼鏡沖洗後至少10-15分鐘左右、三天（或72小時）未改善及全部嚴重症狀。",
+          "新增第4用法用量與第9使用方法完整操作；杯子使用前後清洗、單眼已用液不可轉另一眼、請勿洗眼30秒以上均與原欄相符。",
+          "仿單一般用量僅作原文標示說明，沒有推算本人用量；操作題不考個人劑量或頻次。",
+          "9題中8題為獨立核對的生成理解題；1題為原有逐字用途來源確認模板，兩類分開記錄。"
+        ],
+        "reviewActor": "coding_agent",
+        "humanReview": false,
+        "clinicalReview": false,
+        "pharmacistReview": false
+      }
+    },
+    {
+      "id": "023513",
+      "sourceResultSha256": "5bb9d38f42a1a9cc72894a5b3921e7a272b0a6ae4fb91cba16989afeaeb1427c",
+      "stagesReplayed": 3,
+      "resultUnchangedUnderFinalGuards": true,
+      "allCitationsLiteral": true,
+      "allCoverageIndicesValid": true,
+      "status": "supported",
+      "claims": 14,
+      "aiPlainLanguageClaims": 11,
+      "quiz": 5,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "sourceSpans": 2,
+          "explainedSpans": 2,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "sourceSpans": 1,
+          "explainedSpans": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttp": 3,
+      "tokens": 15495,
+      "elapsedMs": 53653,
+      "before": {
+        "claims": 14,
+        "quiz": 4,
+        "coverage": [
+          {
+            "sourceSection": "使用上注意事項",
+            "status": "complete",
+            "sourceSpanCount": 2,
+            "explainedSpanCount": 2
+          },
+          {
+            "sourceSection": "警語",
+            "status": "partial",
+            "sourceSpanCount": 1,
+            "explainedSpanCount": 0
+          }
+        ]
+      },
+      "semanticReview": {
+        "claimsReviewed": 14,
+        "questionsReviewed": 5,
+        "optionsReviewed": 10,
+        "explanationsReviewed": 5,
+        "sourceFidelityVerdict": "recognized_fields_supported_and_complete",
+        "notes": [
+          "逐條核對成分過敏禁用、接受醫師治療或處方眼藥、洗手保管防污染、28天與外觀變化停用。",
+          "先眼藥水後眼藥膏，間隔10分鐘以上；兩種眼藥水間隔5分鐘以上，原時間界線保留。",
+          "隱形眼鏡條件保留防腐劑及懸浮液原AND關係；三天未改善、眼痛視力等警語全部保留。",
+          "用途所引起後插入的只在原完整因果span及整欄body不變時通過；用途題帶原欄名且已實際通過，不是原文回填。",
+          "最後v5沒有前v4未有依據的沒有另列其他保管方式；全部5題兩選項與說明逐條核對。"
+        ],
+        "reviewActor": "coding_agent",
+        "humanReview": false,
+        "clinicalReview": false,
+        "pharmacistReview": false
+      }
+    },
+    {
+      "id": "028248",
+      "sourceResultSha256": "e7ca4c33a0cc2fa3f72304fb51dfc2dcdd8db41903d83caf854d3833437ce608",
+      "stagesReplayed": 5,
+      "resultUnchangedUnderFinalGuards": true,
+      "allCitationsLiteral": true,
+      "allCoverageIndicesValid": true,
+      "status": "supported",
+      "claims": 30,
+      "aiPlainLanguageClaims": 27,
+      "quiz": 5,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "sourceSpans": 3,
+          "explainedSpans": 3,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "partial",
+          "sourceSpans": 3,
+          "explainedSpans": 2,
+          "quiz": 2
+        }
+      ],
+      "providerHttp": 5,
+      "tokens": 46088,
+      "elapsedMs": 156900,
+      "before": {
+        "claims": 25,
+        "quiz": 5,
+        "coverage": [
+          {
+            "sourceSection": "使用上注意事項",
+            "status": "complete",
+            "sourceSpanCount": 3,
+            "explainedSpanCount": 3
+          },
+          {
+            "sourceSection": "警語",
+            "status": "partial",
+            "sourceSpanCount": 4,
+            "explainedSpanCount": 1
+          }
+        ]
+      },
+      "semanticReview": {
+        "claimsReviewed": 30,
+        "questionsReviewed": 5,
+        "optionsReviewed": 10,
+        "explanationsReviewed": 5,
+        "sourceFidelityVerdict": "supported_with_explicit_partial_coverage",
+        "notes": [
+          "注意事項全欄核對成分過敏/苯酮尿症、心臟病及65歲以上AND、肝腎疾病或重大疾病OR與慢性咳嗽因果條件。",
+          "妊娠哺乳、水腫、併用其他感冒/退燒/鎮靜等藥品的諮詢群組完整；七日、超過4000毫克肝損害、酒精急性肝衰竭、嗜睡駕駛、咖啡因與長期依賴/肝腎傷害均核對。",
+          "警語已核對的表格行列、停用/就醫不同層級、過敏及8組嚴重症狀的配對與父層行動均保留。",
+          "警語的服用過量每日超過Acetaminophen4000毫克或服藥後出現胃腸症狀的整段白話未通過scope審核，該有疑義lesson未發布；原始完整警語仍保留。",
+          "一次補漏稿被審核為多條僅搬貼原文而不是真正白話，未取代既有安全稿；本欄維持partial，不能稱完整白話。",
+          "5題所有選項及解釋核對；題目僅抽查各欄重點，不代表所有警語項目皆有測驗。"
+        ],
+        "reviewActor": "coding_agent",
+        "humanReview": false,
+        "clinicalReview": false,
+        "pharmacistReview": false
+      }
+    }
+  ],
+  "allExperimentAttempts": [
+    {
+      "round": 1,
+      "id": "026558",
+      "sha256": "d264df627fdccaa10786ef48a46c9f49368e53c938c7ba021d2c432b8d16f249",
+      "errorCode": null,
+      "elapsedMs": 49443,
+      "providerHttp": 4,
+      "tokens": 25011,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "explained": 3,
+          "total": 3,
+          "quiz": 2
+        },
+        {
+          "section": "用法用量",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "partial",
+          "explained": 0,
+          "total": 1,
+          "quiz": 2
+        },
+        {
+          "section": "使用方法",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 1,
+      "id": "023513",
+      "sha256": "0856f5bd70dd50d0df8869fba5e65886ef9f3be78660307c5ebc6a2dd48b0420",
+      "errorCode": null,
+      "elapsedMs": 46221,
+      "providerHttp": 3,
+      "tokens": 17902,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "explained": 2,
+          "total": 2,
+          "quiz": 2
+        },
+        {
+          "section": "用法用量",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 0
+        },
+        {
+          "section": "警語",
+          "status": "partial",
+          "explained": 0,
+          "total": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 1,
+      "id": "028248",
+      "sha256": "03f889e28dea748f02aafa4a09f08995a64873e00db8306359b184f68fc4bccc",
+      "errorCode": null,
+      "elapsedMs": 85694,
+      "providerHttp": 4,
+      "tokens": 34763,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "partial",
+          "explained": 2,
+          "total": 3,
+          "quiz": 1
+        },
+        {
+          "section": "用法用量",
+          "status": "partial",
+          "explained": 0,
+          "total": 1,
+          "quiz": 0
+        },
+        {
+          "section": "警語",
+          "status": "partial",
+          "explained": 2,
+          "total": 4,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 2,
+      "id": "026558",
+      "sha256": "4ed3fc095589d931ef233d5fc828a610ad1750bd48aa25b1df02c15dd6c4acb4",
+      "errorCode": "invalid_ai_output",
+      "elapsedMs": 32288,
+      "providerHttp": 1,
+      "tokens": 10027,
+      "providerHttpStatuses": [
+        200
+      ],
+      "finishReasons": [
+        "stop"
+      ]
+    },
+    {
+      "round": 3,
+      "id": "026558",
+      "sha256": "1c149c97786023b9225a000ab25a8d343c58bbaafa8ccdc352e4cddfadaccf30",
+      "errorCode": null,
+      "elapsedMs": 84021,
+      "providerHttp": 5,
+      "tokens": 35297,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "explained": 3,
+          "total": 3,
+          "quiz": 2
+        },
+        {
+          "section": "用法用量",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        },
+        {
+          "section": "使用方法",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 3,
+      "id": "023513",
+      "sha256": "9ab6eea3b01637be6f37b91843f564fafa099a4fd30fe8a810869dc86bc0d7eb",
+      "errorCode": null,
+      "elapsedMs": 69243,
+      "providerHttp": 4,
+      "tokens": 24444,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "explained": 2,
+          "total": 2,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 3,
+      "id": "028248",
+      "sha256": "c8c60d5ec3c3e85dae7f68d5fdafa9b1ee95a04699c336305b9a37082b7fb732",
+      "errorCode": null,
+      "elapsedMs": 122061,
+      "providerHttp": 5,
+      "tokens": 49939,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "partial",
+          "explained": 2,
+          "total": 3,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "partial",
+          "explained": 3,
+          "total": 4,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 4,
+      "id": "023513",
+      "sha256": "b560cf89630de26754d33c23c20346b9d6dd6a18cda467327b6a6b3bffd3736d",
+      "errorCode": null,
+      "elapsedMs": 73176,
+      "providerHttp": 3,
+      "tokens": 16427,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "explained": 2,
+          "total": 2,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 4,
+      "id": "028248",
+      "sha256": "e7ca4c33a0cc2fa3f72304fb51dfc2dcdd8db41903d83caf854d3833437ce608",
+      "errorCode": null,
+      "elapsedMs": 156900,
+      "providerHttp": 5,
+      "tokens": 46088,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "explained": 3,
+          "total": 3,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "partial",
+          "explained": 2,
+          "total": 3,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    {
+      "round": 5,
+      "id": "023513",
+      "sha256": "5bb9d38f42a1a9cc72894a5b3921e7a272b0a6ae4fb91cba16989afeaeb1427c",
+      "errorCode": null,
+      "elapsedMs": 53653,
+      "providerHttp": 3,
+      "tokens": 15495,
+      "coverage": [
+        {
+          "section": "使用上注意事項",
+          "status": "complete",
+          "explained": 2,
+          "total": 2,
+          "quiz": 2
+        },
+        {
+          "section": "警語",
+          "status": "complete",
+          "explained": 1,
+          "total": 1,
+          "quiz": 2
+        }
+      ],
+      "providerHttpStatuses": [
+        200,
+        200,
+        200
+      ],
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ]
+    }
+  ],
+  "totals": {
+    "caseAttempts": 10,
+    "distinctSources": 3,
+    "providerHttp": 37,
+    "tokens": 275393,
+    "caseErrors": 1,
+    "completeRecognizedFieldsInSelectedFinalCases": 7,
+    "recognizedFieldsInSelectedFinalCases": 8,
+    "claimsReviewedInSelectedCases": 67,
+    "questionsReviewedInSelectedCases": 19,
+    "optionsReviewedInSelectedCases": 38
+  },
+  "experimentFindings": [
+    {
+      "round": 1,
+      "id": "026558",
+      "finding": "rejected_experiment_changed_30_seconds_inclusive_boundary",
+      "publishedToCloud": false
+    },
+    {
+      "round": 2,
+      "id": "026558",
+      "finding": "complete_json_but_option_objects_rejected_by_string_schema",
+      "publishedToCloud": false
+    },
+    {
+      "round": 3,
+      "id": "023513",
+      "finding": "safe_source_reading_preserved_but_purpose_literal_grammar_and_question_heading_false_negative",
+      "publishedToCloud": false
+    },
+    {
+      "round": 4,
+      "id": "023513",
+      "finding": "unsupported_absence_comment_detected_by_full_text_review",
+      "publishedToCloud": false
+    },
+    {
+      "round": 4,
+      "id": "028248",
+      "finding": "overdose_scope_and_non_plain_repair_rejected_remaining_partial",
+      "publishedToCloud": false
+    }
+  ],
+  "finalGuardReplay": {
+    "sha256": "4aac47160c3e4e41fb52a7deea60c6b86e2799aa115862d2168e0cbdc0a8c33a",
+    "cases": 3,
+    "allCitationsLiteral": true,
+    "resultUnchangedUnderFinalGuards": true,
+    "networkCalls": 0,
+    "freshProviderGeneration": false
+  },
+  "sourceFidelityReview": {
+    "sha256": "42d47e4895178b101ca7365f7617c46f079df909acbb1d7ab272f1b36ea3e6ff",
+    "reviewerScope": "source-fidelity review by development agent; not pharmacist or clinical validation",
+    "allClaimsOptionsExplanationsReviewed": true,
+    "reviewActor": "coding_agent",
+    "humanReview": false,
+    "clinicalReview": false,
+    "pharmacistReview": false
+  },
+  "websiteAiJobsCreated": 0,
+  "websiteQuotaCharges": 0,
+  "cloudApplicationWrites": 0,
+  "newAccounts": 0,
+  "quotaChanges": 0,
+  "limits": {
+    "repairFieldsPerWave": 2,
+    "repairWavesPerJob": 1,
+    "additionalLogicalModelStages": 2,
+    "sharedExistingJobTimeoutMs": 240000,
+    "existingSafeResultsRetainedWhenRepairFails": true,
+    "originalHistoricalResultsAndAnswersOverwritten": false,
+    "unrepairableBudgetOnlyResultsOfferPaidCompletion": false
+  },
+  "remainingGaps": [
+    "028248警語仍partial：過量與服藥後症狀段未形成完整核對的白話；完整官方原文仍可查閱。",
+    "超過4欄/4000字等單次教學範圍仍會保留未處理標示；沒有以刪來源或改旗標宣稱完整。",
+    "三個公開來源的小批驗收不能推論所有仿單的AI品質、臨床安全或普遍理解成效。",
+    "本批為直接provider離線評估與最終程式回放，未使用已滿網站帳號繞過配額，不是新一輪雲端使用者AI端到端作業。"
+  ]
+}

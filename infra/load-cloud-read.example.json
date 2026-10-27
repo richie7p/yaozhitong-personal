@@ -1,0 +1,14 @@
+{
+  "schema": "yzt-load-plan/v1",
+  "mode": "cloud-readonly",
+  "project": "project-b6fe4904-e687-4365-b2f",
+  "origin": "https://project-b6fe4904-e687-4365-b2f.firebaseapp.com",
+  "profiles": [
+    { "virtualUsers": 1, "requests": 60, "thinkTimeMs": 100 },
+    { "virtualUsers": 4, "requests": 60, "thinkTimeMs": 100 },
+    { "virtualUsers": 8, "requests": 60, "thinkTimeMs": 100 }
+  ],
+  "requestTimeoutMs": 15000,
+  "stopP95Ms": 10000,
+  "stopServerErrorRate": 0.05
+}

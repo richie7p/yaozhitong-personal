@@ -1,0 +1,602 @@
+{
+  "schema": "tfda-source-recovery-phase2-20261022/v1",
+  "status": "completed_with_documented_source_and_ai_coverage_limits",
+  "officialSnapshotRetrievedAt": "2026-10-22T12:24:25.288012Z",
+  "codeCommit": "169eff0d4347bbdde73a6ff611487520a1f50472",
+  "publication": {
+    "before": 2800,
+    "newUniqueSources": 721,
+    "newHtmlV1PrintedLeaderRecovery": 61,
+    "newHtmlV2RectangularRecovery": 660,
+    "newPdfSources": 0,
+    "after": 3521,
+    "attempts": 722,
+    "sameSourceNoOp": 1,
+    "waves": [
+      {
+        "wave": "printed-leaders",
+        "created": 61,
+        "receiptSha256": "45b7bc0d0dcbec4fa5c1a91af20ea4b869608b46597a5070e9d08c0ce2a9e959",
+        "batches": 2
+      },
+      {
+        "wave": "html-v2-canary-fixed",
+        "created": 1,
+        "receiptSha256": "655d5215edcc380623a4bada316a449d4f16680719276dd1aee54b37b0d550ff",
+        "batches": 1
+      },
+      {
+        "wave": "html-v2-a-fixed",
+        "created": 349,
+        "receiptSha256": "8bf0cf819bce7680c33ac7887f6c05956623f393e05c6e112facd0516d8b7af2",
+        "batches": 7
+      },
+      {
+        "wave": "html-v2-b-fixed",
+        "created": 310,
+        "receiptSha256": "cad44c5d1dfbc04609e2ddd1d4a314191dc609f5ec275672258c67c4e0b6edeb",
+        "batches": 7
+      }
+    ],
+    "attemptsScope": "completed fixed-wave operations; two earlier failed publication attempts reported separately"
+  },
+  "sourceReadback": {
+    "status": "passed",
+    "startedAt": "2026-10-22T15:52:22.381Z",
+    "finishedAt": "2026-10-22T15:58:51.048Z",
+    "reportSha256": "2e3127b5d67819308e4f9caabc1f38c7f53b04ee13db9ea0151772ab1c70e61e",
+    "newSourcesVerified": 721,
+    "nativeHtmlV1Reparses": 61,
+    "nativeHtmlV2Reparses": 660,
+    "baselinePointers": 2800,
+    "baselineKnownSourceDocuments": 2803,
+    "baselineFullMetadataAndTextExact": true,
+    "publishedPointersAfter": 3521,
+    "knownSourceDocumentsAfter": 3524,
+    "allPointersAndKnownSourceDocumentsStableDuringReadback": true,
+    "issues": 0,
+    "rawDownloads": 721,
+    "rawDownloadedBytes": 75406345,
+    "paidGenerativeApiRequests": 0,
+    "cloudWrites": 0,
+    "independentAuditReceiptSha256": "79994182c73ba79099f8c82c1a51725d7f5854669b20e93dd029a81d1b2afe07"
+  },
+  "sourceProcessing": {
+    "rectangularHtml": {
+      "assessed": 783,
+      "nativeStructurePassed": 763,
+      "completeProofWithinLimit": 761,
+      "eligibleAndPublished": 660,
+      "remainingHeld": 123,
+      "structuralHeld": 20,
+      "evidenceSizeHeld": 2,
+      "contentOrCatalogHeld": 101,
+      "holdReasonsOverlap": true
+    },
+    "printedLeaders": {
+      "assessed": 66,
+      "eligibleAndPublished": 61,
+      "remainingHeld": 5,
+      "originalTextAndHashesPreserved": true
+    },
+    "equivalentCurrentPaperSources": {
+      "completeLicenses": 14,
+      "currentUrls": 28,
+      "newPublished": 0,
+      "heldContentAssessments": 13,
+      "independentPdfExtractionFailed": 1,
+      "associationProofDoesNotOverrideContentChecks": true
+    },
+    "scannedPages": {
+      "samples": 3,
+      "visionModel": "gpt-6-luna",
+      "actualPaidApiRequests": 3,
+      "actualTokens": 10071,
+      "newPublished": 0,
+      "completeTranscriptionsNotIndependentlyEqual": 3,
+      "comparisonReceiptSha256": "af28937feac02215d163055ed2a09d656ba5b4b9eed8b1b51ce8d2fc11d942dd"
+    },
+    "unclassifiedPdfDiagnostics": {
+      "unpublishedLicenses": 8,
+      "uniqueRawPdfs": 7,
+      "canonicalSucceeded": 7,
+      "independentTimedOut": 4,
+      "instrumentedWindowsExits": 3,
+      "newQualifiedSources": 0,
+      "instrumentedExitIsNotProofPdfCorrupt": true
+    }
+  },
+  "remainingAsOfOfficialSnapshot": {
+    "activeLicenses": 21247,
+    "activeWithSourceLinks": 18188,
+    "activeWithLinksNotPublished": 14667,
+    "activeWithoutIndexOrLink": 3059,
+    "denominatorsIncludeRawMaterialsAndOtherNonPatientProducts": true
+  },
+  "fixedCloudStorageFailure": {
+    "cause": "Directly nested arrays in complete rectangular table evidence are incompatible with Firestore Standard.",
+    "fix": "Validated complete v2 evidence stored as lossless SHA-bound JSON; full document shape and size checked before blob creation.",
+    "failedTransactions": 2,
+    "partiallyPublishedSources": 0,
+    "immutableBlobsReusedWithoutOverwrite": 2,
+    "recoveryReceiptSha256": "1f430b176bcc9d6bd20e231993642e89256e2bee6666e19cfe8cc2f5ea1c8ba3"
+  },
+  "cloudAcceptance": {
+    "status": "current_ui_source_fidelity_and_honest_partial_pending_states_verified",
+    "plannedProducts": [
+      "衛署藥製字第051528號",
+      "衛署藥製字第010332號",
+      "衛署藥製字第018498號",
+      "衛部藥製字第060225號"
+    ],
+    "includesTrueSourceReviewHold": true,
+    "preFixActualTasks": [
+      {
+        "operation": "pdf-acetaminophen-two-pages:bundle",
+        "kind": "bundle",
+        "jobStatus": "succeeded",
+        "answerStatus": "supported",
+        "attempts": 2,
+        "actualTokens": 3310,
+        "actualProviderRequests": 2,
+        "quizQuestions": 1,
+        "resultPacketSha256": "182eea4b8cbf45adb892ed4f8df229e004d65bbbd4b9ed28ec5ad1b8c0c85dd3",
+        "completeAiExplanationClaimed": false
+      },
+      {
+        "operation": "pdf-propranolol-three-pages:chat",
+        "kind": "chat",
+        "jobStatus": "succeeded",
+        "answerStatus": "supported",
+        "attempts": 1,
+        "actualTokens": 7326,
+        "actualProviderRequests": 2,
+        "quizQuestions": 0,
+        "resultPacketSha256": "1c5200edb4411cef19081db59daee94c17d835ad13c6b773044723a539120714",
+        "completeAiExplanationClaimed": false
+      },
+      {
+        "operation": "pdf-acetaminophen-two-pages:chat",
+        "kind": "chat",
+        "jobStatus": "succeeded",
+        "answerStatus": "insufficient_data",
+        "attempts": 1,
+        "actualTokens": 3595,
+        "actualProviderRequests": 2,
+        "quizQuestions": 0,
+        "resultPacketSha256": "aef7647166f0203ec02196db63432f1831f1893136d0f772542f48024e863126",
+        "completeAiExplanationClaimed": false
+      },
+      {
+        "operation": "pdf-propranolol-three-pages:bundle",
+        "kind": "bundle",
+        "jobStatus": "succeeded",
+        "answerStatus": "supported",
+        "attempts": 1,
+        "actualTokens": 9784,
+        "actualProviderRequests": 2,
+        "quizQuestions": 2,
+        "resultPacketSha256": "84349d81fb095971172037d7e2077c26d4dfa40e10d34600a7435d6231bba0ba",
+        "completeAiExplanationClaimed": false
+      }
+    ],
+    "preFixLogicalJobs": 4,
+    "preFixActualTokens": 24015,
+    "preFixProviderRequests": 8,
+    "materialStopReceiptSha256": "628337815d3b25e74d59b85324e980010c5c9bfc2697c5009792679421126236",
+    "remainingThreeOperationsSubmittedBeforeStop": false,
+    "intendedPostFixRetestLogicalJobs": 7,
+    "accountCreationOrQuotaResetPlanned": false,
+    "historicalIndependentReviewSha256": "ac3a2c00016301d49f6baf6e8b77ea283b464e315e03cb49d737a7b5fcbf8450",
+    "historicalResultsNotCurrentVersionAcceptance": true,
+    "plannedCurrentVersionLogicalJobs": 7,
+    "historicalLogicalJobs": 4,
+    "plannedTotalLogicalJobs": 11,
+    "plannedNewAccounts": 0,
+    "currentFrozenPlanSha256": "55168599fadbdbe07589f60a5b3ee2944830f6e5088505658e0b3d80708b0585",
+    "offlineRunnerReceiptSha256": "9e1a1b5d857d5da134e6b3ef4472fc54c95eef037ee25d58bd30ea5979d16ac8",
+    "independentRunnerScopeReviewSha256": "b75a497b8d21d8a15e381155624c33bf5b0c8b538f83ea99c8a234a84691dfdb",
+    "freshSourceCaptureSha256": "8981981048720943ce45e8234fb2f2c9a3478775723e6727e8395c604f18fc59",
+    "knownProductRecordsAreExplicitlySynthetic": true,
+    "newPhotoRecognitionClaims": 0,
+    "runtimeMedicationSearchCatalogSize": 66521,
+    "runtimeCatalogChanged": false,
+    "currentTasks": [
+      {
+        "operation": "pdf-acetaminophen-two-pages:chat",
+        "kind": "chat",
+        "jobStatus": "succeeded",
+        "answerStatus": "insufficient_data",
+        "attempts": 1,
+        "reportedTokens": 2548,
+        "actualProviderRequests": 1,
+        "claimRecords": 0,
+        "quizQuestions": 0,
+        "sourceReadingReason": "model_source_capacity",
+        "sourceReadingFields": [
+          "警語及注意事項"
+        ],
+        "sourceReviewReason": null,
+        "sourceSectionCount": null,
+        "quizCoveredSectionCount": null,
+        "resultPacketSha256": "ea94b9977149ba30a54ea4420267ea5c60dc15674b4d0a170c4081bc86d42dbc"
+      },
+      {
+        "operation": "pdf-propranolol-three-pages:bundle",
+        "kind": "bundle",
+        "jobStatus": "succeeded",
+        "answerStatus": "supported",
+        "attempts": 1,
+        "reportedTokens": 9693,
+        "actualProviderRequests": 2,
+        "claimRecords": 4,
+        "quizQuestions": 2,
+        "sourceReadingReason": null,
+        "sourceReadingFields": [],
+        "sourceReviewReason": null,
+        "sourceSectionCount": 3,
+        "quizCoveredSectionCount": 1,
+        "resultPacketSha256": "985ee0a23bacac15abd20727ab37baa32fb55eba87d71dc51092b7bc2dbdd382"
+      },
+      {
+        "operation": "html-source-review-hold:bundle",
+        "kind": "bundle",
+        "jobStatus": "succeeded",
+        "answerStatus": "insufficient_data",
+        "attempts": 1,
+        "reportedTokens": 0,
+        "actualProviderRequests": 0,
+        "claimRecords": 0,
+        "quizQuestions": 0,
+        "sourceReadingReason": null,
+        "sourceReadingFields": [],
+        "sourceReviewReason": "safety_sections_pending",
+        "sourceSectionCount": null,
+        "quizCoveredSectionCount": null,
+        "resultPacketSha256": "4c8e9bf967f9bb9b4f27f40acc65b1f5f514fb6279d3df39550a38b2929436a0"
+      },
+      {
+        "operation": "html-literal-rectangular-subtable:chat",
+        "kind": "chat",
+        "jobStatus": "succeeded",
+        "answerStatus": "insufficient_data",
+        "attempts": 1,
+        "reportedTokens": 7083,
+        "actualProviderRequests": 2,
+        "claimRecords": 2,
+        "quizQuestions": 0,
+        "sourceReadingReason": "requested_topic_coverage",
+        "sourceReadingFields": [
+          "使用上注意事項"
+        ],
+        "sourceReviewReason": null,
+        "sourceSectionCount": null,
+        "quizCoveredSectionCount": null,
+        "resultPacketSha256": "4703fcf7675fd1b389a70272e0d1389385ab9b59635feb1983fe60bc02dbed83"
+      },
+      {
+        "operation": "pdf-propranolol-three-pages:chat",
+        "kind": "chat",
+        "jobStatus": "succeeded",
+        "answerStatus": "insufficient_data",
+        "attempts": 1,
+        "reportedTokens": 7358,
+        "actualProviderRequests": 2,
+        "claimRecords": 1,
+        "quizQuestions": 0,
+        "sourceReadingReason": "requested_topic_coverage",
+        "sourceReadingFields": [
+          "注意事項",
+          "交互作用"
+        ],
+        "sourceReviewReason": null,
+        "sourceSectionCount": null,
+        "quizCoveredSectionCount": null,
+        "resultPacketSha256": "f609b98c4d5711700c50b826e5d4e83f3f5c8416b55a56308bab24d00b05a162"
+      },
+      {
+        "operation": "html-literal-rectangular-subtable:bundle",
+        "kind": "bundle",
+        "jobStatus": "succeeded",
+        "answerStatus": "supported",
+        "attempts": 1,
+        "reportedTokens": 7633,
+        "actualProviderRequests": 2,
+        "claimRecords": 3,
+        "quizQuestions": 1,
+        "sourceReadingReason": null,
+        "sourceReadingFields": [],
+        "sourceReviewReason": null,
+        "sourceSectionCount": 2,
+        "quizCoveredSectionCount": 0,
+        "resultPacketSha256": "71d8f85637b7c468b77d834dfac347ce2e643a1f794c032fe0095d3544082243"
+      },
+      {
+        "operation": "pdf-acetaminophen-two-pages:bundle",
+        "kind": "bundle",
+        "jobStatus": "succeeded",
+        "answerStatus": "supported",
+        "attempts": 1,
+        "reportedTokens": 3310,
+        "actualProviderRequests": 2,
+        "claimRecords": 2,
+        "quizQuestions": 1,
+        "sourceReadingReason": null,
+        "sourceReadingFields": [],
+        "sourceReviewReason": null,
+        "sourceSectionCount": 1,
+        "quizCoveredSectionCount": 0,
+        "resultPacketSha256": "16f636bbf7f5eed0472a87b974d17d1f8eb5e0f40f9ae6631b6c9d9ac8f64ea6"
+      }
+    ],
+    "currentLogicalJobs": 7,
+    "currentReportedTokens": 37625,
+    "currentProviderRequests": 11,
+    "totalAppLogicalJobs": 11,
+    "totalAppReportedTokens": 61640,
+    "totalAppProviderRequests": 19,
+    "currentUiReportSha256": "e5d4be1c2f94f3c659a9f195e06c5aaac0ad0f4fed4bfbd064f870fa40d4ad8f",
+    "currentHistoryCollectorSha256": "f2b761ab0c477bd965e949e7c0a58be03686224e1b884613f032cb2f59f26206",
+    "ui": {
+      "aiTaskPosts": 7,
+      "retryPosts": 0,
+      "identityChecks": 2,
+      "savePosts": 2,
+      "answerPosts": 8,
+      "blockedWrites": 0,
+      "pageErrors": 0,
+      "allWrongOptionsThenCorrect": true,
+      "quizAndResultReloadPersistence": true,
+      "mobileViewportWidth": 375,
+      "mobileViewportProducts": 4,
+      "pendingOfficialSourceLinkAndReopenWithoutNewTask": true,
+      "offlineBeforeSubmitNewTaskPosts": 0
+    },
+    "state": {
+      "before": {
+        "userUsage": 4,
+        "siteUsage": 4,
+        "trialSeats": 4,
+        "medications": 31
+      },
+      "after": {
+        "userUsage": 11,
+        "siteUsage": 11,
+        "trialSeats": 4,
+        "medications": 33
+      }
+    },
+    "coverage": {
+      "knownProducts": 3,
+      "truePendingSourceProducts": 1,
+      "sourceSafetyFieldsPreservedInBundles": 6,
+      "bundleSafetyFields": 6,
+      "quizQuestions": 4,
+      "purposeQuizQuestions": 3,
+      "safetyQuizQuestions": 1,
+      "safetyFieldsWithQuiz": 1,
+      "safetyFieldsWithoutQuiz": 5,
+      "fullyAnsweredAiChats": 0,
+      "incompleteAiChatsExplicitlyMarked": 3,
+      "chatSourceReadingIsNotAiExplanation": true,
+      "pendingSourceProviderRequests": 0,
+      "clinicalEvaluationPerformed": false,
+      "populationAnswerAccuracyEstimated": false,
+      "quizAssessmentScope": "one_key_point_per_covered_section"
+    },
+    "remainingCoverageLimits": [
+      "051528 chat produced no AI claim; complete warning original text was provided.",
+      "010332 chat retained purpose but safety topics remained complete original-text reading.",
+      "018498 chat explained purpose and the full warning table; precautions remained original-text reading.",
+      "Safety quiz covered one of six source fields across three bundles."
+    ],
+    "sourceSemanticReviewCompleted": true,
+    "independentCurrentSemanticReviewSha256": "1d7668db5ecc8df2fe5b3fbc40f17afb32faa8136c1a519a19edd9e8cfa10358",
+    "independentChecks": {
+      "claimRecords": 12,
+      "quizQuestions": 4,
+      "quizOptions": 8,
+      "literalCitations": 24,
+      "unsupportedContentDetectedInSelectedOutputs": 0,
+      "currentPersistedHistoryExact": true,
+      "historicalFourJobsRawExact": true,
+      "clinicalAdjudication": false
+    },
+    "postUiRuntimeReceiptSha256": "b8d2634e536e179d15e428c1e45ed5d46b7d026c7f19dae25fef01ee6efc6121",
+    "postUiSourceCapacityReceiptSha256": "d0f3a7ad2ce1228c7559927ef78dbde6a1b3435e93927b386565d8cc35a3e31f",
+    "originalThirtyOneMedicationsPreserved": true,
+    "selectedFourSourceFullMetadataAndPointersPreserved": true
+  },
+  "verification": {
+    "runtimePreservationReceiptSha256": "80804aa709ac3abbb3c0da77bcfeca988e3e541f6da54c9d155ad91dd2e61388",
+    "sourcePublicationCi": {
+      "commit": "9b03f80ad704fa2bedb847b018bb4b3b91c9bb06",
+      "conclusion": "success",
+      "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39805713326",
+      "unitTests": 1271,
+      "pythonTests": 173,
+      "browserTests": 160
+    },
+    "runtimeImageTrafficEnvironmentSecretReferencesAndCapacityUnchangedBeforeAppDeployment": true,
+    "initialApplicationFixCi": {
+      "commit": "e3cc726b7559e201f00d0a462cca19af4cea0b2b",
+      "conclusion": "success",
+      "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39820515749",
+      "unitTests": 1394,
+      "pythonTests": 173,
+      "browserTests": 186,
+      "logSha256": "468602b4928b8a33208cec16d8a3a75507fab71f994e594f00610b874d9e38f7"
+    },
+    "githubCi": {
+      "commit": "169eff0d4347bbdde73a6ff611487520a1f50472",
+      "conclusion": "success",
+      "url": "https://github.com/richie7p/yaozhitong-personal/actions/runs/39826238950",
+      "unitTests": 1425,
+      "pythonTests": 173,
+      "browserTests": 196,
+      "logSha256": "9725b44c393d1ec2b4f9dc31c88ad973bec3c7c8ba9d79f55b873bfdbab3d002"
+    },
+    "postUiFullTemplateEnvironmentSecretReferencesRuntimeAndCapacityPreserved": true
+  },
+  "quotas": {
+    "perUserDaily": 20,
+    "siteDaily": 200,
+    "trialSeatLimit": 50,
+    "changed": false
+  },
+  "humanClinicalReview": false,
+  "applicationFix": {
+    "status": "deployed_verified_in_seven_current_cloud_operations",
+    "groundingVersion": "grounded-v17-requested-chat-safety-coverage",
+    "completeSafetyFieldsAcrossPhysicalPages": true,
+    "splittingSafetyItemsIntoIndependentModelClaims": false,
+    "overlongOrUnclearFieldsNotSummarizedByModel": true,
+    "completeOriginalSourceReadingAvailableWhenBounded": true,
+    "quizCoverageExplicitlyDistinctFromSourceCoverage": true,
+    "pendingSourceReviewOfficialLinkAndReopenWithoutResubmission": true,
+    "localVerification": {
+      "fullUnitTests": 1425,
+      "typecheckPassed": true,
+      "desktopAndMobileFocusedBrowserTestsBeforeCopyChange": 46,
+      "desktopAndMobileFinalCopyBrowserTests": 16,
+      "independentFocusedTests": 57,
+      "mainWipIntegrationFocusedTests": 148,
+      "mainWipIntegrationTypecheckPassed": true,
+      "independentFinalCodeReviewSha256": "a9a446b7dcfc474e9776ce5189db7622f29fc2968db48d4a521fa2e826b228f1"
+    },
+    "requestedSafetyTopicsCheckedAfterClaimVerification": true,
+    "missingTopicsDoNotInventCanonicalHeadings": true,
+    "explicitPurposeOnlyDoesNotInheritUnrelatedSafetyCapacityReading": true,
+    "negationRetainsPositiveSafetyRequests": true
+  },
+  "sourceParserCompatibility": {
+    "scope": "final v17 clean source; offline deterministic source parser only",
+    "sources": 3521,
+    "accepted": 2764,
+    "needsReview": 757,
+    "otherErrors": 0,
+    "newSources": {
+      "sources": 721,
+      "accepted": 516,
+      "needsReview": 205,
+      "otherErrors": 0
+    },
+    "baseline": {
+      "sources": 2800,
+      "accepted": 2248,
+      "needsReview": 552,
+      "otherErrors": 0
+    },
+    "sourcesContainingModelIneligibleFields": 517,
+    "modelIneligiblePassages": 691,
+    "acceptedSourcesWithNoPassages": 0,
+    "acceptedSourcesWithAllPassagesModelIneligible": 0,
+    "reportSha256": "a3c8fc886a95be38bc9c202148d38d9db2fa0205fb4d7a3448667438d00f4e0e",
+    "paidApiRequests": 0,
+    "cloudWrites": 0,
+    "notAiAnswerOrClinicalPassRate": true,
+    "canonicalSourceModulesAndParserFunctionUnchangedFromWholeFieldCore": true
+  },
+  "discoveredApplicationFailures": [
+    {
+      "status": "fixed_and_normal_same_job_retry_verified_in_cloud",
+      "cause": "The application treated a physical PDF page break inside a complete warning as a truncated source field.",
+      "firstAffectedLicense": "衛署藥製字第051528號",
+      "secondAffectedLicenseOffline": "衛署藥製字第010332號",
+      "firstJobAttempts": 1,
+      "firstJobError": "source_requires_review",
+      "firstJobActualProviderRequests": 0,
+      "firstJobTokens": 0,
+      "failureEvidenceSha256": "831ea1452a8745f3ea826e7376c745a1cd067c93f43e0add52fc0f71eb2dc4c9",
+      "remainingFiveJobsSubmittedAtFailure": false,
+      "recoveredAttempt": 2
+    },
+    {
+      "status": "fixed_v17_cloud_case_now_explicitly_incomplete_with_complete_source_reading",
+      "cause": "After verification removed an eligible safety claim, chat retained a purpose-only claim and reported supported despite requested contraindication and interaction topics being unanswered.",
+      "licenseNo": "衛署藥製字第010332號",
+      "resultPacketSha256": "1c5200edb4411cef19081db59daee94c17d835ad13c6b773044723a539120714",
+      "misleadingPartialAnswerStatus": "supported",
+      "automaticReplacementOrBlindRetry": false
+    }
+  ],
+  "initialApplicationDeployment": {
+    "at": "2026-10-22T17:21:27.076100+00:00",
+    "status": "clean_image_and_exact_revision_traffic_update_verified",
+    "commit": "e3cc726b7559e201f00d0a462cca19af4cea0b2b",
+    "pinnedImage": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:182b9d153cbdf06d7f62d79e6550f6a303ca3bea8605b4b7f41c4f3a5ed1f2ed",
+    "imageUpdates": 2,
+    "exactRevisionTrafficPromotions": 2,
+    "otherRuntimeChanges": 0,
+    "quotaChanges": 0,
+    "HostingChanges": 0,
+    "IAMChanges": 0,
+    "catalogChanges": 0,
+    "receiptSha256": "29c493985463f66c7cf1a518c975719f88eb12edb6bb0d7f9c0673136114c2a6",
+    "ready100Services": {
+      "yzt-test-worker": "yzt-test-worker-00020-f5q",
+      "yzt-test-web": "yzt-test-web-00020-kxl"
+    },
+    "capacityPreserved": {
+      "serviceMin": 0,
+      "serviceMax": 2,
+      "revisionMax": 3,
+      "webConcurrency": 40,
+      "webTimeoutSeconds": 120,
+      "workerConcurrency": 2,
+      "workerTimeoutSeconds": 600
+    },
+    "fullTemplateExceptImageAnnotationsAndEnvironmentHashesPreserved": true,
+    "trialSeatsBeforeAndAfter": 4
+  },
+  "applicationDeployment": {
+    "at": "2026-10-22T18:01:11.423355+00:00",
+    "status": "clean_image_and_exact_revision_traffic_update_verified",
+    "commit": "169eff0d4347bbdde73a6ff611487520a1f50472",
+    "pinnedImage": "asia-east1-docker.pkg.dev/project-b6fe4904-e687-4365-b2f/yaozhitong/app@sha256:4c9e246fc32d67b46e5ba2da3750eb4b3829a657aef848aedcc19baa82a0f9f7",
+    "imageUpdates": 2,
+    "exactRevisionTrafficPromotions": 2,
+    "otherRuntimeChanges": 0,
+    "quotaChanges": 0,
+    "HostingChanges": 0,
+    "IAMChanges": 0,
+    "catalogChanges": 0,
+    "receiptSha256": "1dfc59654e98954f26e068fe6bbb18f22d92ba2f7c92616599921d9987059775",
+    "ready100Services": {
+      "yzt-test-worker": "yzt-test-worker-00021-rf5",
+      "yzt-test-web": "yzt-test-web-00021-hsb"
+    },
+    "capacityPreserved": {
+      "serviceMin": 0,
+      "serviceMax": 2,
+      "revisionMax": 3,
+      "webConcurrency": 40,
+      "webTimeoutSeconds": 120,
+      "workerConcurrency": 2,
+      "workerTimeoutSeconds": 600
+    },
+    "fullTemplateExceptImageAnnotationsAndEnvironmentHashesPreserved": true,
+    "trialSeatsBeforeAndAfter": 4
+  },
+  "reportedApiUsage": {
+    "appProviderRequests": 19,
+    "appTokens": 61640,
+    "scanVisionRequests": 3,
+    "scanVisionTokens": 10071,
+    "combinedProviderRequests": 22,
+    "combinedReportedTokens": 71711
+  },
+  "finishedAt": "2026-10-22T18:13:45.195911+00:00",
+  "remainingGaps": {
+    "publishedSourcesNeedingDeterministicParserReview": 757,
+    "activeWithLinksNotPublished": 14667,
+    "activeWithoutIndexOrLink": 3059,
+    "remainingLicenseDenominatorsIncludeNonPatientProducts": true,
+    "newScanSourcesPublished": 0,
+    "currentChatsWithoutCompleteAiAnswer": 3,
+    "currentChatWithNoAiClaims": 1,
+    "currentSafetyFieldsWithoutQuiz": 5,
+    "generativeEvaluationAcrossAllPublishedSourcesPerformed": false,
+    "statisticalUserComprehensionOrClinicalEvaluationPerformed": false
+  }
+}

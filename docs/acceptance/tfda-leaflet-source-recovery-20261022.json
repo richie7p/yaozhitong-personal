@@ -1,0 +1,366 @@
+{
+  "schema": "tfda-leaflet-source-recovery-acceptance/v1",
+  "updatedAt": "2026-10-22T14:35:17.863372+00:00",
+  "status": "passed_source_readback_and_cloud_regression",
+  "publication": {
+    "unit": "完整許可證字號",
+    "previousTotal": 2025,
+    "confirmedNewPublications": 775,
+    "newByFormat": {
+      "html": 757,
+      "pdf": 18
+    },
+    "newHtmlByMethod": {
+      "strictNumberedOutline": 735,
+      "legacyCompleteDom": 22
+    },
+    "finalFullReadback": {
+      "status": "verified",
+      "publishedLicenses": 2800,
+      "allSourceDocuments": 2803,
+      "newSourcesVerified": 775,
+      "newRawDownloads": 775,
+      "rawDownloadedBytes": 95898274,
+      "nativeNewOutlineHtmlReparses": 735,
+      "nativePdfReparsesInThisReadback": 0,
+      "prior2025PointersAnd2028FullDocumentsExact": true,
+      "allPointersAndSourceDocumentsStableBeforeAfter": true,
+      "issues": 0,
+      "reportSha256": "75b42a6073e9dcbaec597956e5b5a81119c2792dc0f6d741b715468cd372a779",
+      "retiredSourceDocumentsRetained": 3
+    },
+    "verifiedCloudTotal": 2800
+  },
+  "currentInventory": {
+    "asOfDate": "2026-10-22",
+    "activeLicenses": 21247,
+    "activeWithOfficialSourceLinks": 18188,
+    "activeWithoutIndexOrLinks": 3059,
+    "uniqueActiveSourceUrls": 20707,
+    "uniqueActiveSourceUrlsWithRawBytes": 20704,
+    "unitNote": "字號與網址分別計數；原檔下載數不表示患者端可用仿單數。",
+    "frozenSnapshotSemanticSha256": "62beb30d411d041e4b518f94b36536f1fa275d04f8d6c0679f120f5a174a0ed7",
+    "frozenSnapshotFileBytesSha256": "de79a260367d4e4b15ab76c7df6faab66154b215eaae4a163a3be3ebda805f51",
+    "hashMeaning": "前者識別凍結快照的內容關係；後者驗證快照檔案原始位元組，兩者用途不同。",
+    "rawAvailabilityRemaining": {
+      "emptyConcreteUrls": 2,
+      "sharedBarePlaceholderUrls": 1,
+      "licensesReferencingThePlaceholder": 9
+    }
+  },
+  "searchCatalog": {
+    "uniqueMappedRows": 66521,
+    "officialUniqueLicenses": 66522,
+    "filteredRows": 1,
+    "filteredReason": "既有匯入規則略過中文品名空白的已註銷資料。",
+    "version": "ef9caf16a5285aea",
+    "contentBytesSha256": "ef9caf16a5285aeab31ebf4bfbf00b508be9d61e768991962c029297e5a35192",
+    "contentBytes": 15675275
+  },
+  "targetedCohorts": {
+    "htmlNumberedOutline": {
+      "unit": "唯一完整字號",
+      "examined": 4664,
+      "qualifiedTotal": 735,
+      "qualifiedAlreadyPublishedInInitialBatch": 2,
+      "additionalPublished": 733,
+      "held": 3929,
+      "heldByPrimaryStage": {
+        "unsupportedStructure": 3845,
+        "catalogIdentityOrTextQuality": 82,
+        "proofOver100000Bytes": 2
+      },
+      "meaning": "定向處理無圖片且舊全文守恆的複雜表格集合，並非一般辨識準確率。"
+    },
+    "newHtml": {
+      "newSourceUrlCount": 54,
+      "completeFamilies": 62,
+      "publishedLicenses": 22,
+      "heldOrExcludedFamilies": 40,
+      "meaning": "以每個字號全部現行來源判定；不能將54個網址直接視為54款藥。"
+    },
+    "pdfLayout": {
+      "examinedLicenses": 22,
+      "publishedLicenses": 18,
+      "heldNegativeCases": 4,
+      "meaning": "符合完整有序三引擎文字與字元位置證據者才通過；負例維持攔截。"
+    },
+    "newlyDownloadedPdf": {
+      "newUrls": 16,
+      "completeFamilies": 8,
+      "ambiguousPatientFamiliesHeld": 6,
+      "rawMaterialFamiliesArchivedOnly": 2,
+      "patientSourcesPublished": 0,
+      "meaning": "六組來源仍含多份不同檔案及未釐清的共用空網址；另外兩組由官方類別確認為原料。"
+    }
+  },
+  "scans": {
+    "diagnosticSamples": 3,
+    "engines": [
+      "Windows OCR",
+      "Tesseract"
+    ],
+    "numericOrUnitRecognitionErrorsObserved": true,
+    "publishedFromOcr": 0,
+    "meaning": "樣本仍有數字或單位辨識錯誤，OCR文字只供診斷，未當成已核對正文發布。"
+  },
+  "appFollowup": {
+    "status": "passed",
+    "cacheVersionFix": "grounded-v14-chat-purpose-completeness：舊v13結果改為過期，新生成快取與歷史紀錄分開保留。",
+    "deployment": {
+      "status": "verified_ready_100_percent",
+      "commit": "28d7cbacde622bfa4dac38ca9e43044a5e03710a",
+      "imageDigest": "sha256:b02ffeb41fd65e72c4fdf9c39bf0ca1c549aba2ef9e1382d689cf0e9a0e02fb3",
+      "webRevision": "yzt-test-web-00019-slt",
+      "workerRevision": "yzt-test-worker-00019-z7m",
+      "preservedFullRuntimeConfigExcludingImageAndReleaseTraffic": true,
+      "preservedMinInstances": 0,
+      "preservedServiceMaxInstances": 2,
+      "preservedRevisionMaxInstances": 3,
+      "preservedWebConcurrency": 40,
+      "preservedWorkerConcurrency": 2,
+      "quotaChanges": 0,
+      "iamChanges": 0,
+      "hostingChanges": 0,
+      "receiptSha256": "251ca8a99291197c18310f5ed2e09f034fc3e52dfd6d36f5724ef863943d7167"
+    },
+    "cloudUiAndApiRegression": {
+      "status": "passed",
+      "coreReleaseCommit": "680e10a79d694b5aab3dd7f49ad27bbd37d40c17",
+      "additionalRealJobs": 3,
+      "providerHttpRequests": 5,
+      "providerTokens": 15495,
+      "allRequestsHttp200StopAttempt1": true,
+      "sameKentaminMedicationAndOriginalQuestion": true,
+      "completePurposeAndCobaltWarning": true,
+      "v13OldCacheAndHistoryPreservedButHidden": true,
+      "newHtmlClaimsChecked": 6,
+      "newHtmlQuestionsCheckedAndSaved": 6,
+      "cleanedAdverseReactionOptionObserved": true,
+      "realBubdelPrnFrequencyAndGuidanceConsistent": true,
+      "duplicateSavedMedications": 0,
+      "originalMedicationsPreserved": 29,
+      "userUsageBefore": 16,
+      "userUsageAfter": 19,
+      "trialSeatsBeforeAfter": 4,
+      "pageErrors": 0,
+      "blockedWrites": 0,
+      "independentSemanticReviewPassed": true,
+      "clinicalAdjudication": false,
+      "reportSha256": "72a35c0e755acab6f8e841d05fc5ba0e5bfefa0dd9a4d52fcf5220407b0c7a48",
+      "collectorSha256": "d45df33b228ec998f065dec05c94d15d6e88f6e812ac480d0e08b4c77a03838b",
+      "independentReviewSha256": "e4ab3825f528200cd3b2e7213ce0adfe4c6e36375a82bbebf6e5f5752c22867b",
+      "rootReviewSha256": "0ef282cc7238eb7b4777465f511a88663f22c504b4bc775ad2776e63c429f7e8"
+    },
+    "testsAndCi": {
+      "fullBaseline": {
+        "commit": "8d4638c4ef42a83d52c8c8e65fb651de3ae0d518",
+        "unitSuites": 66,
+        "unitTests": 1208,
+        "pythonTests": 156,
+        "browserTestsDesktopAndMobile": 160,
+        "typecheck": "passed",
+        "build": "passed",
+        "lifecycle": "passed",
+        "offlineDeploymentCases": 74,
+        "offlineHostingCases": 17,
+        "externalProviderRequests": 0
+      },
+      "affectedCoreRelease": {
+        "commit": "680e10a79d694b5aab3dd7f49ad27bbd37d40c17",
+        "unitSuites": 12,
+        "unitTests": 157,
+        "typecheck": "passed",
+        "build": "passed",
+        "receiptSha256": "7d366f8bed0f3e90463f9cc9cfc2cbb081f97f429f7e139aebed15bd9ee0bb1e"
+      },
+      "wordingOnlyChildCommit": "28d7cbacde622bfa4dac38ca9e43044a5e03710a",
+      "wordingTypecheck": "passed",
+      "githubWorkflow": "https://github.com/richie7p/yaozhitong-personal/actions/workflows/ci.yml?query=branch%3Amaster",
+      "remoteResultLocation": "validate workflow on the synchronized master"
+    },
+    "meaning": "本機驗證與雲端抽測分開記錄；四款來源的生成內容抽測，尚未逐款評估全部2800款的回答品質。",
+    "baselineValidation": {
+      "commit": "8d4638c4ef42a83d52c8c8e65fb651de3ae0d518",
+      "unitSuites": 66,
+      "unitTests": 1208,
+      "pythonTests": 156,
+      "browserTestsDesktopAndMobile": 160,
+      "typecheck": "passed",
+      "build": "passed",
+      "lifecycle": "passed",
+      "offlineDeploymentCases": 74,
+      "offlineHostingCases": 17,
+      "externalProviderRequests": 0
+    },
+    "originalCloudAcceptance": {
+      "realPublicPhotos": 2,
+      "sourceLearningExercises": 4,
+      "explicitlySyntheticSourceIdentityExercises": true,
+      "missingSourceExercises": 1,
+      "jobs": 11,
+      "modelHttpRequests": 18,
+      "modelTokens": 45977,
+      "allModelHttp200StopAttempt1": true,
+      "quizQuestionsChecked": 17,
+      "pageErrors": 0,
+      "unsupportedFilePosts": 0,
+      "offlineDraftPosts": 0,
+      "lostAcknowledgementRecoveredSameJob": true,
+      "rapidDuplicateRecognitionProducedJobs": 1,
+      "note": "公開照片無完整身分，兩筆均保留待補資料；四款已知字號的說明／測驗是另建的明示合成測試，不宣稱照片自動配對成功。Kentamin問答曾漏答用途，後續版本另行修正驗收。",
+      "reportSha256": "9350b392b2a72e9f4a5eed28a36f64d5d80163638e507538bbd7fe748e04b694"
+    },
+    "foundAndFixedIssues": [
+      "問答漏掉明確要求的完整用途欄",
+      "生成版本未更新而重用舊不完整快取",
+      "副作用測驗選項殘留章節編號",
+      "完整辨識需要時用法後仍提示頻次欄缺漏",
+      "舊結果過期時的提示誤稱一律缺少產品／包裝資料"
+    ],
+    "affectedReleaseValidation": {
+      "commit": "680e10a79d694b5aab3dd7f49ad27bbd37d40c17",
+      "unitSuites": 12,
+      "unitTests": 157,
+      "typecheck": "passed",
+      "build": "passed",
+      "receiptSha256": "7d366f8bed0f3e90463f9cc9cfc2cbb081f97f429f7e139aebed15bd9ee0bb1e"
+    },
+    "phasePaidApiTotals": {
+      "logicalJobs": 14,
+      "providerHttpRequests": 23,
+      "providerTokens": 61472,
+      "uniquePublicRealPhotos": 2,
+      "realPhotoRecognitionRuns": 3,
+      "distinctKnownSourceLearningExercises": 4,
+      "sourceIdentityFixturesExplicitlySynthetic": true,
+      "missingSourceExercises": 1,
+      "quizQuestionInstancesChecked": 23,
+      "distinctQuizQuestionsInOriginalSample": 17,
+      "followupQuizQuestionInstances": 6,
+      "meaning": "六題為同一HTML來源的修正後重測，不當成六個額外獨立藥品樣本。",
+      "referenceStatus": "AI-assisted visual transcription checked against visible text; not human-adjudicated ground truth."
+    },
+    "coreDeployment": {
+      "status": "verified_ready_100_percent",
+      "commit": "680e10a79d694b5aab3dd7f49ad27bbd37d40c17",
+      "imageDigest": "sha256:93e6bd70e8a4601ed7769c0335f19fe04fc323f3c296e32d015b9e3c7440cacc",
+      "webRevision": "yzt-test-web-00018-7r2",
+      "workerRevision": "yzt-test-worker-00018-n8r",
+      "preservedFullRuntimeConfigExcludingImageAndReleaseTraffic": true,
+      "preservedMinInstances": 0,
+      "preservedServiceMaxInstances": 2,
+      "preservedRevisionMaxInstances": 3,
+      "preservedWebConcurrency": 40,
+      "preservedWorkerConcurrency": 2,
+      "quotaChanges": 0,
+      "iamChanges": 0,
+      "hostingChanges": 0,
+      "receiptSha256": "89ec8aa2f1e9137f03838a6242b2492990170242b675048287baea4625de3812"
+    },
+    "finalWordingReload": {
+      "status": "passed_zero_jobs_no_answers_no_model",
+      "commit": "28d7cbacde622bfa4dac38ca9e43044a5e03710a",
+      "neutralExpiredBannerAndPublicJobError": true,
+      "currentKentaminResultRetained": true,
+      "allSixHtmlAnswersRetained": true,
+      "normalReloadAnd375pxPassed": true,
+      "newJobs": 0,
+      "providerRequests": 0,
+      "answerPosts": 0,
+      "apiWrites": 0,
+      "pageErrors": 0,
+      "usageBefore": 19,
+      "usageAfter": 19,
+      "medicationsBeforeAfter": 29,
+      "allMedicationHashesJobIdsSeatsAndPaidResultsExact": true,
+      "reportSha256": "4c3b6e78a229128d41a87cf37d3a8c4856063590fac90be585009823bc381d71"
+    }
+  },
+  "unchangedPolicy": {
+    "dailyAiPerUser": 20,
+    "dailyAiGlobal": 200,
+    "trialSeats": 50,
+    "sourceIngestionPaidGenerativeRequests": 0,
+    "technicalSourceVerification": true,
+    "humanClinicalReview": false,
+    "sourceExistingVersions": "原2025個發布指標與2028份既有來源完整metadata及全文前後核對一致。"
+  },
+  "artifactRefs": [
+    {
+      "label": "HTML章節綱目完整4664字號結構檢查",
+      "sha256": "bff4b18a24c0c7c38e12e9027a8c8c1738928573cb73d3e5cc7230da872bb51d"
+    },
+    {
+      "label": "現行關聯與內容門檻後的733份HTML候選",
+      "sha256": "c8a47713879cb4a06315c2d1f7da2e80eb24886fa871faba6917c24b6a986126"
+    },
+    {
+      "label": "新增HTML來源完整family檢查",
+      "sha256": "f9e94498cc130743b345e5ede487ff2fdacc47f9a25eb288bad03fad61eae5c0"
+    },
+    {
+      "label": "18份PDF候選及反例檢查",
+      "sha256": "b73bd5ddb42611688dcb657c7638a261445daf26ae2c078e870ec22f68288539"
+    },
+    {
+      "label": "733份HTML發布完成紀錄",
+      "sha256": "0d3b46842007ea021e9027d43e91497e5c6908957d84276fde8682211e40924b"
+    },
+    {
+      "label": "22份HTML首輪嘗試：20份發布、2份因舊目錄缺資料跳過",
+      "sha256": "4f52496434dffd3e0adfed6bd5a5567ed58dbe35cffd6ee77a1fc8e153f8fca9"
+    },
+    {
+      "label": "更新官方目錄後兩份來源補發布紀錄",
+      "sha256": "bd9b064d2de4dc11c76c0e3d0974b41e56b5a83009134b52a41e6cc7707e31ea"
+    },
+    {
+      "label": "18份PDF發布完成紀錄",
+      "sha256": "6c96c7373d50fd556dbc8fb24467b04c882dd980a36ea4f3e3fa88937449a32c"
+    },
+    {
+      "label": "原始兩份HTML發布完成紀錄",
+      "sha256": "8059780b78384b40b2026c4424a4f07facef99180f75df9c98dad669d80ded4f"
+    },
+    {
+      "label": "新增16個PDF網址之完整來源關聯判定",
+      "sha256": "60d5d412ab043cfe9d1caf81c5003c6d68fbe8adf4c24dda61a92e76cfd96ed5"
+    },
+    {
+      "label": "官方搜尋目錄更新及完整讀回紀錄",
+      "sha256": "00244b25f5896cb3f1a4576c6f449ba04451ca1c810f2a1aee30fdce0ce33218"
+    },
+    {
+      "label": "775新增來源與既有2025指標／2028來源全量讀回",
+      "sha256": "75b42a6073e9dcbaec597956e5b5a81119c2792dc0f6d741b715468cd372a779"
+    },
+    {
+      "label": "依最終讀回確認的剩餘缺口",
+      "sha256": "85f89eed2ee17e511229d5adbc0f1463abaaae3e6ba0507326e7539edfc630cb"
+    },
+    {
+      "label": "8d基線完整本機驗證：1208單元、156Python、160瀏覽器及lifecycle",
+      "sha256": "39cff2231014db029c93569b29260a1949fe613f93149d34e79134ef90ec9da5"
+    },
+    {
+      "label": "修正後三項真實複驗交付紀錄",
+      "sha256": "752fc5f380186dcbbe107e8178e0428dca64872b6e3c4254753c343ab86947a8"
+    },
+    {
+      "label": "最後純文案版本零新任務的真實畫面重載驗收",
+      "sha256": "4c3b6e78a229128d41a87cf37d3a8c4856063590fac90be585009823bc381d71"
+    }
+  ],
+  "remainingCoverage": {
+    "activeLinkedUnpublishedLicenses": 15388,
+    "activeWithoutIndexOrLinks": 3059,
+    "activeTotalUnpublishedLicenses": 18447,
+    "meaning": "尚未發布集合含原料藥及內容、版面或現行來源關聯待釐清的字號；不預設它們全部適合發布為患者仿單。",
+    "unresolvedParserOperations": {
+      "total": 11,
+      "diagnosedButStillHeld": 2,
+      "unclassified": 9
+    }
+  }
+}

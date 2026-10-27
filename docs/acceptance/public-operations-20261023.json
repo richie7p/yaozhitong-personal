@@ -1,0 +1,77 @@
+{
+  "schema": "yzt-public-operations-acceptance/v1",
+  "date": "2026-10-23",
+  "scope": "Firestore isolated restore, silent operational rules, password policy and support index; application deployment and AI acceptance recorded separately",
+  "restore": {
+    "source": "latest READY daily backup, snapshot 2026-10-22T08:02:18.276831Z",
+    "requests": 1,
+    "restoredDocuments": 5606,
+    "collections": 12,
+    "typedJsonBytesApprox": 24730000,
+    "unchangedDocumentHashMatches": 5605,
+    "postSnapshotChangedDocuments": 1,
+    "newDocumentsAfterSnapshot": 5253,
+    "unexpectedMissingDocuments": 0,
+    "unexpectedHashMismatches": 0,
+    "tombstonesChecked": 2,
+    "ownerMedicationReferencesChecked": 152,
+    "missingReferences": 0,
+    "canonicalSourceDocuments": 1807,
+    "publishedPointers": 1804,
+    "restoreSeconds": 822,
+    "relationshipDocuments": 0,
+    "relationshipRecoveryExercised": false,
+    "restoredDisabledAccountRequiresQuarantine": true,
+    "reactivatedUsers": 0,
+    "defaultDatabaseUidUnchanged": true,
+    "criticalDefaultDocumentsUnchanged": 11,
+    "drillDatabaseDeleted": true,
+    "drillDatabaseReadbackHttpStatus": 404,
+    "remainingDatabases": 1,
+    "documentReadUpperBound": 32955,
+    "firestoreBackupCoversAuth": false,
+    "firestoreBackupCoversStorage": false,
+    "billingAmountVerified": false
+  },
+  "monitoring": {
+    "enabledPolicies": 3,
+    "notificationChannels": 0,
+    "emailsSent": 0,
+    "deliveryMode": "rules_only_user_requested",
+    "conditions": [
+      "web at least 5 server errors in 5 minutes",
+      "worker ERROR logs, including redacted persisted job failures after application deployment",
+      "AI queue depth over 10 for 10 minutes, or p95 dispatch delay over 5 minutes for 5 minutes"
+    ],
+    "acceptedFilters": 4,
+    "offlineThresholdVectorsPassed": 15,
+    "productionFailuresInjected": 0,
+    "liveIncidentTransitionExercised": false
+  },
+  "auth": {
+    "minimumPasswordLength": 8,
+    "enforcement": "ENFORCE",
+    "forceExistingPasswordUpgradeOnSignin": false,
+    "realSevenCharacterSignupRejected": true,
+    "weakSignupHttpStatus": 400,
+    "newWeakAccountsCreated": 0,
+    "verificationOrResetEmailsSentThisPolicyCheck": 0,
+    "emailPrivacyUnchanged": true,
+    "recaptchaConfigUnchanged": true
+  },
+  "supportIndex": {
+    "state": "READY",
+    "fields": [
+      "ownerId ASCENDING",
+      "createdAt DESCENDING",
+      "__name__ DESCENDING"
+    ],
+    "existingFourIndexesPreserved": true
+  },
+  "privateEvidenceSha256": {
+    "restorePlan": "3bdc82dc90e16f4b8a9577bad2e5bd8b285d6af25462b1c7c9ed9bfdeffe7442",
+    "restoreValidation": "e7f1c98600e1efde6e83f1c8304e11be89b96fd6efae45c7ec280d1de28de7df",
+    "cleanupJournal": "9f1dd331b1dee2b55a9c46e8482decf95557b0618353090c155c713f0196c6e2",
+    "postDrillReadback": "a1feaa1b5dd3e82008fa5ffa3d05eb8cf556917e6e509273f08e2da576227a1a"
+  }
+}

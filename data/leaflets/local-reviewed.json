@@ -1,0 +1,30 @@
+{
+  "reviewedAt": "2026-09-10",
+  "reviewer": "Codex visual/source transcription review",
+  "scope": "Local software testing only; not a pharmacist review or approval for clinical use",
+  "checks": [
+    "All PDF pages rendered and visually inspected",
+    "License number and product identity checked",
+    "Extracted medicine text, warnings, numeric values and page boundaries compared with PDF"
+  ],
+  "items": [
+    {
+      "licenseNo": "內衛成製字第000544號",
+      "sha256": "08ade0a0c8bb0a18a54215825daeed25d6f692f6cb1df00e3217dda14f01bf07",
+      "version": "08ade0a0c8bb0a18",
+      "pages": 1
+    },
+    {
+      "licenseNo": "衛署藥製字第026087號",
+      "sha256": "355931af34ccb1998ce774cda49b16e125c261d7fd697ff4d846b24477264528",
+      "version": "355931af34ccb199",
+      "pages": 1
+    }
+  ],
+  "deferred": [
+    {
+      "licenseNo": "內衛成製字第000075號",
+      "reason": "PDF says 洸洋 while current catalog says 福元. License and manufacturer match, but current product-label correspondence still needs confirmation. Keep draft."
+    }
+  ]
+}

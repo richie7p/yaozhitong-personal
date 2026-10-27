@@ -1,0 +1,14 @@
+{
+  "schema": "yzt-complete-backup-plan/v1",
+  "sourceProject": "replace-project-id",
+  "sourceProjectNumber": "123456789012",
+  "sourceBucket": "replace-private-data-bucket",
+  "backupBucket": "replace-separate-private-backup-bucket",
+  "backupKeyVersion": "projects/replace-project-id/secrets/recovery-encryption-key/versions/1",
+  "maxObjects": 25000,
+  "maxBytes": 2147483648,
+  "maxAuthUsers": 10000,
+  "maxObjectBytes": 33554432,
+  "retentionDays": 7,
+  "concurrency": 2
+}

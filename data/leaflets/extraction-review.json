@@ -1,0 +1,548 @@
+[
+  {
+    "id": "9bec31c959afc866bc7604176c52e12387e194cf1c8a31b6b75d840a8ce40b02",
+    "licenseNo": "內衛成製字第000075號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 673,
+        "extractedChars": 673,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 429,
+        "extractedChars": 429,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "21125e5c192f894d2cb2f2cd461709f31f277f4cc1c04603a178ea5fccee2b19",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "e9c0bbe6d525934b14ff4f620e6869000e0bf432c50157fc2ade80634bd212e7",
+    "licenseNo": "內衛成製字第000544號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 932,
+        "extractedChars": 932,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "08ade0a0c8bb0a18a54215825daeed25d6f692f6cb1df00e3217dda14f01bf07",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "9318a46080de3b7c077f762dae1999a2bbeff0b940110def9cb18c10f2d0488e",
+    "licenseNo": "衛部藥輸字第026675號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 15090,
+        "extractedChars": 23106,
+        "characterCoverage": 0.4373
+      },
+      {
+        "page": 2,
+        "sourceChars": 16269,
+        "extractedChars": 24029,
+        "characterCoverage": 0.4661
+      }
+    ],
+    "sourceHash": "92f4f29b382c011d3df2187b7a7a52477dc8b04f2908aab43e5bad4695b6541f",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "e07157d545138cdc4f2bed1560c921e60a9dc76b3eb50c88460f438cc210008c",
+    "licenseNo": "衛部藥輸字第026791號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 4543,
+        "extractedChars": 4543,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 4047,
+        "extractedChars": 4047,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "c6006b947d978a68cd13194e6d766ef219e4f26785732e5796b310e81ed813a7",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "fdfb91f7760a053465c3e9ef99d9a762080eeda1bf5edcdd23957ee07473e780",
+    "licenseNo": "衛部藥輸字第026820號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 5573,
+        "extractedChars": 5573,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 6016,
+        "extractedChars": 6016,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "503b885b8e51d871eac868c8793920a4f07c0057c49e5d20b29d93752f7e3003",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "2a69bdcc32e9c78c85dbba6a8eb70bc6f6f557497c33d0e999465fbb68e748ad",
+    "licenseNo": "衛部藥輸字第026848號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 5540,
+        "extractedChars": 10306,
+        "characterCoverage": 0.252
+      },
+      {
+        "page": 2,
+        "sourceChars": 5643,
+        "extractedChars": 8661,
+        "characterCoverage": 0.3685
+      }
+    ],
+    "sourceHash": "a4ad565db5b5b1cffa76add6be0d34f2ab4d1be59afa6b790e5a7a8905eadb07",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "09a33a1954d67e65643df8c5f41edc40ffbeffe29c458544d612949616a1c9a6",
+    "licenseNo": "衛部藥輸字第026849號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 5540,
+        "extractedChars": 10306,
+        "characterCoverage": 0.252
+      },
+      {
+        "page": 2,
+        "sourceChars": 5643,
+        "extractedChars": 8661,
+        "characterCoverage": 0.3685
+      }
+    ],
+    "sourceHash": "a4ad565db5b5b1cffa76add6be0d34f2ab4d1be59afa6b790e5a7a8905eadb07",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "9ddf5dac029a907cd3c44ec36457345c9e94b306ffde14a7ebf207c3826d1072",
+    "licenseNo": "衛部藥輸字第026850號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 5540,
+        "extractedChars": 10306,
+        "characterCoverage": 0.252
+      },
+      {
+        "page": 2,
+        "sourceChars": 5643,
+        "extractedChars": 8661,
+        "characterCoverage": 0.3685
+      }
+    ],
+    "sourceHash": "a4ad565db5b5b1cffa76add6be0d34f2ab4d1be59afa6b790e5a7a8905eadb07",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "cde1674765ffbca9186e0bc9020ca0087bd52bfe121dce0a3ccb15ad90b2c1b6",
+    "licenseNo": "衛署藥製字第025997號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 3145,
+        "extractedChars": 3145,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 2799,
+        "extractedChars": 2799,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "244eb06eebc937f40ec6649c283af6273bdf50f5f6a8e08b58857a2b3a429bd6",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "7f63f4bf6baad18684e75b50f263958a3838d0404985a0a914a3af6dc414a8c2",
+    "licenseNo": "衛署藥製字第026002號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1121,
+        "extractedChars": 1121,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 506,
+        "extractedChars": 506,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "6033868b91c2775eb1551e7310fe767427ccb128eec90950d81ccbffdffb9925",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "3242a0b37cda64f4db00d13d010f5ffaba0373fbe8675c06faf4d562e0469b1b",
+    "licenseNo": "衛署藥製字第026032號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1306,
+        "extractedChars": 1306,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 155,
+        "extractedChars": 155,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "4c0b30c8cc7dbd0fc843fafd27c3b56814ac3fa458d3c51da5cd7daa71590b51",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "bebadb7438ef8b1fa437484bc32300272f6e28834c970b4fcdc848254cee5f15",
+    "licenseNo": "衛署藥製字第026085號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1042,
+        "extractedChars": 1042,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "9a3380fac4f6a41eb30de8533e366a564858ad5d8279e7c5df8a38347e63f8da",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "553a71ac6af8b49791d957058ab128d505f871f582a67e875c8f177abd18ab0b",
+    "licenseNo": "衛署藥製字第026087號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 828,
+        "extractedChars": 829,
+        "characterCoverage": 0.9855
+      }
+    ],
+    "sourceHash": "355931af34ccb1998ce774cda49b16e125c261d7fd697ff4d846b24477264528",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "64f10e95d9ad4e343ee00c859d0aee9595cbd00b4562fe4069941c84ee0f5ddb",
+    "licenseNo": "衛署藥製字第026089號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 774,
+        "extractedChars": 774,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "53e12c4c545c28be0c342e3039ae436b6ba255c125c72bad4686a55de4157b86",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "950c75aeb6e48aa80e0f88312e3e1f70cc0de450a8c07c50fb3d30a89a76a579",
+    "licenseNo": "衛署藥製字第026090號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1608,
+        "extractedChars": 1608,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 645,
+        "extractedChars": 645,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "b3a4ed3d089ac09ca76612c72af5d2b707bf877f994a7b15ad86bf3ca018c990",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "7a8b2b466e59838df90442184e19ca24ec00c422ca17d76f2f8ee3879f9cacf4",
+    "licenseNo": "衛署藥製字第026100號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1085,
+        "extractedChars": 1085,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "62083271b09b5b599e8134df667d405c367eeb8072caa6c457155a3dfcfd8fc5",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "a86a327b2d259c774658e852849e5036c357da5bcd7d5a95042aa26ca61cb464",
+    "licenseNo": "衛署藥製字第026120號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1107,
+        "extractedChars": 1107,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "cde0e500d734481bb2510a9599d8568ffab6600c728f6b1e11ca841ff14515bc",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "ee028dc9c4525bfa6b980d4e2662800e245495577926dcbd2dca6980d2ae6aa5",
+    "licenseNo": "衛署藥製字第026164號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1130,
+        "extractedChars": 1130,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "861769c272ead337616e208320555d20c57198b71fe84351cc6eff27b4a20378",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "669b5a43328f7876ba28f79a27ab7895c15470ff318f1dc8ca3e1340d490b82c",
+    "licenseNo": "衛署藥製字第026167號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1969,
+        "extractedChars": 1969,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "9625bb811b388b27236eb8bab4a460c529871addc473bade2a305d2f6607f020",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "d5d66e01f0653afdcbbf0ed5e87d2eeea8c586e8a572be0cc21b1cccab3f7df0",
+    "licenseNo": "衛署藥製字第026184號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1033,
+        "extractedChars": 1033,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "ccfd661aeff22809d2915bb764ff88dfff3b73aaba216ec5b625f69e30e0270a",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "c7f5fe9249f119fb65817b0ea9ab7d204e3d93152ef8e18415a06e0437b3a393",
+    "licenseNo": "衛署藥製字第026185號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1177,
+        "extractedChars": 1177,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "596ba352d742831b13021ee0e2e4b3ab79af2dd71bc038ff7ed9e6ef4d775257",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "facf76afa348339e1d1ec5ab7c53f710ba7dbc00678905ae357d776ccda6212d",
+    "licenseNo": "衛署藥製字第026199號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 996,
+        "extractedChars": 996,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "3665fa54ccf83bf60fc1cfd8c02a64ada952f720bd12d18bdabbfce733b4b306",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "f969536e1652040c5546c4642380d06932f0e61feca51f809f2558e176b9ab71",
+    "licenseNo": "衛署藥製字第026203號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 96,
+        "extractedChars": 96,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 2336,
+        "extractedChars": 2336,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "4415353c5b5b46f415d7654e961f1d4a391103bb2b120fef05e4feb41f3b48f7",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "593fa58b5a2a6a7cb0dcac6cc814f1d756105dba1c9d2d076cfac544f2ddeed3",
+    "licenseNo": "衛署藥製字第026261號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1136,
+        "extractedChars": 1136,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 0,
+        "extractedChars": 0,
+        "characterCoverage": 0.0
+      }
+    ],
+    "sourceHash": "4942441f1aacab77494d92c7e9bfd25f72b206036582cc5381bcecd782464c26",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "7b4da0ed4795b4caf9b383099e94914b38e65b9469f1d76aee050d00531087be",
+    "licenseNo": "衛署藥製字第026277號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1564,
+        "extractedChars": 1564,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 1329,
+        "extractedChars": 1329,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "8cc5d93571de484d743ea113c2af41dea70b16b60cf18042e0ab33e20b1042ab",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "a47f16d6a9c5a7b7b2f1fab3fe01bb57d6023198ad1bef937830b8026a287430",
+    "licenseNo": "衛署藥製字第026282號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 54,
+        "extractedChars": 54,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 2336,
+        "extractedChars": 2336,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "0aaef605146d741fccc9f530b216339d512cc1ec63576c2d43a6729eb3305e94",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "63ca1769a1271e93c726915ad355b2d06a96e88447dd2610866e7f07baa75893",
+    "licenseNo": "衛署藥製字第026404號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 653,
+        "extractedChars": 653,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "5378cc355c3fbb51edf1b61541cd8d3dba8c80bfc09733d89b4f302d21cd1c3a",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "daf4d40dfe9fb95f9556bb5f40c6ea2c1698c709bc094596acaa5a8670b96a0b",
+    "licenseNo": "衛署藥製字第026454號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1399,
+        "extractedChars": 1399,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "ffb5c462f57899cb29ab02511c420f71c91c4b46ba28d7d5e184f9f601af1f5e",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "d367d96e89d835a9ae17a8904709b8f5e5d6178fde529305b18deb94e4119e76",
+    "licenseNo": "衛署藥製字第026487號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1496,
+        "extractedChars": 1496,
+        "characterCoverage": 1.0
+      },
+      {
+        "page": 2,
+        "sourceChars": 355,
+        "extractedChars": 355,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "268830401d3b29178b6897035cac9bbe40514ec2f9eda673bab7a3ddefb0b1cc",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  },
+  {
+    "id": "7eccfb5903f7ee2beb70161a6cd8b69a2f2230bce2c3a291f9fcc38b9945c4cf",
+    "licenseNo": "衛署藥製字第026491號",
+    "pages": [
+      {
+        "page": 1,
+        "sourceChars": 1512,
+        "extractedChars": 1512,
+        "characterCoverage": 1.0
+      }
+    ],
+    "sourceHash": "7587a35246f1efa6a44f1e210d29b928df3eae02a2547a7251142e602d5046f7",
+    "status": "needs_visual_review",
+    "note": "Character coverage compares two extraction engines; it does not establish semantic or clinical correctness."
+  }
+]

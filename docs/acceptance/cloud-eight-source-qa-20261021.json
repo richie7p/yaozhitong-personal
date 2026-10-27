@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "checkedAt": "2026-10-21T04:42:02.470Z",
+  "status": "passed_for_reviewed_source_scope",
+  "reviewType": "AI-assisted comparison of frozen official sources, actual generated statements and each question/option/explanation",
+  "humanReviewPerformed": false,
+  "medicalOrPharmacistReviewPerformed": false,
+  "clinicalValidationPerformed": false,
+  "semanticCorrectnessGuaranteed": false,
+  "scope": "Actual eight cloud bundle results compared locally against pinned draft and review evidence. No extra API, model-service call, account access, answer change or product-code edit was performed for this QA.",
+  "manifestSha256": "9fa3fdc85db6d061ef85a8144d8afd3f15c3599367eb80083285349b103dd7d1",
+  "sourceCount": 8,
+  "claimCount": 25,
+  "questionCount": 25,
+  "recognizedSafetyGroupCount": 17,
+  "literalCitationCount": 50,
+  "observedActualSourceContradictionCount": 0,
+  "observedSafetyTruncationCount": 0,
+  "sourceBasedUniqueAnswerAssessment": {
+    "questionsReviewed": 25,
+    "uniqueSourceConsistentCorrectOptionObserved": 25,
+    "scope": "Each option was assessed against its named cited section; this is an AI-assisted observation, not a guarantee of clinical or semantic correctness."
+  },
+  "mechanicalEvidence": {
+    "frozenDraftAndReviewHashesMatched": true,
+    "completeReturnedChunksMatched": true,
+    "sourceVersionsMatched": true,
+    "everyClaimAndQuestionHasLiteralCitations": true,
+    "completeReviewedSafetyPassagesPresentInDisplayedClaims": true,
+    "allExplanationsMatchTheirCompleteCitations": true
+  },
+  "items": [
+    {
+      "licenseNo": "內衛成製字第000544號",
+      "nameZh": "酵素膠囊",
+      "sourceVersion": "08ade0a0c8bb0a18",
+      "sourceSha256": "08ade0a0c8bb0a18a54215825daeed25d6f692f6cb1df00e3217dda14f01bf07",
+      "canonicalTextSha256": "88960446793a09612b0c9cb71e92e0a7662ef0fdff3cf92c10fa45ce551c6f23",
+      "resultSha256": "ac0b8674002640ed7dc19a59a46ee017a3f80f5aa84ed1d6a134fcb3391b0190",
+      "claimCount": 1,
+      "questionCount": 1,
+      "recognizedSafetyGroupCount": 0,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "用途仍保留原列情況所致的食慾不振／消化不良，沒有擴張為任何原因。",
+        "來源沒有獨立安全欄，結果未推論沒有副作用或全面安全。"
+      ]
+    },
+    {
+      "licenseNo": "衛署藥製字第014025號",
+      "nameZh": "開恩達命膠囊",
+      "sourceVersion": "04fac7184e45a93a",
+      "sourceSha256": "04fac7184e45a93afca52e33943c567e2483ba0c3c6d4c47bbe5b6bedc86b937",
+      "canonicalTextSha256": "bef78e36db12199f0b44fad4ad0e1b66e2c19eadf8310b8669ca54427c63d528",
+      "resultSha256": "3d61ebe931d2d596bc734ba55f0149866c4613f01ffe4fef8e48adf5e6c5bc57",
+      "claimCount": 6,
+      "questionCount": 6,
+      "recognizedSafetyGroupCount": 5,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "B12／賦形劑嚴重過敏禁忌、鈷過敏告知醫療人員、接觸性皮膚炎與嚴重反應完整保留。",
+        "交互作用及過量的尚無資訊未被改述為安全。"
+      ]
+    },
+    {
+      "licenseNo": "衛署藥製字第019054號",
+      "nameZh": "優克黴素膠囊２５０公絲（安莫西林）",
+      "sourceVersion": "fe20872faa5288d9",
+      "sourceSha256": "fe20872faa5288d9159951101bdd472c3468f22175f81a5d08f144b357144143",
+      "canonicalTextSha256": "83643ce63cae4a6f1de58e4c6fbc9b7539622d02c1ce61724b76bf230fca6b27",
+      "resultSha256": "cad369bba370eddca19fdfd3fe7bd51a598e64f9e937a02923f976762e51ab6d",
+      "claimCount": 2,
+      "questionCount": 2,
+      "recognizedSafetyGroupCount": 1,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "用途仍限所列及其他具感受性細菌感染，未擴張為所有感染。",
+        "附記原標籤、Penicillin過敏禁用與發疹／蕁麻疹停止用藥條件完整保留。"
+      ]
+    },
+    {
+      "licenseNo": "衛署藥製字第026087號",
+      "nameZh": "\"生達\"咳服錠200毫克(呱芬那辛)",
+      "sourceVersion": "355931af34ccb199",
+      "sourceSha256": "355931af34ccb1998ce774cda49b16e125c261d7fd697ff4d846b24477264528",
+      "canonicalTextSha256": "49cd879b5c4a63c99862cd669096b57077be4579ce390d7d2d7e86b74be03c71",
+      "resultSha256": "97fc43257020c2246a787f49c8bfa27f9d22a0f63e4f9440803385ff43a058d8",
+      "claimCount": 4,
+      "questionCount": 4,
+      "recognizedSafetyGroupCount": 3,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "副作用、注意事項與警語三欄完整；孕哺例外、不適停用與不得併酒條件未縮減。",
+        "氣喘等所引起之咳嗽的因果限定，以及濃痰、持續症狀、低齡及過敏條件完整保留。"
+      ]
+    },
+    {
+      "licenseNo": "衛署藥製字第030418號",
+      "nameZh": "普德錠80毫克",
+      "sourceVersion": "fbf471a208627918",
+      "sourceSha256": "fbf471a20862791856e9291d0d412a403d916204a53b2941e3ae5f2fd2c59b50",
+      "canonicalTextSha256": "fca083b3029d17ec5b043f198477b34b3c589f16ce5b252ce9051d1b61482c03",
+      "resultSha256": "ea41983d9d829dd75d510afba6f3cd1254d50e2749c33bb0aaa4cf382b763435",
+      "claimCount": 3,
+      "questionCount": 3,
+      "recognizedSafetyGroupCount": 2,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "成人超過七日／12歲以下超過三日且症狀未緩解、孕哺先諮詢、肝病與過敏等條件完整。",
+        "完整人工轉錄來源保留成人用量所屬表格欄及25°C儲存；本次沒有生成用量或儲存題。"
+      ]
+    },
+    {
+      "licenseNo": "衛署藥製字第039632號",
+      "nameZh": "\"永勝\"克黴隆親水性乳膏１０公絲/公克（亦可那挫）",
+      "sourceVersion": "e97c566a94682879",
+      "sourceSha256": "e97c566a94682879d7121fdbdf2484fb94645c0a1e40e1b67d0fceb6528c4011",
+      "canonicalTextSha256": "543bf032cffcebb3ac1c6a15fce2a19b3c33433df86d20b61be51edabc47b5ac",
+      "resultSha256": "f2e05579fec1a494af75db7d42940301bfa1ea2323a2174f3795d841c8f9931d",
+      "claimCount": 2,
+      "questionCount": 2,
+      "recognizedSafetyGroupCount": 1,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "注意事項父欄完整包含禁忌、副作用與妊孕條件，沒有因合併為一組而漏文。",
+        "懷孕前三個月或可能懷孕、尚未確立安全性及治療有益性例外完整保留。"
+      ]
+    },
+    {
+      "licenseNo": "衛署藥製字第040161號",
+      "nameZh": "\"晟德\"安佳熱滴劑１００毫克/毫升（乙醯胺酚）",
+      "sourceVersion": "8f80ed21790ccc9b",
+      "sourceSha256": "8f80ed21790ccc9b6eeb85bb6fed2d03cfa03327be3a741441154f616c43338b",
+      "canonicalTextSha256": "8d8ee268f78d4bb39bbfcb7e69cc1d5ecdf700c52b42ad77798f094b76f6f7bd",
+      "resultSha256": "f359e0f118df0ac05d7a34027d7562c56b563457677d659e120f575a9558cb37",
+      "claimCount": 4,
+      "questionCount": 4,
+      "recognizedSafetyGroupCount": 3,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "完整警語九項與肝毒性三子項、過量和注意事項均保留，未把4,000mg改述成安全用量。",
+        "重複含同成分藥、肝病／飲酒風險及超量即使無不適仍立即就醫的段落沒有截斷。"
+      ]
+    },
+    {
+      "licenseNo": "衛署藥製字第040833號",
+      "nameZh": "\"晟德\"息咳寧糖漿",
+      "sourceVersion": "998437964f0a230a",
+      "sourceSha256": "998437964f0a230a7f33b8a7a5dee6c7f72216d8ae4eca28f62f9fbc84ea4665",
+      "canonicalTextSha256": "eb204065097a17bde83fa9795ba8d632abf1ef07c6a2596854ce91695118f343",
+      "resultSha256": "50ec30b5a0cae752d41ff814969518ed9f6c898ecda3314320c77470e49a9df3",
+      "claimCount": 3,
+      "questionCount": 3,
+      "recognizedSafetyGroupCount": 2,
+      "completeReturnedSourceMatched": true,
+      "reviewedSafetyPassagesPreserved": true,
+      "sourceConsistentSingleCorrectAnswerObserved": true,
+      "explanationsMatchCompleteCitations": true,
+      "observedContradictions": [],
+      "checks": [
+        "兩完整安全欄保留父層處置和全部子條件；用途仍限原列感冒症狀。",
+        "柑橘／葡萄兩種口味賦形劑分支均保留於完整來源，未擅選口味或混同分支；共同Aspartame／苯酮尿症警語未縮限。"
+      ]
+    }
+  ],
+  "limitations": [
+    "Safety assessment covers one key point per recognized section, not every nested condition or every clinical scenario.",
+    "Complete liver-toxicity paragraphs are retained, but the questions do not assess every liver-risk item.",
+    "Bubdel dose-table and storage text are retained in full source chunks; no dose/storage comprehension question was evaluated.",
+    "Secorine flavor branches are preserved as alternatives; exact dispensed flavor or historical photograph identity was not established.",
+    "Unknown information and absence of a source safety section are not evidence of safety.",
+    "Literal quotation and source-based question consistency do not establish patient-specific suitability, medical currency, pharmacist approval or validated educational effectiveness."
+  ],
+  "privacy": {
+    "privateSnapshotsIncluded": false,
+    "sourceFullTextIncluded": false,
+    "patientOrAccountIdentifiersIncluded": false,
+    "secretsOrTokensIncluded": false
+  },
+  "additionalApiCalls": 0,
+  "cloudWrites": 0,
+  "answersModified": false,
+  "productCodeModified": false
+}

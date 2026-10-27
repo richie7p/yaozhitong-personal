@@ -1,0 +1,529 @@
+{
+  "schema": "yzt-luna-reasoning-diagnostic-v1",
+  "date": "2026-10-23",
+  "model": "gpt-6-luna",
+  "scope": "Historical unreleased v18-v8 diagnostic; final release acceptance is separate.",
+  "sourceCount": 3,
+  "logicalCases": 12,
+  "freshRequests": true,
+  "retries": 0,
+  "replays": 0,
+  "requestMaxCompletionTokens": 25000,
+  "requestTimeoutMs": 180000,
+  "logicalTimeoutMs": 400000,
+  "providerHttp": 33,
+  "promptTokens": 188750,
+  "completionTokensIncludingReasoning": 90161,
+  "reasoningTokensIncludedInCompletion": 58317,
+  "estimatedStandardCostMicroUsd": 63971,
+  "costScope": "Token-based Standard-rate estimate, rounded per HTTP; excludes all other prototypes, candidate tests, cloud costs and unknown timeout usage. Not a billing statement.",
+  "ratesUsdPerMillion": {
+    "input": 0.1,
+    "outputIncludingReasoning": 0.5
+  },
+  "pricingSource": "https://developers.openai.com/api/docs/pricing",
+  "independentReview": {
+    "reviewSha256": "c2e5c91e4d97df4df25c5b40f4d9c86f4679809936b958f14f1c5e13875e6b51",
+    "nativeAddendumSha256": "0adc1727605117749ae49cd87f482f9d8c7a3c67286e221625cf9d593cb7d20f",
+    "literalCitationsInspected": 215,
+    "literalCitationMismatches": 0,
+    "allQuizQuestionsInspected": 20,
+    "allQuizOptionsInspected": 40,
+    "publishedScopeDefects": [
+      {
+        "case": "018498-bundle-medium",
+        "type": "single_field_absence_generalized_to_entire_source"
+      },
+      {
+        "case": "018498-chat-high",
+        "type": "contiguous_ambiguous_condition_split_into_separate_prohibitions"
+      },
+      {
+        "case": "010332-chat-medium",
+        "type": "missing_source_word_repaired_with_unsupported_missed_dose_scenario"
+      }
+    ],
+    "structuralTeachingLossCases": [
+      "010332-bundle-medium",
+      "010332-bundle-high"
+    ],
+    "verdict": "DO_NOT_DEPLOY_V8"
+  },
+  "effortSummary": {
+    "medium": {
+      "caseCount": 6,
+      "medianElapsedMs": 39949.0,
+      "maxElapsedMs": 48325
+    },
+    "high": {
+      "caseCount": 6,
+      "medianElapsedMs": 74800.0,
+      "maxElapsedMs": 95733
+    }
+  },
+  "interpretation": [
+    "Both efforts produced source-scope errors; high reasoning alone did not ensure faithful content.",
+    "These are three selected difficult sources and one run per source/kind/effort; no population accuracy or statistical superiority claim.",
+    "Citation substring validity, task success and model self-review are distinct from semantic fidelity.",
+    "Coverage metadata is not an accuracy score; conservative holds and literal ledger alignment can leave faithful content partial.",
+    "The production candidate must be tested at its own actual budgets after guard and parser fixes."
+  ],
+  "cases": [
+    {
+      "id": "010332-bundle-high",
+      "caseSha256": "2ae57b00a6cbf329b6709c0193d10abb2e68acc333b1e5f7201b3734df604896",
+      "kind": "bundle",
+      "effort": "high",
+      "elapsedMs": 95733,
+      "providerHttp": 2,
+      "promptTokens": 10220,
+      "completionTokensIncludingReasoning": 11566,
+      "reasoningTokensIncludedInCompletion": 8090,
+      "estimatedStandardCostMicroUsd": 6806,
+      "finishReasons": [
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "6f77a866c73fe3727b4f015592c6a912f9755d4287d3bd4bb9f871a263b31b2d",
+      "nativeDocumentSha256": "9735af7aa77e70be67fcb3e910db19e85b08bd0c1bef8a154203d5e335dfbdb6"
+    },
+    {
+      "id": "010332-bundle-medium",
+      "caseSha256": "dd477c471e38bd6c536d2cc653221cb596f358864875419688e54dd7cc260834",
+      "kind": "bundle",
+      "effort": "medium",
+      "elapsedMs": 38596,
+      "providerHttp": 2,
+      "promptTokens": 10198,
+      "completionTokensIncludingReasoning": 4795,
+      "reasoningTokensIncludedInCompletion": 1205,
+      "estimatedStandardCostMicroUsd": 3418,
+      "finishReasons": [
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "6f77a866c73fe3727b4f015592c6a912f9755d4287d3bd4bb9f871a263b31b2d",
+      "nativeDocumentSha256": "9735af7aa77e70be67fcb3e910db19e85b08bd0c1bef8a154203d5e335dfbdb6"
+    },
+    {
+      "id": "010332-chat-high",
+      "caseSha256": "a748c9af2a4bb422ff7f72cce9721645d60e457203a9da0229bdb082ff27bc7f",
+      "kind": "chat",
+      "effort": "high",
+      "elapsedMs": 67920,
+      "providerHttp": 2,
+      "promptTokens": 19326,
+      "completionTokensIncludingReasoning": 8145,
+      "reasoningTokensIncludedInCompletion": 5385,
+      "estimatedStandardCostMicroUsd": 6006,
+      "finishReasons": [
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "6f77a866c73fe3727b4f015592c6a912f9755d4287d3bd4bb9f871a263b31b2d",
+      "nativeDocumentSha256": "9735af7aa77e70be67fcb3e910db19e85b08bd0c1bef8a154203d5e335dfbdb6"
+    },
+    {
+      "id": "010332-chat-medium",
+      "caseSha256": "ba1fdf93b51099e6b4e1a3b286c413bf3f14bcc86412bc66f81449e0c0b6dfeb",
+      "kind": "chat",
+      "effort": "medium",
+      "elapsedMs": 41302,
+      "providerHttp": 3,
+      "promptTokens": 19881,
+      "completionTokensIncludingReasoning": 5549,
+      "reasoningTokensIncludedInCompletion": 3026,
+      "estimatedStandardCostMicroUsd": 4765,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "6f77a866c73fe3727b4f015592c6a912f9755d4287d3bd4bb9f871a263b31b2d",
+      "nativeDocumentSha256": "9735af7aa77e70be67fcb3e910db19e85b08bd0c1bef8a154203d5e335dfbdb6"
+    },
+    {
+      "id": "018498-bundle-high",
+      "caseSha256": "b53c4f6e31cb430366d489a64d3f6ed037e150117902ef2cd2e45328684c124b",
+      "kind": "bundle",
+      "effort": "high",
+      "elapsedMs": 74253,
+      "providerHttp": 3,
+      "promptTokens": 18261,
+      "completionTokensIncludingReasoning": 9338,
+      "reasoningTokensIncludedInCompletion": 6091,
+      "estimatedStandardCostMicroUsd": 6496,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "9bf4778e5e36406fa69804b6b52a63528cba2c2cbb131fa96749d51cfc83f7fe",
+      "nativeDocumentSha256": "6c60a644334cd241f25ae6ede435ff5392972799a559cfc0d8e988693f3ccbbf"
+    },
+    {
+      "id": "018498-bundle-medium",
+      "caseSha256": "f751d493f0919a764204df6e2bbf5bff45c858081eca0832ce6d8a8b2076da2d",
+      "kind": "bundle",
+      "effort": "medium",
+      "elapsedMs": 42618,
+      "providerHttp": 3,
+      "promptTokens": 18084,
+      "completionTokensIncludingReasoning": 6241,
+      "reasoningTokensIncludedInCompletion": 3111,
+      "estimatedStandardCostMicroUsd": 4931,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "9bf4778e5e36406fa69804b6b52a63528cba2c2cbb131fa96749d51cfc83f7fe",
+      "nativeDocumentSha256": "6c60a644334cd241f25ae6ede435ff5392972799a559cfc0d8e988693f3ccbbf"
+    },
+    {
+      "id": "018498-chat-high",
+      "caseSha256": "cea4711a16dbe8216884f01d3014b7d5b6b2bcb26e2ce91bd7370088169b9387",
+      "kind": "chat",
+      "effort": "high",
+      "elapsedMs": 66867,
+      "providerHttp": 3,
+      "promptTokens": 17928,
+      "completionTokensIncludingReasoning": 8356,
+      "reasoningTokensIncludedInCompletion": 5762,
+      "estimatedStandardCostMicroUsd": 5972,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "9bf4778e5e36406fa69804b6b52a63528cba2c2cbb131fa96749d51cfc83f7fe",
+      "nativeDocumentSha256": "6c60a644334cd241f25ae6ede435ff5392972799a559cfc0d8e988693f3ccbbf"
+    },
+    {
+      "id": "018498-chat-medium",
+      "caseSha256": "2ffd8db8ee94401c07a98de922e45169905d099be1cfb6060bb757554599bd6d",
+      "kind": "chat",
+      "effort": "medium",
+      "elapsedMs": 38592,
+      "providerHttp": 3,
+      "promptTokens": 17937,
+      "completionTokensIncludingReasoning": 5706,
+      "reasoningTokensIncludedInCompletion": 3134,
+      "estimatedStandardCostMicroUsd": 4648,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "9bf4778e5e36406fa69804b6b52a63528cba2c2cbb131fa96749d51cfc83f7fe",
+      "nativeDocumentSha256": "6c60a644334cd241f25ae6ede435ff5392972799a559cfc0d8e988693f3ccbbf"
+    },
+    {
+      "id": "051528-bundle-high",
+      "caseSha256": "194301a4f26e7a05d651bf6278550ef6e2e7765d8bc081b9addfcf561da94c3c",
+      "kind": "bundle",
+      "effort": "high",
+      "elapsedMs": 92025,
+      "providerHttp": 3,
+      "promptTokens": 13982,
+      "completionTokensIncludingReasoning": 11011,
+      "reasoningTokensIncludedInCompletion": 8782,
+      "estimatedStandardCostMicroUsd": 6905,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "4846bdfe119f13225bf5afda6306d5fa78a1e7cbcba8b8ec9343f7632e2e112f",
+      "nativeDocumentSha256": "851c7a515176aa39c3144cda9a7a35284cc70d892fc4bee95301572298456600"
+    },
+    {
+      "id": "051528-bundle-medium",
+      "caseSha256": "4ed5a29eb473dd5443d0c90643c8855e3a25e3f8c98170a3aeff23f2e1ba91fb",
+      "kind": "bundle",
+      "effort": "medium",
+      "elapsedMs": 48325,
+      "providerHttp": 3,
+      "promptTokens": 13890,
+      "completionTokensIncludingReasoning": 6161,
+      "reasoningTokensIncludedInCompletion": 4020,
+      "estimatedStandardCostMicroUsd": 4471,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "4846bdfe119f13225bf5afda6306d5fa78a1e7cbcba8b8ec9343f7632e2e112f",
+      "nativeDocumentSha256": "851c7a515176aa39c3144cda9a7a35284cc70d892fc4bee95301572298456600"
+    },
+    {
+      "id": "051528-chat-high",
+      "caseSha256": "3daf38bf6a1d37c1238e92336906e61341ac4e4bd1d79393e9dd577f3075c6ff",
+      "kind": "chat",
+      "effort": "high",
+      "elapsedMs": 75347,
+      "providerHttp": 3,
+      "promptTokens": 14519,
+      "completionTokensIncludingReasoning": 9403,
+      "reasoningTokensIncludedInCompletion": 7573,
+      "estimatedStandardCostMicroUsd": 6155,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "4846bdfe119f13225bf5afda6306d5fa78a1e7cbcba8b8ec9343f7632e2e112f",
+      "nativeDocumentSha256": "851c7a515176aa39c3144cda9a7a35284cc70d892fc4bee95301572298456600"
+    },
+    {
+      "id": "051528-chat-medium",
+      "caseSha256": "3c09076c0d299ac08483787c11a2a4b6cc9fde4a1bb254032d25f4e2588fb8cc",
+      "kind": "chat",
+      "effort": "medium",
+      "elapsedMs": 29618,
+      "providerHttp": 3,
+      "promptTokens": 14524,
+      "completionTokensIncludingReasoning": 3890,
+      "reasoningTokensIncludedInCompletion": 2138,
+      "estimatedStandardCostMicroUsd": 3398,
+      "finishReasons": [
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "canonicalChunkPayloadSha256": "4846bdfe119f13225bf5afda6306d5fa78a1e7cbcba8b8ec9343f7632e2e112f",
+      "nativeDocumentSha256": "851c7a515176aa39c3144cda9a7a35284cc70d892fc4bee95301572298456600"
+    }
+  ],
+  "hashMeaning": "canonicalChunkPayloadSha256 hashes the exact ordered chunk JSON serialized as UTF-8; nativeDocumentSha256 hashes the original official PDF/HTML bytes. They intentionally describe different artifacts.",
+  "latestCandidateComparison": {
+    "candidate": "v18-v10.3",
+    "freshLogicalCases": 12,
+    "providerHttp": 36,
+    "planSha256": "ad492a5499abf6caeadee6523ce91449e6bc3fb23bf4c70990e35f4b94410407",
+    "receiptSha256": "2574d05da90286fb7ef1de7abed743880407e56a23821523f7319868554ef77e",
+    "independentSemanticReviewSha256": "1a485381d8906822376213c288204f7bf3ac83ed4b213b137f9637f772c54dc5",
+    "sameSourceThreeByTwoModesByTwoProfiles": true,
+    "controlledEffortOnlyAblation": false,
+    "nativeProductionConfigAndTransport": true,
+    "chosenTextEffort": "medium",
+    "effortSummary": {
+      "medium": {
+        "caseCount": 6,
+        "medianElapsedMs": 45152.5,
+        "maxElapsedMs": 62653,
+        "promptTokens": 109236,
+        "completionTokensIncludingReasoning": 39569,
+        "reasoningTokensIncludedInCompletion": 19938,
+        "estimatedStandardCostMicroUsd": 30708,
+        "safetyQuestionsAcrossThreeBundles": 8,
+        "transportErrors": 0,
+        "truncations": 0,
+        "automaticRetries": 0
+      },
+      "high": {
+        "caseCount": 6,
+        "medianElapsedMs": 76396.0,
+        "maxElapsedMs": 114341,
+        "promptTokens": 111013,
+        "completionTokensIncludingReasoning": 69113,
+        "reasoningTokensIncludedInCompletion": 48672,
+        "estimatedStandardCostMicroUsd": 45658,
+        "safetyQuestionsAcrossThreeBundles": 10,
+        "transportErrors": 0,
+        "truncations": 0,
+        "automaticRetries": 0
+      }
+    },
+    "cases": [
+      {
+        "id": "051528-bundle-medium",
+        "caseSha256": "bf85f4e896d514954546d347c8c4234af1d1692b24e749ea15ac5aaeb560177d",
+        "kind": "bundle",
+        "effort": "medium",
+        "elapsedMs": 35103,
+        "providerHttp": 3,
+        "promptTokens": 14472,
+        "completionTokensIncludingReasoning": 4995,
+        "reasoningTokensIncludedInCompletion": 2339,
+        "estimatedStandardCostMicroUsd": 3944,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 13,
+        "safetyQuestions": 1
+      },
+      {
+        "id": "051528-chat-medium",
+        "caseSha256": "2664b51ce7c608e9f44990205ff0266c275546c9e718f3f0a9ad866d6edcedea",
+        "kind": "chat",
+        "effort": "medium",
+        "elapsedMs": 29705,
+        "providerHttp": 3,
+        "promptTokens": 15089,
+        "completionTokensIncludingReasoning": 3987,
+        "reasoningTokensIncludedInCompletion": 1753,
+        "estimatedStandardCostMicroUsd": 3502,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 14,
+        "safetyQuestions": 0
+      },
+      {
+        "id": "010332-bundle-medium",
+        "caseSha256": "264532b1fc3aee4940dda37aeef534dc1c3f04d3dff12f3b82686b3fbae54bfa",
+        "kind": "bundle",
+        "effort": "medium",
+        "elapsedMs": 62653,
+        "providerHttp": 3,
+        "promptTokens": 21954,
+        "completionTokensIncludingReasoning": 9434,
+        "reasoningTokensIncludedInCompletion": 4533,
+        "estimatedStandardCostMicroUsd": 6912,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 25,
+        "safetyQuestions": 5
+      },
+      {
+        "id": "010332-chat-medium",
+        "caseSha256": "f40d10fe775263d18f69a52a9231f05e4af4c7cfce8b8ff1390a9d150aac13c3",
+        "kind": "chat",
+        "effort": "medium",
+        "elapsedMs": 47079,
+        "providerHttp": 3,
+        "promptTokens": 20947,
+        "completionTokensIncludingReasoning": 6578,
+        "reasoningTokensIncludedInCompletion": 3356,
+        "estimatedStandardCostMicroUsd": 5384,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 22,
+        "safetyQuestions": 0
+      },
+      {
+        "id": "018498-bundle-medium",
+        "caseSha256": "a15ad9911e5c73049eac4669be895d1ec7a832e05f529cb095e0bf79571ccaeb",
+        "kind": "bundle",
+        "effort": "medium",
+        "elapsedMs": 51736,
+        "providerHttp": 3,
+        "promptTokens": 18581,
+        "completionTokensIncludingReasoning": 7911,
+        "reasoningTokensIncludedInCompletion": 4048,
+        "estimatedStandardCostMicroUsd": 5814,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 20,
+        "safetyQuestions": 2
+      },
+      {
+        "id": "018498-chat-medium",
+        "caseSha256": "f41be3227049a756491fb14a78a65e2223371bf7abf755ae67fae9e58cbbe8f2",
+        "kind": "chat",
+        "effort": "medium",
+        "elapsedMs": 43226,
+        "providerHttp": 3,
+        "promptTokens": 18193,
+        "completionTokensIncludingReasoning": 6664,
+        "reasoningTokensIncludedInCompletion": 3909,
+        "estimatedStandardCostMicroUsd": 5152,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 17,
+        "safetyQuestions": 0
+      },
+      {
+        "id": "051528-bundle-high",
+        "caseSha256": "18fa93ecdc34dc802329f67a2a9dd54060151c330795edda0218c6b439806036",
+        "kind": "bundle",
+        "effort": "high",
+        "elapsedMs": 65035,
+        "providerHttp": 3,
+        "promptTokens": 14565,
+        "completionTokensIncludingReasoning": 8866,
+        "reasoningTokensIncludedInCompletion": 6179,
+        "estimatedStandardCostMicroUsd": 5890,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 14,
+        "safetyQuestions": 1
+      },
+      {
+        "id": "051528-chat-high",
+        "caseSha256": "438a6c44dc76bc2ad6efe23a8a7565fb682c501d3d88c830b9231ded8a2d3346",
+        "kind": "chat",
+        "effort": "high",
+        "elapsedMs": 69237,
+        "providerHttp": 3,
+        "promptTokens": 15136,
+        "completionTokensIncludingReasoning": 8921,
+        "reasoningTokensIncludedInCompletion": 6645,
+        "estimatedStandardCostMicroUsd": 5974,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 12,
+        "safetyQuestions": 0
+      },
+      {
+        "id": "010332-bundle-high",
+        "caseSha256": "004d811e379f544119e20fba84fc4166582e8b73ecc5cdd6b35692b648b9f40d",
+        "kind": "bundle",
+        "effort": "high",
+        "elapsedMs": 114341,
+        "providerHttp": 3,
+        "promptTokens": 22379,
+        "completionTokensIncludingReasoning": 15435,
+        "reasoningTokensIncludedInCompletion": 10293,
+        "estimatedStandardCostMicroUsd": 9955,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 28,
+        "safetyQuestions": 5
+      },
+      {
+        "id": "010332-chat-high",
+        "caseSha256": "fa9dfb36d76f223b590574fad200632a4e82f8d2b6c3b25a233355f3df914e0a",
+        "kind": "chat",
+        "effort": "high",
+        "elapsedMs": 72863,
+        "providerHttp": 3,
+        "promptTokens": 21070,
+        "completionTokensIncludingReasoning": 9784,
+        "reasoningTokensIncludedInCompletion": 6496,
+        "estimatedStandardCostMicroUsd": 6999,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 22,
+        "safetyQuestions": 0
+      },
+      {
+        "id": "018498-bundle-high",
+        "caseSha256": "170d8d29f69d381efc4f48bc20b2fe93689fe99bfdbc158b88c66efdb3f0261c",
+        "kind": "bundle",
+        "effort": "high",
+        "elapsedMs": 106525,
+        "providerHttp": 3,
+        "promptTokens": 19406,
+        "completionTokensIncludingReasoning": 14955,
+        "reasoningTokensIncludedInCompletion": 10852,
+        "estimatedStandardCostMicroUsd": 9418,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 25,
+        "safetyQuestions": 4
+      },
+      {
+        "id": "018498-chat-high",
+        "caseSha256": "a7d0f490661a3b163d91efc0a81644ab7f572a9be4a392cbc819b97f26be7f43",
+        "kind": "chat",
+        "effort": "high",
+        "elapsedMs": 79929,
+        "providerHttp": 3,
+        "promptTokens": 18457,
+        "completionTokensIncludingReasoning": 11152,
+        "reasoningTokensIncludedInCompletion": 8207,
+        "estimatedStandardCostMicroUsd": 7422,
+        "aiPurposeClaims": 1,
+        "plainSafetyClaims": 20,
+        "safetyQuestions": 0
+      }
+    ],
+    "selectionReason": "Both reviewed profiles retained source-grounded useful explanations and safety questions. Medium substantially reduced first-result latency; high added some tail teaching and two more questions in one complex bundle, but did not resolve conservative source holds. Complete original fields remain available with explicit partial status.",
+    "knownUtilityLimits": [
+      "051528 faithful pregnancy/lactation and prior-drug-allergy exception drafts can be conservatively held.",
+      "018498 unresolved flattened chronic-cough subject is original-reading-only.",
+      "Some long-field tails and malformed source wording are not simplified or assessed."
+    ],
+    "costScope": "Standard token-rate estimate rounded per HTTP; no invoice claim, excludes all earlier prototypes, cloud costs and later cloud acceptance.",
+    "clinicalOrUniversalAccuracyProven": false
+  }
+}
