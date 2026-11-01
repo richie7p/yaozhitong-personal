@@ -84,7 +84,7 @@ export function AssistanceAnswer({ result }: { result: GroundedResult }) {
           hour12: false,
         })}
         （臺灣時間）。AI
-        搜尋摘要與回答仍可能有誤，請開啟來源核對；不代表完整仿單或個人處方建議。
+        解讀與回答仍可能有誤，請開啟來源核對；不代表完整仿單或個人處方建議。
       </p>
     </section>
   );

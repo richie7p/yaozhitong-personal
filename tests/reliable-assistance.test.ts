@@ -48,6 +48,7 @@ const claim = {
   text: "關於 SYNTHETIC 成分的一般資訊。",
   basis: "reference" as const,
   sourceIds: [source.id],
+  evidenceQuotes: [{ sourceId: source.id, quote: search.passages[0].text }],
 };
 
 it("restricts retrieval to canonical product fields, never the user's private question / profile / notes", () => {
@@ -141,7 +142,9 @@ it("separates retrieved-reference assistance from leaflet evidence and never man
   expect(result.chunks).toEqual([]);
   expect(result.quiz).toEqual([]);
   expect(result.sourceVersions).toEqual({});
-  expect(result.assistance?.claims).toEqual([claim]);
+  expect(result.assistance?.claims).toEqual([
+    { text: claim.text, basis: claim.basis, sourceIds: claim.sourceIds },
+  ]);
   expect(result.assistance?.uncertainties.join("")).toContain("不同廠牌");
 });
 it.each([
@@ -265,6 +268,32 @@ it("drops fabricated citations and reviewer-rejected medical statements", async 
   expect(result.assistance?.claims).toEqual([]);
   expect(result.rejectedCount).toBe(2);
 });
+it.each([
+  { evidenceQuotes: [] },
+  {
+    evidenceQuotes: [
+      { sourceId: source.id, quote: "這段文字從未出現在來源原文之中。" },
+    ],
+  },
+])(
+  "rejects absent or fabricated verbatim evidence before review",
+  async ({ evidenceQuotes }) => {
+    const json = vi.fn().mockResolvedValue({
+      status: "answered",
+      claims: [{ ...claim, evidenceQuotes }],
+    });
+    const result = await assisted(
+      { json, searchReferences: async () => search },
+      "用途？",
+      [med],
+      [drug],
+      [null],
+    );
+    expect(result.assistance?.claims).toEqual([]);
+    expect(result.rejectedCount).toBe(1);
+    expect(json).toHaveBeenCalledTimes(1);
+  },
+);
 it("withholds personal medication decisions instead of quoting general sources as individual advice", async () => {
   const json = vi
     .fn()
@@ -336,6 +365,18 @@ it.each(["found", "not_found", "unavailable"] as const)(
         job.id,
       ))!;
       expect(await d.learningCurrent("owner", record)).toBe(true);
+      expect(
+        await d.learningCurrent("owner", {
+          ...record,
+          result: {
+            ...record.result,
+            assistance: {
+              ...record.result.assistance,
+              version: "reliable-reference-v3",
+            },
+          },
+        }),
+      ).toBe(false);
       expect(
         await d.learningCurrent("owner", {
           ...record,

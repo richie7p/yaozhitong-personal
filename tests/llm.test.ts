@@ -44,6 +44,21 @@ const completion = (value: unknown = { ok: true }, finishReason = "stop") =>
     usage: { total_tokens: 17 },
   });
 
+it("retrieves original reference text before exposing search evidence, without forwarding model credentials", async () => {
+  const summary = "SYNTHETIC unsupported summary detail. [1]";
+  const original = "SYNTHETIC original warning: a severe symptom must not be described as a common adverse reaction. This sentence is the only fetched evidence for the test.";
+  const fetcher = vi.fn().mockResolvedValueOnce(Response.json({
+    status: "completed", usage: { total_tokens: 100 }, output: [
+      { type: "web_search_call", status: "completed" },
+      { type: "message", content: [{ type: "output_text", text: summary, annotations: [{ type: "url_citation", url: "https://medlineplus.gov/synthetic", start_index: summary.indexOf("[1]"), end_index: summary.length }] }] },
+    ],
+  })).mockResolvedValueOnce(new Response(`<main><p>${original}</p></main>`, { headers: { "content-type": "text/html" } }));
+  vi.stubGlobal("fetch", fetcher);
+  const result = await new JsonLlm().searchReferences([{ nameZh: "合成藥品", nameEn: "SYNTHETIC", ingredients: ["SYNTHETIC"] } as any]);
+  expect(result.passages).toEqual([{ text: original, sourceIds: ["web-1"] }]);
+  expect(fetcher.mock.calls[1][1].headers).not.toHaveProperty("authorization");
+});
+
 describe("provider transport", () => {
   it("can give reasoning text more time while preserving the shorter vision timeout", async () => {
     config.aiRequestTimeoutMs = 25;

@@ -43,6 +43,9 @@ const normalized = (s: string) =>
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]/gu, "");
+export function relevantReferenceText(text: string, drugs: Drug[]) {
+  return referenceTerms(drugs).some((term) => normalized(text).includes(term));
+}
 const hospitalHost = (host: string) =>
   [
     "ntuh.gov.tw",
@@ -77,29 +80,7 @@ export function parseReferenceSearch(raw: any, drugs: Drug[]): ReferenceSearch {
     return { state: "unavailable", sources: [], passages: [] };
   const sources: ReferenceSource[] = [],
     passages: ReferenceSearch["passages"] = [];
-  const terms = drugs
-    .flatMap((d) => [
-      d.nameZh,
-      d.nameEn,
-      ...d.ingredients,
-      ...d.ingredients.map((s) =>
-        // Search relevance only: a known hydrate suffix may be absent in
-        // ingredient education. Do not remove arbitrary parenthetical content
-        // or use this alias to equate product identities, strengths or doses.
-        s
-          .normalize("NFKC")
-          .replace(
-            /\s+(?:\(\s*(?:(?:MONO|DI|TRI|HEMI)HYDRATE|ANHYDROUS)\s*\)|(?:(?:MONO|DI|TRI|HEMI)HYDRATE|ANHYDROUS))\s*$/i,
-            "",
-          )
-          .replace(
-            /\s+(?:OXALATE|HYDROCHLORIDE|HCL|HYDROBROMIDE|MALEATE|FUMARATE|SUCCINATE|TARTRATE)\b.*$/i,
-            "",
-          ),
-      ),
-    ])
-    .map(normalized)
-    .filter((s) => s.length >= 4);
+  const terms = referenceTerms(drugs);
   for (const item of raw.output) {
     if (item.type !== "message") continue;
     for (const content of item.content || []) {
@@ -171,4 +152,30 @@ export function parseReferenceSearch(raw: any, drugs: Drug[]): ReferenceSearch {
     }
   }
   return { state: passages.length ? "found" : "not_found", sources, passages };
+}
+
+function referenceTerms(drugs: Drug[]) {
+  return drugs
+    .flatMap((d) => [
+      d.nameZh,
+      d.nameEn,
+      ...d.ingredients,
+      ...d.ingredients.map((s) =>
+        // Search relevance only: a known hydrate suffix may be absent in
+        // ingredient education. Do not remove arbitrary parenthetical content
+        // or use this alias to equate product identities, strengths or doses.
+        s
+          .normalize("NFKC")
+          .replace(
+            /\s+(?:\(\s*(?:(?:MONO|DI|TRI|HEMI)HYDRATE|ANHYDROUS)\s*\)|(?:(?:MONO|DI|TRI|HEMI)HYDRATE|ANHYDROUS))\s*$/i,
+            "",
+          )
+          .replace(
+            /\s+(?:OXALATE|HYDROCHLORIDE|HCL|HYDROBROMIDE|MALEATE|FUMARATE|SUCCINATE|TARTRATE)\b.*$/i,
+            "",
+          ),
+      ),
+    ])
+    .map(normalized)
+    .filter((s) => s.length >= 4);
 }
