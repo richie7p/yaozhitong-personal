@@ -920,7 +920,7 @@ export function Medications() {
   async function explain(m: any) {
     const version = ++explanationVersion.current;
     const isCurrent = () => explanationVersion.current === version;
-    setBusy("正在讀取已保存的仿單說明…");
+    setBusy("正在讀取已保存的藥品解說…");
     setMessage("");
     setResult(null);
     setSourceInfo(null);

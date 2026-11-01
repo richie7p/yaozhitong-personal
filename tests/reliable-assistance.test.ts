@@ -145,12 +145,30 @@ it("separates retrieved-reference assistance from leaflet evidence and never man
   expect(result.assistance?.uncertainties.join("")).toContain("不同廠牌");
 });
 it("retains cited ingredient information under its heading without carrying context into another drug section", () => {
-  const text = "## SYNTHETIC OXALATE\n一般注意事項合成內容。[1]\n## OTHER MEDICINE\n不相關內容。[2]\n";
-  const raw = { status: "completed", output: [{ type: "web_search_call", status: "completed" }, {
-    type: "message", content: [{ type: "output_text", text, annotations: ["[1]", "[2]"].map((marker) => ({
-      type: "url_citation", url, title: "C:\\private\\report.pdf", start_index: text.indexOf(marker), end_index: text.indexOf(marker) + marker.length,
-    })) }],
-  }] };
+  const text =
+    "## SYNTHETIC OXALATE\n一般注意事項合成內容。[1]\n## OTHER MEDICINE\n不相關內容。[2]\n";
+  const raw = {
+    status: "completed",
+    output: [
+      { type: "web_search_call", status: "completed" },
+      {
+        type: "message",
+        content: [
+          {
+            type: "output_text",
+            text,
+            annotations: ["[1]", "[2]"].map((marker) => ({
+              type: "url_citation",
+              url,
+              title: "C:\\private\\report.pdf",
+              start_index: text.indexOf(marker),
+              end_index: text.indexOf(marker) + marker.length,
+            })),
+          },
+        ],
+      },
+    ],
+  };
   const parsed = parseReferenceSearch(raw, [drug]);
   expect(parsed.passages).toHaveLength(1);
   expect(parsed.passages[0].text).toContain("SYNTHETIC OXALATE");
@@ -180,7 +198,12 @@ it.each(["not_found", "unavailable"] as const)(
       [drug],
       [null],
     );
-    expect(result.assistance?.claims).toEqual([label]);
+    expect(result.assistance?.claims).toHaveLength(1);
+    expect(result.assistance?.claims[0]).toMatchObject({
+      basis: "user_label",
+      sourceIds: [],
+    });
+    expect(result.assistance?.claims[0].text).toContain("每日一次");
     expect(result.assistance?.searchState).toBe(state);
     expect(result.assistance?.sources).toEqual([]);
   },
@@ -217,73 +240,86 @@ it("withholds personal medication decisions instead of quoting general sources a
   expect(result.status).toBe("refused");
   expect(result.assistance?.claims).toEqual([]);
 });
-it("persists ordinary-user missing-leaflet results, protects ownership, and expires them after a new leaflet is published", async () => {
-  const store = new MemoryStore();
-  const json = vi
-    .fn()
-    .mockImplementation(async (_: string, content: any) =>
-      content.expectedIds
-        ? { decisions: [{ id: "0", supported: true }] }
-        : { status: "answered", claims: [claim] },
-    );
-  const d = new Domain(store, undefined, () => ({
-    json,
-    searchReferences: async () => search,
-  }));
-  d.catalog.all = async () => [drug];
-  d.catalog.get = async () => drug;
-  d.enqueue = async () => {};
-  await d.account({
-    uid: "owner",
-    email: "synthetic@example.invalid",
-    name: "合成測試",
-    admin: false,
-    verified: true,
-  });
-  const saved = await d.saveMedication("owner", {
-    ...med,
-    identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
-  });
-  for (const kind of ["bundle", "chat"] as const) {
-    const input = { medicationIds: [saved.id], question: "一般用途？" };
-    await d.preflightTextSources("owner", true, kind, input, "missing-" + kind);
-    const job = await d.enqueueJob(
-      "owner",
-      true,
-      kind,
-      input,
-      "missing-" + kind,
-    );
-    await d.processJob(job.id);
-    const complete = (await store.get("jobs", job.id))!;
-    expect(complete.status).toBe("succeeded");
-    expect((await d.publicJob("owner", complete as any)).result).toHaveProperty(
-      "assistance",
-    );
-    const record = (await store.get(
-      kind === "chat" ? "chats" : "learning",
-      job.id,
-    ))!;
-    expect(await d.learningCurrent("owner", record)).toBe(true);
+it.each(["found", "not_found", "unavailable"] as const)(
+  "persists ordinary-user missing-leaflet results for %s, protects ownership, and expires them after a new leaflet is published",
+  async (state) => {
+    const store = new MemoryStore();
+    const json = vi
+      .fn()
+      .mockImplementation(async (_: string, content: any) =>
+        content.expectedIds
+          ? { decisions: [{ id: "0", supported: true }] }
+          : { status: "answered", claims: [claim] },
+      );
+    const d = new Domain(store, undefined, () => ({
+      json,
+      searchReferences: async () =>
+        state === "found" ? search : { state, sources: [], passages: [] },
+    }));
+    d.catalog.all = async () => [drug];
+    d.catalog.get = async () => drug;
+    d.enqueue = async () => {};
+    await d.account({
+      uid: "owner",
+      email: "synthetic@example.invalid",
+      name: "合成測試",
+      admin: false,
+      verified: true,
+    });
+    const saved = await d.saveMedication("owner", {
+      ...med,
+      identityEvidence: { method: "license", printedLicenseNo: drug.licenseNo },
+    });
+    for (const kind of ["bundle", "chat"] as const) {
+      const input = { medicationIds: [saved.id], question: "一般用途？" };
+      await d.preflightTextSources(
+        "owner",
+        true,
+        kind,
+        input,
+        "missing-" + kind,
+      );
+      const job = await d.enqueueJob(
+        "owner",
+        true,
+        kind,
+        input,
+        "missing-" + kind,
+      );
+      await d.processJob(job.id);
+      const complete = (await store.get("jobs", job.id))!;
+      expect(complete.status).toBe("succeeded");
+      expect(
+        (await d.publicJob("owner", complete as any)).result,
+      ).toHaveProperty("assistance");
+      const record = (await store.get(
+        kind === "chat" ? "chats" : "learning",
+        job.id,
+      ))!;
+      expect(await d.learningCurrent("owner", record)).toBe(true);
+      expect(
+        await d.learningCurrent("owner", {
+          ...record,
+          result: {
+            ...record.result,
+            assistance: {
+              ...record.result.assistance,
+              expiresAt: "2020-01-01",
+            },
+          },
+        }),
+      ).toBe(false);
+      await expect(
+        d.preflightTextSources("other", true, kind, input, "other-key"),
+      ).rejects.toMatchObject({ code: "not_found" });
+    }
+    await store.set("published", hash(drug.licenseNo), { leafletId: "new" });
+    await store.set("leaflets", "new", {
+      licenseNo: drug.licenseNo,
+      status: "published",
+    });
     expect(
-      await d.learningCurrent("owner", {
-        ...record,
-        result: {
-          ...record.result,
-          assistance: { ...record.result.assistance, expiresAt: "2020-01-01" },
-        },
-      }),
+      await d.learningCurrent("owner", (await store.list("learning"))[0]),
     ).toBe(false);
-    await expect(
-      d.preflightTextSources("other", true, kind, input, "other-key"),
-    ).rejects.toMatchObject({ code: "not_found" });
-  }
-  await store.set("published", hash(drug.licenseNo), { leafletId: "new" });
-  await store.set("leaflets", "new", {
-    licenseNo: drug.licenseNo,
-    status: "published",
-  });
-  expect(
-    await d.learningCurrent("owner", (await store.list("learning"))[0]),
-  ).toBe(false);
-});
+  },
+);

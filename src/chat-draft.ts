@@ -56,7 +56,7 @@ export function chatDraftSession() {
     },
     startSubmission: () => {
       if (!isCurrent() || draft.busy) return false;
-      publish({ ...draft, busy: "正在查閱仿單…", error: "", sent: false });
+      publish({ ...draft, busy: "正在查找藥品資料…", error: "", sent: false });
       return true;
     },
     progress: (busy: string) => {

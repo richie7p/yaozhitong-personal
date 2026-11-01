@@ -103,7 +103,7 @@ for (const action of ["edit", "remove"] as const) {
     await expect(page.locator(".medication-detail")).toHaveCount(0);
     await expect(page.locator(".quiz")).toHaveCount(0);
     await expect(
-      page.getByText("正在讀取已保存的仿單說明…", { exact: true }),
+      page.getByText("正在讀取已保存的藥品解說…", { exact: true }),
     ).toHaveCount(0);
   });
 }
@@ -154,7 +154,7 @@ for (const older of ["success", "failure"] as const) {
     releaseOld();
     await oldFinished;
     await expect(
-      page.getByText("正在讀取已保存的仿單說明…", { exact: true }),
+      page.getByText("正在讀取已保存的藥品解說…", { exact: true }),
     ).toBeVisible();
     await expect(
       second.getByRole("button", { name: "AI 藥品解說", exact: true }),
@@ -168,7 +168,7 @@ for (const older of ["success", "failure"] as const) {
       b.medication.name,
     );
     await expect(
-      page.getByText("正在讀取已保存的仿單說明…", { exact: true }),
+      page.getByText("正在讀取已保存的藥品解說…", { exact: true }),
     ).toHaveCount(0);
   });
 }
@@ -216,7 +216,7 @@ test("late accepted bundle progress and completion cannot replace a newer saved-
   releaseAccepted();
   await oldPoll;
   await expect(
-    page.getByText("正在讀取已保存的仿單說明…", { exact: true }),
+    page.getByText("正在讀取已保存的藥品解說…", { exact: true }),
   ).toBeVisible();
   await expect(
     second.getByRole("button", { name: "AI 藥品解說", exact: true }),

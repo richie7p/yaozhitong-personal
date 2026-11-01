@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { assisted } from "../../server/assistance";
+import type { Medication } from "../../shared/schema";
 test.use({ serviceWorkers: "block" });
-for (const state of ["found", "unavailable"] as const)
+for (const state of ["found", "not_found", "unavailable"] as const)
   test(`ordinary user can explain and ask without an indexed leaflet: ${state}`, async ({
     page,
   }) => {
@@ -15,7 +17,7 @@ for (const state of ["found", "unavailable"] as const)
       frequencyRaw: "QD",
       identityReview: { status: "confirmed", missingFields: [] },
     };
-    const result = {
+    const fixture = {
       status: "supported",
       claims: [],
       chunks: [],
@@ -25,7 +27,7 @@ for (const state of ["found", "unavailable"] as const)
       sourceVersions: {},
       verification: "model_assisted",
       assistance: {
-        version: "reliable-reference-v2",
+        version: "reliable-reference-v3",
         checkedAt: new Date().toISOString(),
         searchState: state,
         sources:
@@ -53,10 +55,43 @@ for (const state of ["found", "unavailable"] as const)
           "本站尚未收錄這款產品的官方仿單。",
           state === "found"
             ? "不同廠牌或規格仍待核對。"
-            : "這次可靠來源搜尋暫時無法完成。",
+            : state === "not_found"
+              ? "這次未找到能引用的可靠資料。"
+              : "這次可靠來源搜尋暫時無法完成。",
         ],
       },
     };
+    const result =
+      state === "found"
+        ? fixture
+        : await assisted(
+            {
+              searchReferences: async () => ({
+                state,
+                sources: [],
+                passages: [],
+              }),
+              json: async () => {
+                throw Error(
+                  "No-evidence UI must not depend on model-authored medical text",
+                );
+              },
+            },
+            "用途、副作用和 QD 是什麼？",
+            [med as unknown as Medication],
+            [
+              {
+                licenseNo: med.licenseNo,
+                nameZh: med.name,
+                nameEn: "Synthetic missing",
+                strength: "",
+                form: "錠",
+                ingredients: ["SYNTHETIC"],
+                revoked: false,
+              },
+            ],
+            [null],
+          );
     const record = {
       id: "synthetic-bundle",
       medicationIds: [med.id],
@@ -153,7 +188,13 @@ for (const state of ["found", "unavailable"] as const)
       await expect(
         answer.getByRole("link", { name: /合成官方醫療來源/ }),
       ).toHaveAttribute("href", "https://www.ntuh.gov.tw/synthetic-reference");
-    else await expect(answer).toContainText("依你記錄的藥袋文字");
+    else {
+      await expect(answer).toContainText("依你記錄的藥袋文字");
+      await expect(answer.getByRole("link")).toHaveCount(0);
+      await expect(answer).toContainText(
+        state === "not_found" ? "未找到能引用" : "搜尋暫時無法完成",
+      );
+    }
     await expect(answer).not.toContainText("已附仿單依據");
     expect(
       await page.evaluate(
