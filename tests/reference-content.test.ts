@@ -53,7 +53,11 @@ it("keeps headings and lists while removing scripts, navigation and hidden conte
   expect(text).toContain("If symptoms:");
   expect(text).toContain("item & condition");
   expect(text).not.toContain("discard");
-  expect(referenceHtmlText("<main><table><tr><td>5</td><td>10</td></tr></table></main>")).toBe("5\n\n10");
+  expect(
+    referenceHtmlText(
+      "<main><table><tr><td>5</td><td>10</td></tr></table></main>",
+    ),
+  ).toBe("5\n\n10");
 });
 it.each([
   "http_error",
@@ -80,7 +84,7 @@ it.each([
       });
     });
     expect(await readReferenceContent(search, [drug], { fetcher })).toEqual({
-      state: "unavailable",
+      state: kind === "wrong_ingredient" ? "not_found" : "unavailable",
       sources: [],
       passages: [],
     });

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { assisted } from "../../server/assistance";
 import type { Medication } from "../../shared/schema";
+import { ASSISTANCE_VERSION } from "../../shared/assistance";
 test.use({ serviceWorkers: "block" });
 for (const state of ["found", "not_found", "unavailable"] as const)
   test(`ordinary user can explain and ask without an indexed leaflet: ${state}`, async ({
@@ -27,7 +28,7 @@ for (const state of ["found", "not_found", "unavailable"] as const)
       sourceVersions: {},
       verification: "model_assisted",
       assistance: {
-        version: "reliable-reference-v4",
+        version: ASSISTANCE_VERSION,
         checkedAt: new Date().toISOString(),
         searchState: state,
         sources:

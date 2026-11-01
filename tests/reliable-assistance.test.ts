@@ -2,6 +2,7 @@ import { expect, it, vi } from "vitest";
 import {
   referenceSearchRequest,
   parseReferenceSearch,
+  referenceSearchCandidates,
 } from "../server/reference-search";
 import { assisted } from "../server/assistance";
 import { reliableReferenceUrl } from "../shared/assistance";
@@ -67,6 +68,56 @@ it("restricts retrieval to canonical product fields, never the user's private qu
   expect(request.store).toBe(false);
   expect(request.tool_choice).toBe("required");
   expect(request.tools[0].filters.allowed_domains).toContain("fda.gov.tw");
+});
+it.each(["citation", "tool_source"])(
+  "discovers provider URLs independently of translated summary wording: %s",
+  (kind) => {
+    const raw = {
+      status: "completed",
+      output: [
+        {
+          type: "web_search_call",
+          status: "completed",
+          action: { sources: kind === "tool_source" ? [{ url }] : [] },
+        },
+        {
+          type: "message",
+          content: [
+            {
+              type: "output_text",
+              text: "翻譯摘要沒有保留英文成分名稱。https://evil.test/made-up",
+              annotations:
+                kind === "citation" ? [{ type: "url_citation", url }] : [],
+            },
+          ],
+        },
+      ],
+    };
+    const result = referenceSearchCandidates(raw);
+    expect(result.sources.map((s) => s.url)).toEqual([url]);
+    expect(result.passages).toEqual([]);
+    expect(
+      referenceSearchCandidates({ ...raw, status: "incomplete" }).state,
+    ).toBe("unavailable");
+  },
+);
+it("never promotes prose-only links or untrusted metadata into a source candidate", () => {
+  expect(
+    referenceSearchCandidates({
+      status: "completed",
+      output: [
+        {
+          type: "web_search_call",
+          status: "completed",
+          action: { sources: [{ url: "https://evil.test/" }] },
+        },
+        {
+          type: "message",
+          content: [{ type: "output_text", text: url, annotations: [] }],
+        },
+      ],
+    }),
+  ).toEqual({ state: "not_found", sources: [], passages: [] });
 });
 it.each([
   "https://ntuh.gov.tw.attacker.test/x",
@@ -372,7 +423,7 @@ it.each(["found", "not_found", "unavailable"] as const)(
             ...record.result,
             assistance: {
               ...record.result.assistance,
-              version: "reliable-reference-v3",
+              version: "reliable-reference-v4",
             },
           },
         }),

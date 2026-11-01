@@ -2,7 +2,7 @@ import type { Llm } from "./ai.js";
 import type { AiRequestMetric } from "../shared/schema.js";
 import type { Drug } from "../shared/schema.js";
 import type { ReferenceSearch } from "../shared/assistance.js";
-import { referenceSearchRequest, parseReferenceSearch } from "./reference-search.js";
+import { referenceSearchRequest, referenceSearchCandidates } from "./reference-search.js";
 import { readReferenceContent } from "./reference-content.js";
 import {
   aiConnection,
@@ -41,7 +41,7 @@ export class JsonLlm implements Llm {
       const raw: any = await response.json();
       metric.tokens = Number(raw.usage?.total_tokens) || 0;
       this.tokens += metric.tokens;
-      const parsed = parseReferenceSearch(raw, drugs);
+      const parsed = referenceSearchCandidates(raw);
       const readBudget = Math.min(10000, this.startedAt + config.aiJobTimeoutMs - Date.now() - 10000);
       const result = parsed.state === "found" && readBudget > 0
         ? await readReferenceContent(parsed, drugs, { signal: AbortSignal.timeout(readBudget) })

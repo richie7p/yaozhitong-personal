@@ -45,7 +45,7 @@ const completion = (value: unknown = { ok: true }, finishReason = "stop") =>
   });
 
 it("retrieves original reference text before exposing search evidence, without forwarding model credentials", async () => {
-  const summary = "SYNTHETIC unsupported summary detail. [1]";
+  const summary = "翻譯摘要沒有英文成分名稱，也沒有逐字來源證據。 [1]";
   const original = "SYNTHETIC original warning: a severe symptom must not be described as a common adverse reaction. This sentence is the only fetched evidence for the test.";
   const fetcher = vi.fn().mockResolvedValueOnce(Response.json({
     status: "completed", usage: { total_tokens: 100 }, output: [

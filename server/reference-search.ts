@@ -66,6 +66,53 @@ function referenceTitle(value: unknown, host: string) {
     return "食藥署公開資料";
   return (hospitalHost(host) ? "醫療機構資料 · " : "官方醫療資料 · ") + host;
 }
+/** Locate sources from provider metadata, never from the model's prose.
+ * Relevance is checked against fetched originals, so translated summaries or
+ * missing name prefixes cannot discard otherwise useful cited source pages. */
+export function referenceSearchCandidates(raw: any): ReferenceSearch {
+  if (
+    raw?.status !== "completed" ||
+    !Array.isArray(raw.output) ||
+    !raw.output.some(
+      (item: any) =>
+        item.type === "web_search_call" && item.status === "completed",
+    )
+  )
+    return { state: "unavailable", sources: [], passages: [] };
+  const sources: ReferenceSource[] = [];
+  const add = (entry: any) => {
+    const url = reliableReferenceUrl(entry?.url);
+    if (!url || sources.some((s) => s.url === url) || sources.length >= 12)
+      return;
+    const host = new URL(url).hostname;
+    sources.push({
+      id: "web-" + (sources.length + 1),
+      url,
+      title: referenceTitle(entry.title, host),
+      kind: hospitalHost(host) ? "hospital" : "official",
+    });
+  };
+  // Prefer explicit citations, then tool-reported sources. Only actual fetched
+  // text is subsequently eligible for the answer; this list is not evidence.
+  for (const item of raw.output) {
+    if (item.type !== "message") continue;
+    for (const content of item.content || []) {
+      if (content.type !== "output_text") continue;
+      for (const annotation of content.annotations || [])
+        if (annotation.type === "url_citation") add(annotation);
+    }
+  }
+  for (const item of raw.output) {
+    if (item.type !== "web_search_call" || item.status !== "completed")
+      continue;
+    for (const source of item.action?.sources || []) add(source);
+  }
+  return {
+    state: sources.length ? "found" : "not_found",
+    sources,
+    passages: [],
+  };
+}
 /** Provider citation metadata supplies URLs; generated text never supplies links.
  * Only cited, relevant paragraphs are passed to the answer / review stages. */
 export function parseReferenceSearch(raw: any, drugs: Drug[]): ReferenceSearch {

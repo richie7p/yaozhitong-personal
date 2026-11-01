@@ -144,6 +144,7 @@ export async function readReferenceContent(
   if (search.state !== "found")
     return { state: search.state, sources: [], passages: [] };
   const signal = options.signal || AbortSignal.timeout(10000);
+  let readable = 0;
   const reads = await Promise.all(
     search.sources.slice(0, 6).map(async (source) => {
       try {
@@ -153,12 +154,9 @@ export async function readReferenceContent(
           options.fetcher || fetch,
         );
         // Omit an oversized document in full, never truncate a warning mid-condition.
-        if (
-          page.text.length < 100 ||
-          page.text.length > 24000 ||
-          !relevantReferenceText(page.text, drugs)
-        )
-          return null;
+        if (page.text.length < 100 || page.text.length > 24000) return null;
+        readable++;
+        if (!relevantReferenceText(page.text, drugs)) return null;
         return { source: { ...source, url: page.url }, text: page.text };
       } catch {
         return null;
@@ -166,7 +164,7 @@ export async function readReferenceContent(
     }),
   );
   const result: ReferenceSearch = {
-    state: "unavailable",
+    state: readable ? "not_found" : "unavailable",
     sources: [],
     passages: [],
   };
