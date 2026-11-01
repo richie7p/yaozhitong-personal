@@ -5,6 +5,9 @@ import {
   ScanLine,
   BookOpen,
   ArrowUpRight,
+  ShieldCheck,
+  Pill,
+  CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "./auth";
 import { api } from "./api";
@@ -117,7 +120,10 @@ export function Home() {
     <div className="journal-home">
       <header className="journal-heading">
         <div>
-          <p className="eyebrow">我的用藥手帳</p>
+          <p className="eyebrow">
+            你好，{me.account.displayName || "朋友"}{" "}
+            <span className="greeting-dot" />
+          </p>
           <h1>今天的用藥日常</h1>
           <p className="journal-intro">依你確認的用法，記錄每一次服藥。</p>
         </div>
@@ -129,6 +135,120 @@ export function Home() {
           </span>
         </div>
       </header>
+      <section className="next-step-card" aria-label="接下來可以做什麼">
+        <div className="next-step-copy">
+          <span className="next-step-label">
+            <ShieldCheck size={16} />
+            一步一步，把用藥整理好
+          </span>
+          <h2>
+            {meds.loading
+              ? "正在讀取你的用藥…"
+              : meds.error
+                ? "先重新讀取你的用藥"
+                : Number(pending) > 0
+                  ? "還差一步，完成藥品核對"
+                  : !meds.data?.items?.length
+                    ? "從第一張藥袋開始"
+                    : "你的用藥，隨時清楚掌握"}
+          </h2>
+          <p>
+            {meds.error
+              ? "目前無法確認清單，重新讀取後再繼續。"
+              : Number(pending) > 0
+                ? `有 ${pending} 款藥品需要你確認產品或用法。對照原藥袋，確認後再閱讀說明。`
+                : !meds.data?.items?.length
+                  ? "拍下清楚的藥袋，系統先整理，你再逐項確認。也可以搜尋藥名或手動新增。"
+                  : "查看今天的提醒、讀懂官方說明，讓每次記錄都有依據。"}
+          </p>
+          {meds.error ? (
+            <Button className="primary" onClick={meds.refresh}>
+              重新讀取藥品
+            </Button>
+          ) : (
+            !meds.loading && (
+              <a
+                className="btn primary"
+                href={
+                  Number(pending) > 0
+                    ? "#medications"
+                    : !meds.data?.items?.length
+                      ? "#add"
+                      : "#learning"
+                }
+              >
+                {Number(pending) > 0
+                  ? "繼續核對藥品"
+                  : !meds.data?.items?.length
+                    ? "新增我的第一款藥"
+                    : "閱讀我的用藥說明"}
+                <ArrowRight size={18} />
+              </a>
+            )
+          )}
+        </div>
+        <ol className="welcome-steps" aria-label="用藥整理流程">
+          <li>
+            <span>
+              <ScanLine size={21} />
+            </span>
+            <div>
+              <strong>1. 拍下藥袋</strong>
+              <small>藥名與用法清楚入鏡</small>
+            </div>
+          </li>
+          <li>
+            <span>
+              <ShieldCheck size={21} />
+            </span>
+            <div>
+              <strong>2. 由你核對</strong>
+              <small>確認產品、用量與頻次</small>
+            </div>
+          </li>
+          <li>
+            <span>
+              <BookOpen size={21} />
+            </span>
+            <div>
+              <strong>3. 讀懂與記錄</strong>
+              <small>閱讀說明，建立日常提醒</small>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <nav className="quick-actions" aria-label="常用功能">
+        <a href="#add">
+          <span className="quick-icon mint">
+            <ScanLine size={23} />
+          </span>
+          <div>
+            <strong>拍藥袋・新增用藥</strong>
+            <small>拍攝、搜尋或手動輸入</small>
+          </div>
+          <ArrowUpRight size={18} />
+        </a>
+        <a href="#medications">
+          <span className="quick-icon blue">
+            <Pill size={23} />
+          </span>
+          <div>
+            <strong>我的藥品</strong>
+            <small>核對資料與閱讀仿單</small>
+          </div>
+          <ArrowUpRight size={18} />
+        </a>
+        <a href="#history">
+          <span className="quick-icon peach">
+            <CalendarCheck size={23} />
+          </span>
+          <div>
+            <strong>回顧服藥紀錄</strong>
+            <small>每一筆日常，清楚保存</small>
+          </div>
+          <ArrowUpRight size={18} />
+        </a>
+      </nav>
       <div className="journal-layout">
         <div className="journal-main">
           <dl className="journal-numbers">

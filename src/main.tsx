@@ -4,6 +4,7 @@ import { AuthProvider } from "./auth";
 import { App } from "./App";
 import "./styles.css";
 import "./design.css";
+import "./public-design.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AuthProvider>

@@ -69,6 +69,7 @@ if (config.role === "web") {
     "/sw.js",
     "/manifest.webmanifest",
     "/icon.svg",
+    "/favicon.ico",
     "/icon-192.png",
     "/icon-512.png",
   ])

@@ -2,53 +2,61 @@ import { test, expect } from "@playwright/test";
 // This workflow tests the real worker and its private-data cache boundary.
 // Other workflows can block workers so route fixtures remain deterministic.
 const serviceWorkerTest = test.extend({ serviceWorkers: "allow" as const });
-serviceWorkerTest("offline keeps the public shell without caching private APIs", async ({
-  page,
-  context,
-}) => {
-  await page.goto("/");
-  await expect(
-    page.getByRole("button", { name: "本機使用者", exact: true }),
-  ).toBeVisible();
-  const onlineDisplay = await page
-    .locator(".login-page")
-    .evaluate((el) => getComputedStyle(el).display);
-  await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: /今天的用藥日常/ }),
-  ).toBeVisible();
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
-  const urls = await page.evaluate(async () => {
-    const names = await caches.keys();
-    return (
-      await Promise.all(
-        names.map(async (name) =>
-          (await (await caches.open(name)).keys()).map(
-            (r) => new URL(r.url).pathname,
+serviceWorkerTest(
+  "offline keeps the public shell without caching private APIs",
+  async ({ page, context }) => {
+    await page.goto("/");
+    await expect(
+      page.getByRole("button", { name: "本機使用者", exact: true }),
+    ).toBeVisible();
+    const onlineDisplay = await page
+      .locator(".login-page")
+      .evaluate((el) => getComputedStyle(el).display);
+    await page.getByRole("button", { name: "本機使用者", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: /今天的用藥日常/ }),
+    ).toBeVisible();
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    const urls = await page.evaluate(async () => {
+      const names = await caches.keys();
+      return (
+        await Promise.all(
+          names.map(async (name) =>
+            (await (await caches.open(name)).keys()).map(
+              (r) => new URL(r.url).pathname,
+            ),
           ),
-        ),
-      )
-    ).flat();
-  });
-  expect(
-    urls.some((url) => url.startsWith("/assets/") && url.endsWith(".js")),
-  ).toBe(true);
-  expect(
-    urls.some((url) => url.startsWith("/api/") || url.startsWith("/uploads/")),
-  ).toBe(false);
-  await context.setOffline(true);
-  await page.reload();
-  await expect(
-    page.getByRole("heading", { name: /把用藥，\s*看清楚/, level: 1 }),
-  ).toBeVisible();
-  await expect(page.locator(".login-page")).toHaveCSS("display", onlineDisplay);
-  await expect(
-    page.getByRole("heading", { name: /今天的用藥日常/ }),
-  ).toHaveCount(0);
-  await context.setOffline(false);
-});
+        )
+      ).flat();
+    });
+    expect(
+      urls.some((url) => url.startsWith("/assets/") && url.endsWith(".js")),
+    ).toBe(true);
+    expect(
+      urls.some(
+        (url) => url.startsWith("/api/") || url.startsWith("/uploads/"),
+      ),
+    ).toBe(false);
+    await context.setOffline(true);
+    await page.reload();
+    await expect(
+      page.getByRole("heading", {
+        name: /把每天的用藥，\s*照顧得更清楚/,
+        level: 1,
+      }),
+    ).toBeVisible();
+    await expect(page.locator(".login-page")).toHaveCSS(
+      "display",
+      onlineDisplay,
+    );
+    await expect(
+      page.getByRole("heading", { name: /今天的用藥日常/ }),
+    ).toHaveCount(0);
+    await context.setOffline(false);
+  },
+);
 test("manual medication, scheduling, log, isolation and care revocation", async ({
   page,
   browser,
@@ -200,15 +208,19 @@ test("admin access and privacy boundary", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await page.goto("/#admin");
-  await expect(page.getByText("此功能需要管理員權限。")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "這是管理員專用工作區" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "登出", exact: true }).click();
   await page.getByRole("button", { name: "本機管理員", exact: true }).click();
   await page.goto("/#admin");
   await expect(
-    page.getByRole("heading", { name: "管理員後台", exact: true }),
+    page.getByRole("heading", { name: "管理總覽", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "帳號管理", exact: true }),
+    page
+      .getByRole("navigation", { name: "後台功能" })
+      .getByRole("link", { name: "帳號管理", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "登出", exact: true }).click();
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();

@@ -268,7 +268,7 @@ test("narrow auth forms explain registration and reset without hiding the primar
   await syntheticAuth(page);
   await page.goto("/");
   await expect(
-    page.getByText("開啟你的藥品、說明與服藥紀錄。", { exact: true }),
+    page.getByText("登入後，從第一張藥袋開始。", { exact: true }),
   ).toBeVisible();
   await expectPrimaryInFirstScreen(page, "登入");
 

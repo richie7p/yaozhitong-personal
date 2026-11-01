@@ -19,6 +19,7 @@ import { tick } from "./scheduler.js";
 import { refreshCatalog } from "./import-catalog.js";
 import { completeGoogleProfile } from "./google-profile.js";
 import { Support } from "./support.js";
+import { AdminLeaflets } from "./admin-leaflets.js";
 import { validateRecognitionPhoto } from "./photo-validation.js";
 import { AdmissionGate } from "./admission.js";
 import {
@@ -539,8 +540,15 @@ export function createApp(d: Domain, auth = authenticate) {
     await d.setUser(uid(c), c.req.param("id"), b);
     return c.json({ ok: true });
   });
+  const adminLeaflets = new AdminLeaflets(d.store);
+  app.get("/api/v1/admin/leaflets/stats", async (c) =>
+    c.json(await adminLeaflets.stats()),
+  );
   app.get("/api/v1/admin/leaflets", async (c) =>
-    c.json({ items: await d.store.list("leaflets") }),
+    c.json(await adminLeaflets.page(c.req.query())),
+  );
+  app.get("/api/v1/admin/leaflets/:id", async (c) =>
+    c.json(await adminLeaflets.detail(c.req.param("id"))),
   );
   app.post("/api/v1/admin/leaflets", async (c) => {
     const b = z

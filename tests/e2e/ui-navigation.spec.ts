@@ -95,7 +95,9 @@ test("daily navigation, More and the separate saved demonstration are reachable"
     await navigation
       .getByRole("button", { name: "更多功能", exact: true })
       .click();
-  await page.locator('.sidebar a[href="#demo"]').click();
+  await expect(page.locator('.sidebar a[href="#demo"]')).toHaveCount(0);
+  await expect(page.locator('.sidebar a[href="#admin"]')).toHaveCount(0);
+  await page.goto("/#demo");
   await expect(page).toHaveURL(/\/#demo$/);
   await expect(
     page.getByRole("heading", { name: "研討會展示", exact: true }),

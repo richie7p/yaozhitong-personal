@@ -4,6 +4,7 @@ const BUILD_ASSETS = [];
 const SHELL_FILES = [
   "/",
   "/icon.svg",
+  "/favicon.ico",
   "/icon-192.png",
   "/icon-512.png",
   "/manifest.webmanifest",

@@ -33,7 +33,10 @@ test("private support works from public entry through administrator reply and re
   await page.getByRole("button", { name: "登出", exact: true }).click();
   await page.getByRole("button", { name: "本機管理員", exact: true }).click();
   await page.goto("/#admin");
-  await page.getByRole("button", { name: "問題回報", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "後台功能" })
+    .getByRole("link", { name: "問題回報", exact: true })
+    .click();
   const article = page
     .locator("article")
     .filter({ has: page.getByText(text, { exact: true }) });

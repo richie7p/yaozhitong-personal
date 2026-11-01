@@ -26,6 +26,7 @@ import { Button, Busy, Field, Notice, SectionTitle } from "./components";
 import { Medications, AddMedication, Learning, Chat } from "./MedicationViews";
 import { Care, Cabinet, Profile, Admin, History } from "./ManagementViews";
 import { JobHistory } from "./JobHistory";
+import { adminSections } from "./AdminConsole";
 import { Notifications } from "./NotificationViews";
 import { Demo } from "./Demo";
 import { Home, BagDrawing } from "./Home";
@@ -70,7 +71,7 @@ export function App() {
     document.addEventListener("pointerdown", cancelFocus);
     document.addEventListener("keydown", cancelFocus);
     return cancelFocus;
-  }, [pageName, auth.me?.account.id]);
+  }, [pageName, pageName === "admin" ? pageQuery : "", auth.me?.account.id]);
   const menuTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!menu) return;
@@ -118,8 +119,10 @@ export function App() {
   if (pageName === "support") return <SupportPage />;
   if (pageName === "privacy") return <PrivacyPage />;
   if (auth.loading) return <Busy />;
-  if (!auth.me) return <Login />;
+  if (!auth.me) return <Login adminEntry={pageName === "admin"} />;
   const account = auth.me.account;
+  const adminWorkspace = pageName === "admin" && account.admin;
+  const adminView = new URLSearchParams(pageQuery).get("view") || "overview";
   const pages: Record<string, React.ReactNode> = {
     home: <Home />,
     medications: <Medications />,
@@ -164,14 +167,21 @@ export function App() {
     history: <History />,
     notifications: <Notifications />,
     admin: account.admin ? (
-      <Admin />
+      <Admin section={adminView} />
     ) : (
-      <Notice error>此功能需要管理員權限。</Notice>
+      <section className="card access-panel">
+        <ShieldCheck size={38} />
+        <h1>這是管理員專用工作區</h1>
+        <p>你目前的身分是一般使用者，可繼續使用自己的用藥與照護功能。</p>
+        <a className="btn primary" href="#home">
+          回到我的用藥
+        </a>
+      </section>
     ),
   };
   return (
     <div
-      className="app"
+      className={"app public-app" + (adminWorkspace ? " admin-workspace" : "")}
       style={{ "--font-scale": scale } as React.CSSProperties}
     >
       <a
@@ -201,66 +211,114 @@ export function App() {
         >
           <X size={21} />
         </button>
-        <a className="brand" href="#home">
+        <a className="brand" href={adminWorkspace ? "#admin" : "#home"}>
           <img src="/icon.svg" alt="" />
           <div>
-            藥智通<small>看懂用藥・記錄日常</small>
+            藥智通
+            <small>
+              {adminWorkspace ? "管理員工作區" : "你的日常用藥夥伴"}
+            </small>
           </div>
         </a>
-        <span className="nav-label">日常紀錄與閱讀</span>
-        <nav aria-label="主要導覽">
-          {navigation.map(([id, label, Icon], index) => (
-            <a
-              href={"#" + id}
-              key={id}
-              className={pageName === id ? "active" : ""}
-              aria-current={pageName === id ? "page" : undefined}
-            >
-              <span className="nav-number" aria-hidden="true">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <Icon size={18} />
-              {label}
-            </a>
-          ))}
+        <div
+          className={"workspace-identity " + (adminWorkspace ? "is-admin" : "")}
+        >
+          <ShieldCheck size={16} />
+          <span>{account.admin ? "管理員" : "一般使用者"}</span>
+          <small>{adminWorkspace ? "服務管理" : "個人空間"}</small>
+        </div>
+        {!adminWorkspace && (
+          <a href="#add" className="btn primary sidebar-add">
+            <ScanLine size={19} />
+            新增藥袋
+          </a>
+        )}
+        <span className="nav-label">
+          {adminWorkspace ? "服務管理" : "我的健康日常"}
+        </span>
+        <nav aria-label={adminWorkspace ? "管理員導覽" : "主要導覽"}>
+          {adminWorkspace
+            ? adminSections.map(([id, label], index) => {
+                const Icon = [
+                  House,
+                  BookOpen,
+                  Users,
+                  HistoryIcon,
+                  MessageCircle,
+                ][index];
+                return (
+                  <a
+                    key={id}
+                    href={"#admin?view=" + id}
+                    className={adminView === id ? "active" : ""}
+                    aria-current={adminView === id ? "page" : undefined}
+                  >
+                    <Icon size={19} />
+                    {label}
+                  </a>
+                );
+              })
+            : navigation.map(([id, label, Icon]) => (
+                <a
+                  href={"#" + id}
+                  key={id}
+                  className={pageName === id ? "active" : ""}
+                  aria-current={pageName === id ? "page" : undefined}
+                >
+                  <Icon size={19} />
+                  {label}
+                </a>
+              ))}
         </nav>
         <div className="sidebar-bottom">
-          <a
-            href="#demo"
-            className={pageName === "demo" ? "active demo-link" : "demo-link"}
-            aria-current={pageName === "demo" ? "page" : undefined}
-          >
-            <Presentation size={19} />
-            研討會展示
-          </a>
-          <a
-            href="#notifications"
-            aria-current={pageName === "notifications" ? "page" : undefined}
-          >
-            <Bell size={18} />
-            通知紀錄
-          </a>
-          <a
-            href="#jobs"
-            aria-current={pageName === "jobs" ? "page" : undefined}
-          >
-            <HistoryIcon size={18} />
-            處理紀錄與恢復
-          </a>
-          <a href="#support">
-            <MessageCircle size={18} />
-            問題回報
-          </a>
-          <a href="#profile">
-            <Settings size={18} />
-            帳號與設定
-          </a>
+          {!adminWorkspace && (
+            <>
+              <a
+                href="#notifications"
+                aria-current={pageName === "notifications" ? "page" : undefined}
+              >
+                <Bell size={18} />
+                通知紀錄
+              </a>
+              <a
+                href="#jobs"
+                aria-current={pageName === "jobs" ? "page" : undefined}
+              >
+                <HistoryIcon size={18} />
+                處理紀錄與恢復
+              </a>
+              <a href="#support">
+                <MessageCircle size={18} />
+                問題回報
+              </a>
+              <a href="#profile">
+                <Settings size={18} />
+                帳號與設定
+              </a>
+            </>
+          )}
           {account.admin && (
-            <a href="#admin">
+            <a
+              className="workspace-switch"
+              href={adminWorkspace ? "#home" : "#admin"}
+            >
               <ShieldCheck size={18} />
-              管理員後台
+              {adminWorkspace ? "回到我的用藥" : "管理員後台"}
+              <ArrowRight size={15} />
             </a>
           )}
+          {account.admin && (
+            <a href="#demo" className="demo-link">
+              <Presentation size={18} />
+              研討會展示
+            </a>
+          )}
+          <div className="sidebar-help">
+            <BookOpen size={19} />
+            <span>
+              每一步，都有依據。<small>官方仿單・由你核對</small>
+            </span>
+          </div>
         </div>
       </aside>
       {menu && <div className="scrim" onClick={() => setMenu(false)} />}
@@ -276,7 +334,7 @@ export function App() {
               {menu ? <X /> : <Menu />}
             </button>
             <span className="top-label">
-              <span>個人用藥手帳</span>
+              <span>{adminWorkspace ? "管理員工作區" : "我的用藥"}</span>
               <i>/</i>
               <strong>
                 {navigation.find(([id]) => id === pageName)?.[1] ||
@@ -287,7 +345,9 @@ export function App() {
                       jobs: "處理紀錄",
                       notifications: "通知紀錄",
                       profile: "帳號與設定",
-                      admin: "管理員後台",
+                      admin:
+                        adminSections.find(([id]) => id === adminView)?.[1] ||
+                        "管理總覽",
                     } as Record<string, string>
                   )[pageName] ||
                   "藥智通"}
@@ -310,6 +370,9 @@ export function App() {
             >
               <Bell size={19} />
             </a>
+            <span className={"role-pill" + (account.admin ? " admin" : "")}>
+              {account.admin ? "管理員" : "一般使用者"}
+            </span>
             <div className="avatar">{account.displayName?.[0] || "我"}</div>
             <span className="user-name">{account.displayName}</span>
             <button
@@ -350,55 +413,57 @@ export function App() {
           </a>
         </footer>
       </div>
-      <nav className="bottom-nav" aria-label="手機主要導覽">
-        <a
-          href="#home"
-          className={pageName === "home" ? "active" : ""}
-          aria-current={pageName === "home" ? "page" : undefined}
-        >
-          <House size={21} />
-          <span>今日</span>
-        </a>
-        <a
-          href="#medications"
-          className={pageName === "medications" ? "active" : ""}
-          aria-current={pageName === "medications" ? "page" : undefined}
-        >
-          <Pill size={21} />
-          <span>藥品</span>
-        </a>
-        <a
-          href="#add"
-          className={"capture-nav" + (pageName === "add" ? " active" : "")}
-          aria-current={pageName === "add" ? "page" : undefined}
-        >
-          <span className="capture-nav-icon">
-            <ScanLine size={22} />
-          </span>
-          <span>拍藥袋</span>
-        </a>
-        <a
-          href="#learning"
-          className={pageName === "learning" ? "active" : ""}
-          aria-current={pageName === "learning" ? "page" : undefined}
-        >
-          <BookOpen size={21} />
-          <span>小教室</span>
-        </a>
-        <button
-          type="button"
-          aria-label="更多功能"
-          aria-expanded={menu}
-          onClick={() => setMenu(!menu)}
-        >
-          <Menu size={21} />
-          <span>更多</span>
-        </button>
-      </nav>
+      {!adminWorkspace && (
+        <nav className="bottom-nav" aria-label="手機主要導覽">
+          <a
+            href="#home"
+            className={pageName === "home" ? "active" : ""}
+            aria-current={pageName === "home" ? "page" : undefined}
+          >
+            <House size={21} />
+            <span>今日</span>
+          </a>
+          <a
+            href="#medications"
+            className={pageName === "medications" ? "active" : ""}
+            aria-current={pageName === "medications" ? "page" : undefined}
+          >
+            <Pill size={21} />
+            <span>藥品</span>
+          </a>
+          <a
+            href="#add"
+            className={"capture-nav" + (pageName === "add" ? " active" : "")}
+            aria-current={pageName === "add" ? "page" : undefined}
+          >
+            <span className="capture-nav-icon">
+              <ScanLine size={22} />
+            </span>
+            <span>拍藥袋</span>
+          </a>
+          <a
+            href="#learning"
+            className={pageName === "learning" ? "active" : ""}
+            aria-current={pageName === "learning" ? "page" : undefined}
+          >
+            <BookOpen size={21} />
+            <span>小教室</span>
+          </a>
+          <button
+            type="button"
+            aria-label="更多功能"
+            aria-expanded={menu}
+            onClick={() => setMenu(!menu)}
+          >
+            <Menu size={21} />
+            <span>更多</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }
-function Login() {
+function Login({ adminEntry = false }: { adminEntry?: boolean }) {
   const {
     config,
     login,
@@ -430,7 +495,9 @@ function Login() {
     }
   }
   return (
-    <div className="login-page">
+    <div
+      className={"login-page public-login" + (adminEntry ? " admin-login" : "")}
+    >
       <section className="login-story">
         <a className="brand" href="/">
           <img src="/icon.svg" alt="" />
@@ -439,33 +506,44 @@ function Login() {
           </div>
         </a>
         <div>
-          <span className="eyebrow">你的個人用藥手帳</span>
+          <span className="eyebrow login-kicker">
+            <span className="status-dot" />
+            每天多一點清楚，少一點擔心
+          </span>
           <h1>
-            把用藥，
+            把每天的用藥，
             <br />
-            看清楚。
+            <em>照顧得更清楚。</em>
           </h1>
           <p>
-            從藥袋、仿單，到每一天的服藥紀錄。
+            拍下藥袋、核對資料，讀懂自己的用藥。
             <br />
-            一份資訊，一步一步讀懂。
+            提醒與紀錄，都在同一個地方。
           </p>
           <div className="story-steps">
             <span>
-              <b>01</b>辨識藥袋
+              <b>1</b>拍下藥袋
             </span>
             <ArrowRight />
             <span>
-              <b>02</b>閱讀說明
+              <b>2</b>核對資料
             </span>
             <ArrowRight />
             <span>
-              <b>03</b>理解與記錄
+              <b>3</b>讀懂用藥
             </span>
           </div>
         </div>
         <div className="login-illustration">
+          <div className="illustration-label">
+            <ScanLine size={19} />
+            <span>從一張藥袋，開始整理</span>
+          </div>
           <BagDrawing />
+          <div className="illustration-note">
+            <ShieldCheck size={20} />
+            <span>逐項確認，再放心保存</span>
+          </div>
         </div>
         <div className="story-bottom">
           <ShieldCheck size={18} />
@@ -474,13 +552,22 @@ function Login() {
       </section>
       <section className="login-panel">
         <div className="login-card">
-          <span className="eyebrow">藥智通 / 個人用藥</span>
+          <div className="login-card-brand">
+            <img src="/icon.svg" alt="" />
+            <span>藥智通</span>
+          </div>
+          <span className="login-role">
+            <ShieldCheck size={16} />
+            {adminEntry ? "管理員專用入口" : "一般使用者入口"}
+          </span>
           <h2>
             {mode === "register"
               ? "開始你的健康日常"
               : mode === "reset"
                 ? "重設密碼"
-                : "歡迎回來"}
+                : adminEntry
+                  ? "管理員登入"
+                  : "歡迎來到藥智通"}
           </h2>
           <p className="muted">
             {mode === "register"
@@ -489,7 +576,9 @@ function Login() {
                 : "先建立帳號並驗證信箱，再確認 AI 試用資格。"
               : mode === "reset"
                 ? "輸入註冊時使用的信箱，我們會寄送重設密碼連結。"
-                : "開啟你的藥品、說明與服藥紀錄。"}
+                : adminEntry
+                  ? "請使用已授權的管理員帳號。"
+                  : "登入後，從第一張藥袋開始。"}
           </p>
           {authError && (
             <>
@@ -519,6 +608,11 @@ function Login() {
             </>
           )}
           {config?.error && <Notice error>{config.error}</Notice>}
+          {!adminEntry && (
+            <a className="admin-login-link" href="#admin">
+              管理員登入 <ArrowRight size={14} />
+            </a>
+          )}
           {config?.error ? (
             <Button className="primary full" onClick={() => location.reload()}>
               重新連線
@@ -653,13 +747,20 @@ function Login() {
                   className="text-button"
                   disabled={busy}
                   onClick={() => {
-                    setMode(mode === "login" ? "register" : "login");
+                    if (adminEntry) {
+                      location.hash = "home";
+                      setMode("login");
+                    } else setMode(mode === "login" ? "register" : "login");
                     setPassword("");
                     setShowPassword(false);
                     setMessage("");
                   }}
                 >
-                  {mode === "login" ? "建立新帳號" : "返回登入"}
+                  {adminEntry
+                    ? "返回一般使用者登入"
+                    : mode === "login"
+                      ? "建立新帳號"
+                      : "返回登入"}
                 </button>
                 {mode !== "reset" && (
                   <button

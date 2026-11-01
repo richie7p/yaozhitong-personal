@@ -16,12 +16,20 @@ import {
 } from "firebase-admin/firestore";
 import { config } from "./config.js";
 export type Doc = Record<string, any>;
+export interface PageQuery {
+  limit: number;
+  after?: string;
+  where?: Array<[string, unknown]>;
+  fields?: string[];
+}
 export interface Tx {
   get<T = Doc>(collection: string, id: string): Promise<T | null>;
   set(collection: string, id: string, value: unknown): void;
   delete(collection: string, id: string): void;
 }
 export interface Store {
+  page<T = Doc>(collection: string, query: PageQuery): Promise<T[]>;
+  count(collection: string, where?: Array<[string, unknown]>): Promise<number>;
   get<T = Doc>(collection: string, id: string): Promise<T | null>;
   list<T = Doc>(
     collection: string,
@@ -70,6 +78,40 @@ export class MemoryStore implements Store {
   async get<T = Doc>(c: string, id: string): Promise<T | null> {
     if (this.file) await this.load();
     return structuredClone(this.data[c]?.[id] ?? null);
+  }
+  async page<T = Doc>(c: string, query: PageQuery): Promise<T[]> {
+    if (this.file) await this.load();
+    const rows = Object.entries(this.data[c] || {})
+      .filter(
+        ([id, value]) =>
+          (!query.after ||
+            Buffer.compare(Buffer.from(id), Buffer.from(query.after)) > 0) &&
+          (query.where || []).every(
+            ([field, expected]) => value[field] === expected,
+          ),
+      )
+      .sort(([a], [b]) => Buffer.compare(Buffer.from(a), Buffer.from(b)))
+      .slice(0, query.limit)
+      .map(([id, value]) =>
+        query.fields
+          ? Object.fromEntries([
+              ...[...query.fields]
+                .filter((field) => field in value)
+                .map((field) => [field, value[field]]),
+              ["id", id],
+            ])
+          : { ...value, id },
+      );
+    return structuredClone(rows) as T[];
+  }
+  async count(
+    c: string,
+    where: Array<[string, unknown]> = [],
+  ): Promise<number> {
+    if (this.file) await this.load();
+    return Object.values(this.data[c] || {}).filter((value) =>
+      where.every(([field, expected]) => value[field] === expected),
+    ).length;
   }
   async list<T = Doc>(
     c: string,
@@ -213,6 +255,23 @@ export class MemoryStore implements Store {
 }
 export class FirestoreStore implements Store {
   db = getFirestore(firebaseApp());
+  async page<T = Doc>(c: string, options: PageQuery): Promise<T[]> {
+    let query = this.db.collection(c).orderBy(FieldPath.documentId());
+    for (const [field, value] of options.where || [])
+      query = query.where(field, "==", value);
+    if (options.after) query = query.startAfter(options.after);
+    if (options.fields) query = query.select(...options.fields);
+    const snapshot = await query.limit(options.limit).get();
+    return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }) as T);
+  }
+  async count(
+    c: string,
+    where: Array<[string, unknown]> = [],
+  ): Promise<number> {
+    let query = this.db.collection(c).orderBy(FieldPath.documentId());
+    for (const [field, value] of where) query = query.where(field, "==", value);
+    return (await query.count().get()).data().count;
+  }
   async get<T = Doc>(c: string, id: string): Promise<T | null> {
     const d = await this.db.collection(c).doc(id).get();
     return d.exists ? (d.data() as T) : null;
