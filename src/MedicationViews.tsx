@@ -557,11 +557,11 @@ export function AddMedication({
               <h2>藥袋照片</h2>
             </div>
             <p className="capture-instructions">
-              遮住姓名與身分證號，讓藥名、用法清楚入鏡。請平放藥袋，避開反光。
+              拍清楚藥名與用法，辨識後再由你逐項核對。
             </p>
             <ul className="photo-tips" aria-label="拍照小提醒">
               <li>
-                <span>01</span> 遮住個人資料
+                <span>01</span> 遮住姓名與身分證號
               </li>
               <li>
                 <span>02</span> 藥袋平放、避開反光

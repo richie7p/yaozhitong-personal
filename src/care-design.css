@@ -998,8 +998,9 @@
     padding: 20px 15px;
   }
   .capture-art {
-    width: 210px;
-    height: 146px;
+    width: 155px;
+    height: 103px;
+    margin-bottom: 8px;
   }
   .capture-station-heading h2 {
     font-size: 24px;
@@ -1010,8 +1011,8 @@
   .photo-tips {
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 23px;
+    gap: 4px;
+    margin-bottom: 16px;
     font-size: 11px;
   }
   .photo-tips li {
