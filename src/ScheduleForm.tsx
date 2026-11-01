@@ -3,6 +3,7 @@ import { api } from "./api";
 import { Button, Field, Notice } from "./components";
 import { Frequency, MedicationIdentity } from "./medication-presentation";
 import { parseReminderTimes } from "./reminder-times";
+import type { Schedule } from "../shared/schema";
 
 export function ScheduleForm({
   medication,
@@ -21,6 +22,14 @@ export function ScheduleForm({
   const [error, setError] = useState("");
   const [timeError, setTimeError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [currentSchedule, setCurrentSchedule] = useState<Schedule | null>(null);
+  const [loadingSchedule, setLoadingSchedule] = useState(true);
+  const [scheduleError, setScheduleError] = useState("");
+  const [scheduleVersion, setScheduleVersion] = useState(0);
+  const [stopping, setStopping] = useState(false);
+  const [stopped, setStopped] = useState(false);
+  const stopPending = useRef(false);
+  const live = useRef(true);
   const submitting = useRef(false);
   const timeInput = useRef<HTMLInputElement>(null);
   const startInput = useRef<HTMLInputElement>(null);
@@ -33,6 +42,39 @@ export function ScheduleForm({
     heading.current?.focus({ preventScroll: true });
     heading.current?.scrollIntoView({ block: "start" });
   }, [medication.id]);
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    let active = true;
+    setLoadingSchedule(true);
+    setScheduleError("");
+    setCurrentSchedule(null);
+    setStopped(false);
+    api<{ items: Schedule[] }>("/schedules")
+      .then(({ items }) => {
+        if (active)
+          setCurrentSchedule(
+            items.find((s) => s.active && s.medicationId === medication.id) ||
+              null,
+          );
+      })
+      .catch((cause: unknown) => {
+        if (active)
+          setScheduleError(
+            cause instanceof Error ? cause.message : "目前無法讀取提醒設定。",
+          );
+      })
+      .finally(() => {
+        if (active) setLoadingSchedule(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [medication.id, scheduleVersion]);
 
   return (
     <section className="card schedule-form">
@@ -40,6 +82,73 @@ export function ScheduleForm({
         排定提醒 · {medication.name}
       </h2>
       <MedicationIdentity medication={medication} />
+      <div
+        className="schedule-current"
+        aria-label="目前提醒設定"
+        aria-live="polite"
+      >
+        {loadingSchedule ? (
+          <p>正在讀取目前提醒…</p>
+        ) : scheduleError ? (
+          <>
+            <Notice error>{scheduleError}</Notice>
+            <Button onClick={() => setScheduleVersion((v) => v + 1)}>
+              重新讀取提醒
+            </Button>
+          </>
+        ) : currentSchedule ? (
+          <>
+            <h3>目前的提醒</h3>
+            <p>每天 {currentSchedule.times.join("、")}（台北時間）</p>
+            <p>
+              {currentSchedule.startDate} 起
+              {currentSchedule.endDate
+                ? `，至 ${currentSchedule.endDate}`
+                : "，未設定結束日期"}
+            </p>
+            <p>
+              停用只會停止提醒，不會更動藥品用法或服藥紀錄。已送出的通知可能仍會顯示。
+            </p>
+            <Button
+              className="secondary"
+              disabled={busy || stopping}
+              onClick={async () => {
+                if (stopPending.current) return;
+                stopPending.current = true;
+                setStopping(true);
+                setError("");
+                try {
+                  await api(`/schedules/${currentSchedule.id}/stop`, "POST");
+                  window.dispatchEvent(new Event("yzt-schedules-changed"));
+                  if (live.current) {
+                    setCurrentSchedule(null);
+                    setStopped(true);
+                  }
+                } catch (cause: unknown) {
+                  if (live.current)
+                    setError(
+                      cause instanceof Error
+                        ? cause.message
+                        : "停用提醒失敗，請稍後再試。",
+                    );
+                } finally {
+                  stopPending.current = false;
+                  if (live.current) setStopping(false);
+                }
+              }}
+            >
+              {stopping ? "正在停用…" : "停用提醒"}
+            </Button>
+            <p className="fine">下方儲存新的時間後，會取代目前的提醒設定。</p>
+          </>
+        ) : (
+          <p>
+            {stopped
+              ? "已停用提醒。需要時可在下方重新排定。"
+              : "目前沒有啟用的提醒。"}
+          </p>
+        )}
+      </div>
       <p>
         已確認頻次：
         <Frequency raw={medication.frequencyRaw} />
@@ -50,7 +159,7 @@ export function ScheduleForm({
         aria-busy={busy}
         onSubmit={async (e) => {
           e.preventDefault();
-          if (submitting.current) return;
+          if (submitting.current || stopPending.current) return;
           setError("");
           setTimeError(false);
           const parsed = parseReminderTimes(times);
@@ -101,7 +210,7 @@ export function ScheduleForm({
             <input
               ref={timeInput}
               required
-              disabled={busy}
+              disabled={busy || stopping}
               aria-describedby={helpId + (timeError ? ` ${errorId}` : "")}
               aria-invalid={timeError || undefined}
               placeholder="例如：08:00, 20:00"
@@ -125,7 +234,7 @@ export function ScheduleForm({
           <input
             ref={startInput}
             required
-            disabled={busy}
+            disabled={busy || stopping}
             type="date"
             value={start}
             onChange={(e) => setStart(e.target.value)}
@@ -134,7 +243,7 @@ export function ScheduleForm({
         <Field label="結束日期（可留白）">
           <input
             ref={endInput}
-            disabled={busy}
+            disabled={busy || stopping}
             type="date"
             min={start || undefined}
             value={end}
@@ -147,10 +256,10 @@ export function ScheduleForm({
               <Notice error>{error}</Notice>
             </div>
           )}
-          <Button type="submit" className="primary" disabled={busy}>
+          <Button type="submit" className="primary" disabled={busy || stopping}>
             {busy ? "儲存提醒中…" : "確認提醒時間"}
           </Button>{" "}
-          <Button disabled={busy} onClick={close}>
+          <Button disabled={busy || stopping} onClick={close}>
             取消
           </Button>
         </div>

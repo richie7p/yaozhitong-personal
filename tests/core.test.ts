@@ -124,6 +124,32 @@ async function setup(
   return { d, store, app, req };
 }
 describe("account and access boundaries", () => {
+  it("lets only the owner stop a reminder without changing medication data", async () => {
+    const { d, store, req } = await setup();
+    const med = await d.saveMedication("a", medInput);
+    const schedule = await d.saveSchedule("a", {
+      medicationId: med.id,
+      times: ["08:00"],
+      startDate: "2030-01-01",
+    });
+    const path = `/schedules/${schedule.id}/stop`;
+    expect((await req(path, "POST", undefined, "b")).status).toBe(404);
+    expect((await store.get("schedules", schedule.id))?.active).toBe(true);
+    const response = await req(path, "POST");
+    expect(response.status).toBe(200);
+    const stopped = await response.json();
+    expect(stopped).toMatchObject({
+      active: false,
+      nextAt: null,
+      nextFamilyAt: null,
+    });
+    expect(stopped.reminderVersion).not.toBe(schedule.reminderVersion);
+    expect(await (await req(path, "POST")).json()).toEqual(stopped);
+    expect((await store.get("medications", med.id))?.revision).toBe(
+      med.revision,
+    );
+    expect((await req("/schedules/missing/stop", "POST")).status).toBe(404);
+  });
   it("starts new users with no health data", async () => {
     const { req } = await setup();
     expect((await (await req("/medications")).json()).items).toEqual([]);

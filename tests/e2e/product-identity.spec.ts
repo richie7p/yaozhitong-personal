@@ -291,6 +291,12 @@ test("incomplete Secorine stays pending through save, then full package license 
   await expect(page.locator(".product-identity-review")).toContainText(
     "產品已核對",
   );
+  await expect(page.locator(".product-identity-review")).not.toContainText(
+    "補拍完整藥名",
+  );
+  await expect(page.locator(".product-identity-review")).not.toContainText(
+    "候選許可證：",
+  );
   await page
     .getByRole("button", { name: "儲存已核對藥品與用法", exact: true })
     .click();

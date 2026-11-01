@@ -155,7 +155,10 @@ export function ProductIdentityReview({
             含量／規格：{candidate.strength || "官方未提供"} · 劑型：
             {candidate.form || "官方未提供"}
           </p>
-          <p>候選許可證：{candidate.licenseNo}</p>
+          <p>
+            {confirmed ? "許可證字號：" : "候選許可證："}
+            {candidate.licenseNo}
+          </p>
           {!confirmed && (
             <p>同名藥品可能有不同廠牌、口味或規格。選取候選尚未連結仿單。</p>
           )}
@@ -178,10 +181,14 @@ export function ProductIdentityReview({
           </Button>
         </div>
       )}
-      <Notice>{identityGuidance}</Notice>
-      <p>
-        請從手上包裝另行抄錄，與候選的完整品名、含量及劑型核對。用法確認不代表產品已核對。
-      </p>
+      {!confirmed && (
+        <>
+          <Notice>{identityGuidance}</Notice>
+          <p>
+            請從手上包裝另行抄錄，與候選的完整品名、含量及劑型核對。用法確認不代表產品已核對。
+          </p>
+        </>
+      )}
       <fieldset className="identity-methods">
         <legend>選擇核對方式</legend>
         <label className="choice">

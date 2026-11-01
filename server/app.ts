@@ -268,6 +268,9 @@ export function createApp(d: Domain, auth = authenticate) {
   app.post("/api/v1/schedules", async (c) =>
     c.json(await d.saveSchedule(uid(c), await c.req.json()), 201),
   );
+  app.post("/api/v1/schedules/:id/stop", async (c) =>
+    c.json(await d.stopSchedule(uid(c), c.req.param("id"))),
+  );
   app.get("/api/v1/today", async (c) =>
     c.json({ items: await d.today(uid(c)) }),
   );

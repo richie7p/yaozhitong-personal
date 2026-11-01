@@ -1,4 +1,18 @@
 /* Personal care visual language. Functional states stay in public-design.css. */
+.schedule-current {
+  margin: 20px 0;
+  padding: 18px 20px;
+  background: #f1f4eb;
+  border: 1px solid #dce4d3;
+  border-radius: 12px;
+}
+.schedule-current h3 {
+  margin-top: 0;
+  color: #285b43;
+}
+.schedule-current p:last-child {
+  margin-bottom: 0;
+}
 #main h1:focus {
   outline: none;
 }

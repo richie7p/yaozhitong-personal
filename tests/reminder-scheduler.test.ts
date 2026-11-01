@@ -149,6 +149,24 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("indexed medication reminders", () => {
+  it("stopping cancels pending retries and prevents future owner and family reminders", async () => {
+    const { d, store, run, sends, schedule, med } = await setup();
+    await run(DUE, async () => {
+      throw new Error("synthetic temporary push failure");
+    });
+    expect((await notifications(store, false))[0].status).toBe("pending");
+    await d.stopSchedule("owner", schedule.id);
+    await run("2026-10-20T00:01:00.000Z");
+    await run(FAMILY_DUE);
+    await run("2026-10-21T00:00:00.000Z");
+    expect(sends).toEqual([]);
+    expect((await notifications(store, false))[0].status).toBe("cancelled");
+    expect(await notifications(store, true)).toEqual([]);
+    expect((await store.get("medications", med.id))?.revision).toBe(
+      med.revision,
+    );
+    expect(await d.today("owner", "2026-10-20")).toEqual([]);
+  });
   it("does not send early and delivers once at the minute boundary despite concurrent/repeated ticks", async () => {
     const { d, store, run, sender, sends, schedule } = await setup();
     await run("2026-10-19T23:59:59.999Z");

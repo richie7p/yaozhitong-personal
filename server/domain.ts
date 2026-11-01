@@ -414,6 +414,26 @@ export class Domain {
     await this.writePrivate(uid, "schedules", id, result);
     return result;
   }
+  async stopSchedule(uid: string, id: string) {
+    return this.store.transaction(async (tx) => {
+      const user = await tx.get<Account>("users", uid);
+      const schedule = await tx.get<Schedule>("schedules", id);
+      if (!user || user.disabled || user.deleting)
+        return fail("account_disabled", "帳號已停用。", 403);
+      if (!schedule || schedule.ownerId !== uid)
+        return fail("not_found", "找不到提醒。", 404);
+      if (!schedule.active) return schedule;
+      const stopped: Schedule = {
+        ...schedule,
+        active: false,
+        nextAt: null,
+        nextFamilyAt: null,
+        reminderVersion: randomUUID(),
+      };
+      tx.set("schedules", id, stopped);
+      return stopped;
+    });
+  }
   async today(
     uid: string,
     date = DateTime.now().setZone("Asia/Taipei").toISODate()!,

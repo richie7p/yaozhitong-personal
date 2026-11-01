@@ -44,6 +44,8 @@ async function openReminder(
     saveGate?: Promise<void>;
     medicationId?: string;
     allowMedicationEdits?: boolean;
+    existingReminders?: boolean;
+    failStopFirst?: boolean;
   } = {},
 ) {
   const attempts: ScheduleInput[] = [];
@@ -55,6 +57,19 @@ async function openReminder(
   const currentMedications = medications.map((medication) => ({
     ...medication,
   }));
+  const stoppedIds: string[] = [];
+  let stopAttempts = 0;
+  const schedules = options.existingReminders
+    ? medications.map((medication) => ({
+        id: `schedule-${medication.id}`,
+        medicationId: medication.id,
+        active: true,
+        times: ["08:00", "20:00"],
+        startDate: "2030-01-01",
+        endDate: "2030-01-03",
+        timezone: "Asia/Taipei",
+      }))
+    : [];
   const unexpected: string[] = [];
   await page.addInitScript(() => {
     sessionStorage.setItem("yzt-local-token", "synthetic-reminder-ui-only");
@@ -83,6 +98,7 @@ async function openReminder(
         profile: { displayName: "合成提醒測試使用者" },
       },
       "/api/v1/medications": { items: currentMedications, duplicates: [] },
+      "/api/v1/schedules": { items: schedules },
     };
     if (request.method() === "GET" && url.pathname in responses) {
       await route.fulfill({ json: responses[url.pathname] });
@@ -102,6 +118,25 @@ async function openReminder(
           id: medicationId,
         };
         await route.fulfill({ json: currentMedications[index] });
+        return;
+      }
+    }
+    if (request.method() === "POST" && url.pathname.endsWith("/stop")) {
+      const schedule = schedules.find(
+        (s) => url.pathname === `/api/v1/schedules/${s.id}/stop`,
+      );
+      if (schedule) {
+        stopAttempts++;
+        if (options.failStopFirst && stopAttempts === 1) {
+          await route.fulfill({
+            status: 503,
+            json: { message: "合成測試：停用暫時失敗。" },
+          });
+        } else {
+          schedule.active = false;
+          stoppedIds.push(schedule.id);
+          await route.fulfill({ json: schedule });
+        }
         return;
       }
     }
@@ -154,8 +189,47 @@ async function openReminder(
     medicationEdits,
     unexpected,
     openMedication,
+    stoppedIds,
   };
 }
+
+test("existing reminders can be stopped for the chosen medicine, with failed requests retaining settings", async ({
+  page,
+}) => {
+  const {
+    form,
+    stoppedIds,
+    persisted,
+    medicationEdits,
+    unexpected,
+    openMedication,
+  } = await openReminder(page, {
+    existingReminders: true,
+    failStopFirst: true,
+  });
+  const current = page.getByLabel("目前提醒設定");
+  await expect(current).toContainText("08:00、20:00");
+  await expect(current).toContainText("2030-01-03");
+  await form.getByLabel("每天提醒時間").fill("09:15");
+  await current.getByRole("button", { name: "停用提醒", exact: true }).click();
+  await expect(form.getByRole("alert")).toContainText("停用暫時失敗");
+  await expect(
+    current.getByRole("button", { name: "停用提醒", exact: true }),
+  ).toBeEnabled();
+  await expect(form.getByLabel("每天提醒時間")).toHaveValue("09:15");
+  expect(stoppedIds).toEqual([]);
+  await current.getByRole("button", { name: "停用提醒", exact: true }).click();
+  await expect(current).toContainText("已停用提醒");
+  expect(stoppedIds).toEqual([`schedule-${selectedMedication.id}`]);
+  expect(persisted).toEqual([]);
+  expect(medicationEdits).toEqual([]);
+  await form.getByRole("button", { name: "取消", exact: true }).click();
+  await openMedication(medications[0].id);
+  await expect(
+    current.getByRole("button", { name: "停用提醒", exact: true }),
+  ).toBeVisible();
+  expect(unexpected).toEqual([]);
+});
 
 test("manual reminders explain the time format, reject invalid input before sending, and save only the chosen medication", async ({
   page,
