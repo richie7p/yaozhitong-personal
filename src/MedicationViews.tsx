@@ -44,6 +44,7 @@ import {
 } from "./medication-presentation";
 import { ScheduleForm } from "./ScheduleForm";
 import { ChatAnswer } from "./ChatAnswer";
+import { CareIllustration } from "./CareIllustration";
 import { TeachingCompletionAction } from "./TeachingCompletionAction";
 import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { OfficialSourceLinks } from "./OfficialSourceLinks";
@@ -546,6 +547,11 @@ export function AddMedication({
       {tab === "photo" && !draft && (
         <section className="card capture-station" aria-label="藥袋辨識工作區">
           <div className="upload-area capture-workspace">
+            {!photoPreview && (
+              <div className="capture-art">
+                <CareIllustration compact />
+              </div>
+            )}
             <div className="capture-station-heading">
               <ScanLine size={32} aria-hidden="true" />
               <h2>藥袋照片</h2>
@@ -553,6 +559,17 @@ export function AddMedication({
             <p className="capture-instructions">
               遮住姓名與身分證號，讓藥名、用法清楚入鏡。請平放藥袋，避開反光。
             </p>
+            <ul className="photo-tips" aria-label="拍照小提醒">
+              <li>
+                <span>01</span> 遮住個人資料
+              </li>
+              <li>
+                <span>02</span> 藥袋平放、避開反光
+              </li>
+              <li>
+                <span>03</span> 藥名與用法完整入鏡
+              </li>
+            </ul>
             <div className="row">
               <Button
                 className="secondary"

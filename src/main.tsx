@@ -5,6 +5,7 @@ import { App } from "./App";
 import "./styles.css";
 import "./design.css";
 import "./public-design.css";
+import "./care-design.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AuthProvider>

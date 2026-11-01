@@ -1,13 +1,14 @@
 /* Public product design: clear actions, readable type and two distinct workspaces. */
 :root {
-  --paper: #f4f8f6;
+  --paper: #f6f5f0;
   --sheet: #fff;
-  --ink: #193e34;
-  --green: #147d65;
-  --deep: #10604e;
-  --muted: #60766d;
-  --line: #dce8e1;
-  --accent: #b85c2e;
+  --ink: #233f32;
+  --green: #285b43;
+  --deep: #1c4431;
+  --muted: #617064;
+  --line: #dfe4d8;
+  --accent: #a96c3f;
+  --display: "Noto Serif TC", "PMingLiU", "Songti TC", Georgia, serif;
   --serif:
     "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
   color: #243e34;

@@ -13,49 +13,7 @@ import { useAuth } from "./auth";
 import { api } from "./api";
 import { Button, Busy, Empty, Notice, useData } from "./components";
 import { doseLabel } from "../shared/medication";
-
-export function BagDrawing() {
-  return (
-    <svg
-      className="bag-drawing"
-      viewBox="0 0 280 220"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M53 31H213L228 193H39L53 31Z"
-        fill="#F6F2E6"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <path d="M53 43H214M49 66H216" stroke="currentColor" strokeWidth="1.2" />
-      <path
-        d="M69 85H151M69 95H178M69 108H125"
-        stroke="#9AA497"
-        strokeWidth="2"
-      />
-      <rect x="69" y="126" width="132" height="42" stroke="#C7CBBE" />
-      <path
-        d="M78 139H115M78 151H138M153 139H190M153 151H177"
-        stroke="#9AA497"
-        strokeWidth="2"
-      />
-      <path
-        d="M26 85V70H42M226 70H242V85M26 162V178H42M226 178H242V162"
-        stroke="#B65438"
-        strokeWidth="2.5"
-      />
-      <path
-        d="M24 119H245"
-        stroke="#B65438"
-        strokeWidth="1.5"
-        strokeDasharray="4 4"
-      />
-      <path d="M207 181L215 189L233 168" stroke="#183F37" strokeWidth="2.5" />
-      <circle cx="232" cy="38" r="6" fill="#B65438" />
-    </svg>
-  );
-}
+import { CareIllustration } from "./CareIllustration";
 
 export function Home() {
   const { me } = useAuth();
@@ -139,7 +97,7 @@ export function Home() {
         <div className="next-step-copy">
           <span className="next-step-label">
             <ShieldCheck size={16} />
-            一步一步，把用藥整理好
+            你的用藥，值得好好照顧
           </span>
           <h2>
             {meds.loading
@@ -187,36 +145,51 @@ export function Home() {
             )
           )}
         </div>
-        <ol className="welcome-steps" aria-label="用藥整理流程">
-          <li>
-            <span>
-              <ScanLine size={21} />
-            </span>
-            <div>
-              <strong>1. 拍下藥袋</strong>
-              <small>藥名與用法清楚入鏡</small>
-            </div>
-          </li>
-          <li>
-            <span>
-              <ShieldCheck size={21} />
-            </span>
-            <div>
-              <strong>2. 由你核對</strong>
-              <small>確認產品、用量與頻次</small>
-            </div>
-          </li>
-          <li>
-            <span>
-              <BookOpen size={21} />
-            </span>
-            <div>
-              <strong>3. 讀懂與記錄</strong>
-              <small>閱讀說明，建立日常提醒</small>
-            </div>
-          </li>
-        </ol>
+        <div className="care-hero-art">
+          <span className="care-hero-art-caption">
+            從一張藥袋，開始安心的日常
+          </span>
+          <CareIllustration />
+          <span className="care-hero-art-seal">
+            <Check size={14} /> 由你核對，清楚保存
+          </span>
+        </div>
       </section>
+      <ol className="welcome-steps" aria-label="用藥整理流程">
+        <li>
+          <span>
+            <ScanLine size={21} />
+          </span>
+          <div>
+            <strong>
+              <b>01</b> 拍下藥袋
+            </strong>
+            <small>藥名與用法清楚入鏡</small>
+          </div>
+        </li>
+        <li>
+          <span>
+            <ShieldCheck size={21} />
+          </span>
+          <div>
+            <strong>
+              <b>02</b> 由你核對
+            </strong>
+            <small>確認產品、用量與頻次</small>
+          </div>
+        </li>
+        <li>
+          <span>
+            <BookOpen size={21} />
+          </span>
+          <div>
+            <strong>
+              <b>03</b> 讀懂與記錄
+            </strong>
+            <small>閱讀說明，建立日常提醒</small>
+          </div>
+        </li>
+      </ol>
       <nav className="quick-actions" aria-label="常用功能">
         <a href="#add">
           <span className="quick-icon mint">
@@ -365,26 +338,17 @@ export function Home() {
         <aside className="journal-side">
           <section className="capture-panel">
             <div className="panel-caption">
-              <span>新增一款用藥</span>
-              <span>01</span>
+              <span>給自己的小提醒</span>
+              <ShieldCheck size={18} />
             </div>
-            <BagDrawing />
             <h2>
-              從藥袋，
+              慢慢核對，
               <br />
-              開始看清楚。
+              每一步都算數。
             </h2>
-            <p>
-              拍下藥名與用法，
-              <br />
-              再逐項核對辨識結果。
-            </p>
-            <a className="btn primary full" href="#add">
-              <ScanLine size={18} />
-              拍攝我的藥袋 <ArrowRight size={17} />
-            </a>
-            <a className="capture-manual" href="#add">
-              也可以搜尋藥名或手動新增 <ArrowUpRight size={14} />
+            <p>辨識結果需要你再看一次。藥名、用量與頻次，都以原藥袋為準。</p>
+            <a className="care-note-link" href="#medications">
+              查看我的藥品 <ArrowUpRight size={17} />
             </a>
           </section>
           <a className="reading-entry" href="#learning">

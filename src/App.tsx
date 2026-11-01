@@ -29,7 +29,8 @@ import { JobHistory } from "./JobHistory";
 import { adminSections } from "./AdminConsole";
 import { Notifications } from "./NotificationViews";
 import { Demo } from "./Demo";
-import { Home, BagDrawing } from "./Home";
+import { Home } from "./Home";
+import { CareIllustration } from "./CareIllustration";
 import { SupportPage } from "./Support";
 import { PrivacyPage, PrivacyLink } from "./Privacy";
 const navigation = [
@@ -539,7 +540,7 @@ function Login({ adminEntry = false }: { adminEntry?: boolean }) {
             <ScanLine size={19} />
             <span>從一張藥袋，開始整理</span>
           </div>
-          <BagDrawing />
+          <CareIllustration />
           <div className="illustration-note">
             <ShieldCheck size={20} />
             <span>逐項確認，再放心保存</span>
