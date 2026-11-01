@@ -144,6 +144,20 @@ it("separates retrieved-reference assistance from leaflet evidence and never man
   expect(result.assistance?.claims).toEqual([claim]);
   expect(result.assistance?.uncertainties.join("")).toContain("不同廠牌");
 });
+it("retains cited ingredient information under its heading without carrying context into another drug section", () => {
+  const text = "## SYNTHETIC OXALATE\n一般注意事項合成內容。[1]\n## OTHER MEDICINE\n不相關內容。[2]\n";
+  const raw = { status: "completed", output: [{ type: "web_search_call", status: "completed" }, {
+    type: "message", content: [{ type: "output_text", text, annotations: ["[1]", "[2]"].map((marker) => ({
+      type: "url_citation", url, title: "C:\\private\\report.pdf", start_index: text.indexOf(marker), end_index: text.indexOf(marker) + marker.length,
+    })) }],
+  }] };
+  const parsed = parseReferenceSearch(raw, [drug]);
+  expect(parsed.passages).toHaveLength(1);
+  expect(parsed.passages[0].text).toContain("SYNTHETIC OXALATE");
+  expect(parsed.passages[0].text).toContain("一般注意事項");
+  expect(parsed.sources[0].kind).toBe("hospital");
+  expect(parsed.sources[0].title).not.toContain("private");
+});
 it.each(["not_found", "unavailable"] as const)(
   "keeps user-label AI available when retrieval is %s",
   async (state) => {

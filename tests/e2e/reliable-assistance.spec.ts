@@ -25,7 +25,7 @@ for (const state of ["found", "unavailable"] as const)
       sourceVersions: {},
       verification: "model_assisted",
       assistance: {
-        version: "reliable-reference-v1",
+        version: "reliable-reference-v2",
         checkedAt: new Date().toISOString(),
         searchState: state,
         sources:
