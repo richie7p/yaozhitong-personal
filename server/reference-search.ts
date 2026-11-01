@@ -83,10 +83,19 @@ export function parseReferenceSearch(raw: any, drugs: Drug[]): ReferenceSearch {
       d.nameEn,
       ...d.ingredients,
       ...d.ingredients.map((s) =>
-        s.replace(
-          /\s+(?:OXALATE|HYDROCHLORIDE|HCL|HYDROBROMIDE|MALEATE|FUMARATE|SUCCINATE|TARTRATE)\b.*$/i,
-          "",
-        ),
+        // Search relevance only: a known hydrate suffix may be absent in
+        // ingredient education. Do not remove arbitrary parenthetical content
+        // or use this alias to equate product identities, strengths or doses.
+        s
+          .normalize("NFKC")
+          .replace(
+            /\s+(?:\(\s*(?:(?:MONO|DI|TRI|HEMI)HYDRATE|ANHYDROUS)\s*\)|(?:(?:MONO|DI|TRI|HEMI)HYDRATE|ANHYDROUS))\s*$/i,
+            "",
+          )
+          .replace(
+            /\s+(?:OXALATE|HYDROCHLORIDE|HCL|HYDROBROMIDE|MALEATE|FUMARATE|SUCCINATE|TARTRATE)\b.*$/i,
+            "",
+          ),
       ),
     ])
     .map(normalized)

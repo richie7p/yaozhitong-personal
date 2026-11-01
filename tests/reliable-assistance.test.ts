@@ -144,6 +144,45 @@ it("separates retrieved-reference assistance from leaflet evidence and never man
   expect(result.assistance?.claims).toEqual([claim]);
   expect(result.assistance?.uncertainties.join("")).toContain("不同廠牌");
 });
+it.each([
+  ["AMOXICILLIN (TRIHYDRATE)", true],
+  ["AMOXICILLIN TRIHYDRATE", true],
+  ["AMOXICILLIN (UNRELATED COMPOUND)", false],
+  ["AMOXICILLIN / OTHER INGREDIENT (TRIHYDRATE)", false],
+])(
+  "matches a known hydrate suffix without discarding arbitrary composition: %s",
+  (ingredient, expected) => {
+    const text = "Amoxicillin 的來源內容。[1]";
+    const raw = {
+      status: "completed",
+      output: [
+        { type: "web_search_call", status: "completed" },
+        {
+          type: "message",
+          content: [
+            {
+              type: "output_text",
+              text,
+              annotations: [
+                {
+                  type: "url_citation",
+                  url,
+                  start_index: text.indexOf("[1]"),
+                  end_index: text.length,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseReferenceSearch(raw, [
+      { ...drug, ingredients: [ingredient as string] },
+    ]);
+    expect(parsed.state).toBe(expected ? "found" : "not_found");
+    expect(parsed.passages).toHaveLength(expected ? 1 : 0);
+  },
+);
 it("retains cited ingredient information under its heading without carrying context into another drug section", () => {
   const text =
     "## SYNTHETIC OXALATE\n一般注意事項合成內容。[1]\n## OTHER MEDICINE\n不相關內容。[2]\n";
