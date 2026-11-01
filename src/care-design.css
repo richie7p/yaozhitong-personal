@@ -1087,3 +1087,66 @@
     margin-bottom: 12px;
   }
 }
+.notification-settings-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.notification-settings-heading h2 {
+  margin: 0 0 5px;
+}
+.notification-settings-heading p {
+  margin: 0;
+  color: #60736a;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+.notification-settings-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 16px;
+  color: #266f53;
+  background: #e6f3e9;
+}
+.notification-device-status {
+  margin: 20px 0;
+  padding: 4px 16px;
+  background: #f5f8f3;
+  border-radius: 16px;
+}
+.notification-device-status > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+.notification-device-status > div + div {
+  border-top: 1px solid #e2e9df;
+}
+.notification-device-status dt {
+  color: #60736a;
+  font-size: 0.88rem;
+}
+.notification-device-status dd {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: right;
+}
+.notification-attempt {
+  margin-top: 18px;
+  padding: 18px;
+  background: #f5f8f3;
+  border: 1px solid #dce9dd;
+  border-radius: 16px;
+}
+.notification-attempt p {
+  overflow-wrap: anywhere;
+}
+.notification-attempt .row {
+  flex-wrap: wrap;
+  gap: 8px;
+}

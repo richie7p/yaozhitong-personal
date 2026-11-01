@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Users,
-  Copy,
-  Plus,
-  Bell,
-  Download,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { Users, Copy, Plus, Download, Search, Trash2 } from "lucide-react";
 import { api } from "./api";
 import { useAuth } from "./auth";
 import { JobHistory } from "./JobHistory";
+import { NotificationSettings } from "./NotificationSettings";
 import { cabinetExpiryStatus } from "../shared/dates";
 import { useTaipeiDay } from "./use-taipei-day";
 import {
@@ -342,7 +335,9 @@ export function Cabinet() {
               <Button type="submit" className="primary" disabled={saving}>
                 {saving ? "儲存中…" : "儲存"}
               </Button>{" "}
-              <Button disabled={saving} onClick={() => setEdit(null)}>取消</Button>
+              <Button disabled={saving} onClick={() => setEdit(null)}>
+                取消
+              </Button>
             </div>
           </form>
         </section>
@@ -373,7 +368,9 @@ export function Cabinet() {
                       ? "已過期"
                       : "保存中"}
                 </span>
-                <Button disabled={saving} onClick={() => setEdit(r)}>編輯</Button>
+                <Button disabled={saving} onClick={() => setEdit(r)}>
+                  編輯
+                </Button>
                 {!r.disposed && (
                   <Button
                     onClick={async () => {
@@ -473,7 +470,6 @@ export function Profile() {
       ...auth.me.profile,
     }),
     [message, setMessage] = useState(""),
-    [notificationBusy, setNotificationBusy] = useState(false),
     [password, setPassword] = useState(""),
     [linkEmail, setLinkEmail] = useState(auth.me.account.email || "");
   const set = (key: string, v: any) => setP({ ...p, [key]: v });
@@ -585,8 +581,12 @@ export function Profile() {
           </form>
         </section>
         <div>
+          <NotificationSettings
+            enable={auth.notify}
+            accountName={auth.me.account.displayName || auth.me.account.email}
+          />
           <section className="card">
-            <h2>登入與通知</h2>
+            <h2>登入與帳號</h2>
             <p>{auth.me.account.email}</p>
             <span className="tag">
               {auth.config.publicAccess === "verified"
@@ -598,27 +598,6 @@ export function Profile() {
                   : "尚待管理員開通 AI 測試資格"}
             </span>
             <div className="stack">
-              <Button
-                className="secondary"
-                disabled={notificationBusy}
-                onClick={async () => {
-                  setMessage("");
-                  setNotificationBusy(true);
-                  try {
-                    await action(auth.notify, "已啟用這台裝置的推播。");
-                  } finally {
-                    setNotificationBusy(false);
-                  }
-                }}
-              >
-                <Bell size={17} />
-                {notificationBusy ? "正在啟用推播…" : "啟用網頁推播"}
-              </Button>
-              {notificationBusy && (
-                <p role="status" className="fine">
-                  請查看瀏覽器的通知權限提示並選擇允許，正在連線推播服務。
-                </p>
-              )}
               <Button
                 onClick={() =>
                   action(
