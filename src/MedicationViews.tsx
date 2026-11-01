@@ -557,19 +557,8 @@ export function AddMedication({
               <h2>藥袋照片</h2>
             </div>
             <p className="capture-instructions">
-              拍清楚藥名與用法，辨識後再由你逐項核對。
+              遮住姓名與身分證號，拍清楚藥名與用法。
             </p>
-            <ul className="photo-tips" aria-label="拍照小提醒">
-              <li>
-                <span>01</span> 遮住姓名與身分證號
-              </li>
-              <li>
-                <span>02</span> 藥袋平放、避開反光
-              </li>
-              <li>
-                <span>03</span> 藥名與用法完整入鏡
-              </li>
-            </ul>
             <div className="row">
               <Button
                 className="secondary"
@@ -586,6 +575,17 @@ export function AddMedication({
                 {file ? "更換照片" : "上傳照片"}
               </Button>
             </div>
+            <ul className="photo-tips" aria-label="拍照小提醒">
+              <li>
+                <span>01</span> 遮住姓名與身分證號
+              </li>
+              <li>
+                <span>02</span> 藥袋平放、避開反光
+              </li>
+              <li>
+                <span>03</span> 藥名與用法完整入鏡
+              </li>
+            </ul>
             <input
               ref={photoInput}
               className="visually-hidden"

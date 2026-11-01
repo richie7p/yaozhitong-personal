@@ -31,8 +31,10 @@
   box-shadow: none;
   border-radius: 8px;
 }
-.public-app:not(.admin-workspace) .btn.primary.sidebar-add:hover {
+.public-app:not(.admin-workspace)
+  .btn.primary.sidebar-add:hover:not(:disabled) {
   background: #dbe7ce;
+  border-color: #dbe7ce;
 }
 .public-app:not(.admin-workspace) .sidebar nav a {
   border-radius: 8px;
@@ -522,7 +524,7 @@
   justify-content: center;
   gap: 10px 24px;
   padding: 0;
-  margin: 4px 0 25px;
+  margin: 18px 0 20px;
   color: #69785d;
   font-size: 12px;
 }
