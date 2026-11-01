@@ -49,7 +49,7 @@ test("partial teaching can explicitly recover from a lost response while preserv
 test("complete saved teaching opens without a paid completion action", async ({page}) => {
   const fixture = await setup(page, false);
   await page.goto("/#medications");
-  await page.getByRole("button", {name: "仿單說明", exact: true}).click();
+  await page.getByRole("button", {name: "AI 藥品解說", exact: true}).click();
   await expect(page.getByRole("heading", {name: "合成補充藥品｜仿單白話說明"})).toBeVisible();
   await expect(page.getByRole("button", {name: "補齊說明與測驗", exact: true})).toHaveCount(0);
   expect(fixture.posts).toEqual([]);

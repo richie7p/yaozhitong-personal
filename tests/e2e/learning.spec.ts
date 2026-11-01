@@ -43,7 +43,7 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await page.goto("/#medications");
   await page
     .locator(".med-card")
-    .getByRole("button", { name: "仿單說明" })
+    .getByRole("button", { name: "AI 藥品解說" })
     .click();
   const evidence = page.locator(".evidence");
   await expect(
@@ -80,7 +80,7 @@ test("personal education, one-question feedback, saved progress and keyboard ope
   await page.goto("/#medications");
   await page
     .locator(".med-card")
-    .getByRole("button", { name: "仿單說明" })
+    .getByRole("button", { name: "AI 藥品解說" })
     .click();
   await expect(
     page.locator(".quiz").getByLabel("可以", { exact: true }),
@@ -273,7 +273,7 @@ test("unconfirmed product keeps confirmed usage and offers a usable next step wi
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await page.goto("/#medications");
   const card = page.locator(".med-card").filter({ hasText: name });
-  await expect(card.getByRole("button", { name: "仿單說明" })).toBeDisabled();
+  await expect(card.getByRole("button", { name: "AI 藥品解說" })).toBeDisabled();
   await expect(card.locator(".usage-box strong")).toHaveText("1 錠");
   await expect(card).toContainText("產品待核對");
   await expect(page.locator(".quiz")).toHaveCount(0);

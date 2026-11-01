@@ -250,7 +250,7 @@ test("incomplete Secorine stays pending through save, then full package license 
   await expect(card).toContainText("用法已確認");
   await expect(card).toContainText("產品待核對");
   await expect(
-    card.getByRole("button", { name: "仿單說明", exact: true }),
+    card.getByRole("button", { name: "AI 藥品解說", exact: true }),
   ).toBeDisabled();
   expect(f.saved[0]).toMatchObject({
     licenseNo: null,
@@ -301,9 +301,9 @@ test("incomplete Secorine stays pending through save, then full package license 
     .getByRole("button", { name: "儲存已核對藥品與用法", exact: true })
     .click();
   await expect(
-    card.getByRole("button", { name: "仿單說明", exact: true }),
+    card.getByRole("button", { name: "AI 藥品解說", exact: true }),
   ).toBeEnabled();
-  await card.getByRole("button", { name: "仿單說明", exact: true }).click();
+  await card.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
   await expect(page.locator(".medication-detail .evidence")).toBeVisible();
   await page.goto("/#chat");
   await page.getByLabel(candidate.nameZh, { exact: true }).check();
@@ -490,7 +490,7 @@ test("legacy products and unsafe old chat answers require package review", async
   await page.goto("/#medications");
   await expect(page.locator(".med-card")).toContainText("產品待核對");
   await expect(
-    page.getByRole("button", { name: "仿單說明", exact: true }),
+    page.getByRole("button", { name: "AI 藥品解說", exact: true }),
   ).toBeDisabled();
   await page.goto("/#chat");
   await expect(

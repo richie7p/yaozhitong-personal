@@ -215,7 +215,9 @@ it.each(["missing", "draft", "retired", "wrong-license"])(
       result: { status: "insufficient_data", sourceVersions: {} },
     });
     expect(saved?.result.sourceReview).toBeUndefined();
-    expect(json).not.toHaveBeenCalled();
+    expect(saved?.result.assistance.searchState).toBe("unavailable");
+    expect(saved?.result.assistance.sources).toEqual([]);
+    expect(json).toHaveBeenCalledTimes(1);
   },
 );
 

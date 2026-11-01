@@ -1,5 +1,8 @@
 import type { Llm } from "./ai.js";
 import type { AiRequestMetric } from "../shared/schema.js";
+import type { Drug } from "../shared/schema.js";
+import type { ReferenceSearch } from "../shared/assistance.js";
+import { referenceSearchRequest, parseReferenceSearch } from "./reference-search.js";
 import {
   aiConnection,
   aiModelRoute,
@@ -15,6 +18,34 @@ export class JsonLlm implements Llm {
   readonly requests: AiRequestMetric[] = [];
   private startedAt = Date.now();
   private unavailableModels = new Set<string>();
+
+  async searchReferences(drugs: Drug[]): Promise<ReferenceSearch> {
+    const unavailable: ReferenceSearch = { state: "unavailable", sources: [], passages: [] };
+    if (config.aiProvider !== "openai" || !config.openaiKey || !drugs.length) return unavailable;
+    // One bounded retrieval per job, leaving time for generation and review.
+    const remaining = this.startedAt + config.aiJobTimeoutMs - Date.now();
+    if (remaining < 10000) return unavailable;
+    const started = Date.now();
+    const metric: AiRequestMetric = { provider: "openai", model: config.textModel,
+      stage: "search", attempt: 1, latencyMs: 0, tokens: null };
+    this.requests.push(metric);
+    try {
+      const response = await fetch(config.openaiBase.replace(/\/$/, "") + "/responses", {
+        method: "POST", headers: { authorization: "Bearer " + config.openaiKey, "content-type": "application/json" },
+        body: JSON.stringify(referenceSearchRequest(drugs, config.textModel)),
+        signal: AbortSignal.timeout(Math.min(60000, Math.floor(remaining / 2))),
+      });
+      metric.status = response.status;
+      if (!response.ok) { metric.error = "reference_search_unavailable"; return unavailable; }
+      const raw: any = await response.json();
+      metric.tokens = Number(raw.usage?.total_tokens) || 0;
+      this.tokens += metric.tokens;
+      const result = parseReferenceSearch(raw, drugs);
+      if (result.state === "unavailable") metric.error = "reference_search_incomplete";
+      return result;
+    } catch { metric.error = "reference_search_unavailable"; return unavailable; }
+    finally { metric.latencyMs = Date.now() - started; }
+  }
 
   async json(
     system: string,

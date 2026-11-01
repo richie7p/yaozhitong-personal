@@ -48,6 +48,8 @@ import {
 export { nextTime } from "./schedule-time.js";
 import { Catalog } from "./catalog.js";
 import { AdmissionGate } from "./admission.js";
+import { assisted } from "./assistance.js";
+import { ASSISTANCE_VERSION, reliableReferenceUrl } from "../shared/assistance.js";
 import {
   grounded,
   recognize,
@@ -72,6 +74,10 @@ type HistoryReader = Pick<Store, "get"> & {
   identityCatalog?: Promise<ProductIdentityIndex>;
 };
 const contentUpdateRequired = (result: GroundedResult | null | undefined) =>
+  (result?.assistance && (result.assistance.version !== ASSISTANCE_VERSION ||
+    !Number.isFinite(Date.parse(result.assistance.expiresAt)) ||
+    Date.parse(result.assistance.expiresAt) <= Date.now() ||
+    result.assistance.sources.some((s) => !reliableReferenceUrl(s.url)))) ||
   sourceReviewOutdated(result) ||
   sourceActionResultOutdated(result) ||
   sourceFieldClassificationOutdated(result);
@@ -939,9 +945,8 @@ export class Domain {
       );
     return this.inspectMedicationSource(reviewed);
   }
-  /** Known source gaps are information, not an AI job. Keep this before quota
-   * reservation at the public text-job boundary; the worker still rechecks
-   * source changes after admission. Same-key recovery keeps its original job. */
+  /** Missing indexed leaflets may use referenced assistance for explanation/chat.
+   * Interaction assessments and unreadable indexed sources keep their source gate. */
   async preflightTextSources(
     uid: string,
     verified: boolean,
@@ -970,6 +975,7 @@ export class Domain {
       ).values(),
     ]) {
       const info = await this.inspectMedicationSource(medication);
+      if (info.state === "missing" && kind !== "interaction") continue;
       if (info.state !== "available")
         return fail(
           info.state === "missing"
@@ -1313,6 +1319,11 @@ export class Domain {
             prompt: GROUNDING_VERSION,
             sourceReader: SOURCE_CACHE_VERSION,
             sourceTeaching: SOURCE_TEACHING_VERSION,
+            ...(leaflets.some((l) => !l) && j.kind !== "interaction" ? {
+              assistanceVersion: ASSISTANCE_VERSION,
+              // Revisit external sources rather than caching them indefinitely.
+              referenceDay: now().slice(0, 10),
+            } : {}),
             // Explicit completion is a new, normally charged operation; keep
             // historic cache keys and saved answers unchanged.
             ...(j.kind === "bundle" && j.input.previousLearningId
@@ -1349,8 +1360,9 @@ export class Domain {
             ? cached.result
             : undefined;
         if (!result) {
-          result = leaflets.some((l) => !l)
-            ? {
+          result = leaflets.some((l) => !l) && j.kind !== "interaction"
+            ? await assisted(llm!, String(j.input.question || "請用白話解釋這些藥品的一般用途、注意事項與我記錄的藥袋文字，並說明哪些資訊仍無法確認。"), meds, catalogDrugs, leaflets)
+            : leaflets.some((l) => !l) ? {
                 status: "insufficient_data",
                 claims: [],
                 chunks: [],
@@ -1449,6 +1461,12 @@ export class Domain {
         }
         if (inputRevisions.length)
           await this.jobMedications(j.ownerId, j.kind, j.input, tx);
+        for (const license of (result as GroundedResult)?.assistance?.missingLicenses || []) {
+          const pointer = await tx.get("published", hash(license));
+          const leaflet = pointer ? await tx.get<Leaflet>("leaflets", pointer.leafletId) : null;
+          if (leaflet?.status === "published" && leaflet.licenseNo === license)
+            return fail("stale_content", "官方仿單剛完成收錄，請重試以使用最新資料。", 409);
+        }
         const versions = (result as GroundedResult)?.sourceVersions || {};
         for (const [license, version] of Object.entries(versions)) {
           const pointer = await tx.get("published", hash(license));
@@ -1607,6 +1625,13 @@ export class Domain {
     )
       return false;
     if (row.profileVersion !== u.profileVersion) return false;
+    // Once an indexed leaflet becomes available, use its verified pipeline on a
+    // fresh request instead of indefinitely reopening the old fallback answer.
+    for (const license of row.result?.assistance?.missingLicenses || []) {
+      const pointer = await reader.get("published", hash(license));
+      const leaflet = pointer ? await reader.get<Leaflet>("leaflets", pointer.leafletId) : null;
+      if (leaflet?.status === "published" && leaflet.licenseNo === license) return false;
+    }
     if (
       !Array.isArray(row.medicationRevisions) ||
       !Array.isArray(row.medicationIds)

@@ -114,7 +114,7 @@ test("a known source hold shows the free original instead of a missing AI job or
 }) => {
   const state = await fixture(page);
   await page.goto("/#medications");
-  await page.getByRole("button", { name: "仿單說明", exact: true }).click();
+  await page.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
   await verifyOriginal(page);
   await expect(page.getByRole("alert")).toContainText("來源狀態與可用原文");
   expect(

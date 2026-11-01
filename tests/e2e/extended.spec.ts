@@ -109,7 +109,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   const med = page
     .locator("article.med-card")
     .filter({ hasText: "流程測試片 5mg" });
-  await expect(med.getByRole("button", { name: "仿單說明" })).toBeDisabled();
+  await expect(med.getByRole("button", { name: "AI 藥品解說" })).toBeDisabled();
   await expect(med.getByRole("button", { name: "排定提醒" })).toHaveCount(0);
   await med.getByRole("button", { name: "編輯用法" }).click();
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
@@ -124,7 +124,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   ).toBeVisible();
   await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
   await page.getByRole("button", { name: "儲存已核對藥品與用法" }).click();
-  await med.getByRole("button", { name: "仿單說明" }).click();
+  await med.getByRole("button", { name: "AI 藥品解說" }).click();
   const evidence = page.locator(".evidence");
   await expect(evidence.getByText("已附仿單依據", { exact: true })).toBeVisible(
     { timeout: 20000 },

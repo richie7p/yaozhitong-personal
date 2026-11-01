@@ -1150,3 +1150,13 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.assistance-answer { display: grid; gap: 1.1rem; min-width: 0; }
+.assistance-intro { color: #466559; line-height: 1.8; }
+.assistance-claim { padding: 1.3rem; background: #f7fbf8; border: 1px solid #d8e8df; border-radius: 18px; min-width: 0; }
+.assistance-claim p { line-height: 1.9; }
+.assistance-sources { padding-left: 1.25rem; margin-bottom: 0; }
+.assistance-sources li { margin-top: .65rem; overflow-wrap: anywhere; }
+.assistance-sources small { display: block; color: #52685d; margin-top: .25rem; }
+.assistance-uncertainties { background: #fff8e9; border-left: 4px solid #d1a350; border-radius: 12px; padding: 1.2rem; }
+.assistance-uncertainties h3 { margin-top: 0; }
+.assistance-uncertainties ul { padding-left: 1.3rem; line-height: 1.8; }

@@ -512,7 +512,7 @@ test("a new mocked demonstration photograph keeps its saved medication and learn
   await page
     .locator(".med-card")
     .filter({ hasText: "流程測試片 5mg" })
-    .getByRole("button", { name: "仿單說明", exact: true })
+    .getByRole("button", { name: "AI 藥品解說", exact: true })
     .click();
   const continueDemo = page.getByRole("link", {
     name: "帶這份說明繼續展示",

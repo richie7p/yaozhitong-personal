@@ -120,7 +120,7 @@ it.each(["available", "held", "missing"] as const)(
     expect(store.data).toEqual(before);
   },
 );
-it.each(["held", "missing"] as const)(
+it.each(["held"] as const)(
   "rejects a known %s source at the public text-job boundary before charging",
   async (state) => {
     const { store, domain, med, post, provider } = await fixture(state);
@@ -133,7 +133,7 @@ it.each(["held", "missing"] as const)(
       );
       expect(response.status).toBe(422);
       expect((await response.json()).code).toBe(
-        state === "held" ? "source_requires_review" : "source_unavailable",
+        "source_requires_review",
       );
     }
     expect(await store.list("usage")).toEqual([]);
@@ -142,6 +142,15 @@ it.each(["held", "missing"] as const)(
     expect(provider).not.toHaveBeenCalled();
   },
 );
+it("admits missing-leaflet explanation and chat normally, while keeping interaction assessment gated", async () => {
+  const { store, domain, med, post, provider } = await fixture("missing");
+  for (const kind of ["bundles", "chat"]) expect((await post(kind, "missing-" + kind)).status).toBe(202);
+  const second = await domain.saveMedication(identity.uid, med);
+  expect((await post("interactions", "missing-interactions", [med.id, second.id])).status).toBe(422);
+  expect(await store.list("jobs")).toHaveLength(2);
+  expect((await store.list("usage")).map((row) => row.count)).toEqual([2, 2]);
+  expect(provider).not.toHaveBeenCalled();
+});
 it("keeps official originals readable when the daily AI quota is exhausted", async () => {
   const { store, get, post } = await fixture();
   const day = DateTime.now().setZone("Asia/Taipei").toISODate()!;

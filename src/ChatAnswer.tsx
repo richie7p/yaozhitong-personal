@@ -5,6 +5,7 @@ import { Button, Notice, Speak } from "./components";
 import { SourceReviewNotice } from "./SourceReviewNotice";
 import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { SourceReadingNotice } from "./SourceReadingNotice";
+import { AssistanceAnswer } from "./AssistanceAnswer";
 
 const answerStatusLabels: Record<GroundedResult["status"], string> = {
   supported: "已附仿單依據",
@@ -18,6 +19,7 @@ export function ChatAnswer({ result }: { result: GroundedResult }) {
   const claimRefs = useRef(new Map<number, HTMLElement>());
   const sourceReading =
     result.status === "insufficient_data" && result.sourceReading;
+  if (result.assistance) return <AssistanceAnswer result={result} />;
   if (
     result.status === "insufficient_data" &&
     result.sourceReview?.reason === "safety_sections_pending"

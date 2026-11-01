@@ -1026,7 +1026,7 @@ export function Medications() {
           </a>
         }
       >
-        藥品、藥袋用法與仿單說明，集中保存在這裡。
+        藥品、藥袋用法與 AI 解說，集中保存在這裡。尚未收錄仿單，也能查找可靠資料。
       </SectionTitle>
       {savedMedication && (
         <Notice>
@@ -1191,7 +1191,7 @@ export function Medications() {
                   onClick={() => explain(m)}
                 >
                   <BookOpen size={16} />
-                  仿單說明
+                  AI 藥品解說
                 </Button>
                 <Button
                   className="ghost"
@@ -1400,12 +1400,20 @@ export function Medications() {
           <p>查閱來源不使用 AI 額度，也不會建立學習或作答紀錄。</p>
           <p>
             {sourceInfo.state === "missing"
-              ? "目前尚未收錄這款藥可確認的官方仿單；請先核對產品資料。"
+              ? "本站尚未收錄這款藥的官方仿單，仍可使用 AI 解說與問答。AI 會優先查找可靠來源，並標示無法確認的部分。"
               : sourceInfo.state === "needs_review"
                 ? "官方仿單仍待整理，可先開啟原文閱讀。"
                 : "可開啟官方仿單原文；產生白話說明及理解測驗會使用 AI 額度。"}
           </p>
           <OfficialSourceLinks sources={sourceInfo.sources} />
+          {sourceInfo.state === "missing" && <div className="row wrap">
+            <Button className="primary" disabled={!!busy} onClick={() => {
+              const med = data?.items.find((m: Medication) => m.id === sourceInfo.medicationId);
+              if (med) void explain(med);
+            }}>使用 AI 解說</Button>
+            <a className="btn secondary" href="#chat">前往 AI 問答</a>
+            <span className="fine">產生解說或回答會使用 AI 額度。</span>
+          </div>}
         </section>
       )}
       {result && (
@@ -1415,7 +1423,7 @@ export function Medications() {
               .filter((m: Medication) => result.medicationIds.includes(m.id))
               .map((m: Medication) => m.name)
               .join("、")}
-            ｜仿單白話說明
+            {result.result.assistance ? "｜AI 藥品解說" : "｜仿單白話說明"}
           </h2>
           {fromDemo && (
             <a
@@ -1531,10 +1539,10 @@ export function Learning() {
   return (
     <>
       <SectionTitle
-        eyebrow={activeRecord ? "仿單閱讀" : "閱讀目錄"}
+        eyebrow={activeRecord ? (activeRecord.result.assistance ? "AI 資料協助" : "仿單閱讀") : "閱讀目錄"}
         title="用藥小教室"
       >
-        選擇藥品閱讀仿單，接續已保存的理解題。
+        閱讀已保存的藥品解說。有完整仿單依據時，也可接續理解題。
       </SectionTitle>
       <div className="row wrap learning-toolbar">
         {recordId ? (
@@ -1543,7 +1551,7 @@ export function Learning() {
           </a>
         ) : (
           <a className="btn secondary" href="#medications">
-            選擇藥品，開啟仿單說明
+            選擇藥品，開啟 AI 解說
           </a>
         )}
         {fromDemo && (
@@ -1584,7 +1592,7 @@ export function Learning() {
       ) : !data?.items.length ? (
         <section className="card">
           <Empty title="還沒有學習內容">
-            在「我的藥品」開啟仿單說明，即可開始理解與練習。
+            在「我的藥品」開啟 AI 藥品解說，即可開始閱讀。
           </Empty>
         </section>
       ) : activeRecord ? (
@@ -1711,7 +1719,7 @@ export function Learning() {
                     <ArrowRight size={16} />
                   </a>
                   <a className="btn ghost" href={recordHref(r.id)}>
-                    閱讀仿單說明
+                    {r.result.assistance ? "閱讀 AI 解說" : "閱讀仿單說明"}
                   </a>
                 </div>
               </article>
@@ -1850,11 +1858,11 @@ export function Chat() {
           : "目前還沒有可提問的藥品。請先新增並確認藥品，再回來勾選提問對象。"
         : !selectedIds.length
           ? "請先在「這次想問的藥品」勾選至少一款藥品，才能送出問題。"
-          : `已選擇 ${selectedIds.length} 款藥品。輸入問題後，按「送出」查閱仿單。`;
+          : `已選擇 ${selectedIds.length} 款藥品。輸入問題後，按「送出」查找資料並回答。`;
   return (
     <>
-      <SectionTitle eyebrow="仿單問答" title="用藥問答">
-        把看不懂的地方說出來，一起回到仿單找依據。
+      <SectionTitle eyebrow="AI 藥品問答" title="用藥問答">
+        把看不懂的地方說出來，一起找可靠資料。沒有收錄仿單，也能提問。
       </SectionTitle>
       {meds.error && <Notice error>無法讀取藥品：{meds.error}</Notice>}
       {(history.data?.identityReviewRequired ||
@@ -1881,7 +1889,7 @@ export function Chat() {
               <MessageCircle size={28} />
             </div>
             <h2>關於用藥，你想了解什麼？</h2>
-            <p>先選擇藥品，再提出問題。回答僅依已收錄的官方仿單。</p>
+            <p>先選擇已核對的藥品，再提出問題。優先依官方仿單；本站未收錄時，查找官方與醫療機構資料，並說明不確定的部分。</p>
           </div>
           {historyItems.map((c: any, index: number) => (
             <details
@@ -2031,7 +2039,7 @@ export function Chat() {
                 disabled={!!busy}
                 value={question}
                 onChange={(e) => draft.update({ question: e.target.value })}
-                placeholder="例如：這款藥的仿單有哪些飲食注意事項？"
+                placeholder="例如：這款藥有哪些注意事項？藥袋上的 QD 是什麼意思？"
               />
               <Button className="primary" type="submit" disabled={!canSubmit}>
                 <Send size={18} />

@@ -125,6 +125,7 @@ export const OutputSchema = z.object({
 });
 export interface Llm {
   json(system: string, content: unknown, vision?: boolean): Promise<unknown>;
+  searchReferences?(drugs: import("../shared/schema.js").Drug[]): Promise<import("../shared/assistance.js").ReferenceSearch>;
 }
 export const GROUNDING_VERSION = "grounded-v18-whole-field-plain-language";
 export const generationPrompt =

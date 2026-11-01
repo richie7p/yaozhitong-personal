@@ -170,7 +170,7 @@ test("reopening pending medication education reuses saved content after reload w
       card.getByRole("button", { name: "排定提醒", exact: true }),
     ).toBeEnabled();
     await expect(card.locator(".usage-box strong")).toHaveText("1 錠");
-    await card.getByRole("button", { name: "仿單說明", exact: true }).click();
+    await card.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
     await expectPendingSource(detail, page);
     await expect(
       detail.getByRole("link", { name: "繼續理解測驗", exact: true }),
@@ -438,7 +438,7 @@ for (const reason of [
         if (view === "medications")
           await page
             .locator(".med-card")
-            .getByRole("button", { name: "仿單說明", exact: true })
+            .getByRole("button", { name: "AI 藥品解說", exact: true })
             .click();
         const notice = page.locator(".source-reading");
         await expect(

@@ -407,7 +407,7 @@ export function App() {
         </main>
         <footer className="site-footer">
           <span>藥智通・用藥手帳</span>
-          <span>以官方仿單為依據，陪你看懂每一份用藥資訊。</span>
+          <span>從官方仿單與可靠醫療資料，陪你看懂用藥資訊。</span>
           <PrivacyLink />{" "}
           <a className="text-link" href="#support">
             問題回報

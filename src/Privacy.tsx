@@ -32,7 +32,7 @@ export function PrivacyPage() {
       <SectionTitle eyebrow="使用前，先了解" title="資料使用與隱私">
         你的藥袋、提問與健康資料如何處理，以及你可以怎麼管理。
       </SectionTitle>
-      <p className="fine">更新日期：2026 年 10 月 23 日</p>
+      <p className="fine">更新日期：2026 年 11 月 2 日</p>
       <section className="card">
         <h2>目前的服務範圍</h2>
         <p>
@@ -41,7 +41,7 @@ export function PrivacyPage() {
             : "註冊與信箱驗證完成後，仍需取得 AI 試用資格；可到帳號與設定查看狀態與用量。"}
         </p>
         <p>
-          系統協助閱讀官方仿單與確認理解，不替你診斷、開藥、決定停藥或調整劑量。沒有可確認來源的內容會顯示資料不足；請保留並對照原本的藥袋與仿單。
+          系統協助閱讀官方仿單與藥品資料。本站尚未收錄仿單時，仍可使用 AI 解說與問答，優先查找官方與醫療機構資料，並標示無法確認的部分。系統不替你診斷、開藥、決定停藥或調整劑量；請保留並對照原本的藥袋與仿單。
         </p>
       </section>
       <section className="card">
@@ -78,6 +78,9 @@ export function PrivacyPage() {
             <strong>{config.aiProviderLabel || config.aiProvider}</strong>。
           </p>
         )}
+        <p>
+          未收錄仿單的資料搜尋只使用藥品主檔中的公開名稱、成分、規格與許可證，不會把帳號、個人健康條件、藥袋用量或你的完整提問送進網路搜尋。搜尋結果會再交由 AI 整理與核對；來源網站資訊仍可能不完整，不能視為已核對的產品仿單。
+        </p>
         <p>
           使用 OpenAI
           的雲端版本會關閉應用程式回應儲存；這不等於供應商完全不保留資料。OpenAI

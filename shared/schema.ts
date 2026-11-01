@@ -182,6 +182,8 @@ export interface Claim {
   sourceMentions?: ProfileReference[];
 }
 export interface GroundedResult {
+  /** Retrieved references / user label assistance is never a reviewed leaflet. */
+  assistance?: import("./assistance.js").Assistance;
   status: "supported" | "not_found" | "insufficient_data" | "refused";
   claims: Claim[];
   chunks: Chunk[];
@@ -306,7 +308,7 @@ export type JobKind =
 export interface AiRequestMetric {
   provider: string;
   model: string;
-  stage: "vision" | "generation" | "verification";
+  stage: "vision" | "generation" | "verification" | "search";
   attempt: number;
   latencyMs: number;
   status?: number;

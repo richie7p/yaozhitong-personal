@@ -114,7 +114,7 @@ export function JobHistory() {
   const names: Record<string, string> = {
     recognition: "藥袋辨識",
     chat: "用藥問答",
-    bundle: "仿單說明與測驗",
+    bundle: "AI 藥品解說",
     interaction: "交互作用查詢",
   };
   const states: Record<string, string> = {

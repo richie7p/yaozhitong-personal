@@ -17,6 +17,7 @@ import { Frequency } from "./medication-presentation";
 import { SourceReviewNotice } from "./SourceReviewNotice";
 import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { SourceReadingNotice } from "./SourceReadingNotice";
+import { AssistanceAnswer } from "./AssistanceAnswer";
 import { sharedQuizPresentation } from "./quiz-presentation";
 
 export const learningStateLabels: Record<LearningProgress["status"], string> = {
@@ -434,6 +435,10 @@ export function Evidence({
   useEffect(() => {
     setProgress(learningProgress(result.quiz, JSON.parse(initialKey)));
   }, [learningId, initialKey, result.quiz]);
+  if (result.assistance) return <>
+    <AssistanceAnswer result={result} />
+    {medications && <EducationSummary medications={medications} />}
+  </>;
   if (
     result.status === "insufficient_data" &&
     result.sourceReview?.reason === "safety_sections_pending"

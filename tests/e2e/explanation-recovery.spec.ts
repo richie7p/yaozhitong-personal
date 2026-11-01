@@ -74,7 +74,7 @@ for (const action of ["edit", "remove"] as const) {
     const card = page.locator(
       `.med-card[data-medication-id="${medication.id}"]`,
     );
-    await card.getByRole("button", { name: "仿單說明", exact: true }).click();
+    await card.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
     await ready;
     if (action === "edit") {
       await card.getByRole("button", { name: "編輯用法", exact: true }).click();
@@ -142,11 +142,11 @@ for (const older of ["success", "failure"] as const) {
     const second = page.locator(
       `.med-card[data-medication-id="${b.medication.id}"]`,
     );
-    await first.getByRole("button", { name: "仿單說明", exact: true }).click();
+    await first.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
     await expect.poll(() => requests).toBe(1);
     await first.getByRole("button", { name: "編輯用法", exact: true }).click();
     await page.getByRole("button", { name: "關閉編輯", exact: true }).click();
-    await second.getByRole("button", { name: "仿單說明", exact: true }).click();
+    await second.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
     await expect.poll(() => requests).toBe(2);
     const oldFinished = page.waitForResponse(
       (r) => new URL(r.url()).pathname === "/api/v1/learning",
@@ -157,7 +157,7 @@ for (const older of ["success", "failure"] as const) {
       page.getByText("正在讀取已保存的仿單說明…", { exact: true }),
     ).toBeVisible();
     await expect(
-      second.getByRole("button", { name: "仿單說明", exact: true }),
+      second.getByRole("button", { name: "AI 藥品解說", exact: true }),
     ).toBeDisabled();
     await expect(page.locator(".medication-detail")).toHaveCount(0);
     await expect(
@@ -204,11 +204,11 @@ test("late accepted bundle progress and completion cannot replace a newer saved-
   const second = page.locator(
     `.med-card[data-medication-id="${b.medication.id}"]`,
   );
-  await first.getByRole("button", { name: "仿單說明", exact: true }).click();
+  await first.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
   await expect.poll(() => acceptedJobId).not.toBe("");
   await first.getByRole("button", { name: "編輯用法", exact: true }).click();
   await page.getByRole("button", { name: "關閉編輯", exact: true }).click();
-  await second.getByRole("button", { name: "仿單說明", exact: true }).click();
+  await second.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
   await expect.poll(() => reads).toBe(2);
   const oldPoll = page.waitForResponse(
     (r) => new URL(r.url()).pathname === "/api/v1/jobs/" + acceptedJobId,
@@ -219,7 +219,7 @@ test("late accepted bundle progress and completion cannot replace a newer saved-
     page.getByText("正在讀取已保存的仿單說明…", { exact: true }),
   ).toBeVisible();
   await expect(
-    second.getByRole("button", { name: "仿單說明", exact: true }),
+    second.getByRole("button", { name: "AI 藥品解說", exact: true }),
   ).toBeDisabled();
   await expect(page.locator(".medication-detail")).toHaveCount(0);
   releaseNew();
