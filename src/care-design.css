@@ -1063,6 +1063,10 @@
   .public-login .login-story h1 br {
     display: block;
   }
+  .public-login.auth-register .login-story h1,
+  .public-login.auth-reset .login-story h1 {
+    display: none;
+  }
   .public-login .login-story p {
     font-size: 12px;
     margin: 0;

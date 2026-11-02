@@ -497,7 +497,7 @@ function Login({ adminEntry = false }: { adminEntry?: boolean }) {
   }
   return (
     <div
-      className={"login-page public-login" + (adminEntry ? " admin-login" : "")}
+      className={"login-page public-login auth-" + mode + (adminEntry ? " admin-login" : "")}
     >
       <section className="login-story">
         <a className="brand" href="/">

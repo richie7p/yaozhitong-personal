@@ -46,6 +46,21 @@ const normalized = (s: string) =>
 export function relevantReferenceText(text: string, drugs: Drug[]) {
   return referenceTerms(drugs).some((term) => normalized(text).includes(term));
 }
+/** Reject explicitly incompatible source headings; body warnings may mention other routes. */
+export function referenceFormCompatible(heading: string, drug: Drug) {
+  const routes = [
+    ["vaginal", /陰道|vaginal/i],
+    ["ophthalmic", /眼用|眼藥|點眼|ophthalmic|eye drops/i],
+    ["otic", /耳用|耳藥|滴耳|otic|ear drops/i],
+    ["inhaled", /吸入|inhal/i],
+    ["injection", /注射|injection|injectable/i],
+    ["topical", /乳膏|軟膏|外用|皮膚|cream|ointment|topical|cutaneous/i],
+    ["oral", /口服|膠囊|錠|oral|capsule|tablet|troche|lozenge/i],
+  ] as const;
+  const expected = routes.find(([, re]) => re.test(drug.form || ""))?.[0];
+  const stated = routes.find(([, re]) => re.test(heading))?.[0];
+  return !expected || !stated || expected === stated;
+}
 const hospitalHost = (host: string) =>
   [
     "ntuh.gov.tw",

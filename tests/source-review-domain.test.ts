@@ -212,12 +212,18 @@ it.each(["missing", "draft", "retired", "wrong-license"])(
     const saved = await store.get("jobs", job.id);
     expect(saved).toMatchObject({
       status: "succeeded",
-      result: { status: "insufficient_data", sourceVersions: {} },
+      result: { status: "supported", sourceVersions: {} },
     });
     expect(saved?.result.sourceReview).toBeUndefined();
     expect(saved?.result.assistance.searchState).toBe("unavailable");
     expect(saved?.result.assistance.sources).toEqual([]);
-    expect(json).toHaveBeenCalledTimes(1);
+    expect(saved?.result.assistance.claims.length).toBeGreaterThan(0);
+    expect(
+      saved?.result.assistance.claims.every(
+        (c: any) => c.basis === "user_label" && c.sourceIds.length === 0,
+      ),
+    ).toBe(true);
+    expect(json).not.toHaveBeenCalled();
   },
 );
 
@@ -408,37 +414,67 @@ it("reopens a saved chat with ordinary omitted-object treatment context while wi
   const original = (await store.get<any>("chats", job.id))!;
   const saved = (await store.get<Job>("jobs", job.id))!;
   const actualClaim = JSON.parse(
-    readFileSync(new URL("./fixtures/source-action-context-saved-chat.json", import.meta.url), "utf8"),
+    readFileSync(
+      new URL(
+        "./fixtures/source-action-context-saved-chat.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
   );
   const valid = {
     ...original,
-    result: { ...original.result, sourceReview: undefined, claims: [actualClaim], quiz: [] },
+    result: {
+      ...original.result,
+      sourceReview: undefined,
+      claims: [actualClaim],
+      quiz: [],
+    },
   };
   const unsafe = {
     ...valid,
     id: "synthetic-unsafe-chat",
     result: {
       ...valid.result,
-      claims: [{
-        text: "使用時若嗜睡則勿駕車。",
-        category: "warning",
-        kind: "source_plain_language",
-        citations: [{ chunkId: "synthetic-prohibition", quote: "可能引起嗜睡，勿駕車。" }],
-      }],
+      claims: [
+        {
+          text: "使用時若嗜睡則勿駕車。",
+          category: "warning",
+          kind: "source_plain_language",
+          citations: [
+            {
+              chunkId: "synthetic-prohibition",
+              quote: "可能引起嗜睡，勿駕車。",
+            },
+          ],
+        },
+      ],
     },
   };
-  const obsolete = { ...valid, id: "synthetic-obsolete-chat", groundingVersion: "obsolete-synthetic-version" };
+  const obsolete = {
+    ...valid,
+    id: "synthetic-obsolete-chat",
+    groundingVersion: "obsolete-synthetic-version",
+  };
   await store.set("chats", valid.id, valid);
   await store.set("chats", unsafe.id, unsafe);
   await store.set("chats", obsolete.id, obsolete);
   const before = structuredClone(store.data);
   expect(await d.learningCurrent(uid, valid)).toBe(true);
   expect(await d.chatHistory(uid)).toEqual({
-    items: [valid], hiddenUnsafeCount: 2, identityReviewRequired: true,
+    items: [valid],
+    hiddenUnsafeCount: 2,
+    identityReviewRequired: true,
   });
-  expect((await d.publicJob(uid, { ...saved, result: valid.result })).result).toEqual(valid.result);
-  expect(await d.publicJob(uid, { ...saved, id: unsafe.id, result: unsafe.result })).toMatchObject({
-    sourceUpdateRequired: true, error: { code: "source_updated" }, result: { claims: [], quiz: [] },
+  expect(
+    (await d.publicJob(uid, { ...saved, result: valid.result })).result,
+  ).toEqual(valid.result);
+  expect(
+    await d.publicJob(uid, { ...saved, id: unsafe.id, result: unsafe.result }),
+  ).toMatchObject({
+    sourceUpdateRequired: true,
+    error: { code: "source_updated" },
+    result: { claims: [], quiz: [] },
   });
   expect(store.data).toEqual(before);
   expect(json).not.toHaveBeenCalled();

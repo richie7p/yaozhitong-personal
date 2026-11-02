@@ -4,7 +4,10 @@ import {
   type ReferenceSearch,
 } from "../shared/assistance.js";
 import type { Drug } from "../shared/schema.js";
-import { relevantReferenceText } from "./reference-search.js";
+import {
+  relevantReferenceText,
+  referenceFormCompatible,
+} from "./reference-search.js";
 
 const maxBytes = 1_000_000;
 type HtmlNode = DefaultTreeAdapterMap["node"];
@@ -156,7 +159,15 @@ export async function readReferenceContent(
         // Omit an oversized document in full, never truncate a warning mid-condition.
         if (page.text.length < 100 || page.text.length > 24000) return null;
         readable++;
-        if (!relevantReferenceText(page.text, drugs)) return null;
+        const heading = page.text.split("\n").find((line) => line.trim()) || "";
+        if (
+          !drugs.some(
+            (drug) =>
+              relevantReferenceText(page.text, [drug]) &&
+              referenceFormCompatible(heading, drug),
+          )
+        )
+          return null;
         return { source: { ...source, url: page.url }, text: page.text };
       } catch {
         return null;

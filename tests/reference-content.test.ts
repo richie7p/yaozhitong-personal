@@ -130,3 +130,41 @@ it("keeps no-source outcomes without making speculative requests", async () => {
   ).toBe("not_found");
   expect(fetcher).not.toHaveBeenCalled();
 });
+
+it.each(["Clotrimazole Vaginal", "Clotrimazole Oral Troches"])(
+  "does not use a different formulation's original for a skin cream: %s",
+  async (heading) => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          `<main><h1>${heading}</h1><p>${"CLOTRIMAZOLE synthetic route-specific source. ".repeat(5)}</p></main>`,
+          { headers: { "content-type": "text/html" } },
+        ),
+      );
+    const result = await readReferenceContent(
+      search,
+      [{ ...drug, ingredients: ["CLOTRIMAZOLE"], form: "乳膏" }],
+      { fetcher },
+    );
+    expect(result.state).toBe("not_found");
+    expect(result.passages).toEqual([]);
+  },
+);
+it("retains a topical original even when its body warns against oral or vaginal use", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(
+      new Response(
+        `<main><h1>Clotrimazole Topical</h1><p>${"CLOTRIMAZOLE synthetic source. ".repeat(5)}Do not use orally or vaginally.</p></main>`,
+        { headers: { "content-type": "text/html" } },
+      ),
+    );
+  const result = await readReferenceContent(
+    search,
+    [{ ...drug, ingredients: ["CLOTRIMAZOLE"], form: "乳膏" }],
+    { fetcher },
+  );
+  expect(result.state).toBe("found");
+  expect(result.passages[0].text).toContain("Do not use orally or vaginally");
+});

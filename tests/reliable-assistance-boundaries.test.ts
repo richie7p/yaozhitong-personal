@@ -144,3 +144,88 @@ it("does not infer a schedule from an unknown abbreviation or turn free-text not
   expect(text).toContain("XYZ");
   expect(result.assistance?.uncertainties.join(" ")).toContain("縮寫");
 });
+
+it("allows retry after a transient search failure and warns against personal dosing decisions without sources", async () => {
+  const result = await assisted(
+    {
+      json: vi.fn(),
+      searchReferences: async () => ({
+        state: "unavailable",
+        sources: [],
+        passages: [],
+      }),
+    },
+    "我可以自行停藥或加倍吃嗎？",
+    [med],
+    [drug],
+    [null],
+  );
+  expect(Date.parse(result.assistance!.expiresAt)).toBeLessThanOrEqual(
+    Date.now() + 300000,
+  );
+  expect(result.assistance!.uncertainties.join(" ")).toContain(
+    "不能用來決定自行停藥",
+  );
+  expect(result.assistance!.claims.every((c) => c.basis === "user_label")).toBe(
+    true,
+  );
+});
+it("omits private notes and requires formulation checks in both generation and review for a plain question", async () => {
+  const quote = "SYNTHETIC general information for the specified formulation.";
+  const json = vi
+    .fn()
+    .mockResolvedValueOnce({
+      status: "answered",
+      claims: [
+        {
+          text: "合成一般資訊",
+          basis: "reference",
+          sourceIds: [source.id],
+          evidenceQuotes: [{ sourceId: source.id, quote }],
+        },
+      ],
+    })
+    .mockResolvedValueOnce({ decisions: [{ id: "0", supported: true }] });
+  await assisted(
+    {
+      json,
+      searchReferences: async () => ({
+        state: "found",
+        sources: [source],
+        passages: [{ text: quote, sourceIds: [source.id] }],
+      }),
+    },
+    "這個藥的用途與注意事項？",
+    [{ ...med, instructions: "PRIVATE-NOTE-SENTINEL" }],
+    [drug],
+    [null],
+  );
+  expect(json).toHaveBeenCalledTimes(2);
+  expect(JSON.stringify(json.mock.calls)).not.toContain(
+    "PRIVATE-NOTE-SENTINEL",
+  );
+  for (const [prompt] of json.mock.calls)
+    expect(prompt).toContain("必須核對 products 的劑型 form");
+});
+it("does not cache malformed generation as a valid day-long result", async () => {
+  const result = await assisted(
+    {
+      json: vi.fn().mockResolvedValue({ invalid: true }),
+      searchReferences: async () => ({
+        state: "found",
+        sources: [source],
+        passages: [
+          { text: "SYNTHETIC original source text.", sourceIds: [source.id] },
+        ],
+      }),
+    },
+    "用途？",
+    [med],
+    [drug],
+    [null],
+  );
+  expect(result.status).toBe("insufficient_data");
+  expect(Date.parse(result.assistance!.expiresAt)).toBeLessThanOrEqual(
+    Date.now() + 300000,
+  );
+});

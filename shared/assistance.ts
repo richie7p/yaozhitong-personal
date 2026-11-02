@@ -1,5 +1,5 @@
 /** Separate from the site's reviewed, versioned leaflet evidence. */
-export const ASSISTANCE_VERSION = "reliable-reference-v5";
+export const ASSISTANCE_VERSION = "reliable-reference-v6";
 export const REFERENCE_DOMAINS = [
   "fda.gov.tw",
   "mohw.gov.tw",
