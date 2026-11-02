@@ -168,3 +168,21 @@ it("retains a topical original even when its body warns against oral or vaginal 
   expect(result.state).toBe("found");
   expect(result.passages[0].text).toContain("Do not use orally or vaginally");
 });
+it.each([
+  ["SYNTHETIC Oral Antibiotic", "膠囊"],
+  ["SYNTHETIC Topical Antibiotic", "乳膏"],
+])(
+  "does not confuse antibiotic in a source heading with ear use: %s",
+  async (heading, form) => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(`<main><h1>${heading}</h1><p>${literal}</p></main>`, {
+        headers: { "content-type": "text/html" },
+      }),
+    );
+    const result = await readReferenceContent(search, [{ ...drug, form }], {
+      fetcher,
+    });
+    expect(result.state).toBe("found");
+    expect(result.passages[0].text).toContain(literal);
+  },
+);
