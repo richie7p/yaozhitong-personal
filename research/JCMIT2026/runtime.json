@@ -1,0 +1,118 @@
+{
+  "node": "22.23.2",
+  "package_lock_sha256": "f8d9890d6798bfed048dc67ad02043574685cc691a09cae6f3edac3008c5f66e",
+  "installed_direct_dependencies": {
+    "@google-cloud/storage": {
+      "version": "8.1.0",
+      "package_json_sha256": "d3a5d76e47cee80b6343de524562c1606eef987f38bc5ab16887ead8e5c2334c"
+    },
+    "@google-cloud/tasks": {
+      "version": "6.3.0",
+      "package_json_sha256": "e62e034393f6a7f4b7434f0ece2faafc91b5b1f014089591fc09ec242dc5d511"
+    },
+    "@hono/node-server": {
+      "version": "1.19.17",
+      "package_json_sha256": "f0121ca4b53d5df63e76f164188cfd1878a345ebcb6369ab19fc1596a12cc49d"
+    },
+    "@playwright/test": {
+      "version": "1.63.0",
+      "package_json_sha256": "5587f932b8979b6889654b60e3c28aeb7ca0abbac00eec8c176c939a16149536"
+    },
+    "@types/luxon": {
+      "version": "3.7.5",
+      "package_json_sha256": "6a0b3bc56d52bf16ae37f34c25df8ba250a84c9f1eb6d3860e49df8ccf5dddf8"
+    },
+    "@types/node": {
+      "version": "22.20.1",
+      "package_json_sha256": "1e6d3bbbc5082745123d236b38dce0eacdab987d4ac9e57e299e55f780c170de"
+    },
+    "@types/react": {
+      "version": "19.2.18",
+      "package_json_sha256": "e6a4794d4b2bd136b02c33752667cc651110b82129d643a7cd238376a99607a9"
+    },
+    "@types/react-dom": {
+      "version": "19.2.7",
+      "package_json_sha256": "1948afa09f9a616d30593046586b4b88def90f09de7515fc2c10d37fea2ae9c1"
+    },
+    "@vitejs/plugin-react": {
+      "version": "5.2.0",
+      "package_json_sha256": "162dae2eb246170739d7899d2ce1715a3e17f775fcd75a674da6be6f681225d6"
+    },
+    "concurrently": {
+      "version": "9.2.5",
+      "package_json_sha256": "73d580839fea251b55383d4c441afcf735095ea0f5580050ade170c164f169c7"
+    },
+    "esbuild": {
+      "version": "0.25.12",
+      "package_json_sha256": "cb7d5b1fe478f8cbaae566a86031b6fdf5f7d444354f35d1cb3cba9adf6d2935"
+    },
+    "fflate": {
+      "version": "0.8.3",
+      "package_json_sha256": "5922d8150b307bc0e4e441491c779c45379e9913d348848fca8d5cf02db4d134"
+    },
+    "firebase": {
+      "version": "12.19.0",
+      "package_json_sha256": "c66af3bbc6aa957fdacb9a45d3d7e412b448ff74694e069cc8d1f7d8841b555f"
+    },
+    "firebase-admin": {
+      "version": "13.10.0",
+      "package_json_sha256": "eeea23150ca753f4d3b82e4bd1cfd194b8b4771d6a008be9ff8ae98ff669e490"
+    },
+    "google-auth-library": {
+      "version": "10.9.1",
+      "package_json_sha256": "d502e0b8f9b83f97f5f78aaee9ba5e7cd7067a81d2f8f0215c47b2877814a9c9"
+    },
+    "hono": {
+      "version": "4.13.11",
+      "package_json_sha256": "2988bf74d25c4434c75dbb4e59036431b33d2a2d6acfa5e8dd313a1f3c052604"
+    },
+    "lucide-react": {
+      "version": "0.468.0",
+      "package_json_sha256": "609e78dffe97aab720c105246eca516f0aaac1de60725e53c0f5abb908b08320"
+    },
+    "luxon": {
+      "version": "3.7.2",
+      "package_json_sha256": "bf8c55f4072d01467c1c0c49807722f79577680ac1ff7fa7c030a83716d3db4f"
+    },
+    "pdfjs-dist": {
+      "version": "6.2.108",
+      "package_json_sha256": "d7918934bf0ef5b18beed1bd2d9b49a04447de445c171305a2de082ccee369ed"
+    },
+    "prettier": {
+      "version": "3.9.6",
+      "package_json_sha256": "b69988ff94407ccd6f9e1e66d92f54da25fdc5d14c219902fdb1ed17702f886b"
+    },
+    "react": {
+      "version": "19.2.8",
+      "package_json_sha256": "e40c3ed9b633c9ecf188e09a4be309780a1ea0a9c068278a30ff6a27e7b2dbb6"
+    },
+    "react-dom": {
+      "version": "19.2.8",
+      "package_json_sha256": "7c82f0967114d4b5d38b1f07e543af87c9919e8d3243f9604004819319cb2200"
+    },
+    "sharp": {
+      "version": "0.35.5",
+      "package_json_sha256": "ad4a2535d72eb638053a38867b1abf43c328cd1c1dbae5cf4172d498365a8b97"
+    },
+    "tsx": {
+      "version": "4.23.13",
+      "package_json_sha256": "3ace2493a0acd26fc72a8433a38113ee04d5a1976910a3f40815f9e779d5c426"
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "package_json_sha256": "822ef7ca6452205657b6288b066481ecf508bfbf43455d715cf7d3ec457561e6"
+    },
+    "vite": {
+      "version": "7.3.7",
+      "package_json_sha256": "aae1f593c0e6f320989b60af6e90f8ed4ea5137e5a0b9db663f9b0088333eb3c"
+    },
+    "vitest": {
+      "version": "4.1.11",
+      "package_json_sha256": "a28126d97bcaf567da5bed69443b7f3bcd9a7a8c38c8b66e554686b6bb2c10e0"
+    },
+    "zod": {
+      "version": "4.5.4",
+      "package_json_sha256": "5a1983857f982cc7d69336f32053ac7e38780de313d9e18ca3f7b9b7f2f94298"
+    }
+  }
+}

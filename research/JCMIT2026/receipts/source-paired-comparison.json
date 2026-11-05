@@ -1,0 +1,1822 @@
+{
+  "at_utc": "2026-10-27T16:28:41.482Z",
+  "controlCommit": "f6f8920a14a5a4c83243220faf0df4770729a189",
+  "releaseCommit": "2661ec563eb3ec6a8d2149805020fe822e4c972a",
+  "corpusSha256": "abe30508884145a43dd135059ef78a8f947defc0abc7a2e1f656c1f33dee98c5",
+  "total": 3710,
+  "beforeReadable": 2982,
+  "afterReadable": 2989,
+  "recovered": [
+    "衛部藥製字第061879號",
+    "衛部藥製字第059755號",
+    "衛部藥製字第058974號",
+    "衛部藥輸字第027798號",
+    "衛部藥製字第061537號",
+    "衛部藥製字第061842號",
+    "衛部藥製字第061187號"
+  ],
+  "regressions": [],
+  "changedOldReadable": [
+    {
+      "licenseNo": "衛署藥輸字第024708號",
+      "quoteArrayExactlyEqual": false,
+      "concatenatedQuotesExactlyEqual": true,
+      "before": [
+        {
+          "section": null,
+          "quoteSha256": "db9d54db318c91f20975110b4d67114c1512880fb4526458983388adf12713b1",
+          "citationsSha256": "1b3d1e3b69e13f803453e31ae7b170e3afade0d52065d834eb204bb155959989",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "01c43f31cbb2137c6e0dd503d6b69fcf12fc5582f8774a535970c88a837e393a",
+          "citationsSha256": "e2b311ecf12116bde8cb2df8dc1b47a86b5052e38ee88e62465386d4ab228b26",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "賦形劑",
+          "quoteSha256": "e292cccdbbcbd1a9f9b08668290f15985aea18cf6617a47226027577f5f52a26",
+          "citationsSha256": "beb0e46631d003562b06e62abc6cdf0bb985a5e7e97952279b2e4c57174c2a50",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "賦形劑",
+          "quoteSha256": "6a1354410d4ee7a11f223b820e2174271ff5d684239f24da96df192da30019ea",
+          "citationsSha256": "f3df6d36fbcda17e4f8aa6e69f8b49acfc462f1a11e35a696ba3618fcf70a507",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "賦形劑",
+          "quoteSha256": "836fe0ac6ab87c05fdbff26444dceec0ea0b30dc85209c9022a4605e96f6b40c",
+          "citationsSha256": "38634173aa6479a91fde2ad919c7f23298a79c2e51c039a90dd68902813759d8",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "適應症",
+          "quoteSha256": "3f852d185ab3d5e37c4fa1996881a93c6559a083df13c18364e4544c74c5337b",
+          "citationsSha256": "f787308ec4f39e118b95055f28cbecd56766cf7103acbcdeb6c32edd6293d72e",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "用法及用量",
+          "quoteSha256": "8641ac22d37c69ca5e2d10cfe8584879dd943692ad2903a8578d9e29d55af5c9",
+          "citationsSha256": "5cc4bd340d0ad4a6129494e7253fee30b6ab86ef787c3b8769a1ec5c699eefee",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "禁忌",
+          "quoteSha256": "309711da0457f865b44f396b99185f4f07cc6183547b1462113ddbbbd01155bc",
+          "citationsSha256": "2b2554f236aa84ea4ed7f4e822708ccec6e0cd62fa56d2a4eb7445df7031048c",
+          "originalFieldId": "field-30e2b0ae303bc8a04645",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "警語及注意事項",
+          "quoteSha256": "1c6ba5fa3697ff4c5acfc66ec58e92cceee62796b4101bde6b752ca2dc784443",
+          "citationsSha256": "8ad18c9dd31e662f9751960481df88c702668238e105086ea1aac84c960e3de3",
+          "originalFieldId": "field-a85a16a18530d6151db1",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "特殊族群注意事項",
+          "quoteSha256": "daf36e72e64d4a5f35ff55c4960f9c91d38b11b0d79a7521e8adb775aa56e36d",
+          "citationsSha256": "15e50370ce39b6d3c29f8e62143293110b889b52ce7bcdc57d9b3d06347593b3",
+          "originalFieldId": "field-a3c209889b5a0ad8b5cc",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "交互作用",
+          "quoteSha256": "e0ed911fd3da527c913fbcd9ee49a22def29b09679ce9df556b9d939d9e378f4",
+          "citationsSha256": "20566c50e4df9bd45d3530c09383b53bcdfd5e03dbd18573dc92153be73ab2be",
+          "originalFieldId": "field-b68625781444fdfdc63c",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "副作用/不良反應",
+          "quoteSha256": "20a7321ce38a2c11de16f637720b5c662925ba729ad0f972aa1341ba449a40db",
+          "citationsSha256": "88150b232ae7f538e4d4ded853838e6560e7450b0b9b084afe2b1a6f3651f240",
+          "originalFieldId": "field-6450fdd3a0f536e4b8a5",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "過量",
+          "quoteSha256": "711ce7cbb692783f6eb81993045bb8e7f6dcf0e1d49c18661b7f935eda1b0e07",
+          "citationsSha256": "3274a9da89947dc709a3d1b14ff19260279c7a388e9bfd8f1bb7c9897b704ae4",
+          "originalFieldId": "field-56471cf6653fbfd366e4",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "99de641bab94cd13119b1651ea5ba0f3314cde0b6b7da392657c83525be5b219",
+          "citationsSha256": "06c766cc5f069b290d3afd791da58948f11cd33bcf387b71f2062572430f23c6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "321421b061a842aa0d502af02c439d73bd60f38f949184488ddba6473fbfbd35",
+          "citationsSha256": "a53d33918c43613e69c4d74ae39a57574960d365e707333947fce883afde9e82",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a9ce4eaa92ab183b8782b8f837ec2dd633093813282d61206f49e19f40f8e0b5",
+          "citationsSha256": "fade50585f8001fc729667c1521e795cd2da49a5a896d42ac57f7141a1bc33a1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "dfd718ba2cd135b72dcabbea6a141e5adccd12dc83bc3332eeeaafe968e25e2d",
+          "citationsSha256": "e6c0cc5f438ece840b09303125189d5ca6590ee3bc80c6709b04a4d990c1dc07",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "02252b9623bc930c597c616ffdbb9888623f3b72ed66140c869e457e85f696dc",
+          "citationsSha256": "cc460b86b404849ba4b058501f9280fae84671546b03d86e60972fbb8303ede9",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "0dd497fafd0d7c3a0f846f8591862324f54625af3b0ba246123639d3b0c14616",
+          "citationsSha256": "d4c69793a94ec7ac93a4242dff3a9967562d5c6baafab5d9dc1defea49a1d724",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a6c04c8e59e7a89d9b678afe8a9acc6ba170732f4b5035a0ca41d1b13392fa23",
+          "citationsSha256": "b2c675171f6aa301d7cca9c8bf2eae8c6b22f7f9dd398154914a07de614e7325",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "fb0b3bfa8ebdd4743d158c3b7ce0a6b7a0ede5e1a03623c7af153c14a32f8dc1",
+          "citationsSha256": "2015a00fb2d0fda65a79b7c074dec1baf761398f3c3f6a9451f96005492b447c",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "09c674a5062c78e5e759fd31f87a2f893de1e6f3eb0b1801edd002822674b739",
+          "citationsSha256": "c4ff0782259a2cd7ae68d9817322b22211ebd588676409de4a215f195afcbf50",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "f94fb249e2c471d25ff8bebc3249bca5626a1500294d140b80fedd193e66160e",
+          "citationsSha256": "33b2b273e924d721102a0f8b0dd38356d55552f591312209120b77db94ee2da3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "68c882f9724f705cd074f3c6db6637669a3193209f49c745d8fc2b6ebb724d6b",
+          "citationsSha256": "1ad7e233d334f887398823c031a7896a979d247999521cb3895b679a4e13da75",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "6382819e0d7d064eb51314fa9727735f645b1b252441b8447469e0a516736be7",
+          "citationsSha256": "e00f932ff557027fd2959f98aba58fd631b39334f0cdcfbc555bc6be08bb82b3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "343bde7dc4bf80b55e5fec31b99ec648492158c6ab041c38fba6d597144b3db2",
+          "citationsSha256": "045f14c42b3eb9b57a0356b30f636d6bee4c60a4b0bae97c51ec2f22fddb6a06",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "e45601b21c7987fd8d36dccb625e1a69f436e8bd085313afacfb9310af85d20b",
+          "citationsSha256": "1acee4c15245ef2cc56fe185639acf11d4cdf3f7f107bf5e26502d8dd3021c96",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dcb531ba571e4cab274d9202a9d7dca7d3b835e7d5df87814cd23f55b16fa456",
+          "citationsSha256": "c74005b9cd7b9e4a5956f3b963fc08888be7aae5ae9c5b28237cdf39b3bb31ae",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "3119d05e968fd21f63f5fc920969562c03c43ec6c87449a614de9278486155dc",
+          "citationsSha256": "f25ccbdad600bb00914d9e642991041e682efbd4f7eef90cdef487900eb784d6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dd8621b5e03c9abcd3c1eaaf74c0c3a6a61827f84c5ee5b6e2522807ee66b440",
+          "citationsSha256": "ebe8df63d881a2c44d7d831d53ed2413a1890d45f57b1c5326cb55969dcf4c74",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "臨床試驗資料",
+          "quoteSha256": "5d570855849265c6b29be6fdce3a173fb3a49af8b11ee61304e5a869e27ed5b9",
+          "citationsSha256": "945e8f9b40f6a57a555198d270f2d28be8dc6ab3ced82513d8fe0a19eff110e9",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "包裝及儲存",
+          "quoteSha256": "b8f7ae1a324904fd843d465771675c01fef5a5fcd69dc9be12a5eeb906988c5e",
+          "citationsSha256": "1e97551d886135f015fddd7e98dc74c9797cff2191a087300926ea0facb3addc",
+          "originalFieldId": "field-7d67a2b6aab56feaadc8",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "病人使用須知",
+          "quoteSha256": "cf9e2ed3350bf1e7b9e15707b06070d85972e17587da3a7ce6feb1adffac9014",
+          "citationsSha256": "2e68597863aa4061c5d2f3a419a815799a735e6264722665e3f6da783648aec3",
+          "originalFieldId": "field-98b22eaf514ffa4e3e52",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "7de79f8533974294a96e9d84a0ddf2dfa1997c4f4ad14702eed6cacc6fe3052c",
+          "citationsSha256": "74144b96ed041c2c0d30747d50388f9f55039a16913919509fdaffa13078d072",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "5bac2604fb4eefc0c865e11feb69cf880e8fb81395169bb1cc503b3a295e5314",
+          "citationsSha256": "87a4a21a474ea985fc85eecf7ef3174e14b505d62e3ad1341e2a55c5885891a1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        }
+      ],
+      "after": [
+        {
+          "section": null,
+          "quoteSha256": "db9d54db318c91f20975110b4d67114c1512880fb4526458983388adf12713b1",
+          "citationsSha256": "1b3d1e3b69e13f803453e31ae7b170e3afade0d52065d834eb204bb155959989",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "653bcc76da8a7b886088495e3a17035c87674add005a81ba1a22f3e0548ab261",
+          "citationsSha256": "14406e6e0280cb49b10952368ec11c180bf9cdaa3148249c4ac32d496a6a59e0",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "5c1043fce3bdddaf9babfc2063fd2058d5b3c9feccb70f66fc79307f632420c0",
+          "citationsSha256": "bca9a43465b4368a1a4a770e598828a4f6694ca4cc8a9e3dbbdbd78d45fee262",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "6a1354410d4ee7a11f223b820e2174271ff5d684239f24da96df192da30019ea",
+          "citationsSha256": "f3df6d36fbcda17e4f8aa6e69f8b49acfc462f1a11e35a696ba3618fcf70a507",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "836fe0ac6ab87c05fdbff26444dceec0ea0b30dc85209c9022a4605e96f6b40c",
+          "citationsSha256": "38634173aa6479a91fde2ad919c7f23298a79c2e51c039a90dd68902813759d8",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "適應症",
+          "quoteSha256": "3f852d185ab3d5e37c4fa1996881a93c6559a083df13c18364e4544c74c5337b",
+          "citationsSha256": "f787308ec4f39e118b95055f28cbecd56766cf7103acbcdeb6c32edd6293d72e",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "用法及用量",
+          "quoteSha256": "8641ac22d37c69ca5e2d10cfe8584879dd943692ad2903a8578d9e29d55af5c9",
+          "citationsSha256": "5cc4bd340d0ad4a6129494e7253fee30b6ab86ef787c3b8769a1ec5c699eefee",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "禁忌",
+          "quoteSha256": "309711da0457f865b44f396b99185f4f07cc6183547b1462113ddbbbd01155bc",
+          "citationsSha256": "2b2554f236aa84ea4ed7f4e822708ccec6e0cd62fa56d2a4eb7445df7031048c",
+          "originalFieldId": "field-30e2b0ae303bc8a04645",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "警語及注意事項",
+          "quoteSha256": "1c6ba5fa3697ff4c5acfc66ec58e92cceee62796b4101bde6b752ca2dc784443",
+          "citationsSha256": "8ad18c9dd31e662f9751960481df88c702668238e105086ea1aac84c960e3de3",
+          "originalFieldId": "field-a85a16a18530d6151db1",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "特殊族群注意事項",
+          "quoteSha256": "daf36e72e64d4a5f35ff55c4960f9c91d38b11b0d79a7521e8adb775aa56e36d",
+          "citationsSha256": "15e50370ce39b6d3c29f8e62143293110b889b52ce7bcdc57d9b3d06347593b3",
+          "originalFieldId": "field-a3c209889b5a0ad8b5cc",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "交互作用",
+          "quoteSha256": "e0ed911fd3da527c913fbcd9ee49a22def29b09679ce9df556b9d939d9e378f4",
+          "citationsSha256": "20566c50e4df9bd45d3530c09383b53bcdfd5e03dbd18573dc92153be73ab2be",
+          "originalFieldId": "field-b68625781444fdfdc63c",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "副作用/不良反應",
+          "quoteSha256": "20a7321ce38a2c11de16f637720b5c662925ba729ad0f972aa1341ba449a40db",
+          "citationsSha256": "88150b232ae7f538e4d4ded853838e6560e7450b0b9b084afe2b1a6f3651f240",
+          "originalFieldId": "field-6450fdd3a0f536e4b8a5",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "過量",
+          "quoteSha256": "711ce7cbb692783f6eb81993045bb8e7f6dcf0e1d49c18661b7f935eda1b0e07",
+          "citationsSha256": "3274a9da89947dc709a3d1b14ff19260279c7a388e9bfd8f1bb7c9897b704ae4",
+          "originalFieldId": "field-56471cf6653fbfd366e4",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "99de641bab94cd13119b1651ea5ba0f3314cde0b6b7da392657c83525be5b219",
+          "citationsSha256": "06c766cc5f069b290d3afd791da58948f11cd33bcf387b71f2062572430f23c6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "321421b061a842aa0d502af02c439d73bd60f38f949184488ddba6473fbfbd35",
+          "citationsSha256": "a53d33918c43613e69c4d74ae39a57574960d365e707333947fce883afde9e82",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a9ce4eaa92ab183b8782b8f837ec2dd633093813282d61206f49e19f40f8e0b5",
+          "citationsSha256": "fade50585f8001fc729667c1521e795cd2da49a5a896d42ac57f7141a1bc33a1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "dfd718ba2cd135b72dcabbea6a141e5adccd12dc83bc3332eeeaafe968e25e2d",
+          "citationsSha256": "e6c0cc5f438ece840b09303125189d5ca6590ee3bc80c6709b04a4d990c1dc07",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "02252b9623bc930c597c616ffdbb9888623f3b72ed66140c869e457e85f696dc",
+          "citationsSha256": "cc460b86b404849ba4b058501f9280fae84671546b03d86e60972fbb8303ede9",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "0dd497fafd0d7c3a0f846f8591862324f54625af3b0ba246123639d3b0c14616",
+          "citationsSha256": "d4c69793a94ec7ac93a4242dff3a9967562d5c6baafab5d9dc1defea49a1d724",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a6c04c8e59e7a89d9b678afe8a9acc6ba170732f4b5035a0ca41d1b13392fa23",
+          "citationsSha256": "b2c675171f6aa301d7cca9c8bf2eae8c6b22f7f9dd398154914a07de614e7325",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "fb0b3bfa8ebdd4743d158c3b7ce0a6b7a0ede5e1a03623c7af153c14a32f8dc1",
+          "citationsSha256": "2015a00fb2d0fda65a79b7c074dec1baf761398f3c3f6a9451f96005492b447c",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "09c674a5062c78e5e759fd31f87a2f893de1e6f3eb0b1801edd002822674b739",
+          "citationsSha256": "c4ff0782259a2cd7ae68d9817322b22211ebd588676409de4a215f195afcbf50",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "f94fb249e2c471d25ff8bebc3249bca5626a1500294d140b80fedd193e66160e",
+          "citationsSha256": "33b2b273e924d721102a0f8b0dd38356d55552f591312209120b77db94ee2da3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "68c882f9724f705cd074f3c6db6637669a3193209f49c745d8fc2b6ebb724d6b",
+          "citationsSha256": "1ad7e233d334f887398823c031a7896a979d247999521cb3895b679a4e13da75",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "6382819e0d7d064eb51314fa9727735f645b1b252441b8447469e0a516736be7",
+          "citationsSha256": "e00f932ff557027fd2959f98aba58fd631b39334f0cdcfbc555bc6be08bb82b3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "343bde7dc4bf80b55e5fec31b99ec648492158c6ab041c38fba6d597144b3db2",
+          "citationsSha256": "045f14c42b3eb9b57a0356b30f636d6bee4c60a4b0bae97c51ec2f22fddb6a06",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "e45601b21c7987fd8d36dccb625e1a69f436e8bd085313afacfb9310af85d20b",
+          "citationsSha256": "1acee4c15245ef2cc56fe185639acf11d4cdf3f7f107bf5e26502d8dd3021c96",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dcb531ba571e4cab274d9202a9d7dca7d3b835e7d5df87814cd23f55b16fa456",
+          "citationsSha256": "c74005b9cd7b9e4a5956f3b963fc08888be7aae5ae9c5b28237cdf39b3bb31ae",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "3119d05e968fd21f63f5fc920969562c03c43ec6c87449a614de9278486155dc",
+          "citationsSha256": "f25ccbdad600bb00914d9e642991041e682efbd4f7eef90cdef487900eb784d6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dd8621b5e03c9abcd3c1eaaf74c0c3a6a61827f84c5ee5b6e2522807ee66b440",
+          "citationsSha256": "ebe8df63d881a2c44d7d831d53ed2413a1890d45f57b1c5326cb55969dcf4c74",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "臨床試驗資料",
+          "quoteSha256": "5d570855849265c6b29be6fdce3a173fb3a49af8b11ee61304e5a869e27ed5b9",
+          "citationsSha256": "945e8f9b40f6a57a555198d270f2d28be8dc6ab3ced82513d8fe0a19eff110e9",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "包裝及儲存",
+          "quoteSha256": "b8f7ae1a324904fd843d465771675c01fef5a5fcd69dc9be12a5eeb906988c5e",
+          "citationsSha256": "1e97551d886135f015fddd7e98dc74c9797cff2191a087300926ea0facb3addc",
+          "originalFieldId": "field-7d67a2b6aab56feaadc8",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "病人使用須知",
+          "quoteSha256": "cf9e2ed3350bf1e7b9e15707b06070d85972e17587da3a7ce6feb1adffac9014",
+          "citationsSha256": "2e68597863aa4061c5d2f3a419a815799a735e6264722665e3f6da783648aec3",
+          "originalFieldId": "field-98b22eaf514ffa4e3e52",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "7de79f8533974294a96e9d84a0ddf2dfa1997c4f4ad14702eed6cacc6fe3052c",
+          "citationsSha256": "74144b96ed041c2c0d30747d50388f9f55039a16913919509fdaffa13078d072",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "5bac2604fb4eefc0c865e11feb69cf880e8fb81395169bb1cc503b3a295e5314",
+          "citationsSha256": "87a4a21a474ea985fc85eecf7ef3174e14b505d62e3ad1341e2a55c5885891a1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        }
+      ]
+    },
+    {
+      "licenseNo": "衛部藥製字第059625號",
+      "quoteArrayExactlyEqual": false,
+      "concatenatedQuotesExactlyEqual": true,
+      "before": [
+        {
+          "section": null,
+          "quoteSha256": "3b90865c35cdfa42ca06ac8b81760460e0ff2e744e9a9f996865988f4ed69335",
+          "citationsSha256": "ec61efd286ed451dcff420facf8ee9e61a2c8b0424aaa542fc75988548e33716",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "59bfaa33d52ec8ffbb21d927032bab5268b5cf189ec5c4c8f62105c45e3d50df",
+          "citationsSha256": "05343169208826c335ccb9bff9222e68688f0964b78158aa769f917a3ca50fe3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "0b8e660bd130303bf5485838281fdd5d3b8417e6344f43150840580cab01c3c8",
+          "citationsSha256": "be20f8495451a16793a099d7d0a5ef5c644767bf60b17ba6d45ba0fede44fc1f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "e9c32f2a0d9b1e931ccf1824e61e79d499f6a964112751bedd1072f2507dc4bc",
+          "citationsSha256": "32101eca85743d3e090f47112051741ae95fd08765d67acf79f6603917dc3d97",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "適應症",
+          "quoteSha256": "ea8f6f6ab1ff9ef0650874cec40cd2a690ea2174f562211ebd19bc98f2fa7723",
+          "citationsSha256": "afecf3285311e6c73fa5bda74d22a894e815891e697af7fcbd30bdc607420615",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "用法及用量",
+          "quoteSha256": "360ea336879e9d47c4f1cf76a9c822937879aed42ed7cb083f09bf653fca11dc",
+          "citationsSha256": "556671c039083b90a9ea84514d9dbb7d54a050f7608bae4cf16fa783bda455c1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "禁忌",
+          "quoteSha256": "b5273b23e8b102030567bd70c97fe0fb7c894732ae2cdf0cce627fe15da6fd25",
+          "citationsSha256": "885bc5f3926664977a1a439303dd0e7d40c6da29ae8ed248aac96b5a55902992",
+          "originalFieldId": "field-924ab06cec505683cdd9",
+          "evidenceKind": "literal_short_field"
+        },
+        {
+          "section": "禁忌",
+          "quoteSha256": "5a670fec77599456de2335e3bf057c702c316c03f62ce4c3337e12bcc67ace52",
+          "citationsSha256": "bb78e5ea7a1a1a017f861e4825fc388e1cdd86412d31eb34316e19fbc47335d9",
+          "originalFieldId": "field-6407e351319fb0c3e72d",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "警語及注意事項",
+          "quoteSha256": "d941a0b9da0710d00e74e15a6eaf05292b2de02aabc6c3a59679534d50f7e3a0",
+          "citationsSha256": "40a74605b8ba9606098af73dc75b0b34a3496111658aa75f4b44fbc8a6669d55",
+          "originalFieldId": "field-e402ea311019f72eb874",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "特殊族群注意事項",
+          "quoteSha256": "36d2136264c6d03739c6c1758c6a9239c1c28e46511c9fde4ee26382b3c68753",
+          "citationsSha256": "3c91ef09a45b0ff86b91e4aca1db32164d9b021d35bc2bdc055ac7ec04f6b023",
+          "originalFieldId": "field-36bafc820d051d326d64",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "交互作用",
+          "quoteSha256": "7615f79533c23cc0b3e2d4bdf524cab8fd0023b694093b6bc48bf83e3d4bd9a8",
+          "citationsSha256": "79dd3f8530be87ebfeb74e4b0183ef3314574c73f04b432ffb81263baf08b055",
+          "originalFieldId": "field-ca098b48c0afcb63c302",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "副作用/不良反應",
+          "quoteSha256": "fc9deabb78878077bf3a76232ca8876c025d1298bcba719c502879053092f444",
+          "citationsSha256": "93ada7f47b02838b3ebed29de84e362bc1f24df8702c0253ca07cb7ad8424c50",
+          "originalFieldId": "field-a9841e9adc32579c120c",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "過量",
+          "quoteSha256": "c8340c464bdd088ca1ecf9773b55eb4869060f36b867836c37e028d7d2e628ce",
+          "citationsSha256": "cf402c9966801b9d73855770985b5b6c398502a82b431b448ec4ee69c40ead42",
+          "originalFieldId": "field-6b37015ef83855821b76",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "8b8bd440bb588673c03d8c962d153fc078ab33dc92628cfc6f245ddf6398c3fb",
+          "citationsSha256": "985972825f3de8fbc109617f196bee9c76fdff7e81e2c894176f9d306fa21023",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "1a7e1ae85eb590078773130c5d36dd3ae91f5dfb539a235a7e7c7b0b177a6a8b",
+          "citationsSha256": "e05b4bad3286ca15eaf2389e9f0cc509d23ac5fdb36853ed481802ad58d8ea71",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "23245584abbc2a25567442fa2194fc73b9b6d68e514d2178bd6636e67c2299f5",
+          "citationsSha256": "e59f3c6e844e7d6379b84428fda2e835bb4be9d368687da469391b1f1eceb0e3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "fc1b1f72d2ccf6f761d0c9d298a04a73d0bd41d6b3ab7cec90873a79d736c792",
+          "citationsSha256": "d1d8e900279feba9d468175cb4c3e396d1575650a4dd336649bac61395c3a76b",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a6e186e870b1c27f3b7f01cb566e4d29fb6d39b76a939f28856c0045a653bedf",
+          "citationsSha256": "384dbdec829def126a1b19452963f1e42f2e05e438ea1929648e3d5345e6883f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "6e3e092653b0f238902ece6c549fd36a8e30f70b6426c1b9b197d79c0468e628",
+          "citationsSha256": "707e966ae9a3fccf5fef3e05e19ac013e9fae25feb497ed20b6a073872c9025a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "f8faf23266a0ab49bd850b657d32687a424065abcb72c7789b528469c0222924",
+          "citationsSha256": "f8ad9694f529243ed47250d5a6744b1c1704c45493fcc689489b43978074e9f5",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "40a64e9a966e73afd2473ab90a792e57df5001caf223a1df067be346374a901b",
+          "citationsSha256": "56e753cfb2c4d071fd3aa354a3988589da138c4e53bbe4de5c3d6f806bdb660f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "7c671de69a5d57ab3166bd436fe32af4f225a99330fc3a6db0c5ae4545464299",
+          "citationsSha256": "02791a15b7534c4b3aff11fa982d3edba06f2a59560d184ecaff75da4db19d37",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "f75e2e7d35450d0ab66e620294ea6590a7e9138f1a24b4135786a91b25024299",
+          "citationsSha256": "17fc0073b0d7ed7cf3b8c1b98cee713620104b8319ed982b11da275e9cf4429d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "8492ed319c24c66d20f76c32259cddf7b039689003c8ec02f1c5c50cb1bb07ca",
+          "citationsSha256": "ea6d9e9ac9baa1df92a1e550b6a9f5de92488b4d64eaaf051cbdf9fb4b1e98ea",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "c72baa9babb7733dce97fddd50983b1339ffdec5b93ce7f8fcafdfa437ec7d3e",
+          "citationsSha256": "953088975c73dada20715bca3fa86312baf80b16c45902361916cef5fa45be61",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "5515667e927a8d20e743a6888c2b4d973c38ee437ca0b4d883a4d9e1ba3ddd04",
+          "citationsSha256": "c736faef0b1c1163bbc3c9f39b32ee389374a7a9bc9e15b72a184efc540ea405",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a67a3dd70864f7d639c029e0abc28b0d2013d7a5c2829796b0b64e31fe2fa27e",
+          "citationsSha256": "0922c732cbcb8963d20cab72c425a721adbc66162ec134c0c70be08ec0bdff14",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "7f13656906dbe00bbbe3e1a63266211c4923774e7789134f3c4b51e9af4bbcab",
+          "citationsSha256": "98733500b7cedac33f0b4138ae637154cd32482ca7f913c9d11eda9cf2858188",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "2ed9b34480092f9086b8b10ef18f49681e16fc2386941290749090eaba54d4f1",
+          "citationsSha256": "ee4c49531e7ceca3b05b6845493313ee79989d55dc6ab95e086407166cdf1f70",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "d0bc5ebb5a2e98bb1f9ab76a679783a231cf7eee36cf15489a5c2dbbe6031eac",
+          "citationsSha256": "8594f33e62dfc9e645161cbaa309450135f0fdfd11e741c510f75243b536cfbd",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a2a911a739d945b15c0714dd348d0b7c8157c00a19fd56ba7f1443f6f410ce4e",
+          "citationsSha256": "15ee62594206e51503fe5e8b2ac086faf2d7fd3260bc2b615bbbb4739e98674d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "6958be07c7106eac8a907280c826875f17fca7996b8d110a81d998a5b0b84e8d",
+          "citationsSha256": "927d06aa795cfc8b5ea38ba5abc52cfa89157537dd68e8de7e6cdac3a243a9db",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "0fda9747f16fff51ab63d3d76d34e871268b425e90b77035134e348d0c2b055d",
+          "citationsSha256": "d40f94da6ead4a64fc6a71f66ffae52c4af37ebe59ed95bf621dc6705aedfde5",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "3f87084dfe8e849fa6e12baa63c9293f5cb01fb9bb73631339d487fae4528f80",
+          "citationsSha256": "c10d5740ec7e15c26c1cc6f8c0c99e180d568c9b0bbfbdac4577bc453047031a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "31093f58033d567acf1240e43640d4163a5e7cc6c3b2c31df87e9fc8fd65bde1",
+          "citationsSha256": "dcdcabb2edf2661fd520881b7b8efa6db542e42b64c68da4ca3eee4f34342ee1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "c75b4ad4f76a5ddb62640b3d7e5e41033fb652b731b4843787ecb87690dcae24",
+          "citationsSha256": "2a97e1a0dfcc09c9d7054f8590b20bc5cdfce635d17d9a19aaae41cc4f213c87",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "2671831ef91323610d5cebc14304b4a87228c22096bc825a3eb3cbbfd0066531",
+          "citationsSha256": "20d037c2f0d80822d5deb16c589d11ecb0c3700f6be45822669db950dd3eb686",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "ab3aae051f0cdab30144f28e2b61807e0b44ead971c04430e3c59352e6d48d0a",
+          "citationsSha256": "1a2db8ac1de26cc8ef274a4f8e82e9558aeb9a6220f142e8bfb1fab5aa8c5e8c",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "81dcbdf326d52fce392dae56c22f04754580355329431e60d148e0d25d500d8d",
+          "citationsSha256": "809bc2c1de9eb68dde6088d15af84b4e00e6c3014142c7205b3c68d27bc7b653",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "e1648ec2b4e165a262dd4da9d6ef5ac931c0e7ac6a35011b5b2bdb86be1f7447",
+          "citationsSha256": "894fce232a0b30a1c4f4b74bcd51da7d92d096e0e441ceb11be8a0ea2bb257c6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "5ccb83fbafd9d9b6dd2cdae2276ec5ef5745c9dcf1766b2206dbf11f5f3a3acf",
+          "citationsSha256": "3ba45a53f5146295aa94fbf1e58dfb03d5bf4c2f1ab805442067b738ef3fe2fb",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "db9e608d6ce19772d6d9d3b25dd8c9bf30d1d24fbc5dd9296962bf424ecbc448",
+          "citationsSha256": "8a08fd1349bc634fbdccc159facbce1d08977110d596231e1606b21696b66c9d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "b103f3737a9e4b42dfb044486b0ffd0a36329086925a1a1a086fa3dfd20989a4",
+          "citationsSha256": "bc57bc7d360fc076eb9bffeb30e8f36552b6a5ffc820a6d25588789d821cccc2",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "5ba4be99b310660b3bf789f83f47c4425a8be61bf49ce1321f351749b8585497",
+          "citationsSha256": "1ca1a6b7ab3e191c9c5e841965c782a765ca838a14ddc051b678e3f0ccb1ea86",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "3d5db2e938497eba058b1de8552193479cc81d69aff2f443c8ef1135125e2d15",
+          "citationsSha256": "d9c8ff5903359d951ef4eae3ec263e64647146848c3edd65cebfbfc553ef8e62",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "8966456dad4d4873d00aa4bbab3f3fccde03a822f579b04c8a962317fa366818",
+          "citationsSha256": "3dbe9721bfa495de6252f6895f49431494b43bc9657c6452011a0136c24e9ce6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "639f1c2e36d5e7b02c03f6d1df57bc377a084f107c4be75353ee878604d6981c",
+          "citationsSha256": "2013c1d2f43f34d2e9eb300cb8bb4659548af1f689d5ad10a3c8566a31edd328",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "bea9e150cc36f851a1ce435247792258b606c5edfaf69386bcc166b4d431b029",
+          "citationsSha256": "e31815d0ac86f99a858dce964ca3c49af52255e3abae817b8022cc04ccbe75ea",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "2291ffc07044ea2a68cc21cd35a9d72f9a92f3f321ca50b36ec462ab4fa7073b",
+          "citationsSha256": "d6d1f22221aa457e7c73b0bc792abc460d7006270b054c8782f135b86cebd0bd",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "8a9181141eb9e873560b21748c615df47a57d7fd0ac37541a4536554b48e0048",
+          "citationsSha256": "bd1e8ed4a2ae7e28119129a19b15a6ed6c6c0051be4026dc2908510d361518d1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "a645f33ee9be36ddb9cb6db9e9eec66830b8722b3d0be07640e93c7b83ad6a97",
+          "citationsSha256": "b25ad04232ed78bd1ef4f9499dccf1727252cac21c7ab93741a14c033ffb6506",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "8dd176f7f9c9206e09e09f78072b448ed28f7f291e9ad8b1a579c1f4f4da9f73",
+          "citationsSha256": "277d6ddb90bb480ebe9a58fce84b73f62ba00e798f5c5ce4eb803f3a536a1909",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "d946249134197a513bdec329e163450c5e326b019a47bfcd3c5c9f020f2c5217",
+          "citationsSha256": "b451733f9f7c5eddc2046354abc6a86ae763703148f3ddcf700b30af8706af36",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "02c57438292b7ef164738bb9243b8ad806d401bc0f4b06d76db9b72a3787467b",
+          "citationsSha256": "ef5f9d34f50d19fa7cb41607865b992cbd3cc7cc9f1635e217b393091da019d6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "bb8108e665b2132fda51fb7c63974cc90da6a7761c97f50448af030d329bdc2b",
+          "citationsSha256": "522661570e31fa6e2b917df0e276ac65c64df918229c1752a2fbf93eae0425bc",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "ad1b5175de0ab2348e29f37f51766653b47322eb914e1264f10174944faa810f",
+          "citationsSha256": "5c06f141c6273c1c5fb840b1fec4711d6a65babdf8340a42e34ea113774afffa",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "臨床試驗資料",
+          "quoteSha256": "5d570855849265c6b29be6fdce3a173fb3a49af8b11ee61304e5a869e27ed5b9",
+          "citationsSha256": "84d24f28d23fb456baa7835eba8238857b206767981f6640308d57da9b73b19d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "包裝及儲存",
+          "quoteSha256": "994a1047a09c047e71e608a7f7860c475599842c7e80dd650553c10eb153b3a5",
+          "citationsSha256": "fc5be4436726e7330ff702c31ee9c443b2a5421585377d749bef860c437fd899",
+          "originalFieldId": "field-04e4b6187835fc3bf71f",
+          "evidenceKind": "ordinary"
+        }
+      ],
+      "after": [
+        {
+          "section": null,
+          "quoteSha256": "3b90865c35cdfa42ca06ac8b81760460e0ff2e744e9a9f996865988f4ed69335",
+          "citationsSha256": "ec61efd286ed451dcff420facf8ee9e61a2c8b0424aaa542fc75988548e33716",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "59bfaa33d52ec8ffbb21d927032bab5268b5cf189ec5c4c8f62105c45e3d50df",
+          "citationsSha256": "05343169208826c335ccb9bff9222e68688f0964b78158aa769f917a3ca50fe3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "0b8e660bd130303bf5485838281fdd5d3b8417e6344f43150840580cab01c3c8",
+          "citationsSha256": "be20f8495451a16793a099d7d0a5ef5c644767bf60b17ba6d45ba0fede44fc1f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "e9c32f2a0d9b1e931ccf1824e61e79d499f6a964112751bedd1072f2507dc4bc",
+          "citationsSha256": "32101eca85743d3e090f47112051741ae95fd08765d67acf79f6603917dc3d97",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "適應症",
+          "quoteSha256": "ea8f6f6ab1ff9ef0650874cec40cd2a690ea2174f562211ebd19bc98f2fa7723",
+          "citationsSha256": "afecf3285311e6c73fa5bda74d22a894e815891e697af7fcbd30bdc607420615",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "用法及用量",
+          "quoteSha256": "860f22bcc5b7cb13d61fc78d598ddaf6fa0517bf441228c8df57a6901d6212cf",
+          "citationsSha256": "fd9ea065525bf353fd613bf948ec0128cbad3a93df468842121480e985549c00",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "禁忌",
+          "quoteSha256": "5a670fec77599456de2335e3bf057c702c316c03f62ce4c3337e12bcc67ace52",
+          "citationsSha256": "bb78e5ea7a1a1a017f861e4825fc388e1cdd86412d31eb34316e19fbc47335d9",
+          "originalFieldId": "field-6407e351319fb0c3e72d",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "警語及注意事項",
+          "quoteSha256": "d941a0b9da0710d00e74e15a6eaf05292b2de02aabc6c3a59679534d50f7e3a0",
+          "citationsSha256": "40a74605b8ba9606098af73dc75b0b34a3496111658aa75f4b44fbc8a6669d55",
+          "originalFieldId": "field-e402ea311019f72eb874",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "特殊族群注意事項",
+          "quoteSha256": "36d2136264c6d03739c6c1758c6a9239c1c28e46511c9fde4ee26382b3c68753",
+          "citationsSha256": "3c91ef09a45b0ff86b91e4aca1db32164d9b021d35bc2bdc055ac7ec04f6b023",
+          "originalFieldId": "field-36bafc820d051d326d64",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "交互作用",
+          "quoteSha256": "7615f79533c23cc0b3e2d4bdf524cab8fd0023b694093b6bc48bf83e3d4bd9a8",
+          "citationsSha256": "79dd3f8530be87ebfeb74e4b0183ef3314574c73f04b432ffb81263baf08b055",
+          "originalFieldId": "field-ca098b48c0afcb63c302",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "副作用/不良反應",
+          "quoteSha256": "fc9deabb78878077bf3a76232ca8876c025d1298bcba719c502879053092f444",
+          "citationsSha256": "93ada7f47b02838b3ebed29de84e362bc1f24df8702c0253ca07cb7ad8424c50",
+          "originalFieldId": "field-a9841e9adc32579c120c",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "過量",
+          "quoteSha256": "c8340c464bdd088ca1ecf9773b55eb4869060f36b867836c37e028d7d2e628ce",
+          "citationsSha256": "cf402c9966801b9d73855770985b5b6c398502a82b431b448ec4ee69c40ead42",
+          "originalFieldId": "field-6b37015ef83855821b76",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "8b8bd440bb588673c03d8c962d153fc078ab33dc92628cfc6f245ddf6398c3fb",
+          "citationsSha256": "985972825f3de8fbc109617f196bee9c76fdff7e81e2c894176f9d306fa21023",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "1a7e1ae85eb590078773130c5d36dd3ae91f5dfb539a235a7e7c7b0b177a6a8b",
+          "citationsSha256": "e05b4bad3286ca15eaf2389e9f0cc509d23ac5fdb36853ed481802ad58d8ea71",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "23245584abbc2a25567442fa2194fc73b9b6d68e514d2178bd6636e67c2299f5",
+          "citationsSha256": "e59f3c6e844e7d6379b84428fda2e835bb4be9d368687da469391b1f1eceb0e3",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "fc1b1f72d2ccf6f761d0c9d298a04a73d0bd41d6b3ab7cec90873a79d736c792",
+          "citationsSha256": "d1d8e900279feba9d468175cb4c3e396d1575650a4dd336649bac61395c3a76b",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a6e186e870b1c27f3b7f01cb566e4d29fb6d39b76a939f28856c0045a653bedf",
+          "citationsSha256": "384dbdec829def126a1b19452963f1e42f2e05e438ea1929648e3d5345e6883f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "6e3e092653b0f238902ece6c549fd36a8e30f70b6426c1b9b197d79c0468e628",
+          "citationsSha256": "707e966ae9a3fccf5fef3e05e19ac013e9fae25feb497ed20b6a073872c9025a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "f8faf23266a0ab49bd850b657d32687a424065abcb72c7789b528469c0222924",
+          "citationsSha256": "f8ad9694f529243ed47250d5a6744b1c1704c45493fcc689489b43978074e9f5",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "40a64e9a966e73afd2473ab90a792e57df5001caf223a1df067be346374a901b",
+          "citationsSha256": "56e753cfb2c4d071fd3aa354a3988589da138c4e53bbe4de5c3d6f806bdb660f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "7c671de69a5d57ab3166bd436fe32af4f225a99330fc3a6db0c5ae4545464299",
+          "citationsSha256": "02791a15b7534c4b3aff11fa982d3edba06f2a59560d184ecaff75da4db19d37",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "f75e2e7d35450d0ab66e620294ea6590a7e9138f1a24b4135786a91b25024299",
+          "citationsSha256": "17fc0073b0d7ed7cf3b8c1b98cee713620104b8319ed982b11da275e9cf4429d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "8492ed319c24c66d20f76c32259cddf7b039689003c8ec02f1c5c50cb1bb07ca",
+          "citationsSha256": "ea6d9e9ac9baa1df92a1e550b6a9f5de92488b4d64eaaf051cbdf9fb4b1e98ea",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "c72baa9babb7733dce97fddd50983b1339ffdec5b93ce7f8fcafdfa437ec7d3e",
+          "citationsSha256": "953088975c73dada20715bca3fa86312baf80b16c45902361916cef5fa45be61",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "5515667e927a8d20e743a6888c2b4d973c38ee437ca0b4d883a4d9e1ba3ddd04",
+          "citationsSha256": "c736faef0b1c1163bbc3c9f39b32ee389374a7a9bc9e15b72a184efc540ea405",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a67a3dd70864f7d639c029e0abc28b0d2013d7a5c2829796b0b64e31fe2fa27e",
+          "citationsSha256": "0922c732cbcb8963d20cab72c425a721adbc66162ec134c0c70be08ec0bdff14",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "7f13656906dbe00bbbe3e1a63266211c4923774e7789134f3c4b51e9af4bbcab",
+          "citationsSha256": "98733500b7cedac33f0b4138ae637154cd32482ca7f913c9d11eda9cf2858188",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "2ed9b34480092f9086b8b10ef18f49681e16fc2386941290749090eaba54d4f1",
+          "citationsSha256": "ee4c49531e7ceca3b05b6845493313ee79989d55dc6ab95e086407166cdf1f70",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "d0bc5ebb5a2e98bb1f9ab76a679783a231cf7eee36cf15489a5c2dbbe6031eac",
+          "citationsSha256": "8594f33e62dfc9e645161cbaa309450135f0fdfd11e741c510f75243b536cfbd",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a2a911a739d945b15c0714dd348d0b7c8157c00a19fd56ba7f1443f6f410ce4e",
+          "citationsSha256": "15ee62594206e51503fe5e8b2ac086faf2d7fd3260bc2b615bbbb4739e98674d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "6958be07c7106eac8a907280c826875f17fca7996b8d110a81d998a5b0b84e8d",
+          "citationsSha256": "927d06aa795cfc8b5ea38ba5abc52cfa89157537dd68e8de7e6cdac3a243a9db",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "0fda9747f16fff51ab63d3d76d34e871268b425e90b77035134e348d0c2b055d",
+          "citationsSha256": "d40f94da6ead4a64fc6a71f66ffae52c4af37ebe59ed95bf621dc6705aedfde5",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "3f87084dfe8e849fa6e12baa63c9293f5cb01fb9bb73631339d487fae4528f80",
+          "citationsSha256": "c10d5740ec7e15c26c1cc6f8c0c99e180d568c9b0bbfbdac4577bc453047031a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "31093f58033d567acf1240e43640d4163a5e7cc6c3b2c31df87e9fc8fd65bde1",
+          "citationsSha256": "dcdcabb2edf2661fd520881b7b8efa6db542e42b64c68da4ca3eee4f34342ee1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "c75b4ad4f76a5ddb62640b3d7e5e41033fb652b731b4843787ecb87690dcae24",
+          "citationsSha256": "2a97e1a0dfcc09c9d7054f8590b20bc5cdfce635d17d9a19aaae41cc4f213c87",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "2671831ef91323610d5cebc14304b4a87228c22096bc825a3eb3cbbfd0066531",
+          "citationsSha256": "20d037c2f0d80822d5deb16c589d11ecb0c3700f6be45822669db950dd3eb686",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "ab3aae051f0cdab30144f28e2b61807e0b44ead971c04430e3c59352e6d48d0a",
+          "citationsSha256": "1a2db8ac1de26cc8ef274a4f8e82e9558aeb9a6220f142e8bfb1fab5aa8c5e8c",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "81dcbdf326d52fce392dae56c22f04754580355329431e60d148e0d25d500d8d",
+          "citationsSha256": "809bc2c1de9eb68dde6088d15af84b4e00e6c3014142c7205b3c68d27bc7b653",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "e1648ec2b4e165a262dd4da9d6ef5ac931c0e7ac6a35011b5b2bdb86be1f7447",
+          "citationsSha256": "894fce232a0b30a1c4f4b74bcd51da7d92d096e0e441ceb11be8a0ea2bb257c6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "5ccb83fbafd9d9b6dd2cdae2276ec5ef5745c9dcf1766b2206dbf11f5f3a3acf",
+          "citationsSha256": "3ba45a53f5146295aa94fbf1e58dfb03d5bf4c2f1ab805442067b738ef3fe2fb",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "db9e608d6ce19772d6d9d3b25dd8c9bf30d1d24fbc5dd9296962bf424ecbc448",
+          "citationsSha256": "8a08fd1349bc634fbdccc159facbce1d08977110d596231e1606b21696b66c9d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "b103f3737a9e4b42dfb044486b0ffd0a36329086925a1a1a086fa3dfd20989a4",
+          "citationsSha256": "bc57bc7d360fc076eb9bffeb30e8f36552b6a5ffc820a6d25588789d821cccc2",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "5ba4be99b310660b3bf789f83f47c4425a8be61bf49ce1321f351749b8585497",
+          "citationsSha256": "1ca1a6b7ab3e191c9c5e841965c782a765ca838a14ddc051b678e3f0ccb1ea86",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "3d5db2e938497eba058b1de8552193479cc81d69aff2f443c8ef1135125e2d15",
+          "citationsSha256": "d9c8ff5903359d951ef4eae3ec263e64647146848c3edd65cebfbfc553ef8e62",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "8966456dad4d4873d00aa4bbab3f3fccde03a822f579b04c8a962317fa366818",
+          "citationsSha256": "3dbe9721bfa495de6252f6895f49431494b43bc9657c6452011a0136c24e9ce6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "639f1c2e36d5e7b02c03f6d1df57bc377a084f107c4be75353ee878604d6981c",
+          "citationsSha256": "2013c1d2f43f34d2e9eb300cb8bb4659548af1f689d5ad10a3c8566a31edd328",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "bea9e150cc36f851a1ce435247792258b606c5edfaf69386bcc166b4d431b029",
+          "citationsSha256": "e31815d0ac86f99a858dce964ca3c49af52255e3abae817b8022cc04ccbe75ea",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "2291ffc07044ea2a68cc21cd35a9d72f9a92f3f321ca50b36ec462ab4fa7073b",
+          "citationsSha256": "d6d1f22221aa457e7c73b0bc792abc460d7006270b054c8782f135b86cebd0bd",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "8a9181141eb9e873560b21748c615df47a57d7fd0ac37541a4536554b48e0048",
+          "citationsSha256": "bd1e8ed4a2ae7e28119129a19b15a6ed6c6c0051be4026dc2908510d361518d1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "a645f33ee9be36ddb9cb6db9e9eec66830b8722b3d0be07640e93c7b83ad6a97",
+          "citationsSha256": "b25ad04232ed78bd1ef4f9499dccf1727252cac21c7ab93741a14c033ffb6506",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "8dd176f7f9c9206e09e09f78072b448ed28f7f291e9ad8b1a579c1f4f4da9f73",
+          "citationsSha256": "277d6ddb90bb480ebe9a58fce84b73f62ba00e798f5c5ce4eb803f3a536a1909",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "d946249134197a513bdec329e163450c5e326b019a47bfcd3c5c9f020f2c5217",
+          "citationsSha256": "b451733f9f7c5eddc2046354abc6a86ae763703148f3ddcf700b30af8706af36",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "02c57438292b7ef164738bb9243b8ad806d401bc0f4b06d76db9b72a3787467b",
+          "citationsSha256": "ef5f9d34f50d19fa7cb41607865b992cbd3cc7cc9f1635e217b393091da019d6",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "bb8108e665b2132fda51fb7c63974cc90da6a7761c97f50448af030d329bdc2b",
+          "citationsSha256": "522661570e31fa6e2b917df0e276ac65c64df918229c1752a2fbf93eae0425bc",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "ad1b5175de0ab2348e29f37f51766653b47322eb914e1264f10174944faa810f",
+          "citationsSha256": "5c06f141c6273c1c5fb840b1fec4711d6a65babdf8340a42e34ea113774afffa",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "臨床試驗資料",
+          "quoteSha256": "5d570855849265c6b29be6fdce3a173fb3a49af8b11ee61304e5a869e27ed5b9",
+          "citationsSha256": "84d24f28d23fb456baa7835eba8238857b206767981f6640308d57da9b73b19d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "包裝及儲存",
+          "quoteSha256": "994a1047a09c047e71e608a7f7860c475599842c7e80dd650553c10eb153b3a5",
+          "citationsSha256": "fc5be4436726e7330ff702c31ee9c443b2a5421585377d749bef860c437fd899",
+          "originalFieldId": "field-04e4b6187835fc3bf71f",
+          "evidenceKind": "ordinary"
+        }
+      ]
+    },
+    {
+      "licenseNo": "衛署藥輸字第025533號",
+      "quoteArrayExactlyEqual": false,
+      "concatenatedQuotesExactlyEqual": true,
+      "before": [
+        {
+          "section": null,
+          "quoteSha256": "e7d7645fb89cc6f29c54a2b1c6464fd44de190cd653d25f103a394f00aa9b4b9",
+          "citationsSha256": "a95716633ffc2b099edb088be407dfa712b20b323f94537d9a3a3df513cf9a30",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "60252710366292d055ee856c0dc67b7e7f70b25b1486c9ac49c29f0bb423c813",
+          "citationsSha256": "f91fdba56c9a0ed061cd86a86866ab59dd32ef3df30117f8150afa7869438d75",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "賦形劑",
+          "quoteSha256": "4aa94716d673e2b3be690b8a18fa2d97e2bdc97a5445e88f5c7888cb4b6370f0",
+          "citationsSha256": "fd066f32767893b83ea18592e1b68fe50d3767834a7b75c21c35f0fe67220ed7",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "賦形劑",
+          "quoteSha256": "20fb0c83d3c0ff58ce1efb1413dc6de51868a21466310f395e16307e7ba1b5a1",
+          "citationsSha256": "1e6eff33da708c8eb6dcd8da95bf7a04689d8347f108183ee90f170ec29033ff",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "適應症",
+          "quoteSha256": "3f852d185ab3d5e37c4fa1996881a93c6559a083df13c18364e4544c74c5337b",
+          "citationsSha256": "f9bcb5a0eff2bac404babeba7014e6a52a4c5acf31dbf12c4bb8c3bec31bb896",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "用法及用量",
+          "quoteSha256": "d85b60cb8355e28234f86251944915b48512e0f8e580a8950374a5366f5b1f70",
+          "citationsSha256": "57bba570a07332e17e9c384415e6ce1792af5f6abfe955c722bc41eb4008ac2a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "禁忌",
+          "quoteSha256": "4f288356cb2a2f4530a822031925d3e12114f11146dafecf09b2119a1f844e64",
+          "citationsSha256": "6fa82e264cc7c96e05cb80600f5a05ba0ec8e141eef4cc75491932b30842b8ea",
+          "originalFieldId": "field-0c2158a82d93cbdda1ed",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "警語及注意事項",
+          "quoteSha256": "7d4fbfcdaeaab9dfe42f48d571f11080eaccab061503aa4523f495648b1fb0db",
+          "citationsSha256": "77284ada9bbc31ea216f2be03359131154a85829616bfc33350165f7fb897996",
+          "originalFieldId": "field-4bb26166102becadf544",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "特殊族群注意事項",
+          "quoteSha256": "7d7ee329105a17060eb66c76d06aa6d8b0b49f1cfa071fc2930cdfb2a3d30042",
+          "citationsSha256": "5652f3f38532cfdb37944df8d5f7e8db936a5734b228479e2bd283288a73c205",
+          "originalFieldId": "field-901358ea1b0ed3504a6f",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "交互作用",
+          "quoteSha256": "4f6871ee2535192116c71287470beb662a5d0cdb122ca0d0f5a5efea836c13b3",
+          "citationsSha256": "dc6ff6c5682312ac1f62f3f87322aba0507cba5cfab41d7d38461605a00a84a3",
+          "originalFieldId": "field-cf666b511cbfe7e089e2",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "副作用/不良反應",
+          "quoteSha256": "20a7321ce38a2c11de16f637720b5c662925ba729ad0f972aa1341ba449a40db",
+          "citationsSha256": "b848757b72e1b72699df643096dd60f231e92347cbce606280f61e2049fbb510",
+          "originalFieldId": "field-f21bf434a3f2937ce212",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "過量",
+          "quoteSha256": "165e9d4c7c39cfe4d61569b8921336dd4e150b6dce3f654ff0104b3da4b0a828",
+          "citationsSha256": "bf599a08dc41e309bfee2b78d7756f082a94ba5f7c3105b93b29c07a764289c4",
+          "originalFieldId": "field-ed2a1227fca300164f8e",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "81ba963c31045db92b23eb74614470f1cf280e026ac0bc78f4e714ac003e8fff",
+          "citationsSha256": "e063a926c45dc23ed4332305a866e47b7b5f99596ff5ac6e0e57b3341c43fc5f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "b4bcaf4f7b11bf23b60f540df9cada6dfd6e6501097a789feb4f494839c86397",
+          "citationsSha256": "9f1a51fa6e79a2a7771e5b85cd5ebdb9f7e16a9d49a73211ad0c1459b23c2f85",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a9ce4eaa92ab183b8782b8f837ec2dd633093813282d61206f49e19f40f8e0b5",
+          "citationsSha256": "72cdb0759010479065d7326ffb05552c7c22c47a6301bdb60c49fd5351eb465b",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "dfd718ba2cd135b72dcabbea6a141e5adccd12dc83bc3332eeeaafe968e25e2d",
+          "citationsSha256": "4e160b221626190b99fe3e17d7d287a7774d149e3c4a1af2db0fa093ff5f219f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "02252b9623bc930c597c616ffdbb9888623f3b72ed66140c869e457e85f696dc",
+          "citationsSha256": "75a294bb61d09f5dcbb96b30b0e432c923de06081706b5bc5ae18e0a1c16b738",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "0dd497fafd0d7c3a0f846f8591862324f54625af3b0ba246123639d3b0c14616",
+          "citationsSha256": "ff265730baff8e226972a7188d9942de11206d44aaca6b69eb2d75b387a9b6fc",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "bdfec0c53acdb0158511e491d478839d6130e91ee65b11780e80aea1d7fb8fb6",
+          "citationsSha256": "76bb13ce010a4bf60957529f091e62e9c38baaad6045d631e6ea978db032ccc1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "fb0b3bfa8ebdd4743d158c3b7ce0a6b7a0ede5e1a03623c7af153c14a32f8dc1",
+          "citationsSha256": "e1090aa80febf18e454b300f63d188726a74e502fe5d47e2f51a7669f5422397",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "c5e03053ea1638b3573b58fecf89c58d57416d5cf391fc247589e0cf77fadca8",
+          "citationsSha256": "a4ff32a149e0a8bdd0665e12c507a13eff645bdbdf4e85579dafbe5ee8cb715b",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "f94fb249e2c471d25ff8bebc3249bca5626a1500294d140b80fedd193e66160e",
+          "citationsSha256": "0d72dce868d3559225a3f9fe90bf288e6e09a91b19c5da6a96800545766e19e0",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "68c882f9724f705cd074f3c6db6637669a3193209f49c745d8fc2b6ebb724d6b",
+          "citationsSha256": "c433a87ea913708e78d9b7f04bdc015d6feab2b34555c1cef8b88da06e7e674d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "de8e1141a31df6a2ece6eaea7c53b94185450f436b19150f89107aa8db3cb71f",
+          "citationsSha256": "ae0144137e21a2545eda702c2821d2e0edc4de0d8f142f493a42fffd33a70815",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "343bde7dc4bf80b55e5fec31b99ec648492158c6ab041c38fba6d597144b3db2",
+          "citationsSha256": "70e29cbe4b427365d6518302adbdefc9250fc5e8248d4b99da330aea0461a023",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dd52aaa54188951c25081a9a660ab670db6439891e160d257877a69b5519633c",
+          "citationsSha256": "7f55fa0a9c3c52f52afe2ee53661678b6d8c8015ab26ca734c9ad60596767892",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dcb531ba571e4cab274d9202a9d7dca7d3b835e7d5df87814cd23f55b16fa456",
+          "citationsSha256": "9f0df1ae100b87875aae51e93fcf4fcae24e16790607989738d85d873b4c095e",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "b2a23c26e6c7fb8f4cf130ea7fd26088da7d77dcb4bff85dcea161f2efa84d59",
+          "citationsSha256": "aa7797a5745ec99a64885fc17c6ac9cc52289b244a404c2765235c92ebca92f8",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "bccd54d52c5d6869ad6d14daa7f9b39077bb3e05d4f04566f6e5050760aa4b36",
+          "citationsSha256": "ab955919ca7c9186be05dc6a97c7c734ea55e148c1a44de68a52a47391daa92a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "臨床試驗資料",
+          "quoteSha256": "5d570855849265c6b29be6fdce3a173fb3a49af8b11ee61304e5a869e27ed5b9",
+          "citationsSha256": "629d167394837bc6428413e6e5c8dd0220ef04b790d864f84e463259d3112730",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "包裝及儲存",
+          "quoteSha256": "c23c5c40708b59251fbf98ff0c0d44cfa375f0fc4038d1b8af5c5feca330867d",
+          "citationsSha256": "1b7939ae822b303c90a1e662cbcd5078119a648b4d48a19dc5cced78fbd7dddf",
+          "originalFieldId": "field-26dfde4c43437b04d70c",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "病人使用須知",
+          "quoteSha256": "01899f137bc988fab42c21c79a0217f6b9590a6da5823472d5f39923b009bbb0",
+          "citationsSha256": "4d723d5f00a0b08298590c3707ea88d3f11f559bc3168b71b316c19539d57e40",
+          "originalFieldId": "field-655a191b45ef04d0e9ef",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "5c19ee913f64ed7b7cf588c3703c93c5782fed98cd4834c96a4652e400c5262d",
+          "citationsSha256": "65395ca2a9903258f8d35aa38424863f4461f83cf1d16663bfaa9811e20a8f12",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "e120fc40edc5c461755c06a23321c880e24c362fa4b39bb03bd86732adc921b9",
+          "citationsSha256": "233fd1db3797bd015fcc1087d4052f7bec82f57ef250804a842d9563c451ca76",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        }
+      ],
+      "after": [
+        {
+          "section": null,
+          "quoteSha256": "e7d7645fb89cc6f29c54a2b1c6464fd44de190cd653d25f103a394f00aa9b4b9",
+          "citationsSha256": "a95716633ffc2b099edb088be407dfa712b20b323f94537d9a3a3df513cf9a30",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "fc58fc4c1fa1e5aab37ab641bff5ed5b00817cd5a7e2278d6f2705b98188904c",
+          "citationsSha256": "7210d46d48841f0602d99245beb3a44db0b8ff51aa9df17ad84bf671110456de",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "39c2a05fa8f542c2a76d2bb5519aeca07f6688c6353dd858650d87e0f3bcf27d",
+          "citationsSha256": "84a1d5ec6cdcfa364866d202efd38b26bcca15979fb2e48b4536304bf95f6d90",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "性狀",
+          "quoteSha256": "20fb0c83d3c0ff58ce1efb1413dc6de51868a21466310f395e16307e7ba1b5a1",
+          "citationsSha256": "1e6eff33da708c8eb6dcd8da95bf7a04689d8347f108183ee90f170ec29033ff",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "適應症",
+          "quoteSha256": "3f852d185ab3d5e37c4fa1996881a93c6559a083df13c18364e4544c74c5337b",
+          "citationsSha256": "f9bcb5a0eff2bac404babeba7014e6a52a4c5acf31dbf12c4bb8c3bec31bb896",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "用法及用量",
+          "quoteSha256": "d85b60cb8355e28234f86251944915b48512e0f8e580a8950374a5366f5b1f70",
+          "citationsSha256": "57bba570a07332e17e9c384415e6ce1792af5f6abfe955c722bc41eb4008ac2a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "禁忌",
+          "quoteSha256": "4f288356cb2a2f4530a822031925d3e12114f11146dafecf09b2119a1f844e64",
+          "citationsSha256": "6fa82e264cc7c96e05cb80600f5a05ba0ec8e141eef4cc75491932b30842b8ea",
+          "originalFieldId": "field-0c2158a82d93cbdda1ed",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "警語及注意事項",
+          "quoteSha256": "7d4fbfcdaeaab9dfe42f48d571f11080eaccab061503aa4523f495648b1fb0db",
+          "citationsSha256": "77284ada9bbc31ea216f2be03359131154a85829616bfc33350165f7fb897996",
+          "originalFieldId": "field-4bb26166102becadf544",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "特殊族群注意事項",
+          "quoteSha256": "7d7ee329105a17060eb66c76d06aa6d8b0b49f1cfa071fc2930cdfb2a3d30042",
+          "citationsSha256": "5652f3f38532cfdb37944df8d5f7e8db936a5734b228479e2bd283288a73c205",
+          "originalFieldId": "field-901358ea1b0ed3504a6f",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "交互作用",
+          "quoteSha256": "4f6871ee2535192116c71287470beb662a5d0cdb122ca0d0f5a5efea836c13b3",
+          "citationsSha256": "dc6ff6c5682312ac1f62f3f87322aba0507cba5cfab41d7d38461605a00a84a3",
+          "originalFieldId": "field-cf666b511cbfe7e089e2",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "副作用/不良反應",
+          "quoteSha256": "20a7321ce38a2c11de16f637720b5c662925ba729ad0f972aa1341ba449a40db",
+          "citationsSha256": "b848757b72e1b72699df643096dd60f231e92347cbce606280f61e2049fbb510",
+          "originalFieldId": "field-f21bf434a3f2937ce212",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "過量",
+          "quoteSha256": "165e9d4c7c39cfe4d61569b8921336dd4e150b6dce3f654ff0104b3da4b0a828",
+          "citationsSha256": "bf599a08dc41e309bfee2b78d7756f082a94ba5f7c3105b93b29c07a764289c4",
+          "originalFieldId": "field-ed2a1227fca300164f8e",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "81ba963c31045db92b23eb74614470f1cf280e026ac0bc78f4e714ac003e8fff",
+          "citationsSha256": "e063a926c45dc23ed4332305a866e47b7b5f99596ff5ac6e0e57b3341c43fc5f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "b4bcaf4f7b11bf23b60f540df9cada6dfd6e6501097a789feb4f494839c86397",
+          "citationsSha256": "9f1a51fa6e79a2a7771e5b85cd5ebdb9f7e16a9d49a73211ad0c1459b23c2f85",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "a9ce4eaa92ab183b8782b8f837ec2dd633093813282d61206f49e19f40f8e0b5",
+          "citationsSha256": "72cdb0759010479065d7326ffb05552c7c22c47a6301bdb60c49fd5351eb465b",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "dfd718ba2cd135b72dcabbea6a141e5adccd12dc83bc3332eeeaafe968e25e2d",
+          "citationsSha256": "4e160b221626190b99fe3e17d7d287a7774d149e3c4a1af2db0fa093ff5f219f",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "02252b9623bc930c597c616ffdbb9888623f3b72ed66140c869e457e85f696dc",
+          "citationsSha256": "75a294bb61d09f5dcbb96b30b0e432c923de06081706b5bc5ae18e0a1c16b738",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "0dd497fafd0d7c3a0f846f8591862324f54625af3b0ba246123639d3b0c14616",
+          "citationsSha256": "ff265730baff8e226972a7188d9942de11206d44aaca6b69eb2d75b387a9b6fc",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "bdfec0c53acdb0158511e491d478839d6130e91ee65b11780e80aea1d7fb8fb6",
+          "citationsSha256": "76bb13ce010a4bf60957529f091e62e9c38baaad6045d631e6ea978db032ccc1",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥理特性",
+          "quoteSha256": "fb0b3bfa8ebdd4743d158c3b7ce0a6b7a0ede5e1a03623c7af153c14a32f8dc1",
+          "citationsSha256": "e1090aa80febf18e454b300f63d188726a74e502fe5d47e2f51a7669f5422397",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "c5e03053ea1638b3573b58fecf89c58d57416d5cf391fc247589e0cf77fadca8",
+          "citationsSha256": "a4ff32a149e0a8bdd0665e12c507a13eff645bdbdf4e85579dafbe5ee8cb715b",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "f94fb249e2c471d25ff8bebc3249bca5626a1500294d140b80fedd193e66160e",
+          "citationsSha256": "0d72dce868d3559225a3f9fe90bf288e6e09a91b19c5da6a96800545766e19e0",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "68c882f9724f705cd074f3c6db6637669a3193209f49c745d8fc2b6ebb724d6b",
+          "citationsSha256": "c433a87ea913708e78d9b7f04bdc015d6feab2b34555c1cef8b88da06e7e674d",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "de8e1141a31df6a2ece6eaea7c53b94185450f436b19150f89107aa8db3cb71f",
+          "citationsSha256": "ae0144137e21a2545eda702c2821d2e0edc4de0d8f142f493a42fffd33a70815",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "343bde7dc4bf80b55e5fec31b99ec648492158c6ab041c38fba6d597144b3db2",
+          "citationsSha256": "70e29cbe4b427365d6518302adbdefc9250fc5e8248d4b99da330aea0461a023",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dd52aaa54188951c25081a9a660ab670db6439891e160d257877a69b5519633c",
+          "citationsSha256": "7f55fa0a9c3c52f52afe2ee53661678b6d8c8015ab26ca734c9ad60596767892",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "dcb531ba571e4cab274d9202a9d7dca7d3b835e7d5df87814cd23f55b16fa456",
+          "citationsSha256": "9f0df1ae100b87875aae51e93fcf4fcae24e16790607989738d85d873b4c095e",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "b2a23c26e6c7fb8f4cf130ea7fd26088da7d77dcb4bff85dcea161f2efa84d59",
+          "citationsSha256": "aa7797a5745ec99a64885fc17c6ac9cc52289b244a404c2765235c92ebca92f8",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "藥物動力學特性",
+          "quoteSha256": "bccd54d52c5d6869ad6d14daa7f9b39077bb3e05d4f04566f6e5050760aa4b36",
+          "citationsSha256": "ab955919ca7c9186be05dc6a97c7c734ea55e148c1a44de68a52a47391daa92a",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "臨床試驗資料",
+          "quoteSha256": "5d570855849265c6b29be6fdce3a173fb3a49af8b11ee61304e5a869e27ed5b9",
+          "citationsSha256": "629d167394837bc6428413e6e5c8dd0220ef04b790d864f84e463259d3112730",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "包裝及儲存",
+          "quoteSha256": "c23c5c40708b59251fbf98ff0c0d44cfa375f0fc4038d1b8af5c5feca330867d",
+          "citationsSha256": "1b7939ae822b303c90a1e662cbcd5078119a648b4d48a19dc5cced78fbd7dddf",
+          "originalFieldId": "field-26dfde4c43437b04d70c",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "病人使用須知",
+          "quoteSha256": "01899f137bc988fab42c21c79a0217f6b9590a6da5823472d5f39923b009bbb0",
+          "citationsSha256": "4d723d5f00a0b08298590c3707ea88d3f11f559bc3168b71b316c19539d57e40",
+          "originalFieldId": "field-655a191b45ef04d0e9ef",
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "5c19ee913f64ed7b7cf588c3703c93c5782fed98cd4834c96a4652e400c5262d",
+          "citationsSha256": "65395ca2a9903258f8d35aa38424863f4461f83cf1d16663bfaa9811e20a8f12",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        },
+        {
+          "section": "其他",
+          "quoteSha256": "e120fc40edc5c461755c06a23321c880e24c362fa4b39bb03bd86732adc921b9",
+          "citationsSha256": "233fd1db3797bd015fcc1087d4052f7bec82f57ef250804a842d9563c451ca76",
+          "originalFieldId": null,
+          "evidenceKind": "ordinary"
+        }
+      ]
+    }
+  ],
+  "unchangedOldReadable": 2979,
+  "allChangedConcatenatedQuotesExactlyPreserved": true,
+  "literalViolations": 0
+}

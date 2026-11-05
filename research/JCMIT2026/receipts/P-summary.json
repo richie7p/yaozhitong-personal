@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "artifact_type": "derived_public_summary",
+  "configuration": "P",
+  "commit": "24d2788f7af9f5a35a3ad73109a194a32dfcae55",
+  "assistance_version": "reliable-reference-v5",
+  "source_receipt": {
+    "file_name": "正式站三款藥品驗收.json",
+    "sha256": "3789dfde322635c0898e552b49a6dccb5b0263b8e13bf3ec3930072f84f182de",
+    "recorded_at_utc": "2026-11-01T23:47:57.046Z",
+    "availability": "The original receipt is retained locally. This file is a derived summary, not the raw receipt."
+  },
+  "scope": {
+    "synthetic_cases": 3,
+    "records": 6,
+    "record_types": {
+      "bundle": 3,
+      "chat": 3
+    },
+    "new_experiment": false,
+    "description": "Counts extracted from the existing saved-output snapshots. This publication does not perform a new deployment or rerun model calls."
+  },
+  "records": [
+    {
+      "synthetic_case": "clotrimazole",
+      "record_type": "bundle",
+      "reference_basis_claims": 4,
+      "user_label_basis_claims": 1,
+      "rejected_count": 1
+    },
+    {
+      "synthetic_case": "metformin",
+      "record_type": "bundle",
+      "reference_basis_claims": 5,
+      "user_label_basis_claims": 1,
+      "rejected_count": 0
+    },
+    {
+      "synthetic_case": "amoxicillin",
+      "record_type": "bundle",
+      "reference_basis_claims": 5,
+      "user_label_basis_claims": 1,
+      "rejected_count": 1
+    },
+    {
+      "synthetic_case": "clotrimazole",
+      "record_type": "chat",
+      "reference_basis_claims": 3,
+      "user_label_basis_claims": 1,
+      "rejected_count": 0
+    },
+    {
+      "synthetic_case": "metformin",
+      "record_type": "chat",
+      "reference_basis_claims": 3,
+      "user_label_basis_claims": 1,
+      "rejected_count": 0
+    },
+    {
+      "synthetic_case": "amoxicillin",
+      "record_type": "chat",
+      "reference_basis_claims": 2,
+      "user_label_basis_claims": 1,
+      "rejected_count": 0
+    }
+  ],
+  "totals": {
+    "reference_basis_claims": 22,
+    "user_label_basis_claims": 6,
+    "retained_claims": 28,
+    "rejected_count": 2
+  },
+  "privacy": {
+    "omitted": "Account, owner, medication, record, and job identifiers; application and source URLs; raw response text; and deployment identifiers are not included in this summary."
+  },
+  "limitations": [
+    "The saved assistance claims retain text, basis, and source identifiers, but do not retain verbatim candidate quotations or per-stage validation decisions.",
+    "The aggregate rejected count cannot be separated into literal-check and model-check rejection counts from this receipt.",
+    "These are three synthetic medication cases and six output snapshots, not an estimate of general medical accuracy or user outcomes.",
+    "This summary does not independently verify saving or reopening behavior; the separate reopening receipt is not included here.",
+    "P and the R/B source-reader comparison are separate configurations; this summary is not evidence of a same-version integrated evaluation."
+  ]
+}

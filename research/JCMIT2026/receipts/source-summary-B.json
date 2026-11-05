@@ -1,0 +1,47 @@
+{
+  "stage": "B",
+  "at_utc": "2026-10-27T16:26:47.575Z",
+  "commit": "f6f8920a14a5a4c83243220faf0df4770729a189",
+  "node": "v22.23.2",
+  "corpusSha256": "abe30508884145a43dd135059ef78a8f947defc0abc7a2e1f656c1f33dee98c5",
+  "total": 3710,
+  "readable": 2982,
+  "held": 728,
+  "passages": 64948,
+  "citations": 64973,
+  "evidenceKinds": {
+    "ordinary": 61486,
+    "literal_unavailable": 3368,
+    "structural_container": 88,
+    "literal_short_field": 6
+  },
+  "citationMultiplicity": {
+    "1": 64927,
+    "2": 17,
+    "3": 4
+  },
+  "literalViolations": 0,
+  "networkAttempts": 0,
+  "providerCalls": 0,
+  "cloudWrites": 0,
+  "codePins": {
+    "server/config.ts": "4d412bd17273387cfcc183d4d6fa857b1bdbbdb201c66b2e2fcf065fad0c7fc9",
+    "server/llm.ts": "1473b91351d5336d9a0695107d7a87b24d0a8966bf7268af1c0fb06cd5496159",
+    "shared/schema.ts": "2b31c96bf8b75b4c4a3d7afa38ce83f4521e21f015f0f56af25296695b09f475",
+    "shared/learning.ts": "bae04612d736453ebfb077c15a55dfd048520beaf212f888f09a611487ea8ee4",
+    "shared/source.ts": "aec18caa8ef52dc6583b0fedc11802a3ee7a411a384a8335df952f587e96bb2c",
+    "server/source-field-spans.ts": "fd7fba9856c61a1d303bc338d2aa9cf53cb9c07823c57599bd774aced325e821",
+    "server/source-boundary.ts": "00696c59899f25061655e80f072535adde8dba43e62d6b6d9bf1fbcbd9ab8dd1",
+    "server/safety-learning.ts": "55512b40f3ebc9530ba0b279c2d38ae565123d5d39a02916c55d41079b84ac44",
+    "server/recognition-usage.ts": "dc008a8feea3580483d731ea59116a5ef0e23738e81306810fed77b8ae3701ef",
+    "server/chat-source-coverage.ts": "f4509484d2343584cc3a0070ca27e09a65c37d25fbc564d4c7e22e432154f4c6",
+    "server/source-teaching.ts": "3516cf391afb5765bba05a0cc7316cdd51c8e8fc32d5a646d10948d4c91eecd0",
+    "server/teaching-progress.ts": "ecf0013a5039abc56f46bdde89bd9160763711bad36041c38327cc33e7902788",
+    "server/teaching-completion.ts": "a455c90353cf74a403dc4c448395b0bc833f4106513ac2fde5a7f5b9fd3952c3",
+    "server/purpose-conditions.ts": "cfc41bfed5ff939ff1fb751d79506e08ac9581575a38c7fe6b4df9fa1caac772",
+    "server/recognition-guidance.ts": "e1f3e800d879db962d9e978c4ebe2b8ee7480359773eade9c2b5a2d4be5a5407",
+    "server/recognition-duration.ts": "64605f39879991f3150d57aa53c1c074e1e364132ac0a709cfdc3fe3bb3b03fa",
+    "server/ai.ts": "1d50af37f4edaf7704de9734f552de4300065c3e5d28c3ea58df7d0ab9aeeb49"
+  },
+  "bundleSha256": "8a3d0371d5e484c570f16d7d4091f8187c5a64f502fb9d8f263aa2ed104103f0"
+}

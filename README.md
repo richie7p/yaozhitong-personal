@@ -1,5 +1,7 @@
 # 藥智通 · 個人用藥手帳
 
+> 本研究資料分支的 R／B／P 固定版本、結果與重現範圍，請見 [JCMIT2026 研究材料](research/JCMIT2026/README.md)。
+
 藥智通協助使用者從藥袋照片建立用藥紀錄，閱讀有官方來源依據的白話說明、回答理解題，並管理服藥提醒及家人照護。
 
 [開啟藥智通](https://project-b6fe4904-e687-4365-b2f.firebaseapp.com) · [公開使用與驗收狀態](docs/PUBLIC-READINESS.md) · [部署說明](docs/DEPLOYMENT.md)

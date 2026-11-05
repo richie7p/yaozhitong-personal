@@ -1,0 +1,8 @@
+{
+  "source_root": "../yzt-R",
+  "control_root": "../yzt-B",
+  "corpus_path": "private-inputs/published-final-corpus.json",
+  "corpus_sha256": "abe30508884145a43dd135059ef78a8f947defc0abc7a2e1f656c1f33dee98c5",
+  "release_commit": "2661ec563eb3ec6a8d2149805020fe822e4c972a",
+  "control_commit": "f6f8920a14a5a4c83243220faf0df4770729a189"
+}

@@ -1,0 +1,60 @@
+{
+  "publication_date": "2026-11-05",
+  "repository": "https://github.com/richie7p/yaozhitong-personal",
+  "scope": "Existing JCMIT R/B/P source versions and selected evidence; publication is not a new experimental run.",
+  "versions": {
+    "R": {
+      "commit": "2661ec563eb3ec6a8d2149805020fe822e4c972a",
+      "tag": "paper-20261028-R",
+      "role": "Frozen source-reader repair configuration",
+      "reader": "source-reader-v4-explicit-reference-boundaries"
+    },
+    "B": {
+      "commit": "f6f8920a14a5a4c83243220faf0df4770729a189",
+      "tag": "paper-20261028-B",
+      "role": "Matched counterfactual source-reader control; not a historical released build",
+      "changed_files_relative_to_R": [
+        "server/ai.ts",
+        "server/source-field-spans.ts",
+        "server/source-review-result.ts"
+      ]
+    },
+    "P": {
+      "commit": "24d2788f7af9f5a35a3ad73109a194a32dfcae55",
+      "tag": "paper-20261102-P",
+      "role": "Deployment configuration associated with six retained synthetic-case outputs",
+      "reader": "source-reader-v3-structural-references",
+      "external_assistance": "reliable-reference-v5"
+    }
+  },
+  "R_B_provenance": {
+    "frozen_at_utc": "2026-10-27T16:20:48.892111+00:00",
+    "main_repository_head_at_freeze": "ea2f2804e60d4ee401d32fdf1b562302f2154e8e",
+    "source_files": 467,
+    "method": "A separate Git history captured the main working-tree bytes, including uncommitted files. B reverted only three boundary-related files; R restored those files to the captured working-tree contents.",
+    "original_archives_sha256": {
+      "source-release.zip": "c4be7fd2cdd156a6c2be9c1c8fcd121acd7b7e0f401e141fd33e76906e791c40",
+      "source-control.zip": "6ac046466ed481b4b12de3390eaefc5fdffe2c7a2386c9a0c170c87eee11274a",
+      "frozen-source.bundle": "55b77a6a0212d376e32ba3eec03e2b78920a64535567983d03e87a62e1261524"
+    }
+  },
+  "corpus": {
+    "rows": 3710,
+    "sha256": "abe30508884145a43dd135059ef78a8f947defc0abc7a2e1f656c1f33dee98c5",
+    "bytes": 28712548,
+    "included_in_this_publication": false,
+    "note": "Exact frozen corpus remains locally archived. A current download is not a byte-identical substitute."
+  },
+  "published_original_files_sha256": {
+    "receipts/source-summary-B.json": "29184024209d18c88d6bbc3a147dc2ac386b5ec168eeda89c9a7404af262ef71",
+    "receipts/source-summary-R.json": "7ff0b28d1e24c971beafcdf77288a36a51829eec10f886c80a9ed3f2c3af7196",
+    "receipts/source-paired-comparison.json": "38a8d9f222c38302384d5334608b26dd7cac84277bdceccd91ead67ee0a8e6c8",
+    "replay_sources.mjs": "66f5e648149385ba175ad87a0d059fd56d9aa0e93d43b7ea2932398a7b9e51af"
+  },
+  "limits": [
+    "R/B replay contains no model generation.",
+    "P is a separate deployment configuration and does not validate the R reader repair.",
+    "This package does not include the private raw P account records or the full frozen corpus.",
+    "IMP E/E2/E3 configurations are not published by this version package."
+  ]
+}
