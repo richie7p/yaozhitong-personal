@@ -19,25 +19,20 @@ const formScope =
 const identityScope =
   "products 中 identityVerified=false 代表查詢文字，尚未確認產品。只能根據來源明確支持的該藥名與劑型整理一般資料；不得把名稱相似的候選成分、劑型或產品當作已確認。若提供 catalogReference，它是程式以完整名稱及不衝突規格唯一對上的官方登記資料，可使用其中明列的成分對照查找與整理該成分的一般資料，並註明這不等於核對了手上藥品；這不是模糊候選或模型猜測。沒有 catalogReference 且成分原本未知時，來源必須明確連結查詢名稱與成分，否則省略該說明。查詢劑型未提供時，說明須明確保留來源的劑型或給藥途徑，不可推定手上藥品也是該劑型。表述用『查得的同名藥品／該成分一般資料』並保留未確認手上產品的限制，不能聲稱本品身分、核准用途或個人適用性已確定。";
 
+const unconfirmedTopics = [
+  "用途", "副作用", "飲食注意", "藥品交互作用", "個人適用性",
+  "用法與劑量", "停藥或調整", "完整產品仿單", "使用注意", "保存方式", "需就醫的警訊",
+] as const;
 const Output = z.object({
   status: z.enum(["answered", "insufficient_data", "refused"]),
-  unconfirmedTopics: z
-    .array(
-      z.enum([
-        "用途",
-        "副作用",
-        "飲食注意",
-        "藥品交互作用",
-        "個人適用性",
-        "用法與劑量",
-        "停藥或調整",
-        "完整產品仿單",
-        "使用注意",
-        "保存方式",
-      ]),
-    )
-    .max(10)
-    .default([]),
+  // Optional labels cannot erase otherwise valid, source-reviewable claims.
+  // Unknown labels are omitted, never rendered as arbitrary model text.
+  unconfirmedTopics: z.preprocess(
+    (value) => Array.isArray(value)
+      ? [...new Set(value.filter((topic) => unconfirmedTopics.includes(topic)))].slice(0, 10)
+      : [],
+    z.array(z.enum(unconfirmedTopics)).max(10),
+  ),
   claims: z
     .array(
       z.object({
@@ -97,10 +92,11 @@ ${formScope}
 ${identityScope}
 只根據提供的 references 與 userLabels、glossary，回答問題或整理藥品用途、一般注意事項。references 是已讀取的來源原文，並非已核對的本品仿單；可能屬於同成分、其他廠牌/國家/規格。必須保留這些限制，用「關於成分…的一般資料」表述，不可推導成本品已核准用途、個人處方或診斷。沒有資料的部分不要猜測。
 若 references 有主檔成分的一般用途、副作用或注意事項，應以成分一般資訊回答；不可以「沒有完整本品仿單」為由略過已有來源的資訊。相同活性成分的鹽類名稱可以用於一般衛教，不推算等量劑量。使用者問「這個藥有什麼用途」時，提供有依據的成分一般用途並註明尚不能確認本品完整仿單，而不是拒絕解說。
+一般藥品解說請先回答藥品本身的用途與使用注意，依內容以「用途：」「使用注意：」「可能副作用：」「需就醫的警訊：」「保存方式：」開頭，讓讀者立即看懂。只列有原文依據的項目，沒有證據就省略；不要用其他疾病或傷口的一般照護充當所問劑型的用途。產品尚未核對與仿單未收錄會由介面另行說明，不必在每一項重複整段聲明，但仍須保留成分、劑型與特殊適用條件。
 每項醫療說明必須 basis=reference，sourceIds 只選直接支持該段且與該藥成分相符的來源；完整保留警語條件。不得跨藥品拼接。user_label 只能忠實整理使用者填寫的用法或用 glossary 解釋其中縮寫，不得新增、計算、推薦任何劑量、間隔、天數、服藥時間、餐前後，也不得推導用途或副作用。使用「你記錄的…」，不可把紀錄判定為正確處方。
 每項 reference 說明需附 evidenceQuotes：逐字抄錄 references 中直接支持所有細節的原文，使用原文語言，不自行翻譯引文。每個 sourceId 都需對應引文；無法提供逐字依據就省略該說明。保持每項說明簡短且聚焦，不把一般副作用、嚴重症狀、過量症狀混寫為常見副作用；原文未提到的長期影響與頻率不得補充。
 涉及自行停藥、增減劑量、診斷、個人是否安全/適用/可併用時 status=refused、claims=[]。不得聲稱沒有交互作用、沒有風險或保證安全。不要寫連結、引文標記或新來源，也不要生成測驗。查不到醫療依據時仍可回答藥袋文字，其他部分留空。
-資料未確認的說明不可放進 claims；用 unconfirmedTopics 標示問題中仍無資料可回答的項目，可選「用途」「副作用」「飲食注意」「藥品交互作用」「個人適用性」「用法與劑量」「停藥或調整」「完整產品仿單」「使用注意」「保存方式」，最多 10 項。
+資料未確認的說明不可放進 claims；用 unconfirmedTopics 標示問題中仍無資料可回答的項目，可選「用途」「副作用」「飲食注意」「藥品交互作用」「個人適用性」「用法與劑量」「停藥或調整」「完整產品仿單」「使用注意」「保存方式」「需就醫的警訊」，最多 10 項。
 unconfirmedTopics 只列這次被詢問但沒有可用資料回答的項目；已有成分一般資料回答的項目不要重複標成完全無法確認。不要列使用者沒問的所有項目。claims 不要只重複藥品登記資料或資料不足的宣告。
 JSON 格式上限：claims 最多 10 項；每項 text 為 1 至 1200 字元，sourceIds 最多 6 個且每個編號最多 80 字元；evidenceQuotes 最多 6 筆，每筆 sourceId 最多 80 字元、quote 為 12 至 1800 字元。超出時減少或拆分主張，不能截斷必要條件或拼造引文。
 只回 JSON：{"status":"answered|insufficient_data|refused","unconfirmedTopics":[],"claims":[{"text":"白話說明","basis":"reference|user_label","sourceIds":["來源編號"],"evidenceQuotes":[{"sourceId":"來源編號","quote":"逐字原文"}]}]}。`;
@@ -202,7 +198,7 @@ export async function assisted(
       version: ASSISTANCE_VERSION,
       checkedAt,
       expiresAt:
-        searchState === "unavailable"
+        searchState !== "found"
           ? new Date(Date.now() + 300000).toISOString()
           : new Date(Date.now() + 86400000).toISOString(),
       searchState,
@@ -307,6 +303,8 @@ user_label 只能忠實轉述 userLabels 或依 glossary 解釋其中縮寫，�
   result.status = result.assistance!.claims.length
     ? "supported"
     : "insufficient_data";
+  if (!result.assistance!.claims.some((claim) => claim.basis === "reference"))
+    result.assistance!.expiresAt = new Date(Date.now() + 300000).toISOString();
   if (result.rejectedCount)
     uncertainties.push(
       "部分生成內容未通過來源核對，已隱藏；這份回答可能不完整。",

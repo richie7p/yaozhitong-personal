@@ -320,6 +320,12 @@ export interface AiRequestMetric {
   finishReason?: string;
   error?: string;
   fallbackFrom?: string;
+  /** Aggregate retrieval diagnostics only: no query, patient data or source text. */
+  referenceRetrieval?: {
+    candidates: number;
+    originals: number;
+    outcomes: Record<string, number>;
+  };
 }
 export interface Job {
   id: string;

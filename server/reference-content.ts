@@ -145,7 +145,7 @@ async function readSource(
 export async function readReferenceContent(
   search: ReferenceSearch,
   drugs: Drug[],
-  options: { fetcher?: typeof fetch; signal?: AbortSignal } = {},
+  options: { fetcher?: typeof fetch; signal?: AbortSignal; onRead?: (outcome: string) => void } = {},
 ): Promise<ReferenceSearch> {
   if (search.state !== "found")
     return { state: search.state, sources: [], passages: [] };
@@ -165,7 +165,10 @@ export async function readReferenceContent(
         options.fetcher || fetch,
       );
       // Omit an oversized document in full, never truncate a warning mid-condition.
-      if (page.text.length < 100 || page.text.length > 24000) return null;
+      if (page.text.length < 100 || page.text.length > 24000) {
+        options.onRead?.("text_size");
+        return null;
+      }
       readable++;
       const heading = page.text.split("\n").find((line) => line.trim()) || "";
       if (
@@ -174,26 +177,33 @@ export async function readReferenceContent(
             relevantReferenceText(page.text, [drug]) &&
             referenceFormCompatible(heading, drug),
         )
-      )
+      ) {
+        options.onRead?.("name_or_form_mismatch");
         return null;
+      }
+      options.onRead?.("accepted");
       return { source: { ...source, url: page.url }, text: page.text };
-    } catch {
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "read_failed";
+      options.onRead?.(signal.aborted ? "deadline" : [
+        "unreadable_reference", "empty_reference", "oversized_reference",
+        "unreadable_reference_pdf", "untrusted_reference", "too_many_redirects",
+      ].includes(code) ? code : "read_failed");
       return null;
     }
   };
   const reads: Awaited<ReturnType<typeof read>>[] = new Array(sources.length);
-  const originals = new Set<string>();
   let next = 0;
   // Start at most six reads. Each freed slot can reach a later candidate while
-  // a slow earlier source is pending. Two originals stop new reads; those
-  // already running may finish within the same outer deadline. A matching
-  // original remains evidence to review, never automatic clinical support.
+  // a slow earlier source is pending. A name-matching inventory or combination
+  // product is not necessarily useful education: read the bounded candidate
+  // set rather than stopping after two such pages. The outer deadline and
+  // twelve-document cap still apply to the whole attempt.
   const worker = async () => {
-    while (next < sources.length && !signal.aborted && (next < 6 || originals.size < 2)) {
+    while (next < sources.length && !signal.aborted) {
       const index = next++;
       const row = await read(sources[index]);
       reads[index] = row;
-      if (row) originals.add(row.source.url);
     }
   };
   await Promise.all(Array.from({ length: Math.min(6, sources.length) }, worker));
@@ -203,7 +213,16 @@ export async function readReferenceContent(
     passages: [],
   };
   let remaining = 60000;
-  for (const row of reads) {
+  // Prefer originals containing several patient-information topics over long
+  // inventories before applying the shared context cap. This is selection,
+  // not clinical approval; generation and source review still check every claim.
+  const topicCount = (text: string) => [
+    /適應症|藥品作用|藥物作用|用途|indications|used to treat/i,
+    /注意事項|使用注意|警語|警告|precautions|warnings/i,
+    /副作用|不良反應|side effects|adverse reactions/i,
+    /保存|貯存|儲存|storage|store (?:at|below|in)/i,
+  ].filter((topic) => topic.test(text)).length;
+  for (const row of reads.filter((row) => !!row).sort((a, b) => topicCount(b.text) - topicCount(a.text))) {
     if (
       !row ||
       row.text.length > remaining ||

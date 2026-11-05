@@ -1,6 +1,6 @@
 /** Genuine, deterministic PDFs built without a PDF library. All medicine text is synthetic. */
 export const PDF_FIXTURE_NAME_EN = "RAW VERIFIED SYNTHETIC TABLETS 5MG";
-export function buildTfdaRawPdf(options: { blankSecondPage?: boolean; largeImage?: boolean; tableGrid?: boolean; twoColumns?: boolean; pageCount?: number; longText?: boolean } = {}): Buffer {
+export function buildTfdaRawPdf(options: { blankSecondPage?: boolean; largeImage?: boolean; tableGrid?: boolean; twoColumns?: boolean; staggeredColumns?: boolean; pageCount?: number; longText?: boolean; footerFirst?: boolean; reversedFragments?: boolean; bodyReordered?: boolean; italicHeading?: boolean; rotatedHeading?: boolean; headerLast?: boolean } = {}): Buffer {
   const objects: Buffer[] = [Buffer.alloc(0), Buffer.alloc(0)];
   const add = (text: string | Buffer) => { objects.push(Buffer.isBuffer(text) ? text : Buffer.from(text, "ascii")); return objects.length; };
   const font = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
@@ -25,6 +25,16 @@ export function buildTfdaRawPdf(options: { blankSecondPage?: boolean; largeImage
   for (const [index, lines] of pages.entries()) {
     const escaped = (text: string) => text.replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
     let content = lines.length ? "BT\n/F1 10 Tf\n50 750 Td\n" + lines.map((line, i) => `${i ? "0 -18 Td\n" : ""}(${escaped(line)}) Tj`).join("\n") + "\nET\n" : "q\nQ\n";
+    if (options.italicHeading) content = content.replace("50 750 Td", "1 0 0.3333 1 50 750 Tm");
+    if (options.rotatedHeading) content = content.replace("50 750 Td", "0.9 0.3 -0.3 0.9 50 750 Tm");
+    if (options.headerLast && lines.length)
+      content += "BT /F1 10 Tf 50 700 Td (Synthetic marginal header drawn after body.) Tj ET\n";
+    if (options.footerFirst && lines.length)
+      content = `BT /F1 8 Tf 50 35 Td (Synthetic footer on physical page ${index + 1}.) Tj ET\n` + content;
+    if (options.reversedFragments && lines.length)
+      content += "BT /F1 10 Tf 290 300 Td (the complete synthetic condition.) Tj ET\nBT /F1 10 Tf 50 300 Td (Read this phrase before) Tj ET\n";
+    if (options.bodyReordered && lines.length)
+      content = "BT /F1 10 Tf 50 400 Td (Ambiguous interior paragraph order must not be repaired.) Tj ET\n" + content;
     if (image && index === 0) content += "q\n450 0 0 450 50 50 cm\n/Im1 Do\nQ\n";
     if (options.tableGrid && index === 0) {
       content += "q\n1 w\n";
@@ -37,11 +47,11 @@ export function buildTfdaRawPdf(options: { blankSecondPage?: boolean; largeImage
         content += `BT /F1 10 Tf 310 ${y} Td (Exception ${row + 1}) Tj ET\n`;
       }
     }
-    if (options.twoColumns && index === 0) {
+    if ((options.twoColumns || options.staggeredColumns) && index === 0) {
       for (let row = 0; row < 20; row++) {
         const y = 620 - row * 18;
         content += `BT /F1 10 Tf 50 ${y} Td (Condition A retains source order.) Tj ET\n`;
-        content += `BT /F1 10 Tf 330 ${y} Td (Exception B preserves original scope.) Tj ET\n`;
+        content += `BT /F1 10 Tf 330 ${y - (options.staggeredColumns ? 7 : 0)} Td (Exception B preserves original scope.) Tj ET\n`;
       }
     }
     const contentId = add(`<< /Length ${Buffer.byteLength(content, "ascii")} >>\nstream\n${content}endstream`);

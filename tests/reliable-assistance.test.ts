@@ -218,6 +218,18 @@ it("separates retrieved-reference assistance from leaflet evidence and never man
   ]);
   expect(result.assistance?.uncertainties.join("")).toContain("不同廠牌");
 });
+it("does not let an unknown optional topic label erase reviewable medical information", async () => {
+  const json = vi.fn()
+    .mockResolvedValueOnce({ status: "answered", unconfirmedTopics: ["需就醫的警訊", "UNTRUSTED-LABEL", "用途", "用途", { text: "bad" }], claims: [claim] })
+    .mockResolvedValueOnce({ decisions: [{ id: "0", supported: true }] });
+  const result = await assisted({ json, searchReferences: async () => search }, "一般用途？", [med], [drug], [null]);
+  expect(result.status).toBe("supported");
+  expect(result.assistance!.claims).toHaveLength(1);
+  expect(json).toHaveBeenCalledTimes(2);
+  expect(result.assistance!.uncertainties.join(" ")).toContain("需就醫的警訊、用途");
+  expect(JSON.stringify(result)).not.toContain("UNTRUSTED-LABEL");
+});
+
 it.each([
   ["AMOXICILLIN (TRIHYDRATE)", true],
   ["AMOXICILLIN TRIHYDRATE", true],

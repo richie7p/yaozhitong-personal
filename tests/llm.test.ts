@@ -59,6 +59,77 @@ it("retrieves original reference text before exposing search evidence, without f
   expect(fetcher.mock.calls[1][1].headers).not.toHaveProperty("authorization");
 });
 
+describe("reference search recovery", () => {
+  const product = { nameZh: "合成藥品", nameEn: "SYNTHETIC", ingredients: ["SYNTHETIC"] } as any;
+  const searched = (url?: string) => Response.json({
+    status: "completed", usage: { total_tokens: 100 },
+    output: [{ type: "web_search_call", status: "completed", action: { sources: url ? [{ url }] : [] } }],
+  });
+  const original = "SYNTHETIC complete original information with all necessary conditions. ".repeat(3);
+  it.each(["no_candidates", "unreadable", "wrong_name"])("recovers %s with one new web search and original reading", async (reason) => {
+    let searchCalls = 0;
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.includes("/responses")) return searched(++searchCalls === 1
+        ? reason === "no_candidates" ? undefined : "https://medlineplus.gov/first"
+        : "https://medlineplus.gov/second");
+      if (url.endsWith("/first")) return reason === "unreadable"
+        ? new Response("denied", { status: 403 })
+        : new Response("UNRELATED ".repeat(30), { headers: { "content-type": "text/plain" } });
+      return new Response(original, { headers: { "content-type": "text/plain" } });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const llm = new JsonLlm();
+    const result = await llm.searchReferences([product]);
+    expect(result.passages).toEqual([{ text: original.trim(), sourceIds: ["web-1"] }]);
+    expect(searchCalls).toBe(2);
+    expect(llm.requests.map((m) => m.attempt)).toEqual([1, 2]);
+    expect(llm.requests[1].referenceRetrieval).toEqual({ candidates: 1, originals: 1, outcomes: { accepted: 1 } });
+    const requests = fetcher.mock.calls.filter(([url]) => url.includes("/responses"));
+    const body = JSON.parse((requests[1] as any)[1].body);
+    expect(body.tool_choice).toBe("required");
+    expect(JSON.parse(body.input).previousCandidateUrls).toEqual(reason === "no_candidates" ? [] : ["https://medlineplus.gov/first"]);
+    expect(JSON.stringify(llm.requests)).not.toContain("SYNTHETIC");
+  });
+  it("stops after two empty searches and never generates medical facts from search prose", async () => {
+    const fetcher = vi.fn(async () => searched());
+    vi.stubGlobal("fetch", fetcher);
+    const result = await new JsonLlm().searchReferences([product]);
+    expect(result).toEqual({ state: "not_found", sources: [], passages: [] });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it("looks beyond an uncited background hit and preserves it if the recovery fails", async () => {
+    let searchCalls = 0;
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.includes("/responses")) return ++searchCalls === 1
+        ? searched("https://medlineplus.gov/background")
+        : Response.json({ error: "synthetic" }, { status: 500 });
+      return new Response(original, { headers: { "content-type": "text/plain" } });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const result = await new JsonLlm().searchReferences([product]);
+    expect(searchCalls).toBe(2);
+    expect(result.passages[0].text).toBe(original.trim());
+    const second = fetcher.mock.calls.filter(([url]) => url.includes("/responses"))[1] as any;
+    const request = JSON.parse(second[1].body);
+    expect(request.tools[0].filters.allowed_domains).not.toContain("medlineplus.gov");
+    expect(request.tools[0].filters.allowed_domains).toContain("cth.org.tw");
+    expect(JSON.parse(request.input).searchQueries[0]).toContain("用途 注意事項");
+  });
+  it.each([400, 401, 429, 500])("does not multiply a provider HTTP %s failure", async (status) => {
+    const fetcher = vi.fn(async () => Response.json({ error: "synthetic" }, { status }));
+    vi.stubGlobal("fetch", fetcher);
+    expect((await new JsonLlm().searchReferences([product])).state).toBe("unavailable");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("does not spend the generation/review reserve on a second search", async () => {
+    config.aiJobTimeoutMs = 30000;
+    const fetcher = vi.fn(async () => searched());
+    vi.stubGlobal("fetch", fetcher);
+    await new JsonLlm().searchReferences([product]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("provider transport", () => {
   it("can give reasoning text more time while preserving the shorter vision timeout", async () => {
     config.aiRequestTimeoutMs = 25;

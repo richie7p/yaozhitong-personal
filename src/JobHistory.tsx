@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { api } from "./api";
+import { api, submitJob } from "./api";
 import { publicApiErrorMessage } from "./api-error-messages";
 import { Button, Busy, Empty, Notice, useData } from "./components";
 import { Evidence } from "./Evidence";
 import { DrugExplanation } from "./DrugExplanation";
+import { DrugQuerySchema } from "../shared/drug-explanation";
 
 /** Recheck one requested result; polling summaries never loads private answers. */
 function JobResultPreview({ job }: { job: any }) {
@@ -51,6 +52,43 @@ function JobResultPreview({ job }: { job: any }) {
       }
     }
   }
+  async function requery() {
+    if (checking.current) return;
+    const original = checked?.result?.queriedProduct;
+    const query = DrugQuerySchema.safeParse(original && {
+      name: original.name,
+      strength: original.strength || "",
+      form: original.form || "",
+      ...(original.licenseNo ? { licenseNo: original.licenseNo } : {}),
+    });
+    if (!query.success) {
+      setError("這筆紀錄沒有完整查詢文字，請前往一般藥品查詢重新輸入藥名。");
+      return;
+    }
+    const version = ++requestVersion.current;
+    checking.current = true;
+    setLoading(true);
+    setError("");
+    try {
+      const current = await submitJob("/explanations", { query: query.data });
+      if (live.current && requestVersion.current === version) setChecked(current);
+    } catch (cause: any) {
+      if (live.current && requestVersion.current === version)
+        setError(cause.message);
+    } finally {
+      if (live.current && requestVersion.current === version) {
+        checking.current = false;
+        setLoading(false);
+      }
+    }
+  }
+  const emptyExplanation = job.kind === "explanation" &&
+    checked?.result?.mode === "general_information" &&
+    checked.result.status !== "refused" &&
+    !checked.result.assistance?.claims?.some(
+      (claim: { basis: string; text: string }) =>
+        claim.basis === "reference" && claim.text.trim(),
+    );
   return (
     <details
       onToggle={(event) => {
@@ -98,6 +136,14 @@ function JobResultPreview({ job }: { job: any }) {
               <DrugExplanation result={checked.result} />
             ) : (
               <Evidence result={checked.result} showQuiz={false} />
+            )}
+            {emptyExplanation && (
+              <Notice>
+                本次未取得基本用藥資訊。可使用這筆紀錄的藥名重新搜尋，會使用 1 次 AI 額度。
+                <Button disabled={loading} onClick={requery}>
+                  重新查詢基本用藥資訊
+                </Button>
+              </Notice>
             )}
             {(job.kind === "bundle" || job.kind === "interaction") && (
               <a className="btn secondary" href="#learning">

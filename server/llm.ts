@@ -2,7 +2,8 @@ import type { Llm } from "./ai.js";
 import type { AiRequestMetric } from "../shared/schema.js";
 import type { Drug } from "../shared/schema.js";
 import type { ReferenceSearch } from "../shared/assistance.js";
-import { referenceSearchRequest, referenceSearchCandidates } from "./reference-search.js";
+import { REFERENCE_DOMAINS } from "../shared/assistance.js";
+import { referenceSearchRequest, referenceSearchCandidates, canonicalReferenceUrl } from "./reference-search.js";
 import { readReferenceContent } from "./reference-content.js";
 import {
   aiConnection,
@@ -23,33 +24,71 @@ export class JsonLlm implements Llm {
   async searchReferences(drugs: Drug[]): Promise<ReferenceSearch> {
     const unavailable: ReferenceSearch = { state: "unavailable", sources: [], passages: [] };
     if (config.aiProvider !== "openai" || !config.openaiKey || !drugs.length) return unavailable;
-    // One bounded retrieval per job, leaving time for generation and review.
-    const remaining = this.startedAt + config.aiJobTimeoutMs - Date.now();
-    if (remaining < 10000) return unavailable;
-    const started = Date.now();
-    const metric: AiRequestMetric = { provider: "openai", model: config.textModel,
-      stage: "search", attempt: 1, latencyMs: 0, tokens: null };
-    this.requests.push(metric);
-    try {
-      const response = await fetch(config.openaiBase.replace(/\/$/, "") + "/responses", {
-        method: "POST", headers: { authorization: "Bearer " + config.openaiKey, "content-type": "application/json" },
-        body: JSON.stringify(referenceSearchRequest(drugs, config.textModel)),
-        signal: AbortSignal.timeout(Math.min(60000, Math.floor(remaining / 2))),
-      });
-      metric.status = response.status;
-      if (!response.ok) { metric.error = "reference_search_unavailable"; return unavailable; }
-      const raw: any = await response.json();
-      metric.tokens = Number(raw.usage?.total_tokens) || 0;
-      this.tokens += metric.tokens;
-      const parsed = referenceSearchCandidates(raw, drugs);
-      const readBudget = Math.min(10000, this.startedAt + config.aiJobTimeoutMs - Date.now() - 10000);
-      const result = parsed.state === "found" && readBudget > 0
-        ? await readReferenceContent(parsed, drugs, { signal: AbortSignal.timeout(readBudget) })
-        : parsed.state === "found" ? unavailable : parsed;
-      if (result.state === "unavailable") metric.error = "reference_search_incomplete";
-      return result;
-    } catch { metric.error = "reference_search_unavailable"; return unavailable; }
-    finally { metric.latencyMs = Date.now() - started; }
+    // One recovery search when the first search yielded no readable, matching
+    // cited original (uncited background hits alone may be inventories).
+    // Both attempts share the job deadline; reserve time
+    // for generation/review, and do not retry provider errors or quota failures.
+    let last = unavailable;
+    let previousCandidates: string[] = [];
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const remaining = this.startedAt + config.aiJobTimeoutMs - Date.now();
+      if (remaining < (attempt === 1 ? 10000 : 90000)) return last;
+      const started = Date.now();
+      const metric: AiRequestMetric = { provider: "openai", model: config.textModel,
+        stage: "search", attempt, latencyMs: 0, tokens: null };
+      this.requests.push(metric);
+      try {
+        const request = referenceSearchRequest(drugs, config.textModel);
+        if (attempt === 2) {
+          const priorHosts = previousCandidates.map((url) => new URL(url).hostname);
+          const otherDomains = REFERENCE_DOMAINS.filter((domain) =>
+            !priorHosts.some((host) => host === domain || host.endsWith("." + domain)),
+          );
+          if (otherDomains.length >= 3) request.tools[0].filters.allowed_domains = [...otherDomains];
+          request.instructions += "\n這是一次補充搜尋：上一輪未取得可讀、名稱與劑型相符的來源原文。請改用更簡短的公開藥名及劑型搜尋，優先找醫院的藥品資訊 HTML 頁或用藥指導單張，並實際開啟來源。不要只查產品名冊。不要要求使用者先提供個人用法；不得猜成分、變更給藥途徑或以搜尋不到推斷沒有用途。請在允許來源範圍內尋找其他機構，避免重複只回傳前一輪未能提供原文的網址。";
+          request.input = JSON.stringify({ ...JSON.parse(request.input), previousCandidateUrls: previousCandidates });
+        }
+        const response = await fetch(config.openaiBase.replace(/\/$/, "") + "/responses", {
+          method: "POST", headers: { authorization: "Bearer " + config.openaiKey, "content-type": "application/json" },
+          body: JSON.stringify(request),
+          signal: AbortSignal.timeout(attempt === 1
+            ? Math.min(60000, Math.floor(remaining / 2))
+            : Math.min(45000, remaining - 60000)),
+        });
+        metric.status = response.status;
+        if (!response.ok) { metric.error = "reference_search_unavailable"; return last.passages.length ? last : unavailable; }
+        const raw: any = await response.json();
+        metric.tokens = Number(raw.usage?.total_tokens) || 0;
+        this.tokens += metric.tokens;
+        const parsed = referenceSearchCandidates(raw, drugs);
+        previousCandidates = parsed.sources.map((source) => source.url);
+        const diagnostics = { candidates: parsed.sources.length, originals: 0, outcomes: {} as Record<string, number> };
+        metric.referenceRetrieval = diagnostics;
+        const readBudget = Math.min(15000, this.startedAt + config.aiJobTimeoutMs - Date.now() - (attempt === 1 ? 10000 : 45000));
+        const result = parsed.state === "found" && readBudget > 0
+          ? await readReferenceContent(parsed, drugs, {
+              signal: AbortSignal.timeout(readBudget),
+              onRead: (outcome) => { diagnostics.outcomes[outcome] = (diagnostics.outcomes[outcome] || 0) + 1; },
+            })
+          : parsed.state === "found" ? unavailable : parsed;
+        diagnostics.originals = result.passages.length;
+        if (result.state === "unavailable") metric.error = "reference_search_incomplete";
+        else if (result.state === "not_found") metric.error = "reference_originals_not_found";
+        const citedUrls = new Set<string>((raw.output || []).flatMap((item: any) =>
+          item.type === "message" ? (item.content || []).flatMap((part: any) =>
+            (part.annotations || []).flatMap((annotation: any) => {
+              const url = annotation.type === "url_citation" && canonicalReferenceUrl(annotation.url);
+              return url ? [url] : [];
+            }),
+          ) : [],
+        ));
+        if (result.passages.length && (attempt === 2 || result.sources.some((source) => citedUrls.has(source.url)))) return result;
+        if (parsed.state === "unavailable") return last.passages.length ? last : result;
+        if (result.passages.length || !last.passages.length) last = result;
+      } catch { metric.error = "reference_search_unavailable"; return last.passages.length ? last : unavailable; }
+      finally { metric.latencyMs = Date.now() - started; }
+    }
+    return last;
   }
 
   async json(

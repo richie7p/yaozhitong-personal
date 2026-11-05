@@ -158,6 +158,37 @@ it("applies the same exact name/form relevance rules after PDF text extraction",
   expect(wrongForm.state).toBe("not_found");
 });
 
+it("reads a single-column PDF in visible order when its footer is painted first", async () => {
+  const text = await readReferencePdf(buildTfdaRawPdf({ footerFirst: true }), AbortSignal.timeout(5000));
+  expect(text.startsWith(PDF_FIXTURE_NAME_EN)).toBe(true);
+  expect(text).toContain("The synthetic exception applies only when synthetic condition A holds.");
+  expect(text.indexOf("No sentence in this fixture")).toBeLessThan(text.indexOf("Synthetic footer on physical page 1."));
+  expect(text.indexOf("Synthetic footer on physical page 1.")).toBeLessThan(text.indexOf("WARNINGS AND PRECAUTIONS"));
+  expect(text.endsWith("Synthetic footer on physical page 2.")).toBe(true);
+});
+
+it("preserves visible left-to-right wording when same-line fragments are painted in reverse", async () => {
+  const text = await readReferencePdf(buildTfdaRawPdf({ reversedFragments: true }), AbortSignal.timeout(5000));
+  expect(text).toContain("Read this phrase before the complete synthetic condition.");
+});
+
+it.each(["tableGrid", "twoColumns", "staggeredColumns", "bodyReordered", "rotatedHeading"] as const)("still rejects %s when a footer is painted before the body", async (layout) => {
+  await expect(readReferencePdf(buildTfdaRawPdf({ [layout]: true, footerFirst: true }), AbortSignal.timeout(5000)))
+    .rejects.toThrow("unreadable_reference_pdf");
+});
+
+it("retains bounded italic text on a horizontal baseline", async () => {
+  const text = await readReferencePdf(buildTfdaRawPdf({ italicHeading: true, footerFirst: true }), AbortSignal.timeout(5000));
+  expect(text).toContain(PDF_FIXTURE_NAME_EN);
+  expect(text).toContain("only when synthetic condition A holds.");
+});
+
+it("places a separately painted marginal header by its visible coordinates", async () => {
+  const text = await readReferencePdf(buildTfdaRawPdf({ headerLast: true, footerFirst: true }), AbortSignal.timeout(5000));
+  expect(text.indexOf("Synthetic marginal header drawn after body.")).toBeLessThan(text.indexOf("No sentence in this fixture"));
+  expect(text).toContain("only when synthetic condition A holds.");
+});
+
 it("rejects oversized or already-aborted PDFs without starting an unbounded parser", async () => {
   const oversized = Buffer.alloc(REFERENCE_PDF_BYTE_LIMIT + 1);
   oversized.write("%PDF-");

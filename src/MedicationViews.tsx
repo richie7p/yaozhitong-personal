@@ -83,11 +83,12 @@ const blank = {
 };
 function needsGeneralExplanation(result: GroundedResult) {
   if (result.status === "refused") return false;
-  const hasExplanation =
-    result.claims.some((claim) => claim.text.trim()) ||
-    result.assistance?.claims.some((claim) => claim.text.trim());
-  return !hasExplanation &&
-    (result.status === "insufficient_data" || !!result.sourceReview || !!result.sourceReading);
+  const hasExplanation = result.assistance
+    ? result.assistance.claims.some(
+        (claim) => claim.basis === "reference" && claim.text.trim(),
+      )
+    : result.claims.some((claim) => claim.text.trim());
+  return !hasExplanation;
 }
 export function MedicationForm({
   initial = blank,
@@ -893,6 +894,7 @@ export function Medications() {
     [result, setResult] = useState<LearningRecord | null>(null);
   const [generalResult, setGeneralResult] = useState<{
     id: string;
+    medicationId: string;
     result: DrugExplanationResult;
   } | null>(null);
   const editHeading = useRef<HTMLHeadingElement>(null);
@@ -956,7 +958,7 @@ export function Medications() {
       (a: Medication, b: Medication) =>
         Number(b.id === savedMedicationId) - Number(a.id === savedMedicationId),
     );
-  async function explain(m: any) {
+  async function explain(m: any, generalOnly = false) {
     const version = ++explanationVersion.current;
     const isCurrent = () => explanationVersion.current === version;
     setBusy("正在讀取已保存的藥品解說…");
@@ -977,10 +979,10 @@ export function Medications() {
       if (!isCurrent()) return;
       if (job.explanationUpdateRequired || job.result?.mode !== "general_information")
         throw new Error("藥品資料已更新，請重新整理後再查詢。");
-      setGeneralResult(job);
+      setGeneralResult({ ...job, medicationId: m.id });
     };
     try {
-      if (!leafletReady(m)) {
+      if (generalOnly || !leafletReady(m)) {
         await loadGeneral();
         return;
       }
@@ -1495,7 +1497,7 @@ export function Medications() {
           <p>查閱來源不使用 AI 額度，也不會建立學習或作答紀錄。</p>
           <p>
             {sourceInfo.state === "missing"
-              ? "AI 會幫你查詢基本用藥資訊，包括用途、注意事項、副作用與保存方式。本站尚未收錄這款藥的官方仿單，以下會使用政府與醫療機構的公開資料，並附上來源。"
+              ? "本站尚未收錄這款藥的官方仿單。點選「使用 AI 解說」，即可查詢政府與醫療機構的公開資料，整理有來源支持的用途、注意事項、副作用與保存方式。"
               : sourceInfo.state === "needs_review"
                 ? "官方仿單仍待整理，可先開啟原文閱讀。"
                 : "可開啟官方仿單原文；產生白話說明及理解測驗會使用 AI 額度。"}
@@ -1510,7 +1512,7 @@ export function Medications() {
                   const med = data?.items.find(
                     (m: Medication) => m.id === sourceInfo.medicationId,
                   );
-                  if (med) void explain(med);
+                  if (med) void explain(med, true);
                 }}
               >
                 使用 AI 解說
@@ -1529,6 +1531,23 @@ export function Medications() {
             AI 藥品解說
           </h2>
           <DrugExplanation result={generalResult.result} />
+          {needsGeneralExplanation(generalResult.result) && (
+            <div className="row wrap">
+              <Button
+                className="primary"
+                disabled={!!busy}
+                onClick={() => {
+                  const med = data?.items.find(
+                    (m: Medication) => m.id === generalResult.medicationId,
+                  );
+                  if (med) void explain(med, true);
+                }}
+              >
+                重新查詢基本用藥資訊
+              </Button>
+              <span className="fine">重新搜尋會使用 1 次 AI 額度。</span>
+            </div>
+          )}
           <a className="text-link" href="#jobs">
             到處理紀錄查看這次查詢
           </a>

@@ -3,6 +3,7 @@ import { syntheticAiUsage } from "../support/ai-usage-fixture";
 import { assisted } from "../../server/assistance";
 import type { Medication } from "../../shared/schema";
 import { ASSISTANCE_VERSION } from "../../shared/assistance";
+import { DRUG_EXPLANATION_VERSION } from "../../shared/drug-explanation";
 test.use({ serviceWorkers: "block" });
 for (const state of ["found", "not_found", "unavailable"] as const)
   test(`ordinary user can explain and ask without an indexed leaflet: ${state}`, async ({
@@ -101,7 +102,18 @@ for (const state of ["found", "not_found", "unavailable"] as const)
       answers: {},
       createdAt: new Date().toISOString(),
     };
-    let explained = false,
+    const generalResult = {
+      ...result,
+      mode: "general_information",
+      explanationVersion: DRUG_EXPLANATION_VERSION,
+      queriedProduct: { name: med.name, strength: "", form: "錠" },
+      identityStatus: "confirmed",
+      assistance: {
+        ...result.assistance!,
+        claims: state === "found" ? result.assistance!.claims : [],
+      },
+    };
+    let explanationAttempts = 0,
       asked = false;
     const unexpected: string[] = [];
     await page.addInitScript(() =>
@@ -111,11 +123,12 @@ for (const state of ["found", "not_found", "unavailable"] as const)
       const path = new URL(route.request().url()).pathname.slice(
         "/api/v1".length,
       );
-      if (route.request().method() === "POST" && path === "/bundles") {
-        explained = true;
+      if (route.request().method() === "POST" && path === "/explanations") {
+        expect(route.request().postDataJSON()).toEqual({ medicationId: med.id });
+        explanationAttempts++;
         return route.fulfill({
           status: 202,
-          json: { jobId: record.id, status: "queued" },
+          json: { jobId: "synthetic-general", status: "queued" },
         });
       }
       if (route.request().method() === "POST" && path === "/chat") {
@@ -142,7 +155,7 @@ for (const state of ["found", "not_found", "unavailable"] as const)
           profile: {},
         },
         "/medications": { items: [med] },
-        "/learning": { items: explained ? [record] : [] },
+        "/learning": { items: [] },
         "/chat": {
           items: asked
             ? [{ ...record, id: "synthetic-chat", question: "QD 是什麼意思？" }]
@@ -154,10 +167,10 @@ for (const state of ["found", "not_found", "unavailable"] as const)
           state: "missing",
           sources: [],
         },
-        "/jobs/synthetic-bundle": {
-          id: record.id,
+        "/jobs/synthetic-general": {
+          id: "synthetic-general",
           status: "succeeded",
-          result,
+          result: generalResult,
         },
         "/jobs/synthetic-chat": {
           id: "synthetic-chat",
@@ -186,17 +199,21 @@ for (const state of ["found", "not_found", "unavailable"] as const)
       exact: true,
     });
     await expect(answer).toBeVisible();
+    expect(explanationAttempts).toBe(1);
     await expect(answer).toContainText("尚待確認的部分");
     if (state === "found")
       await expect(
         answer.getByRole("link", { name: /合成官方醫療來源/ }),
       ).toHaveAttribute("href", "https://www.ntuh.gov.tw/synthetic-reference");
     else {
-      await expect(answer).toContainText("依你確認的藥品標示");
+      await expect(answer).not.toContainText("依你確認的藥品標示");
       await expect(answer.getByRole("link")).toHaveCount(0);
       await expect(answer).toContainText(
-        state === "not_found" ? "未找到能引用" : "搜尋暫時無法完成",
+        state === "not_found" ? "沒有找到與查詢名稱相符" : "網路來源搜尋或讀取未完成",
       );
+      await page.getByRole("button", { name: "重新查詢基本用藥資訊", exact: true }).click();
+      await expect(answer).toBeVisible();
+      expect(explanationAttempts).toBe(2);
     }
     await expect(answer).not.toContainText("已附仿單依據");
     expect(

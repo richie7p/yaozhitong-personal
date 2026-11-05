@@ -32,33 +32,70 @@ const mul = (a,b) => [a[0]*b[0]+a[2]*b[1], a[1]*b[0]+a[3]*b[1], a[0]*b[2]+a[2]*b
         if (content.items.length > 10000) throw Error('pdf_item_limit');
         const items = content.items.filter(x => 'str' in x && x.str.trim());
         if (!items.length) throw Error('pdf_image_only_page');
-        let prior, text = '', wideGapLines = new Set();
-        for (const item of items) {
+        const positioned = items.map(item => {
           const t = item.transform;
           if (!Array.isArray(t) || t.length !== 6 || t.some(n => !Number.isFinite(n)) ||
-            item.dir === 'ttb' || Math.abs(t[1]) > 0.1 || Math.abs(t[2]) > 0.1 || t[0] <= 0 || t[3] <= 0)
+            // A bounded italic shear keeps a horizontal baseline; rotation or
+            // vertical text does not. Some hospital titles use this matrix.
+            item.dir === 'ttb' || Math.abs(t[1]) > 0.1 || Math.abs(t[2]) > Math.abs(t[3]) * 0.5 + 0.1 || t[0] <= 0 || t[3] <= 0)
             throw Error('pdf_ambiguous_text_direction');
           const height = Math.max(1, Math.abs(item.height || t[3]));
-          if (prior) {
-            const sameLine = Math.abs(t[5] - prior.y) <= Math.max(2, height * 0.35);
-            // Column resets or reversed content order are not reliable prose.
-            if (t[5] > prior.y + Math.max(5, height * 0.9) || (sameLine && t[4] < prior.x - 2))
-              throw Error('pdf_ambiguous_reading_order');
-            if (sameLine && t[4] - prior.right > Math.max(36, height * 4))
-              wideGapLines.add(Math.round(t[5] / 3));
-            if (!sameLine && !text.endsWith('\n')) text += '\n';
-            else if (sameLine && !text.endsWith(' ') && !text.endsWith('\n')) text += ' ';
+          if (!Number.isFinite(height) || !Number.isFinite(item.width) || item.width < 0)
+            throw Error('pdf_invalid_text_geometry');
+          return { str: item.str, x: t[4], y: t[5], right: t[4] + item.width, height };
+        });
+        // Only marginal headers/footers may be painted separately. A reset
+        // inside the main text can be a second column, so do not repair it.
+        const view = page.view, pageHeight = Math.abs(view[3] - view[1]);
+        let priorBody;
+        for (const item of positioned) {
+          if (item.y <= view[1] + pageHeight * 0.1 || item.y >= view[3] - pageHeight * 0.15) continue;
+          if (priorBody && item.y > priorBody.y + Math.max(5, item.height * 0.9))
+            throw Error('pdf_ambiguous_reading_order');
+          priorBody = item;
+        }
+        // PDF drawing order is not reading order: a single-column document may
+        // paint its footer first. Recover only the order visible in its text
+        // coordinates, retaining every item and every physical page.
+        const rows = [];
+        for (const item of positioned.sort((a,b) => b.y - a.y || a.x - b.x)) {
+          let row = rows[rows.length - 1];
+          if (!row || Math.abs(item.y - row.y) > Math.max(2, Math.min(item.height, row.height) * 0.35)) {
+            row = { y: item.y, height: item.height, items: [] };
+            rows.push(row);
           }
-          text += item.str + (item.hasEOL ? '\n' : '');
-          prior = { x: t[4], y: t[5], right: t[4] + Math.max(0, item.width || 0) };
+          row.items.push(item);
+        }
+        // Check spatial layout before concatenation. Repeated separated cells
+        // remain ambiguous tables/parallel columns regardless of stream order.
+        const wideGapRows = new Set();
+        for (const [index,row] of rows.entries()) {
+          row.items.sort((a,b) => a.x - b.x);
+          if (row.items.some((item,i) => i && item.x - row.items[i-1].right > Math.max(36, item.height * 4)))
+            wideGapRows.add(index);
+          row.left = row.items[0].x;
+          row.right = Math.max(...row.items.map(item => item.right));
+        }
+        // Parallel columns may have slightly staggered baselines. Adjacent
+        // rows that occupy disjoint horizontal bands are still ambiguous.
+        for (let i = 1; i < rows.length; i++) {
+          const above = rows[i-1], below = rows[i];
+          const height = Math.max(above.height, below.height);
+          if (above.y - below.y <= height * 0.9 &&
+            Math.max(below.left - above.right, above.left - below.right) > Math.max(36, height * 4))
+            wideGapRows.add(i);
+        }
+        if (wideGapRows.size >= 3) throw Error('pdf_ambiguous_columns_or_table');
+        let text = '';
+        for (const row of rows) {
+          text += row.items.map(item => item.str).join(' ') + '\n';
           if (text.length + total > 24000) throw Error('pdf_text_limit');
         }
-        if (wideGapLines.size >= 3) throw Error('pdf_ambiguous_columns_or_table');
         if (text.trim().length < 40 || /\uFFFD/.test(text)) throw Error('pdf_incomplete_text');
         // Reject dominant scanned regions; small logos may accompany real text.
         const ops = await page.getOperatorList();
         if (ops.fnArray.length > 30000) throw Error('pdf_operator_limit');
-        const view = page.view, area = Math.abs((view[2] - view[0]) * (view[3] - view[1]));
+        const area = Math.abs((view[2] - view[0]) * (view[3] - view[1]));
         let matrix = [1,0,0,1,0,0], stack = [];
         for (let i = 0; i < ops.fnArray.length; i++) {
           const fn = ops.fnArray[i], args = ops.argsArray[i];
@@ -120,7 +157,7 @@ function extractInWorker(bytes: Buffer, signal: AbortSignal): Promise<string> {
   });
 }
 
-/** No OCR, clipping, layout repair, or model-generated replacement text. */
+/** Complete single-column text in spatial order; no OCR, clipping or generated replacement. */
 export async function readReferencePdf(bytes: Buffer, signal: AbortSignal): Promise<string> {
   signal.throwIfAborted();
   if (bytes.length > REFERENCE_PDF_BYTE_LIMIT || bytes.subarray(0, 5).toString() !== "%PDF-")

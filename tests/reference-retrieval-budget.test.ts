@@ -130,25 +130,22 @@ it.each(["wrong_name", "wrong_form", "unreadable"])(
   },
 );
 
-it("stops starting later candidates once two distinct originals are available", async () => {
+it("does not let two name-matching inventories hide a later educational original", async () => {
   let release!: () => void;
   const blocked = new Promise<void>((resolve) => { release = resolve; });
   const fetcher = vi.fn(async (url: string) => {
-    if (/\/[01]$/.test(url)) return page();
+    if (/\/[01]$/.test(url)) return page(drug.nameEn + " inventory");
     await blocked;
-    return page("UnrelatedMedicine");
+    return url.endsWith("/10") ? page() : page("UnrelatedMedicine");
   });
   const pending = readReferenceContent(sources(12), [drug], { fetcher: fetcher as typeof fetch });
   // Complete the two fast originals while all other requests remain pending.
   await new Promise<void>((resolve) => setImmediate(resolve));
-  const started = fetcher.mock.calls.length;
   release();
   const result = await pending;
   expect(result.state).toBe("found");
-  expect(result.sources.map((s) => s.id)).toEqual(["web-1", "web-2"]);
-  expect(started).toBeGreaterThanOrEqual(6);
-  expect(started).toBeLessThanOrEqual(7);
-  expect(fetcher).toHaveBeenCalledTimes(started);
+  expect(result.sources.map((s) => s.id)).toEqual(["web-1", "web-2", "web-11"]);
+  expect(fetcher).toHaveBeenCalledTimes(12);
 });
 
 it("does not let one combination-product original prevent a later standalone original", async () => {
@@ -226,6 +223,17 @@ it.each([false, true])("caps reading at twelve unique sources and keeps failure 
   const result = await readReferenceContent(sources(15), [drug], { fetcher });
   expect(fetcher).toHaveBeenCalledTimes(12);
   expect(result).toEqual({ state: unreadable ? "unavailable" : "not_found", sources: [], passages: [] });
+});
+
+it("keeps late patient-information originals ahead of long inventories when context is bounded", async () => {
+  const original = (drug.nameEn + " fixture only. 用途：合成測試。注意事項：保留完整條件。副作用：合成測試。保存方式：合成測試。 ").repeat(3);
+  const inventory = (drug.nameEn + " inventory entry ").repeat(650);
+  const fetcher = vi.fn(async (url: string) => new Response(url.endsWith("/3") ? original : inventory,
+    { headers: { "content-type": "text/plain" } }));
+  const result = await readReferenceContent(sources(4), [drug], { fetcher: fetcher as typeof fetch });
+  expect(result.sources[0].id).toBe("web-4");
+  expect(result.passages[0].text).toBe(original.trim());
+  expect(result.passages.reduce((sum, row) => sum + row.text.length, 0)).toBeLessThanOrEqual(60000);
 });
 
 it("does not let duplicate tracking URLs consume the original-reading slots", async () => {
