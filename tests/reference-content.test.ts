@@ -61,6 +61,31 @@ it("keeps headings and lists while removing scripts, navigation and hidden conte
     ),
   ).toBe("5\n\n10");
 });
+it("reads hospital originals for an unconfirmed eye ointment and rejects an oral source", async () => {
+  const eyeQuery = {
+    ...drug, nameZh: "合成鹽酸四環素", nameEn: "", ingredients: [],
+    form: "眼藥膏", identityVerified: false,
+  };
+  const hospitalSearch: ReferenceSearch = {
+    state: "found",
+    sources: [{ id: "eye", title: "合成眼用資料", kind: "hospital", url: "https://www.cth.org.tw/synthetic-eye" }],
+    passages: [],
+  };
+  const original = "這是測試用的合成來源文字，僅用來核對完整原文是否被保留，並非真實醫療建議。".repeat(5);
+  const fetcher = vi.fn().mockResolvedValue(new Response(`<main><h1>合成鹽酸四環素眼藥膏</h1><p>${original}</p></main>`, {
+    headers: { "content-type": "text/html; charset=utf-8" },
+  }));
+  const result = await readReferenceContent(hospitalSearch, [eyeQuery], { fetcher });
+  expect(result.state).toBe("found");
+  expect(result.passages[0].text).toContain(original);
+  expect(result.sources[0].kind).toBe("hospital");
+  const oralFetcher = vi.fn().mockResolvedValue(new Response(`<main><h1>合成鹽酸四環素口服膠囊</h1><p>${original}</p></main>`, {
+    headers: { "content-type": "text/html; charset=utf-8" },
+  }));
+  expect(await readReferenceContent(hospitalSearch, [eyeQuery], { fetcher: oralFetcher })).toEqual({
+    state: "not_found", sources: [], passages: [],
+  });
+});
 it.each([
   "http_error",
   "invalid_pdf",

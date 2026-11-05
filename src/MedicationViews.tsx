@@ -81,6 +81,14 @@ const blank = {
   confirmed: false,
   prn: false,
 };
+function needsGeneralExplanation(result: GroundedResult) {
+  if (result.status === "refused") return false;
+  const hasExplanation =
+    result.claims.some((claim) => claim.text.trim()) ||
+    result.assistance?.claims.some((claim) => claim.text.trim());
+  return !hasExplanation &&
+    (result.status === "insufficient_data" || !!result.sourceReview || !!result.sourceReading);
+}
 export function MedicationForm({
   initial = blank,
   initialOperationKey,
@@ -956,55 +964,68 @@ export function Medications() {
     setResult(null);
     setGeneralResult(null);
     setSourceInfo(null);
+    const loadGeneral = async () => {
+      if (!isCurrent()) return;
+      setBusy("正在搜尋可靠來源並整理一般藥品資訊…");
+      const job = await submitJob(
+        "/explanations",
+        { medicationId: m.id },
+        (text) => {
+          if (isCurrent()) setBusy(text);
+        },
+      );
+      if (!isCurrent()) return;
+      if (job.explanationUpdateRequired || job.result?.mode !== "general_information")
+        throw new Error("藥品資料已更新，請重新整理後再查詢。");
+      setGeneralResult(job);
+    };
     try {
       if (!leafletReady(m)) {
-        setBusy("正在搜尋可靠來源並整理一般藥品資訊…");
-        const job = await submitJob(
-          "/explanations",
-          { medicationId: m.id },
-          (text) => {
-            if (isCurrent()) setBusy(text);
-          },
-        );
-        if (!isCurrent()) return;
-        if (
-          job.explanationUpdateRequired ||
-          job.result?.mode !== "general_information"
-        )
-          throw new Error("藥品資料已更新，請重新整理後再查詢。");
-        setGeneralResult(job);
+        await loadGeneral();
         return;
       }
       const saved = await api<{ items: LearningRecord[] }>("/learning");
       if (!isCurrent()) return;
-      const existing = saved.items.find(
+      const matching = saved.items.filter(
         (r) =>
           r.medicationIds.length === 1 &&
-          r.medicationIds[0] === m.id &&
+          r.medicationIds[0] === m.id,
+      );
+      const existing = matching.find(
+        (r) => !needsGeneralExplanation(r.result) &&
           (r.result.status === "supported" ||
             (r.result.status === "insufficient_data" &&
               (r.result.sourceReview?.reason === "safety_sections_pending" ||
                 ["model_source_capacity", "requested_topic_coverage"].includes(
                   r.result.sourceReading?.reason || "",
                 )))),
-      );
+      ) || matching.find((r) => needsGeneralExplanation(r.result));
       if (existing) {
-        setResult(existing);
+        if (needsGeneralExplanation(existing.result)) await loadGeneral();
+        else setResult(existing);
         return;
       }
-      const j = await submitJob(
-        "/bundles",
-        { medicationIds: [m.id] },
-        (message) => {
-          if (isCurrent()) setBusy(message);
-        },
-      );
+      let j: any;
+      try {
+        j = await submitJob(
+          "/bundles",
+          { medicationIds: [m.id] },
+          (message) => {
+            if (isCurrent()) setBusy(message);
+          },
+        );
+      } catch (cause: any) {
+        if (!["source_unavailable", "source_requires_review"].includes(cause.code)) throw cause;
+        await loadGeneral();
+        return;
+      }
       if (!isCurrent()) return;
       const current = await api<{ items: LearningRecord[] }>("/learning");
       if (explanationVersion.current !== version) return;
       const row = current.items.find((r) => r.id === j.id);
       if (!row) throw new Error("內容已更新，請重新產生仿單說明。");
-      setResult(row);
+      if (needsGeneralExplanation(row.result)) await loadGeneral();
+      else setResult(row);
     } catch (e: any) {
       if (isCurrent()) {
         setMessage(e.message);
@@ -1249,8 +1270,8 @@ export function Medications() {
               {leafletReady(m) && (
                 <p className="fine">
                   「AI
-                  藥品解說」整理藥品用途、使用注意與其他有來源的衛教。已保存內容可直接閱讀；首次產生會使用
-                  1 次 AI 額度。
+                  藥品解說」整理藥品用途、使用注意與其他有來源的衛教。閱讀既有解說不計次；新查詢通常使用
+                  1 次 AI 額度。仿單產生後仍無可用說明時，會改查一般資料，合計最多使用 2 次。
                 </p>
               )}
               {!leafletReady(m) && (

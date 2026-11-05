@@ -37,6 +37,72 @@ const pendingResult: GroundedResult = {
   },
 };
 const recordId = "synthetic-source-review-record";
+const generalId = "synthetic-general-fallback";
+const generalText =
+  "合成一般解說：此處只驗證用途與注意事項能顯示，不是醫療建議。";
+function generalResult(searchState = "found", withClaims = true) {
+  return {
+    ...pendingResult,
+    sourceReview: undefined,
+    sourceVersions: {},
+    status: withClaims ? "supported" : "insufficient_data",
+    mode: "general_information",
+    identityStatus: "confirmed",
+    queriedProduct: { name: medication.name, strength: "", form: "錠" },
+    assistance: {
+      version: "reliable-reference-v6",
+      checkedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+      searchState,
+      missingLicenses: [],
+      sources: [
+        {
+          id: "synthetic-general-source",
+          title: "合成一般資訊來源",
+          url: sourceUrl,
+          kind: "official",
+        },
+        {
+          id: "unsafe-source",
+          title: "不可開啟來源",
+          url: "https://fda.gov.tw.evil.invalid/source",
+          kind: "official",
+        },
+      ],
+      claims: withClaims
+        ? [
+            {
+              text: generalText,
+              basis: "reference",
+              sourceIds: ["synthetic-general-source"],
+            },
+          ]
+        : [],
+      uncertainties: ["此為合成一般資訊，未確認個人適用性。"],
+    },
+  };
+}
+async function mockGeneralFallback(page: Page, result = generalResult()) {
+  const requests: unknown[] = [];
+  await page.route("**/api/v1/explanations", async (route) => {
+    requests.push(route.request().postDataJSON());
+    await route.fulfill({
+      status: 202,
+      json: { jobId: generalId, status: "queued" },
+    });
+  });
+  await page.route("**/api/v1/jobs/" + generalId, (route) =>
+    route.fulfill({
+      json: {
+        id: generalId,
+        kind: "explanation",
+        status: "succeeded",
+        result,
+      },
+    }),
+  );
+  return requests;
+}
 
 async function mockSavedReview(
   page: Page,
@@ -155,14 +221,17 @@ test("saved pending learning survives reload with official source access and no 
     `.learning-index-card[data-learning-id="${recordId}"]`,
   );
   await expect(directory).toContainText("尚無測驗");
-  await expect(directory.getByText("測驗已完成", { exact: true })).toHaveCount(0);
+  await expect(directory.getByText("測驗已完成", { exact: true })).toHaveCount(
+    0,
+  );
   expect(unexpected).toEqual([]);
 });
 
-test("reopening pending medication education reuses saved content after reload without another AI request", async ({
+test("a saved pending leaflet leads to general explanation without changing the medication or resubmitting its bundle", async ({
   page,
 }) => {
   const { unexpected, reads } = await mockSavedReview(page);
+  const generalRequests = await mockGeneralFallback(page);
   await page.goto("/#medications");
   const card = page.locator(`.med-card[data-medication-id="${medication.id}"]`);
   const detail = page.locator(".medication-detail");
@@ -172,19 +241,194 @@ test("reopening pending medication education reuses saved content after reload w
       card.getByRole("button", { name: "排定提醒", exact: true }),
     ).toBeEnabled();
     await expect(card.locator(".usage-box strong")).toHaveText("1 錠");
-    await card.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
-    await expectPendingSource(detail, page);
+    await card
+      .getByRole("button", { name: "AI 藥品解說", exact: true })
+      .click();
+    await expect(detail).toContainText(generalText);
+    await expect(detail).toContainText("一般藥品資訊");
+    await expect(detail).not.toContainText("尚未核對完整產品仿單");
     await expect(
       detail.getByRole("link", { name: "繼續理解測驗", exact: true }),
     ).toHaveCount(0);
     expect(reads.filter((path) => path === "/api/v1/learning")).toHaveLength(
       opening,
     );
-    // Any POST, including /bundles, is blocked and recorded by the fixture.
+    expect(generalRequests).toHaveLength(opening);
+    expect(generalRequests[opening - 1]).toEqual({
+      medicationId: medication.id,
+    });
+    // Any other POST, including /bundles or medication edits, remains blocked.
     expect(unexpected).toEqual([]);
     if (opening === 1) await page.reload();
   }
 });
+
+for (const code of ["source_unavailable", "source_requires_review"] as const)
+  test(`a confirmed product falls back to general information when the leaflet request returns ${code}`, async ({
+    page,
+  }) => {
+    const { unexpected } = await mockSavedReview(page);
+    const requests = await mockGeneralFallback(page);
+    let bundleCalls = 0;
+    await page.route("**/api/v1/learning", (route) =>
+      route.fulfill({ json: { items: [] } }),
+    );
+    await page.route("**/api/v1/bundles", async (route) => {
+      bundleCalls++;
+      await route.fulfill({
+        status: 422,
+        json: { code, message: "合成仿單尚待整理。" },
+      });
+    });
+    await page.goto("/#medications");
+    const card = page.locator(`[data-medication-id="${medication.id}"]`);
+    await card
+      .getByRole("button", { name: "AI 藥品解說", exact: true })
+      .click();
+    await expect(page.locator(".medication-detail")).toContainText(generalText);
+    await expect(card).toContainText("產品已核對");
+    await expect(card).toContainText("用法已確認");
+    expect(bundleCalls).toBe(1);
+    expect(requests).toEqual([{ medicationId: medication.id }]);
+    expect(unexpected).toEqual([]);
+  });
+
+test("an accepted leaflet task with no usable claims falls back once to general information", async ({
+  page,
+}) => {
+  const { unexpected } = await mockSavedReview(page);
+  const requests = await mockGeneralFallback(page);
+  let submitted = false;
+  await page.route("**/api/v1/learning", (route) =>
+    route.fulfill({
+      json: {
+        items: submitted
+          ? [
+              {
+                id: recordId,
+                medicationIds: [medication.id],
+                result: pendingResult,
+                answers: {},
+              },
+            ]
+          : [],
+      },
+    }),
+  );
+  await page.route("**/api/v1/bundles", async (route) => {
+    submitted = true;
+    await route.fulfill({
+      status: 202,
+      json: { jobId: recordId, status: "queued" },
+    });
+  });
+  await page.goto("/#medications");
+  await page.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
+  await expect(page.locator(".medication-detail")).toContainText(generalText);
+  expect(requests).toEqual([{ medicationId: medication.id }]);
+  expect(unexpected).toEqual([]);
+});
+
+test("an available saved explanation is preferred to a pending record without another AI request", async ({
+  page,
+}) => {
+  const { unexpected } = await mockSavedReview(page);
+  await page.route("**/api/v1/learning", (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            id: recordId,
+            medicationIds: [medication.id],
+            result: pendingResult,
+            answers: {},
+          },
+          {
+            id: "synthetic-available-record",
+            medicationIds: [medication.id],
+            result: generalResult(),
+            answers: {},
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto("/#medications");
+  await page.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
+  await expect(page.locator(".medication-detail")).toContainText(generalText);
+  expect(unexpected).toEqual([]);
+});
+
+test("quota rejection never starts a second AI request", async ({ page }) => {
+  const { unexpected } = await mockSavedReview(page);
+  const requests = await mockGeneralFallback(page);
+  await page.route("**/api/v1/learning", (route) =>
+    route.fulfill({ json: { items: [] } }),
+  );
+  await page.route("**/api/v1/bundles", (route) =>
+    route.fulfill({
+      status: 429,
+      json: { code: "quota_exceeded", message: "今日 AI 使用額度已達上限。" },
+    }),
+  );
+  await page.route(
+    "**/api/v1/medications/" + medication.id + "/source",
+    (route) =>
+      route.fulfill({
+        json: {
+          medicationId: medication.id,
+          medicationRevision: 1,
+          state: "missing",
+          sources: [],
+        },
+      }),
+  );
+  await page.goto("/#medications");
+  await page.getByRole("button", { name: "AI 藥品解說", exact: true }).click();
+  await expect(page.locator(".medication-detail")).toContainText("官方來源");
+  await expect(page.getByRole("alert")).toContainText("使用額度已達上限");
+  expect(requests).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
+
+for (const [state, message] of [
+  ["found", "已找到參考資料，但尚未整理出有充分依據的用途與注意事項"],
+  ["not_found", "這次沒有找到與查詢名稱相符、可引用的藥品資料"],
+  ["unavailable", "這次網路來源搜尋或讀取未完成"],
+  ["generation_error", "已找到參考資料，但這次 AI 整理未完成"],
+] as const)
+  test(`empty general information explains ${state} and exposes only safe source links`, async ({
+    page,
+  }) => {
+    const { unexpected } = await mockSavedReview(page);
+    const result = generalResult(
+      state === "generation_error" ? "found" : state,
+      false,
+    );
+    if (state === "generation_error")
+      result.assistance.uncertainties.push(
+        "這次 AI 回答格式無法核對，未顯示生成內容。",
+      );
+    await mockGeneralFallback(page, result);
+    await page.goto("/#medications");
+    await page
+      .getByRole("button", { name: "AI 藥品解說", exact: true })
+      .click();
+    const answer = page.getByRole("region", {
+      name: "AI 藥品解說與問答",
+      exact: true,
+    });
+    await expect(answer).toContainText(message);
+    await expect(answer.locator(".assistance-claim")).toHaveCount(0);
+    await expect(answer).not.toContainText("尚未核對完整產品仿單");
+    await expect(
+      answer.getByRole("link", { name: /合成一般資訊來源/ }),
+    ).toHaveAttribute("href", sourceUrl);
+    await expect(
+      answer.getByRole("link", { name: /不可開啟來源/ }),
+    ).toHaveCount(0);
+    expect(unexpected).toEqual([]);
+  });
 
 test("pending chat answers explain the hold and expose official source without invented claims", async ({
   page,
@@ -420,6 +664,9 @@ for (const reason of [
         },
       };
       const { unexpected } = await mockSavedReview(page, result);
+      const generalRequests = view === "medications"
+        ? await mockGeneralFallback(page)
+        : [];
       await page.goto(
         view === "learning"
           ? `/#learning?record=${recordId}&section=reading`
@@ -437,11 +684,15 @@ for (const reason of [
           );
           await card.locator("summary").first().click();
         }
-        if (view === "medications")
+        if (view === "medications") {
           await page
             .locator(".med-card")
             .getByRole("button", { name: "AI 藥品解說", exact: true })
             .click();
+          await expect(page.getByText(generalText, { exact: true })).toBeVisible();
+          await expect(page.locator(".source-reading, .quiz")).toHaveCount(0);
+          continue;
+        }
         const notice = page.locator(".source-reading");
         await expect(
           notice.getByRole("heading", {
@@ -470,6 +721,7 @@ for (const reason of [
           page.getByRole("heading", { name: "完整警語", exact: true }),
         ).toHaveCount(0);
       }
+      if (view === "medications") expect(generalRequests).toHaveLength(2);
       expect(unexpected).toEqual([]);
     });
 

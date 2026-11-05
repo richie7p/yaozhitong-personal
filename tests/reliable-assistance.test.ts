@@ -119,6 +119,26 @@ it("never promotes prose-only links or untrusted metadata into a source candidat
     }),
   ).toEqual({ state: "not_found", sources: [], passages: [] });
 });
+it("accepts the verified hospital source without treating lookalike domains as trusted", () => {
+  const hospitalUrl = "https://www.cth.org.tw/?aid=606&iid=810&page_name=detail&pid=40";
+  const result = referenceSearchCandidates({
+    status: "completed",
+    output: [{
+      type: "web_search_call", status: "completed",
+      action: { sources: [
+        { url: hospitalUrl, title: "醫院藥品資料" },
+        { url: "https://cth.org.tw.attacker.test/drug" },
+        { url: "https://attacker.test/?cth.org.tw" },
+      ] },
+    }],
+  });
+  expect(result.sources).toEqual([
+    { id: "web-1", url: hospitalUrl, title: "醫院藥品資料", kind: "hospital" },
+  ]);
+  expect(result.passages).toEqual([]);
+  expect(reliableReferenceUrl("http://www.cth.org.tw/drug")).toBeUndefined();
+  expect(reliableReferenceUrl("https://www.cth.org.tw:8080/drug")).toBeUndefined();
+});
 it.each([
   "https://ntuh.gov.tw.attacker.test/x",
   "https://attacker.test/?ntuh.gov.tw",

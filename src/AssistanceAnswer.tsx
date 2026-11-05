@@ -5,14 +5,20 @@ import { Notice, Speak } from "./components";
 /** Retrieved references must not impersonate reviewed product leaflets. */
 export function AssistanceAnswer({ result }: { result: GroundedResult }) {
   const answer = result.assistance!;
+  const readableSources = answer.sources.flatMap((source) => {
+    const url = reliableReferenceUrl(source.url);
+    return url ? [{ ...source, url }] : [];
+  });
+  const generationIncomplete = answer.uncertainties.some((text) =>
+    text.includes("AI 回答格式無法核對"),
+  );
   return (
     <section className="assistance-answer" aria-label="AI 藥品解說與問答">
       <div className="row spread wrap">
-        <span className="tag green">AI 資料協助</span>
-        <span className="tag amber">尚未核對完整產品仿單</span>
+        <span className="tag green">一般藥品資訊</span>
       </div>
       <p className="assistance-intro">
-        沒有收錄仿單，也能繼續了解藥品包裝與藥品資訊。以下將查得的資料與尚待確認的部分分開呈現。
+        依查得的官方與醫療機構資料整理，不必先核對完整仿單。請留意來源適用的成分與劑型；這不是個人用藥指示。
       </p>
       {result.status === "refused" && (
         <Notice>
@@ -66,8 +72,31 @@ export function AssistanceAnswer({ result }: { result: GroundedResult }) {
       ))}
       {result.status !== "refused" && !answer.claims.length && (
         <Notice>
-          目前沒有能通過核對的藥品解說。仍可問「這款藥有哪些可以核對的一般用途或注意事項？」或查看下方資料缺口。
+          {answer.searchState === "unavailable"
+            ? "這次網路來源搜尋或讀取未完成。請稍後再查詢；若下方已有參考來源，可先開啟閱讀。"
+            : answer.searchState === "not_found"
+              ? "這次沒有找到與查詢名稱相符、可引用的藥品資料。請補上包裝完整藥名、含量或濃度，以及劑型再查詢，例如眼藥膏與皮膚藥膏需要分開確認。"
+              : generationIncomplete
+                ? "已找到參考資料，但這次 AI 整理未完成。可先閱讀下方來源，或稍後重新查詢。"
+                : "已找到參考資料，但尚未整理出有充分依據的用途與注意事項。請對照下方來源的藥名、成分與劑型；補充包裝文字後可重新查詢。"}
         </Notice>
+      )}
+      {!answer.claims.length && readableSources.length > 0 && (
+        <section aria-label="查得的參考來源">
+          <h3>查得的參考來源（尚未形成解說）</h3>
+          <p className="fine">
+            這些來源供你查閱，尚不能據此確認手上產品的用途或適用性。
+          </p>
+          <ul className="assistance-sources">
+            {readableSources.map((source) => (
+              <li key={source.id}>
+                <a href={source.url} target="_blank" rel="noopener noreferrer">
+                  {source.title || new URL(source.url).hostname} ↗
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       <aside className="assistance-uncertainties" aria-label="尚待確認的部分">
         <h3>尚待確認的部分</h3>

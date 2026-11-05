@@ -6,6 +6,7 @@ export const REFERENCE_DOMAINS = [
   "ntuh.gov.tw",
   "vghtpe.gov.tw",
   "cgmh.org.tw",
+  "cth.org.tw",
   "mmh.org.tw",
   "cmuh.cmu.edu.tw",
   "medlineplus.gov",
