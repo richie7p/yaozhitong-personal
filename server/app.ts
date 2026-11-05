@@ -23,6 +23,7 @@ import { AdminLeaflets } from "./admin-leaflets.js";
 import { validateRecognitionPhoto } from "./photo-validation.js";
 import { AdmissionGate } from "./admission.js";
 import { readAiUsage } from "./ai-usage.js";
+import { DrugExplanationRequestSchema } from "../shared/drug-explanation.js";
 import {
   clientRequestCorrelation,
   requestCompletionEvent,
@@ -412,6 +413,14 @@ export function createApp(d: Domain, auth = authenticate) {
         await d.blobs.delete(imagePath);
       throw e;
     }
+  });
+  app.post("/api/v1/explanations", async (c) => {
+    const input = DrugExplanationRequestSchema.parse(await c.req.json());
+    const j = await d.enqueueJob(
+      uid(c), c.get("identity").verified, "explanation", input,
+      c.req.header("Idempotency-Key") || "",
+    );
+    return c.json({ jobId: j.id, status: j.status }, 202);
   });
   for (const [route, kind] of [
     ["chat", "chat"],

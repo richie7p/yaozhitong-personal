@@ -264,7 +264,7 @@ function Assert-CloudRunCalls {
     Assert-Deployment ($call.EnvironmentValues.GOOGLE_OAUTH_CLIENT_ID -ceq $googleClientId) "$($Result.Name): Google token audience is missing or changed."
     Assert-Deployment ($call.EnvironmentValues.APP_MODE -eq 'firebase') "$($Result.Name): production mode changed."
     Assert-Deployment ($call.EnvironmentValues.PUBLIC_ACCESS_MODE -ceq 'verified') "$($Result.Name): all verified accounts must have access."
-    Assert-Deployment ($call.EnvironmentValues.DAILY_USER_LIMIT -ceq '20' -and $call.EnvironmentValues.DAILY_GLOBAL_LIMIT -ceq '1000') "$($Result.Name): authorized public quotas changed."
+    Assert-Deployment ($call.EnvironmentValues.DAILY_USER_LIMIT -ceq '30' -and $call.EnvironmentValues.DAILY_GLOBAL_LIMIT -ceq '2000') "$($Result.Name): authorized public quotas changed."
     Assert-Deployment ($call.EnvironmentValues.AI_PROVIDER -ceq $Provider) "$($Result.Name): Cloud Run provider mismatch."
     Assert-Deployment ($call.EnvironmentValues.STORAGE_BUCKET -ceq "$projectId-yzt-$Environment-data") "$($Result.Name): bucket name is incorrect or not lowercase."
     Assert-Deployment ($call.EnvironmentValues.TASKS_QUEUE -ceq "yzt-$Environment-ai") "$($Result.Name): queue name is incorrect or not lowercase."

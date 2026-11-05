@@ -304,7 +304,7 @@ export interface LearningRecord {
   createdAt: string;
 }
 export type JobKind =
-  "recognition" | "chat" | "bundle" | "interaction" | "delete-account";
+  "recognition" | "explanation" | "chat" | "bundle" | "interaction" | "delete-account";
 export interface AiRequestMetric {
   provider: string;
   model: string;
@@ -339,6 +339,8 @@ export interface Job {
   tokens?: number;
   latencyMs?: number;
   aiRequests?: AiRequestMetric[];
+  /** Server-only source snapshot; never returned by public job endpoints. */
+  explanationFingerprint?: string;
 }
 export interface Account {
   id: string;

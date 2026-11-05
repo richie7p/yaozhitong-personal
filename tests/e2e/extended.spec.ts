@@ -89,7 +89,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await expect(
     page.getByRole("heading", { name: /今天的用藥日常/ }),
   ).toBeVisible();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.locator('input[type="file"]').setInputFiles({
     name: "synthetic.png",
     mimeType: "image/png",
@@ -139,7 +139,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await evidence.getByLabel("不可以，只供軟體測試", { exact: true }).check();
   await evidence.getByRole("button", { name: "檢查答案" }).click();
   await expect(evidence.getByText(/答對了。/)).toBeVisible();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.getByRole("button", { name: "搜尋藥名", exact: true }).click();
   await page.getByLabel("搜尋藥名", { exact: true }).fill("流程測試片 10mg");
   await page.getByRole("button", { name: "搜尋", exact: true }).click();

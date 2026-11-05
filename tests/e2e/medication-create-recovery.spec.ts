@@ -27,7 +27,7 @@ for (const entry of ["manual", "search", "manual-retake"] as const) {
       page.getByRole("heading", { name: /今天的用藥日常/ }),
     ).toBeVisible();
     const openForm = async () => {
-      await page.goto("/#add");
+      await page.goto("/#add?mode=chronic");
       if (entry === "search") {
         await page
           .getByRole("button", { name: "搜尋藥名", exact: true })

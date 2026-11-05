@@ -14,7 +14,7 @@ test("camera requests rear capture and upload clears it without losing a cancell
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   const input = page.getByLabel("藥品照片", { exact: true });
   const cameraChooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "開啟相機拍攝", exact: true }).click();
@@ -51,7 +51,7 @@ test("invalid camera files never enqueue AI and selecting a valid image restores
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   let calls = 0;
   page.on("request", (request) => {
     if (request.method() === "POST" && request.url().endsWith("/recognitions"))
@@ -127,7 +127,7 @@ for (const invalidPhoto of [
   }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-    await page.goto("/#add");
+    await page.goto("/#add?mode=chronic");
     let calls = 0;
     await page.route("**/api/v1/recognitions", async (route) => {
       calls++;
@@ -246,7 +246,7 @@ test("a late validation of photo A cannot restore it after a newer invalid selec
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.evaluate(() => {
     const original = Blob.prototype.arrayBuffer;
     let holdFirstRead = true;

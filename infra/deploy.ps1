@@ -163,7 +163,7 @@ try {
 }
 $envFile=Join-Path ([System.IO.Path]::GetTempPath()) ("yzt-env-"+[guid]::NewGuid().ToString()+'.yaml')
 try {
-  $base=[ordered]@{APP_MODE='firebase';GOOGLE_CLOUD_PROJECT=$ProjectId;STORAGE_BUCKET=$bucket;TASKS_LOCATION=$Region;TASKS_QUEUE="$name-ai";WORKER_SERVICE_ACCOUNT=$caller;FIREBASE_WEB_CONFIG=($webConfig|ConvertTo-Json -Compress);FIREBASE_VAPID_KEY=$VapidKey;DAILY_USER_LIMIT='20';DAILY_GLOBAL_LIMIT='1000';PUBLIC_ACCESS_MODE='verified';SERVICE_ROLE='worker'}
+  $base=[ordered]@{APP_MODE='firebase';GOOGLE_CLOUD_PROJECT=$ProjectId;STORAGE_BUCKET=$bucket;TASKS_LOCATION=$Region;TASKS_QUEUE="$name-ai";WORKER_SERVICE_ACCOUNT=$caller;FIREBASE_WEB_CONFIG=($webConfig|ConvertTo-Json -Compress);FIREBASE_VAPID_KEY=$VapidKey;DAILY_USER_LIMIT='30';DAILY_GLOBAL_LIMIT='2000';PUBLIC_ACCESS_MODE='verified';SERVICE_ROLE='worker'}
   $base.GOOGLE_OAUTH_CLIENT_ID=$GoogleOAuthClientId
   if ($PublicAppUrl) { $base.APP_URL=$PublicAppUrl }
   foreach ($entry in $ai.environmentVariables.GetEnumerator()) { $base[$entry.Key] = $entry.Value }

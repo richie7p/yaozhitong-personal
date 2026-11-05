@@ -6,7 +6,7 @@ test("completed recognition survives navigation and a lost save response without
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.locator('input[type="file"]').setInputFiles({
     name: "synthetic-recovery.png",
     mimeType: "image/png",
@@ -29,7 +29,7 @@ test("completed recognition survives navigation and a lost save response without
     page.getByRole("button", { name: "編輯這筆資料", exact: true }),
   ).toBeVisible();
   await page.goto("/#jobs");
-  await page.locator(`a[href="#add?recognition=${jobId}"]`).click();
+  await page.locator(`a[href="#add?mode=chronic&recognition=${jobId}"]`).click();
   await expect(
     page.getByRole("button", { name: "編輯這筆資料", exact: true }),
   ).toBeVisible();
@@ -73,7 +73,7 @@ test("completed recognition survives navigation and a lost save response without
   await expect(page.locator(".med-card").filter({ hasText: name })).toHaveCount(
     1,
   );
-  await page.goto(`/#add?recognition=${jobId}`);
+  await page.goto(`/#add?mode=chronic&recognition=${jobId}`);
   await expect(
     page.getByRole("status").filter({ hasText: "這份辨識的 1 筆資料已儲存" }),
   ).toBeVisible();

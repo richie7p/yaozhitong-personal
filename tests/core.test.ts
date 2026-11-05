@@ -460,11 +460,11 @@ describe("grounding and jobs", () => {
       ),
     ).rejects.toMatchObject({ code: "idempotency_conflict" });
   });
-  it("enforces quota atomically", async () => {
+  it("enforces the 30-use daily quota atomically", async () => {
     const { d, store } = await setup();
     const med = await d.saveMedication("a", identifiedInput);
     const result = await Promise.allSettled(
-      Array.from({ length: 25 }, (_, i) =>
+      Array.from({ length: 35 }, (_, i) =>
         d.enqueueJob(
           "a",
           true,
@@ -474,8 +474,9 @@ describe("grounding and jobs", () => {
         ),
       ),
     );
-    expect(result.filter((r) => r.status === "fulfilled")).toHaveLength(20);
-    expect((await store.list("jobs")).length).toBe(20);
+    expect(result.filter((r) => r.status === "fulfilled")).toHaveLength(30);
+    expect(result.filter((r) => r.status === "rejected")).toHaveLength(5);
+    expect((await store.list("jobs")).length).toBe(30);
   });
   it("isolates personalized caches and invalidates corrected source versions", async () => {
     let generation = 0;

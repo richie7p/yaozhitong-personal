@@ -20,8 +20,8 @@ async function setup() {
   Object.assign(config, {
     mode: "firebase",
     publicAccess: "verified",
-    userLimit: 20,
-    globalLimit: 1000,
+    userLimit: 30,
+    globalLimit: 2000,
   });
   const store = new MemoryStore(),
     d = new Domain(store, undefined, () => ({ json: async () => ({}) }));
@@ -64,7 +64,7 @@ const message = {
   category: "bug",
   message: "Synthetic report: the button was unavailable.",
 };
-describe("verified public access and unchanged per-person limit", () => {
+describe("verified public access and daily quota limits", () => {
   it("admits a verified ordinary account without approval or a tester seat", async () => {
     const { d, store, request } = await setup();
     expect((await store.get("users", "owner"))?.eligible).toBe(false);
@@ -81,8 +81,8 @@ describe("verified public access and unchanged per-person limit", () => {
     const cfg = await (await request("/config")).json();
     expect(cfg).toMatchObject({
       publicAccess: "verified",
-      dailyUserLimit: 20,
-      dailyGlobalLimit: 1000,
+      dailyUserLimit: 30,
+      dailyGlobalLimit: 2000,
     });
   });
   it("still rejects unverified, disabled and deleting accounts", async () => {
@@ -112,10 +112,10 @@ describe("verified public access and unchanged per-person limit", () => {
       d.enqueueJob("owner", true, "recognition", {}, "public-operation-04"),
     ).rejects.toMatchObject({ code: "account_disabled" });
   });
-  it("enforces 20 per person atomically under concurrent requests", async () => {
+  it("enforces 30 per person atomically under concurrent requests", async () => {
     const { d, store } = await setup();
     const result = await Promise.allSettled(
-      Array.from({ length: 23 }, (_, i) =>
+      Array.from({ length: 33 }, (_, i) =>
         d.enqueueJob(
           "owner",
           true,
@@ -125,7 +125,7 @@ describe("verified public access and unchanged per-person limit", () => {
         ),
       ),
     );
-    expect(result.filter((x) => x.status === "fulfilled")).toHaveLength(20);
+    expect(result.filter((x) => x.status === "fulfilled")).toHaveLength(30);
     expect(
       result
         .filter((x) => x.status === "rejected")
@@ -133,18 +133,18 @@ describe("verified public access and unchanged per-person limit", () => {
           (x) => x.status === "rejected" && x.reason.code === "quota_exceeded",
         ),
     ).toBe(true);
-    expect(await store.list("jobs")).toHaveLength(20);
+    expect(await store.list("jobs")).toHaveLength(30);
   });
-  it("enforces 1000 site-wide without charging a rejected user", async () => {
+  it("enforces 2000 site-wide without charging a rejected user", async () => {
     const { d, store } = await setup();
     const day = DateTime.now().setZone("Asia/Taipei").toISODate();
-    await store.set("usage", "global-" + day, { count: 999 });
+    await store.set("usage", "global-" + day, { count: 1999 });
     const result = await Promise.allSettled([
       d.enqueueJob("owner", true, "recognition", {}, "public-capacity-01"),
       d.enqueueJob("other", true, "recognition", {}, "public-capacity-02"),
     ]);
     expect(result.filter((x) => x.status === "fulfilled")).toHaveLength(1);
-    expect((await store.get("usage", "global-" + day))?.count).toBe(1000);
+    expect((await store.get("usage", "global-" + day))?.count).toBe(2000);
     expect(await store.list("jobs")).toHaveLength(1);
     expect(
       (await store.list("usage")).filter((row) => row.ownerId),

@@ -5,6 +5,8 @@ import {
 } from "../server/reference-content";
 import type { Drug } from "../shared/schema";
 import type { ReferenceSearch } from "../shared/assistance";
+import { readReferencePdf, REFERENCE_PDF_BYTE_LIMIT } from "../server/reference-pdf";
+import { buildTfdaRawPdf, PDF_FIXTURE_NAME_EN } from "./fixtures/tfda-raw-pdf-fixtures";
 
 const drug = {
   nameZh: "合成藥品",
@@ -61,7 +63,7 @@ it("keeps headings and lists while removing scripts, navigation and hidden conte
 });
 it.each([
   "http_error",
-  "unsupported_pdf",
+  "invalid_pdf",
   "oversize",
   "wrong_ingredient",
   "timeout",
@@ -71,7 +73,7 @@ it.each([
     const fetcher = vi.fn().mockImplementation(async () => {
       if (kind === "timeout") throw Error("timeout");
       if (kind === "http_error") return new Response("error", { status: 403 });
-      if (kind === "unsupported_pdf")
+      if (kind === "invalid_pdf")
         return new Response("%PDF", {
           headers: { "content-type": "application/pdf" },
         });
@@ -90,6 +92,72 @@ it.each([
     });
   },
 );
+
+it("reads complete original prose from a real PDF and retains the trusted citation", async () => {
+  const pdf = buildTfdaRawPdf();
+  const fetcher = vi.fn(async () => new Response(new Uint8Array(pdf), {
+    headers: { "content-type": "application/pdf", "content-length": String(pdf.length) },
+  }));
+  const result = await readReferenceContent(search,
+    [{ ...drug, nameEn: PDF_FIXTURE_NAME_EN, form: "錠" }], { fetcher });
+  expect(result.state).toBe("found");
+  expect(result.sources[0].url).toBe(source.url);
+  expect(result.passages[0].text).toContain(PDF_FIXTURE_NAME_EN);
+  expect(result.passages[0].text).toContain("Preserve the complete second physical page and its original order.");
+  expect(result.passages[0].text).toContain("only when synthetic condition A holds.");
+  expect(JSON.stringify(result)).not.toContain("搜尋摘要");
+});
+
+it.each([
+  ["scanned or missing page text", { blankSecondPage: true }],
+  ["ambiguous table", { tableGrid: true }],
+  ["ambiguous columns", { twoColumns: true }],
+  ["dominant image", { largeImage: true }],
+] as const)("does not use partial prose from a PDF with %s", async (_reason, options) => {
+  const fetcher = vi.fn(async () => new Response(new Uint8Array(buildTfdaRawPdf(options)), {
+    headers: { "content-type": "application/pdf" },
+  }));
+  const result = await readReferenceContent(search, [drug], { fetcher });
+  expect(result).toEqual({ state: "unavailable", sources: [], passages: [] });
+});
+
+it("applies the same exact name/form relevance rules after PDF text extraction", async () => {
+  const fetcher = vi.fn(async () => new Response(new Uint8Array(buildTfdaRawPdf()), {
+    headers: { "content-type": "application/pdf" },
+  }));
+  const wrongName = await readReferenceContent(search,
+    [{ ...drug, nameZh: "完全不同藥名", nameEn: "UnrelatedMedicine", ingredients: [] }], { fetcher });
+  expect(wrongName.state).toBe("not_found");
+  const wrongForm = await readReferenceContent(search,
+    [{ ...drug, nameEn: PDF_FIXTURE_NAME_EN, form: "乳膏" }], { fetcher });
+  expect(wrongForm.state).toBe("not_found");
+});
+
+it("rejects oversized or already-aborted PDFs without starting an unbounded parser", async () => {
+  const oversized = Buffer.alloc(REFERENCE_PDF_BYTE_LIMIT + 1);
+  oversized.write("%PDF-");
+  await expect(readReferencePdf(oversized, AbortSignal.timeout(1000))).rejects.toThrow("invalid_reference_pdf");
+  const controller = new AbortController(); controller.abort();
+  await expect(readReferencePdf(buildTfdaRawPdf(), controller.signal)).rejects.toThrow();
+});
+
+it.each([
+  ["more than twenty pages", { pageCount: 21 }],
+  ["more than the complete-document text budget", { longText: true }],
+] as const)("rejects a whole PDF with %s instead of clipping it", async (_reason, options) => {
+  await expect(readReferencePdf(buildTfdaRawPdf(options), AbortSignal.timeout(5000)))
+    .rejects.toThrow("unreadable_reference_pdf");
+});
+
+it("terminates an interrupted parser and leaves the next PDF query usable", async () => {
+  const controller = new AbortController();
+  const interrupted = readReferencePdf(buildTfdaRawPdf(), controller.signal);
+  const timer = setTimeout(() => controller.abort(), 10);
+  await expect(interrupted).rejects.toThrow("reference_pdf_aborted");
+  clearTimeout(timer);
+  const text = await readReferencePdf(buildTfdaRawPdf(), AbortSignal.timeout(5000));
+  expect(text).toContain("Preserve the complete second physical page");
+});
 it.each([
   "https://attacker.test/",
   "http://medlineplus.gov/",

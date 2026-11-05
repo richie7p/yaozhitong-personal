@@ -42,7 +42,7 @@ test.describe("new recognition drafts", () => {
         },
       });
     });
-    await page.goto("/#add?recognition=synthetic-prn-draft");
+    await page.goto("/#add?mode=chronic&recognition=synthetic-prn-draft");
     await expect.poll(() => mockedRecognitionRequests).toBe(1);
     const asNeeded = page.getByLabel("需要時才使用（不排定時提醒）", {
       exact: true,

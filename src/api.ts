@@ -257,7 +257,11 @@ async function runJob(
       throw error;
     }
   }
-  progress("已排入處理，正在核對資料與仿單…");
+  progress(
+    path === "/explanations"
+      ? "已排入處理，正在搜尋可靠來源與整理藥品資訊…"
+      : "已排入處理，正在核對資料與仿單…",
+  );
   try {
     for (let i = 0; i < 200; i++) {
       await new Promise((r) => setTimeout(r, 1800));

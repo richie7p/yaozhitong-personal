@@ -7,7 +7,7 @@ test("upload, manually confirm edited usage, save and reload the stored medicati
 }, testInfo) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.getByLabel("藥品照片", { exact: true }).setInputFiles({
     name: "synthetic-confirm-save.png",
     mimeType: "image/png",

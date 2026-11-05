@@ -48,6 +48,8 @@ import { CareIllustration } from "./CareIllustration";
 import { TeachingCompletionAction } from "./TeachingCompletionAction";
 import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { OfficialSourceLinks } from "./OfficialSourceLinks";
+import { DrugExplanation } from "./DrugExplanation";
+import type { DrugExplanationResult } from "../shared/drug-explanation";
 import type { MedicationSourceInfo } from "../shared/source-availability";
 import {
   ProductIdentityReview,
@@ -881,6 +883,10 @@ export function Medications() {
     [filter, setFilter] = useState(""),
     [busy, setBusy] = useState(""),
     [result, setResult] = useState<LearningRecord | null>(null);
+  const [generalResult, setGeneralResult] = useState<{
+    id: string;
+    result: DrugExplanationResult;
+  } | null>(null);
   const editHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const [sourceInfo, setSourceInfo] = useState<MedicationSourceInfo | null>(
@@ -901,6 +907,7 @@ export function Medications() {
   const invalidateExplanation = () => {
     explanationVersion.current++;
     setResult(null);
+    setGeneralResult(null);
     setSourceInfo(null);
     setBusy("");
   };
@@ -910,10 +917,10 @@ export function Medications() {
     editHeading.current?.scrollIntoView({ block: "start" });
   }, [edit]);
   useEffect(() => {
-    if (!result) return;
+    if (!result && !generalResult) return;
     resultHeading.current?.focus({ preventScroll: true });
     resultHeading.current?.scrollIntoView({ block: "start" });
-  }, [result?.id]);
+  }, [result?.id, generalResult?.id]);
   useEffect(() => {
     if (!sourceInfo) return;
     sourceHeading.current?.focus({ preventScroll: true });
@@ -947,8 +954,27 @@ export function Medications() {
     setBusy("正在讀取已保存的藥品解說…");
     setMessage("");
     setResult(null);
+    setGeneralResult(null);
     setSourceInfo(null);
     try {
+      if (!leafletReady(m)) {
+        setBusy("正在搜尋可靠來源並整理一般藥品資訊…");
+        const job = await submitJob(
+          "/explanations",
+          { medicationId: m.id },
+          (text) => {
+            if (isCurrent()) setBusy(text);
+          },
+        );
+        if (!isCurrent()) return;
+        if (
+          job.explanationUpdateRequired ||
+          job.result?.mode !== "general_information"
+        )
+          throw new Error("藥品資料已更新，請重新整理後再查詢。");
+        setGeneralResult(job);
+        return;
+      }
       const saved = await api<{ items: LearningRecord[] }>("/learning");
       if (!isCurrent()) return;
       const existing = saved.items.find(
@@ -1019,6 +1045,7 @@ export function Medications() {
     setBusy("正在讀取官方來源…");
     setMessage("");
     setResult(null);
+    setGeneralResult(null);
     setSourceInfo(null);
     try {
       const info = await api<MedicationSourceInfo>(
@@ -1044,7 +1071,7 @@ export function Medications() {
         eyebrow="藥品檔案"
         title="我的藥品"
         action={
-          <a className="btn primary" href="#add">
+          <a className="btn primary" href="#add?mode=chronic">
             <Plus size={18} />
             新增藥品
           </a>
@@ -1103,7 +1130,7 @@ export function Medications() {
           <span>
             研討會展示 ·{" "}
             {demoMedication
-              ? `${demoMedication.name}已儲存。${leafletReady(demoMedication) ? "可開啟仿單說明。" : "請先核對產品資料，即可閱讀衛教。"}`
+              ? `${demoMedication.name}已儲存。${leafletReady(demoMedication) ? "可開啟仿單說明。" : "可先查詢 AI 一般解說，再核對完整產品資料。"}`
               : "選擇藥品，開啟說明後繼續展示。"}
           </span>
           <a className="text-link" href="#demo">
@@ -1126,7 +1153,7 @@ export function Medications() {
           <Empty
             title="你的藥品清單，從這裡開始"
             action={
-              <a className="btn primary" href="#add">
+              <a className="btn primary" href="#add?mode=chronic">
                 <Plus size={17} />
                 新增第一款藥品
               </a>
@@ -1214,21 +1241,29 @@ export function Medications() {
                 </div>
               </dl>
               {m.prn && <p className="medication-file-note">需要時使用</p>}
-              {leafletReady(m) && !m.confirmed && (
+              {!m.confirmed && (
                 <p className="medication-file-note">
                   可以先閱讀用途與衛教，不必填寫個人使用次數。提醒與用藥紀錄需另外確認個人用法。
                 </p>
               )}
               {leafletReady(m) && (
                 <p className="fine">
-                  「AI 藥品解說」整理藥品用途、使用注意與其他有來源的衛教。已保存內容可直接閱讀；首次產生會使用
+                  「AI
+                  藥品解說」整理藥品用途、使用注意與其他有來源的衛教。已保存內容可直接閱讀；首次產生會使用
                   1 次 AI 額度。
+                </p>
+              )}
+              {!leafletReady(m) && (
+                <p className="fine">
+                  產品待核對也可使用「AI
+                  藥品解說」，依目前藥名查詢一般資訊並標示不確定處。每次查詢使用
+                  1 次 AI 額度，結果可從處理紀錄再次閱讀。
                 </p>
               )}
               <div className="row wrap medication-file-actions">
                 <Button
                   className="secondary"
-                  disabled={!leafletReady(m) || !!busy}
+                  disabled={!!busy}
                   onClick={() => explain(m)}
                 >
                   <BookOpen size={16} />
@@ -1350,9 +1385,8 @@ export function Medications() {
               </div>
               {!leafletReady(m) && (
                 <p className="muted">
-                  {(m as any).identityReview?.status !== "confirmed"
-                    ? "產品資料不足，先補齊產品資料完成核對，才能開啟仿單說明、學習與問答。"
-                    : "請先核對產品資料，才能開啟仿單說明。"}
+                  可先查詢 AI
+                  一般解說。要使用這款產品的官方仿單、學習測驗與個人用藥功能，請繼續核對產品資料。
                 </p>
               )}
             </article>
@@ -1447,14 +1481,37 @@ export function Medications() {
                 : "可開啟官方仿單原文；產生白話說明及理解測驗會使用 AI 額度。"}
           </p>
           <OfficialSourceLinks sources={sourceInfo.sources} />
-          {sourceInfo.state === "missing" && <div className="row wrap">
-            <Button className="primary" disabled={!!busy} onClick={() => {
-              const med = data?.items.find((m: Medication) => m.id === sourceInfo.medicationId);
-              if (med) void explain(med);
-            }}>使用 AI 解說</Button>
-            <a className="btn secondary" href="#chat">前往 AI 問答</a>
-            <span className="fine">產生解說或回答會使用 AI 額度。</span>
-          </div>}
+          {sourceInfo.state === "missing" && (
+            <div className="row wrap">
+              <Button
+                className="primary"
+                disabled={!!busy}
+                onClick={() => {
+                  const med = data?.items.find(
+                    (m: Medication) => m.id === sourceInfo.medicationId,
+                  );
+                  if (med) void explain(med);
+                }}
+              >
+                使用 AI 解說
+              </Button>
+              <a className="btn secondary" href="#chat">
+                前往 AI 問答
+              </a>
+              <span className="fine">產生解說或回答會使用 AI 額度。</span>
+            </div>
+          )}
+        </section>
+      )}
+      {generalResult && (
+        <section className="card medication-detail">
+          <h2 ref={resultHeading} tabIndex={-1}>
+            AI 藥品解說
+          </h2>
+          <DrugExplanation result={generalResult.result} />
+          <a className="text-link" href="#jobs">
+            到處理紀錄查看這次查詢
+          </a>
         </section>
       )}
       {result && (
@@ -1580,7 +1637,13 @@ export function Learning() {
   return (
     <>
       <SectionTitle
-        eyebrow={activeRecord ? (activeRecord.result.assistance ? "AI 資料協助" : "仿單閱讀") : "閱讀目錄"}
+        eyebrow={
+          activeRecord
+            ? activeRecord.result.assistance
+              ? "AI 資料協助"
+              : "仿單閱讀"
+            : "閱讀目錄"
+        }
         title="用藥小教室"
       >
         閱讀已保存的藥品解說。有完整仿單依據時，也可接續理解題。
@@ -1930,7 +1993,9 @@ export function Chat() {
               <MessageCircle size={28} />
             </div>
             <h2>關於用藥，你想了解什麼？</h2>
-            <p>先選擇已核對的藥品，再提出問題。優先依官方仿單；本站未收錄時，查找官方與醫療機構資料，並說明不確定的部分。</p>
+            <p>
+              先選擇已核對的藥品，再提出問題。優先依官方仿單；本站未收錄時，查找官方與醫療機構資料，並說明不確定的部分。
+            </p>
             <div className="row wrap" aria-label="衛教提問範例">
               {[
                 ["主要用途", "這款藥主要用來做什麼？請用容易理解的方式說明。"],
@@ -2061,7 +2126,9 @@ export function Chat() {
             {!loadingMeds && !meds.error && !confirmedMeds.length && (
               <a
                 className="btn secondary"
-                href={meds.data?.items.length ? "#medications" : "#add"}
+                href={
+                  meds.data?.items.length ? "#medications" : "#add?mode=chronic"
+                }
               >
                 {meds.data?.items.length ? "前往確認藥品" : "新增並確認藥品"}
                 <ArrowRight size={16} />

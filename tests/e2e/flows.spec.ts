@@ -72,7 +72,7 @@ test("manual medication, scheduling, log, isolation and care revocation", async 
     path: `test-results/home-${testInfo.project.name}.png`,
     fullPage: true,
   });
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.getByRole("button", { name: "手動建檔", exact: true }).click();
   const name = "流程測試藥品-" + Date.now();
   await page.getByLabel("藥品名稱", { exact: true }).fill(name);

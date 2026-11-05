@@ -38,7 +38,7 @@ test("ointment label without personal dose can be saved, explained and queried",
       },
     }),
   );
-  await page.goto("/#add?recognition=synthetic-ointment-label");
+  await page.goto("/#add?mode=chronic&recognition=synthetic-ointment-label");
   await expect(
     page.getByText("藥膏可拍管身或外盒", { exact: false }),
   ).toBeVisible();

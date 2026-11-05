@@ -6,7 +6,7 @@ test("a confirmed literal amount survives reload and can switch to numeric dosin
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.getByRole("button", { name: "手動建檔", exact: true }).click();
   const name = "合成用量切換驗收-" + Date.now();
   await page.getByLabel("藥品名稱", { exact: true }).fill(name);

@@ -178,7 +178,7 @@ test("manual save reveals its exact record above a long list and name search can
     page,
     Array.from({ length: 12 }, (_, index) => medication(index + 1)),
   );
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.getByRole("button", { name: "手動建檔", exact: true }).click();
   const name = "合成新存紀錄 25mg";
   await page.getByLabel("藥品名稱", { exact: true }).fill(name);

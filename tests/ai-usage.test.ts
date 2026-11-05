@@ -7,7 +7,7 @@ import { createApp } from "../server/app";
 import { config } from "../server/config";
 
 const at = DateTime.fromISO("2026-11-05T15:59:00Z");
-const limits = { userLimit: 20, globalLimit: 1000 };
+const limits = { userLimit: 30, globalLimit: 2000 };
 let original: typeof config;
 beforeEach(() => {
   original = { ...config };
@@ -30,11 +30,11 @@ describe("remaining AI uses from admission counters", () => {
   it("is read-only and takes the smaller personal or shared remainder", async () => {
     const store = new MemoryStore();
     await store.set("usage", hash("reader|2026-11-05"), { count: 3 });
-    await store.set("usage", "global-2026-11-05", { count: 998 });
-    await store.set("usage", hash("someone-else|2026-11-05"), { count: 20 });
+    await store.set("usage", "global-2026-11-05", { count: 1998 });
+    await store.set("usage", hash("someone-else|2026-11-05"), { count: 30 });
     const before = structuredClone(store.data);
     const usage = await readAiUsage(store, "reader", limits, "ready", at);
-    expect(usage.personal).toEqual({ used: 3, limit: 20, remaining: 17 });
+    expect(usage.personal).toEqual({ used: 3, limit: 30, remaining: 27 });
     expect(usage.global.remaining).toBe(2);
     expect(usage.available).toBe(2);
     expect(usage.resetsAt).toBe("2026-11-06T00:00:00.000+08:00");
@@ -46,8 +46,8 @@ describe("remaining AI uses from admission counters", () => {
 
   it("starts a fresh Taiwan day while UTC is still on the previous date", async () => {
     const store = new MemoryStore();
-    await store.set("usage", hash("reader|2026-11-05"), { count: 20 });
-    await store.set("usage", "global-2026-11-05", { count: 1000 });
+    await store.set("usage", hash("reader|2026-11-05"), { count: 30 });
+    await store.set("usage", "global-2026-11-05", { count: 2000 });
     const usage = await readAiUsage(
       store,
       "reader",
@@ -56,16 +56,16 @@ describe("remaining AI uses from admission counters", () => {
       at.plus({ minutes: 1 }),
     );
     expect(usage.date).toBe("2026-11-06");
-    expect(usage.available).toBe(20);
+    expect(usage.available).toBe(30);
     expect(usage.resetsAt).toBe("2026-11-07T00:00:00.000+08:00");
   });
 
   it("does not show negative remaining counts after a lower limit is configured", async () => {
     const store = new MemoryStore();
-    await store.set("usage", hash("reader|2026-11-05"), { count: 25 });
+    await store.set("usage", hash("reader|2026-11-05"), { count: 35 });
     const usage = await readAiUsage(store, "reader", limits, "ready", at);
     expect(usage.personal.remaining).toBe(0);
-    expect(usage.personal.used).toBe(25);
+    expect(usage.personal.used).toBe(35);
     expect(usage.available).toBe(0);
   });
 
@@ -86,7 +86,7 @@ describe("remaining AI uses from admission counters", () => {
     const endpoint = "/api/v1/ai/usage?uid=someone-else";
     expect(
       (await (await app.request(endpoint)).json()).personal.remaining,
-    ).toBe(20);
+    ).toBe(30);
     await d.enqueueJob(
       "reader",
       true,
@@ -106,8 +106,8 @@ describe("remaining AI uses from admission counters", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toMatchObject({
-      personal: { used: 1, remaining: 19 },
-      global: { used: 1, remaining: 999 },
+      personal: { used: 1, remaining: 29 },
+      global: { used: 1, remaining: 1999 },
       access: "ready",
     });
     expect(store.data).toEqual(before);
@@ -126,8 +126,20 @@ describe("remaining AI uses from admission counters", () => {
     const response = await app.request("/api/v1/ai/usage");
     expect(await response.json()).toMatchObject({
       access: "email_unverified",
-      available: 20,
+      available: 30,
     });
     expect(await store.list("usage")).toEqual([]);
+  });
+
+  it("raises available quota while preserving the day's existing use counters", async () => {
+    const store = new MemoryStore();
+    await store.set("usage", hash("reader|2026-11-05"), { count: 20 });
+    await store.set("usage", "global-2026-11-05", { count: 1000 });
+    const before = structuredClone(store.data);
+    const usage = await readAiUsage(store, "reader", limits, "ready", at);
+    expect(usage.personal).toEqual({ used: 20, limit: 30, remaining: 10 });
+    expect(usage.global).toEqual({ used: 1000, limit: 2000, remaining: 1000 });
+    expect(usage.available).toBe(10);
+    expect(store.data).toEqual(before);
   });
 });

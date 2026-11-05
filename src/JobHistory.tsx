@@ -3,6 +3,7 @@ import { api } from "./api";
 import { publicApiErrorMessage } from "./api-error-messages";
 import { Button, Busy, Empty, Notice, useData } from "./components";
 import { Evidence } from "./Evidence";
+import { DrugExplanation } from "./DrugExplanation";
 
 /** Recheck one requested result; polling summaries never loads private answers. */
 function JobResultPreview({ job }: { job: any }) {
@@ -64,14 +65,23 @@ function JobResultPreview({ job }: { job: any }) {
         }
       }}
     >
-      <summary>查看可用結果（先核對目前產品資料）</summary>
+      <summary>
+        {job.kind === "explanation"
+          ? "查看一般藥品解說"
+          : "查看可用結果（先核對目前產品資料）"}
+      </summary>
       {loading && <Busy text="正在核對這筆結果…" />}
       {error && (
         <Notice error>
           {error} <Button onClick={load}>重新核對結果</Button>
         </Notice>
       )}
-      {checked?.sourceUpdateRequired ? (
+      {checked?.explanationUpdateRequired ? (
+        <Notice>
+          這份一般解說的查詢資料或來源已更新，請重新查詢。
+          <a href="#add?mode=quick">前往一般藥品查詢</a>
+        </Notice>
+      ) : checked?.sourceUpdateRequired ? (
         <Notice>
           仿單整理規則已更新，請重新產生說明與測驗。
           <a href="#medications">回到我的藥品</a>
@@ -84,7 +94,11 @@ function JobResultPreview({ job }: { job: any }) {
       ) : (
         checked?.result && (
           <>
-            <Evidence result={checked.result} showQuiz={false} />
+            {job.kind === "explanation" ? (
+              <DrugExplanation result={checked.result} />
+            ) : (
+              <Evidence result={checked.result} showQuiz={false} />
+            )}
             {(job.kind === "bundle" || job.kind === "interaction") && (
               <a className="btn secondary" href="#learning">
                 開啟用藥小教室與目前進度
@@ -115,6 +129,7 @@ export function JobHistory() {
     recognition: "藥品辨識",
     chat: "用藥問答",
     bundle: "AI 藥品解說",
+    explanation: "一般藥品解說",
     interaction: "交互作用查詢",
   };
   const states: Record<string, string> = {
@@ -149,23 +164,38 @@ export function JobHistory() {
             <div className="row spread">
               <h3>{names[job.kind]}</h3>
               <span className="tag">
-                {job.sourceUpdateRequired
-                  ? "說明規則已更新"
-                  : job.identityReviewRequired
-                    ? "產品待核對"
-                    : job.sourceReviewPending
-                      ? "AI 內容待整理"
-                      : job.sourceReadingPending
-                        ? "部分內容尚未整理"
-                        : states[job.status]}
+                {job.explanationUpdateRequired
+                  ? "需要重新查詢"
+                  : job.sourceUpdateRequired
+                    ? job.kind === "explanation"
+                      ? "一般解說需更新"
+                      : "說明規則已更新"
+                    : job.identityReviewRequired
+                      ? "產品待核對"
+                      : job.sourceReviewPending
+                        ? "AI 內容待整理"
+                        : job.sourceReadingPending
+                          ? "部分內容尚未整理"
+                          : states[job.status]}
               </span>
             </div>
             <small>{new Date(job.createdAt).toLocaleString("zh-TW")}</small>
-            {job.error && <p>{publicApiErrorMessage(job.error.code, job.error.message)}</p>}
+            {job.error && (
+              <p>{publicApiErrorMessage(job.error.code, job.error.message)}</p>
+            )}
             {job.sourceUpdateRequired && (
               <Notice>
-                仿單整理規則已更新，請重新產生說明與測驗。
-                <a href="#medications">回到我的藥品</a>
+                {job.kind === "explanation" ? (
+                  <>
+                    這份一般藥品解說已到期或查詢規則更新，請重新查詢。
+                    <a href="#add?mode=quick">前往一般藥品查詢</a>
+                  </>
+                ) : (
+                  <>
+                    仿單整理規則已更新，請重新產生說明與測驗。
+                    <a href="#medications">回到我的藥品</a>
+                  </>
+                )}
               </Notice>
             )}
             {job.identityReviewRequired && (
@@ -197,7 +227,9 @@ export function JobHistory() {
               )}
             {job.status === "failed" &&
               job.attempts >= 3 &&
-              ["chat", "bundle", "interaction"].includes(job.kind) && (
+              ["chat", "bundle", "interaction", "explanation"].includes(
+                job.kind,
+              ) && (
                 <>
                   <p className="muted">
                     這次任務已達重試上限。請先依上方訊息處理，確定可繼續後再回原功能。
@@ -205,18 +237,22 @@ export function JobHistory() {
                   <a
                     className="btn secondary"
                     href={
-                      job.kind === "chat"
-                        ? "#chat"
-                        : job.kind === "bundle"
-                          ? "#medications"
-                          : "#learning"
+                      job.kind === "explanation"
+                        ? "#add?mode=quick"
+                        : job.kind === "chat"
+                          ? "#chat"
+                          : job.kind === "bundle"
+                            ? "#medications"
+                            : "#learning"
                     }
                   >
-                    {job.kind === "chat"
-                      ? "回到用藥問答"
-                      : job.kind === "bundle"
-                        ? "回到我的藥品"
-                        : "回到用藥小教室"}
+                    {job.kind === "explanation"
+                      ? "回到一般藥品查詢"
+                      : job.kind === "chat"
+                        ? "回到用藥問答"
+                        : job.kind === "bundle"
+                          ? "回到我的藥品"
+                          : "回到用藥小教室"}
                   </a>
                 </>
               )}
@@ -226,7 +262,9 @@ export function JobHistory() {
               </a>
             )}
             {job.status === "succeeded" &&
-              ["chat", "bundle", "interaction"].includes(job.kind) && (
+              ["chat", "bundle", "interaction", "explanation"].includes(
+                job.kind,
+              ) && (
                 <JobResultPreview
                   key={job.id + ":" + job.updatedAt + ":" + previewVersion}
                   job={job}
@@ -236,9 +274,20 @@ export function JobHistory() {
               <>
                 <a
                   className="btn secondary"
-                  href={"#add?recognition=" + encodeURIComponent(job.id)}
+                  href={
+                    "#add?mode=chronic&recognition=" +
+                    encodeURIComponent(job.id)
+                  }
                 >
                   繼續核對辨識結果
+                </a>
+                <a
+                  className="btn secondary"
+                  href={
+                    "#add?mode=quick&recognition=" + encodeURIComponent(job.id)
+                  }
+                >
+                  查詢一般藥品解說
                 </a>
                 <details>
                   <summary>查看辨識原文</summary>

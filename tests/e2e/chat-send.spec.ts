@@ -114,7 +114,7 @@ test("empty medication list explains the disabled send button beside the draft a
   );
   await expect(
     page.getByRole("link", { name: "新增並確認藥品", exact: true }),
-  ).toHaveAttribute("href", "#add");
+  ).toHaveAttribute("href", "#add?mode=chronic");
   await expect(
     page.getByRole("button", { name: "送出", exact: true }),
   ).toBeDisabled();

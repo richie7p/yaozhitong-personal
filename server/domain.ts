@@ -16,7 +16,16 @@ import {
   type Leaflet,
   type GroundedResult,
   type LearningRecord,
+  type Drug,
 } from "../shared/schema.js";
+import {
+  DrugExplanationRequestSchema,
+  DrugQuerySchema,
+  DRUG_EXPLANATION_VERSION,
+  type DrugExplanationResult,
+  type DrugQuery,
+} from "../shared/drug-explanation.js";
+import { explainDrug } from "./drug-explanation.js";
 import { learningProgress, validAnswers } from "../shared/learning.js";
 import { doseLabel } from "../shared/medication.js";
 import { needsTeachingCompletion } from "../shared/teaching-completion.js";
@@ -797,6 +806,56 @@ export class Domain {
       })),
     );
   }
+  /** Resolve only an owned record or bounded public label. Suggestions never
+   * acquire the status of independently checked product identity. */
+  private async explanationTarget(
+    uid: string,
+    input: Doc,
+    reader: HistoryReader = this.store,
+  ) {
+    const request = DrugExplanationRequestSchema.parse(input);
+    let query: DrugQuery;
+    let verifiedDrug: Drug | null = null;
+    let sourceState: unknown = null;
+    if ("medicationId" in request) {
+      const medication = await reader.get<Medication>("medications", request.medicationId);
+      if (!medication || medication.ownerId !== uid || medication.archived)
+        return fail("not_found", "找不到藥品。", 404);
+      query = DrugQuerySchema.parse({
+        name: medication.name, strength: medication.strength || "",
+        form: medication.form || "",
+        ...(medication.licenseNo ? { licenseNo: medication.licenseNo } : {}),
+      });
+      const catalog = await (reader.identityCatalog || this.catalog.identitySnapshot());
+      const review = catalog.review(medication);
+      if (review.status === "confirmed" && medication.licenseNo)
+        verifiedDrug = review.candidate || null;
+      sourceState = { revision: medication.revision, identity: review.status, verifiedDrug };
+    } else if ("recognitionId" in request) {
+      const recognition = await reader.get<Job>("jobs", request.recognitionId);
+      if (!recognition || recognition.ownerId !== uid || recognition.kind !== "recognition")
+        return fail("not_found", "找不到這筆藥品照片辨識。", 404);
+      const output = recognition.result as { status?: string; medications?: unknown[] } | null;
+      const row = output?.medications?.[request.medicationIndex] as Record<string, unknown> | undefined;
+      if (recognition.status !== "succeeded" || output?.status !== "succeeded" || !row)
+        return fail("invalid_recognition", "這筆照片尚無可查詢的藥名，請重新拍攝或輸入藥名。");
+      const parsed = DrugQuerySchema.safeParse({
+        name: row.name,
+        strength: typeof row.strength === "string" ? row.strength : "",
+        form: typeof row.form === "string" ? row.form : "",
+      });
+      if (!parsed.success)
+        return fail("invalid_recognition", "照片中的藥名尚不完整，請重新拍攝或輸入藥名。");
+      query = parsed.data;
+      // Candidate lists and dose fields are deliberately excluded.
+      sourceState = { recognitionId: recognition.id, query };
+    } else {
+      query = request.query;
+    }
+    const catalogReference = verifiedDrug ? null : await this.catalog.generalReference(query, reader);
+    const fingerprint = hash(JSON.stringify({ request, query, sourceState, catalogReference }));
+    return { query, verifiedDrug, catalogReference, fingerprint };
+  }
   private async jobMedications(
     uid: string,
     kind: JobKind,
@@ -804,6 +863,10 @@ export class Domain {
     reader: HistoryReader = this.store,
   ) {
     if (kind === "recognition" || kind === "delete-account") return [];
+    if (kind === "explanation") {
+      await this.explanationTarget(uid, input, reader);
+      return [];
+    }
     const ids = z
       .array(z.string().min(1).max(80))
       .min(1)
@@ -1184,6 +1247,7 @@ export class Domain {
     let llm: Llm | undefined;
     const writes: Array<[string, string, Doc]> = [];
     let inputRevisions: Array<{ id: string; revision: number }> = [];
+    let explanationFingerprint: string | undefined;
     let completedCurrentAttempt = false;
     try {
       if (j.kind === "delete-account") {
@@ -1212,6 +1276,10 @@ export class Domain {
             })),
           ),
         };
+      } else if (j.kind === "explanation") {
+        const target = await this.explanationTarget(j.ownerId, j.input);
+        explanationFingerprint = target.fingerprint;
+        result = await explainDrug(llm, target.query, target.verifiedDrug, target.catalogReference);
       } else {
         const ids = j.input.medicationIds as string[];
         const meds = await this.jobMedications(j.ownerId, j.kind, j.input);
@@ -1447,7 +1515,7 @@ export class Domain {
           currentJob.attempts !== j.attempts
         )
           return false;
-        if (currentUser.profileVersion !== u.profileVersion)
+        if (j.kind !== "explanation" && currentUser.profileVersion !== u.profileVersion)
           return fail(
             "stale_content",
             "個人資料已更新，請重試產生新內容。",
@@ -1464,6 +1532,11 @@ export class Domain {
         }
         if (inputRevisions.length)
           await this.jobMedications(j.ownerId, j.kind, j.input, tx);
+        if (j.kind === "explanation") {
+          const target = await this.explanationTarget(j.ownerId, j.input, tx);
+          if (target.fingerprint !== explanationFingerprint)
+            return fail("stale_content", "查詢的藥品資料已更新，請重新產生一般解說。", 409);
+        }
         for (const license of (result as GroundedResult)?.assistance?.missingLicenses || []) {
           const pointer = await tx.get("published", hash(license));
           const leaflet = pointer ? await tx.get<Leaflet>("leaflets", pointer.leafletId) : null;
@@ -1488,7 +1561,8 @@ export class Domain {
           tx.set(collection, key, value);
         tx.set("jobs", id, {
           ...j,
-          input: {},
+          input: j.kind === "explanation" ? j.input : {},
+          ...(explanationFingerprint ? { explanationFingerprint } : {}),
           result,
           status: "succeeded",
           leaseUntil: 0,
@@ -1706,7 +1780,7 @@ export class Domain {
     };
   }
   jobSummary(job: Job) {
-    const { input, ...summary } = job;
+    const { input, explanationFingerprint, ...summary } = job;
     if (job.kind === "recognition" || job.kind === "delete-account")
       return summary;
     return {
@@ -1731,13 +1805,40 @@ export class Domain {
     };
   }
   async publicJob(uid: string, job: Job, reader = this.historyReader()) {
-    const { input, ...result } = job;
+    const { input, explanationFingerprint, ...result } = job;
     if (
       job.status !== "succeeded" ||
       job.kind === "recognition" ||
       job.kind === "delete-account"
     )
       return result;
+    if (job.kind === "explanation") {
+      if (job.ownerId !== uid) return fail("not_found", "找不到任務。", 404);
+      const explanation = job.result as DrugExplanationResult | null;
+      const sourceUpdated = explanation?.explanationVersion !== DRUG_EXPLANATION_VERSION ||
+        !!contentUpdateRequired(explanation);
+      let current = false;
+      if (!sourceUpdated && explanationFingerprint) {
+        try {
+          const target = await this.explanationTarget(uid, input, reader);
+          current = target.fingerprint === explanationFingerprint;
+        } catch (error) {
+          if (!(error instanceof AppError) && !(error instanceof z.ZodError)) throw error;
+        }
+      }
+      if (current) return result;
+      return {
+        ...result, result: null,
+        error: {
+          code: sourceUpdated ? "source_updated" : "stale_content",
+          message: sourceUpdated
+            ? "這份一般資訊已到更新時間，請重新查詢以取得最新來源。"
+            : "查詢的藥品或照片資料已變更，請重新選擇並產生一般解說。",
+        },
+        explanationUpdateRequired: true,
+        sourceUpdateRequired: sourceUpdated,
+      };
+    }
     const record = await reader.get(
       job.kind === "chat" ? "chats" : "learning",
       job.id,

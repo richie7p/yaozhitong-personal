@@ -20,7 +20,13 @@ export function notifyAiUsageChanged() {
 export function mayChangeAiUsage(path: string, method: string) {
   return (
     method === "POST" &&
-    (["/recognitions", "/bundles", "/chat", "/interactions"].includes(path) ||
+    ([
+      "/recognitions",
+      "/explanations",
+      "/bundles",
+      "/chat",
+      "/interactions",
+    ].includes(path) ||
       /^\/jobs\/[^/]+\/retry$/.test(path))
   );
 }

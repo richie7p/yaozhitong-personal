@@ -64,7 +64,7 @@ for (const photo of [
     });
     await page.goto("/");
     await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-    await page.goto("/#add?recognition=synthetic-photo-review");
+    await page.goto("/#add?mode=chronic&recognition=synthetic-photo-review");
     const result = page.locator(".capture-candidate");
     await expect(result).toContainText("80mg");
     await expect(result).toContainText("錠劑");
@@ -126,7 +126,7 @@ test("manual catalog search still prefills the selected official specification",
   );
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.getByRole("button", { name: "搜尋藥名", exact: true }).click();
   await page.getByLabel("搜尋藥名", { exact: true }).fill(candidate.nameZh);
   await page.getByRole("button", { name: "搜尋", exact: true }).click();

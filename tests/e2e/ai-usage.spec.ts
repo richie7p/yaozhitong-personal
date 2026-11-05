@@ -38,9 +38,9 @@ test("remaining uses refresh immediately after accepting a photo task and remain
     }),
   );
   await login(page);
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   const usage = page.getByRole("region", { name: "AI 使用次數" });
-  await expect(usage).toContainText("今日 AI 還可使用 16 次");
+  await expect(usage).toContainText("今日 AI 還可使用 26 次");
   await page.getByLabel("藥品照片", { exact: true }).setInputFiles({
     name: "synthetic-quota.png",
     mimeType: "image/png",
@@ -50,10 +50,10 @@ test("remaining uses refresh immediately after accepting a photo task and remain
     ),
   });
   await page.getByRole("button", { name: "開始辨識" }).click();
-  await expect(usage).toContainText("今日 AI 還可使用 15 次");
-  await expect(usage).toContainText("個人額度：剩 15／每日 20 次");
+  await expect(usage).toContainText("今日 AI 還可使用 25 次");
+  await expect(usage).toContainText("個人額度：剩 25／每日 30 次");
   await page.goto("/#medications");
-  await expect(usage).toContainText("今日 AI 還可使用 15 次");
+  await expect(usage).toContainText("今日 AI 還可使用 25 次");
   await usage.getByText("哪些操作會使用次數？", { exact: true }).click();
   await expect(usage).toContainText("已受理但處理失敗的任務也計次");
   expect(used).toBe(5);
@@ -69,12 +69,12 @@ test("global exhaustion preserves the displayed personal remainder and explains 
   page,
 }) => {
   await page.route("**/api/v1/ai/usage", (route) =>
-    route.fulfill({ json: syntheticAiUsage(3, 1000) }),
+    route.fulfill({ json: syntheticAiUsage(3, 2000) }),
   );
   await login(page);
   const usage = page.getByRole("region", { name: "AI 使用次數" });
   await expect(usage).toContainText("今日 AI 還可使用 0 次");
-  await expect(usage).toContainText("個人額度：剩 17／每日 20 次");
+  await expect(usage).toContainText("個人額度：剩 27／每日 30 次");
   await expect(usage).toContainText("全站今天的 AI 次數已用完");
   await expect(usage).toContainText("每日台北時間 00:00 恢復");
 });
@@ -95,14 +95,14 @@ test("failed or malformed usage reads hide stale counts and recover through the 
   );
   await login(page);
   const usage = page.getByRole("region", { name: "AI 使用次數" });
-  await expect(usage).toContainText("今日 AI 還可使用 19 次");
+  await expect(usage).toContainText("今日 AI 還可使用 29 次");
   for (const next of ["failed", "malformed"] as const) {
     state = next;
     await usage.getByRole("button", { name: "更新 AI 剩餘次數" }).click();
     await expect(usage).toContainText("暫時無法確認 AI 剩餘次數");
-    await expect(usage).not.toContainText("19 次");
+    await expect(usage).not.toContainText("29 次");
   }
   state = "ok";
   await usage.getByRole("button", { name: "更新 AI 剩餘次數" }).click();
-  await expect(usage).toContainText("今日 AI 還可使用 19 次");
+  await expect(usage).toContainText("今日 AI 還可使用 29 次");
 });

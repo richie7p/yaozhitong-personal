@@ -3,8 +3,8 @@ import type { Drug } from "../shared/schema.js";
 import { hash, now } from "./domain.js";
 import { Blobs } from "./blobs.js";
 import type { Store } from "./store.js";
-export const CATALOG_SOURCE =
-  "https://data.fda.gov.tw/opendata/exportDataList.do?method=ExportData&InfoId=36&logType=5";
+export { GENERAL_CATALOG_SOURCE as CATALOG_SOURCE } from "../shared/drug-explanation.js";
+import { GENERAL_CATALOG_SOURCE as CATALOG_SOURCE } from "../shared/drug-explanation.js";
 
 function titleStrength(title: string): string {
   const text = title.normalize("NFKC");

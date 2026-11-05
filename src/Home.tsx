@@ -105,7 +105,7 @@ export function Home() {
               : meds.error
                 ? "先重新讀取你的用藥"
                 : Number(pending) > 0
-                  ? "還差一步，完成藥品核對"
+                  ? "先了解藥品，核對可以接著做"
                   : !meds.data?.items?.length
                     ? "從第一張藥品照片開始"
                     : "你的用藥，隨時清楚掌握"}
@@ -114,9 +114,9 @@ export function Home() {
             {meds.error
               ? "目前無法確認清單，重新讀取後再繼續。"
               : Number(pending) > 0
-                ? `有 ${pending} 款藥品需要核對產品資料。對照包裝確認是哪一款藥後，即可閱讀衛教，個人用法可以留白。`
+                ? `有 ${pending} 款藥品仍待核對，也可以先使用 AI 藥品解說。一般查詢不必填個人用法；長期記錄與提醒再依實際處方建檔。`
                 : !meds.data?.items?.length
-                  ? "拍下藥袋、藥盒、瓶身或藥膏上的清楚藥名，核對後了解用途與衛教。也可以搜尋藥名或手動新增。"
+                  ? "一般藥品可拍照快速查詢用途與衛教，不用建檔。慢性處方箋或長期用藥，再建立藥品清單與提醒。"
                   : "查看今天的提醒、讀懂官方說明，讓每次記錄都有依據。"}
           </p>
           {meds.error ? (
@@ -138,7 +138,7 @@ export function Home() {
                 {Number(pending) > 0
                   ? "繼續核對藥品"
                   : !meds.data?.items?.length
-                    ? "新增我的第一款藥"
+                    ? "拍照查詢藥品"
                     : "閱讀我的用藥說明"}
                 <ArrowRight size={18} />
               </a>
@@ -173,9 +173,9 @@ export function Home() {
           </span>
           <div>
             <strong>
-              <b>02</b> 由你核對
+              <b>02</b> 查閱藥品資訊
             </strong>
-            <small>確認產品，個人用法可稍後補充</small>
+            <small>AI 搜尋可靠資料，列出來源與待確認處</small>
           </div>
         </li>
         <li>
@@ -184,9 +184,9 @@ export function Home() {
           </span>
           <div>
             <strong>
-              <b>03</b> 讀懂與記錄
+              <b>03</b> 按需要保存
             </strong>
-            <small>閱讀說明，建立日常提醒</small>
+            <small>長期用藥再建檔，確認用法後設定提醒</small>
           </div>
         </li>
       </ol>
@@ -196,8 +196,8 @@ export function Home() {
             <ScanLine size={23} />
           </span>
           <div>
-            <strong>拍藥品・新增用藥</strong>
-            <small>拍攝、搜尋或手動輸入</small>
+            <strong>拍藥品・查詢或建檔</strong>
+            <small>一般快速查詢，長期用藥另行保存</small>
           </div>
           <ArrowUpRight size={18} />
         </a>

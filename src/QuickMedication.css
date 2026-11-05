@@ -1,0 +1,106 @@
+.medication-entry-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 28px;
+}
+.medication-entry-modes a {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.medication-entry-modes a[aria-current="page"] {
+  border-color: var(--green);
+  box-shadow: inset 4px 0 var(--green);
+  background: #f0f6ed;
+}
+.medication-entry-modes svg {
+  flex: 0 0 auto;
+  color: var(--green);
+}
+.medication-entry-modes strong,
+.medication-entry-modes small {
+  display: block;
+}
+.medication-entry-modes small {
+  margin-top: 7px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.medication-entry-context {
+  color: var(--deep);
+}
+.quick-drug-capture {
+  max-width: 820px;
+}
+.quick-drug-capture .capture-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  margin: auto;
+  object-fit: contain;
+}
+.quick-drug-capture .capture-preview {
+  margin: 20px 0;
+}
+.quick-drug-capture .capture-preview figcaption {
+  overflow-wrap: anywhere;
+}
+.quick-drug-results {
+  margin-top: 28px;
+}
+.quick-drug-row {
+  margin: 14px 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.quick-drug-row h3 {
+  overflow-wrap: anywhere;
+}
+.quick-drug-manual {
+  margin: 24px 0;
+  max-width: 820px;
+}
+.quick-drug-manual summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--green);
+  font-weight: 600;
+}
+.quick-drug-manual form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding-top: 18px;
+}
+.quick-drug-manual .full-grid {
+  grid-column: 1 / -1;
+}
+.quick-drug-result {
+  margin-top: 28px;
+}
+.drug-explanation > h3 {
+  overflow-wrap: anywhere;
+}
+.drug-explanation > .notice {
+  margin-bottom: 24px;
+}
+@media (max-width: 650px) {
+  .medication-entry-modes {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .medication-entry-modes a {
+    padding: 16px;
+  }
+  .quick-drug-manual form {
+    grid-template-columns: 1fr;
+  }
+}

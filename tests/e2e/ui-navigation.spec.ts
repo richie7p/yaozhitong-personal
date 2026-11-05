@@ -314,7 +314,7 @@ test("learning index, one record and saved demo deep links retain the selected c
     .locator(`a[href="#${mobile ? "add" : "medications"}"]`)
     .click();
   const destinationTitle = page.getByRole("heading", {
-    name: mobile ? "新增藥品" : "我的藥品",
+    name: mobile ? "一般藥品快速查詢" : "我的藥品",
     exact: true,
     level: 1,
   });

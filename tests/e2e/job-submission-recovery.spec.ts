@@ -70,7 +70,7 @@ test("lost recognition creation response survives reload without a second job, A
     else await route.fulfill({ response });
   });
   await login(page);
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.locator('input[type="file"]').setInputFiles(photo);
   await page.getByRole("button", { name: "開始辨識", exact: true }).click();
   await expect(

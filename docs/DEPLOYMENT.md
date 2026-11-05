@@ -1,4 +1,4 @@
-> 最新公開模式、20／1,000 次配額、備份還原及告警驗收請見 [PUBLIC-READINESS](PUBLIC-READINESS.md)。下列 2026-10-20／21 版本數據為歷史紀錄。
+> 現行程式與部署範本的每日配額為每人 30／全站 2,000 次；調整上限不重設既有計數。公開模式、備份還原及告警驗收請見 [PUBLIC-READINESS](PUBLIC-READINESS.md)。下列 2026-10-20／21 版本數據為歷史紀錄。
 
 # Google Cloud 與 Firebase 部署
 

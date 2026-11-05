@@ -1,6 +1,6 @@
 /** Genuine, deterministic PDFs built without a PDF library. All medicine text is synthetic. */
 export const PDF_FIXTURE_NAME_EN = "RAW VERIFIED SYNTHETIC TABLETS 5MG";
-export function buildTfdaRawPdf(options: { blankSecondPage?: boolean; largeImage?: boolean; tableGrid?: boolean; twoColumns?: boolean } = {}): Buffer {
+export function buildTfdaRawPdf(options: { blankSecondPage?: boolean; largeImage?: boolean; tableGrid?: boolean; twoColumns?: boolean; pageCount?: number; longText?: boolean } = {}): Buffer {
   const objects: Buffer[] = [Buffer.alloc(0), Buffer.alloc(0)];
   const add = (text: string | Buffer) => { objects.push(Buffer.isBuffer(text) ? text : Buffer.from(text, "ascii")); return objects.length; };
   const font = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
@@ -14,8 +14,15 @@ export function buildTfdaRawPdf(options: { blankSecondPage?: boolean; largeImage
     "Preserve the complete second physical page and its original order.",
     "The synthetic exception applies only when synthetic condition A holds.",
     "This document is test data and does not describe an actual medicine."];
+  if (options.longText) {
+    const conditions = Array.from({ length: 32 }, () =>
+      "Synthetic condition A and exception B stay together in this test paragraph.");
+    first.push(...conditions); second.push(...conditions);
+  }
   const pageIds: number[] = [];
-  for (const [index, lines] of [first, second].entries()) {
+  const pages = [first, second];
+  while (pages.length < (options.pageCount || (options.longText ? 20 : 2))) pages.push(second);
+  for (const [index, lines] of pages.entries()) {
     const escaped = (text: string) => text.replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
     let content = lines.length ? "BT\n/F1 10 Tf\n50 750 Td\n" + lines.map((line, i) => `${i ? "0 -18 Td\n" : ""}(${escaped(line)}) Tj`).join("\n") + "\nET\n" : "q\nQ\n";
     if (image && index === 0) content += "q\n450 0 0 450 50 50 cm\n/Im1 Do\nQ\n";

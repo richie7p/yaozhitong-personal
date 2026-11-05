@@ -206,12 +206,12 @@ test("skip link focuses the current page without losing unsaved medication input
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.getByRole("button", { name: "手動建檔", exact: true }).click();
   await page.getByLabel("藥品名稱", { exact: true }).fill("尚未儲存的藥品資料");
   await page.getByRole("link", { name: "跳到主要內容", exact: true }).focus();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/#add$/);
+  await expect(page).toHaveURL(/\/#add\?mode=chronic$/);
   await expect(page.locator("main")).toBeFocused();
   await expect(page.getByLabel("藥品名稱", { exact: true })).toHaveValue(
     "尚未儲存的藥品資料",
@@ -271,7 +271,7 @@ test("multiple recognized medications can be saved one by one without repeating 
   );
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
   await page.locator('input[type="file"]').setInputFiles({
     name: "synthetic-multiple.png",
     mimeType: "image/png",
@@ -307,7 +307,7 @@ test("multiple recognized medications can be saved one by one without repeating 
       .getByRole("button", { name: "保存待核對資料", exact: true })
       .click();
     if (index === 0) {
-      await expect(page).toHaveURL(/\/#add$/);
+      await expect(page).toHaveURL(/\/#add\?mode=chronic$/);
       await expect(
         page.getByRole("status").filter({ hasText: "還有 1 筆待核對" }),
       ).toBeVisible();

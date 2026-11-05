@@ -227,7 +227,7 @@ async function fixture(page: Page, initial: any[] = []) {
 }
 
 async function openPhotoCandidate(page: Page) {
-  await page.goto("/#add?recognition=identity-photo");
+  await page.goto("/#add?mode=chronic&recognition=identity-photo");
   await page.locator(".capture-candidate").click();
   await expect(page.locator(".product-identity-review")).toContainText(
     "待核對候選",
@@ -254,7 +254,7 @@ test("incomplete Secorine stays pending through save, then full package license 
   await expect(card).toContainText("產品待核對");
   await expect(
     card.getByRole("button", { name: "AI 藥品解說", exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   expect(f.saved[0]).toMatchObject({
     licenseNo: null,
     candidateLicenseNo: candidate.licenseNo,
@@ -497,7 +497,7 @@ test("legacy products and unsafe old chat answers require package review", async
   await expect(page.locator(".med-card")).toContainText("產品待核對");
   await expect(
     page.getByRole("button", { name: "AI 藥品解說", exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await page.goto("/#chat");
   await expect(
     page.getByText("不應顯示的舊產品回答", { exact: true }),
@@ -539,7 +539,7 @@ test("an old account's delayed identity response cannot populate a new account's
     .getByRole("button", { name: "合成第二使用者", exact: true })
     .click();
   await page.evaluate(() => {
-    location.hash = "#add?recognition=identity-photo";
+    location.hash = "#add?mode=chronic&recognition=identity-photo";
   });
   await page.locator(".capture-candidate").click();
   const oldResponse = page.waitForResponse("**/medications/identity-check");

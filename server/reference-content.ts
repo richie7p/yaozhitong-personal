@@ -1,4 +1,5 @@
 import { parse, type DefaultTreeAdapterMap } from "parse5";
+import { readReferencePdf } from "./reference-pdf.js";
 import {
   reliableReferenceUrl,
   type ReferenceSearch,
@@ -92,7 +93,7 @@ async function readSource(
       redirect: "manual",
       signal,
       headers: {
-        accept: "text/html, text/plain;q=0.9",
+        accept: "text/html, application/pdf;q=0.9, text/plain;q=0.8",
         "user-agent": "YaoZhiTong-ReferenceReader/1.0",
       },
     });
@@ -106,7 +107,7 @@ async function readSource(
     const type = response.headers.get("content-type") || "";
     if (
       !response.ok ||
-      !/^(?:text\/html|text\/plain|application\/xhtml\+xml)\b/i.test(type) ||
+      !/^(?:text\/html|text\/plain|application\/xhtml\+xml|application\/pdf)\b/i.test(type) ||
       Number(response.headers.get("content-length")) > maxBytes
     ) {
       await response.body?.cancel();
@@ -127,9 +128,12 @@ async function readSource(
     } finally {
       await reader.cancel().catch(() => {});
     }
+    const bytesRead = Buffer.concat(chunks);
+    if (/^application\/pdf\b/i.test(type))
+      return { url: trusted, text: await readReferencePdf(bytesRead, signal) };
     const charset =
       type.match(/charset\s*=\s*["']?([^;\s"']+)/i)?.[1] || "utf-8";
-    const raw = new TextDecoder(charset).decode(Buffer.concat(chunks));
+    const raw = new TextDecoder(charset).decode(bytesRead);
     return {
       url: trusted,
       text: /text\/plain/i.test(type) ? raw.trim() : referenceHtmlText(raw),

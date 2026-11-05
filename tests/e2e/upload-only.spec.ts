@@ -10,7 +10,7 @@ const png = Buffer.from(
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
-  await page.goto("/#add");
+  await page.goto("/#add?mode=chronic");
 });
 
 test("upload picker accepts a supported file without opening the camera and completes recognition", async ({

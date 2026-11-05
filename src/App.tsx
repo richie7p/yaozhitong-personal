@@ -23,7 +23,8 @@ import { useAuth } from "./auth";
 import { authErrorMessage } from "./auth-errors";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { Button, Busy, Field, Notice, SectionTitle } from "./components";
-import { Medications, AddMedication, Learning, Chat } from "./MedicationViews";
+import { Medications, Learning, Chat } from "./MedicationViews";
+import { MedicationEntry } from "./MedicationEntry";
 import { Care, Cabinet, Profile, Admin, History } from "./ManagementViews";
 import { JobHistory } from "./JobHistory";
 import { adminSections } from "./AdminConsole";
@@ -147,7 +148,13 @@ export function App() {
             </a>
           </div>
         )}
-        <AddMedication
+        <MedicationEntry
+          mode={
+            new URLSearchParams(pageQuery).get("mode") === "chronic" ||
+            new URLSearchParams(pageQuery).get("from") === "demo"
+              ? "chronic"
+              : "quick"
+          }
           recognitionId={new URLSearchParams(pageQuery).get("recognition")}
         />
       </>
@@ -232,7 +239,7 @@ export function App() {
         {!adminWorkspace && (
           <a href="#add" className="btn primary sidebar-add">
             <ScanLine size={19} />
-            新增藥品
+            查藥與建檔
           </a>
         )}
         <span className="nav-label">
@@ -342,7 +349,7 @@ export function App() {
                 {navigation.find(([id]) => id === pageName)?.[1] ||
                   (
                     {
-                      add: "新增用藥",
+                      add: "查藥與建檔",
                       demo: "研討會展示",
                       jobs: "處理紀錄",
                       notifications: "通知紀錄",
@@ -499,7 +506,11 @@ function Login({ adminEntry = false }: { adminEntry?: boolean }) {
   }
   return (
     <div
-      className={"login-page public-login auth-" + mode + (adminEntry ? " admin-login" : "")}
+      className={
+        "login-page public-login auth-" +
+        mode +
+        (adminEntry ? " admin-login" : "")
+      }
     >
       <section className="login-story">
         <a className="brand" href="/">

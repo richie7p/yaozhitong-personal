@@ -1,5 +1,6 @@
 import type { Drug } from "../shared/schema.js";
 import type { Store } from "./store.js";
+import { GENERAL_CATALOG_SOURCE, type DrugCatalogReference, type DrugQuery } from "../shared/drug-explanation.js";
 import { Blobs } from "./blobs.js";
 import {
   ProductIdentityIndex,
@@ -338,6 +339,24 @@ function scoreIndexedDrug(
   if (d.revoked) s -= 20;
   return s;
 }
+/** Lookup for general reference search only, never package-identity proof.
+ * No substring, prefix, ingredient, bilingual or ranked candidate fallback. */
+export function exactGeneralReferenceMatch(rows: Drug[], query: DrugQuery) {
+  const name = normalize(query.name);
+  const hits = rows.filter((drug) => {
+    if (drug.revoked || !formMatches(drug, query.form, query.name)) return false;
+    if (query.licenseNo && normalize(query.licenseNo) !== normalize(drug.licenseNo)) return false;
+    const identity = query.strength ? strengthIdentity(drug, query.name, query.strength, query.form) : noStrength;
+    if (identity.conflict) return false;
+    if (query.strength && normalize(drug.strength) !== normalize(query.strength) && !identity.equivalent) return false;
+    return [drug.nameZh, drug.nameEn].some((title) => normalize(title) === name) || identity.splitNameMatch;
+  });
+  if (hits.length !== 1) return null;
+  const drug = hits[0];
+  const matchBasis = [drug.nameZh, drug.nameEn].some((title) => normalize(title) === name)
+    ? "complete_name" as const : "complete_name_and_strength" as const;
+  return { drug, matchBasis };
+}
 export class Catalog {
   private version = "";
   private rows: Drug[] = [];
@@ -351,6 +370,7 @@ export class Catalog {
   private searchCache = new Map<string, (Drug & { score: number })[]>();
   private identityRows: Drug[] | null = null;
   private identityIndex: ProductIdentityIndex | null = null;
+  private referenceSnapshot: { key: string; rows: Drug[] } | null = null;
   constructor(
     private store: Store,
     private blobs = new Blobs(),
@@ -442,6 +462,29 @@ export class Catalog {
   }
   async identityReview(input: IdentityInput) {
     return (await this.identitySnapshot()).review(input);
+  }
+  async generalReference(query: DrugQuery, reader: Pick<Store, "get"> = this.store): Promise<DrugCatalogReference | null> {
+    // Load the blob named by this exact metadata snapshot. A concurrent catalog
+    // refresh cannot mix a new name/ingredient row with an old provenance stamp.
+    const metadata = await reader.get("settings", "catalog");
+    if (!metadata || metadata.source !== GENERAL_CATALOG_SOURCE ||
+      typeof metadata.version !== "string" || !metadata.version ||
+      typeof metadata.path !== "string" || !metadata.path.startsWith("catalog/")) return null;
+    const key = JSON.stringify([metadata.version, metadata.path]);
+    let rows = metadata.version === this.version && metadata.path === this.path
+      ? this.rows : this.referenceSnapshot?.key === key ? this.referenceSnapshot.rows : null;
+    if (!rows) {
+      rows = await this.loadRows(metadata.version, metadata.path);
+      this.referenceSnapshot = { key, rows };
+    }
+    const matched = exactGeneralReferenceMatch(rows, query);
+    if (!matched) return null;
+    const { drug, matchBasis } = matched;
+    return {
+      sourceUrl: GENERAL_CATALOG_SOURCE, catalogVersion: metadata.version,
+      licenseNo: drug.licenseNo, nameZh: drug.nameZh, nameEn: drug.nameEn,
+      strength: drug.strength, form: drug.form, ingredients: [...drug.ingredients], matchBasis,
+    };
   }
   invalidate() {
     this.loadedAt = 0;

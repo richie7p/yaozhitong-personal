@@ -13,9 +13,11 @@ afterEach(() => {
 });
 
 describe("quota display refresh after AI requests", () => {
-  it.each([202, 429, 503])(
-    "refreshes server counters after an AI request returns %s",
-    async (status) => {
+  it.each([202, 429, 503].flatMap((status) =>
+    ["/recognitions", "/explanations"].map((path) => ({ status, path })),
+  ))(
+    "refreshes server counters after $path returns $status",
+    async ({ status, path }) => {
       const update = vi.fn();
       stop = onAiUsageChanged(update);
       vi.stubGlobal(
@@ -35,7 +37,7 @@ describe("quota display refresh after AI requests", () => {
             ),
           ),
       );
-      await api("/recognitions", "POST", { image: "synthetic" }).catch(
+      await api(path, "POST", { image: "synthetic" }).catch(
         () => {},
       );
       expect(update).toHaveBeenCalledOnce();
