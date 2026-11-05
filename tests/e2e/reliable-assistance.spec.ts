@@ -174,7 +174,7 @@ for (const state of ["found", "not_found", "unavailable"] as const)
       .getByRole("button", { name: "官方仿單原文", exact: true })
       .click();
     await expect(
-      page.getByText("本站尚未收錄這款藥的官方仿單，仍可使用 AI 解說與問答。", {
+      page.getByText("本站尚未收錄這款藥的官方仿單", {
         exact: false,
       }),
     ).toBeVisible();

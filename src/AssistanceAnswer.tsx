@@ -15,10 +15,13 @@ export function AssistanceAnswer({ result }: { result: GroundedResult }) {
   return (
     <section className="assistance-answer" aria-label="AI 藥品解說與問答">
       <div className="row spread wrap">
-        <span className="tag green">一般藥品資訊</span>
+        <span className="tag green">AI 基本用藥資訊</span>
       </div>
       <p className="assistance-intro">
-        依查得的官方與醫療機構資料整理，不必先核對完整仿單。請留意來源適用的成分與劑型；這不是個人用藥指示。
+        AI 會幫你查詢基本用藥資訊，包括用途、注意事項、副作用與保存方式，並附上資料來源。
+      </p>
+      <p className="fine">
+        本站尚未收錄官方仿單時，AI 會參考政府與醫療機構的公開資料。以下是一般藥品資訊，不代表完整產品仿單或你的個人用法。
       </p>
       {result.status === "refused" && (
         <Notice>
