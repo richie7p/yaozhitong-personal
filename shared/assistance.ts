@@ -73,4 +73,13 @@ export interface Assistance {
     basis: "reference" | "user_label";
   }[];
   uncertainties: string[];
+  /** Counts only: no query, source text, URLs or personal information. */
+  validation?: {
+    proposedReferenceClaims: number;
+    evidenceRejected: number;
+    submittedToReview: number;
+    reviewRejected: number;
+    acceptedReferenceClaims: number;
+    reviewContractInvalid: boolean;
+  };
 }
