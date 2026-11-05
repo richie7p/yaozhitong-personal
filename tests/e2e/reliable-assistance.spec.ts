@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 import { assisted } from "../../server/assistance";
 import type { Medication } from "../../shared/schema";
 import { ASSISTANCE_VERSION } from "../../shared/assistance";
@@ -125,6 +126,7 @@ for (const state of ["found", "not_found", "unavailable"] as const)
         });
       }
       const reads: Record<string, unknown> = {
+        "/ai/usage": syntheticAiUsage(),
         "/config": {
           mode: "local",
           ai: true,
@@ -190,7 +192,7 @@ for (const state of ["found", "not_found", "unavailable"] as const)
         answer.getByRole("link", { name: /合成官方醫療來源/ }),
       ).toHaveAttribute("href", "https://www.ntuh.gov.tw/synthetic-reference");
     else {
-      await expect(answer).toContainText("依你記錄的藥袋文字");
+      await expect(answer).toContainText("依你確認的藥品標示");
       await expect(answer.getByRole("link")).toHaveCount(0);
       await expect(answer).toContainText(
         state === "not_found" ? "未找到能引用" : "搜尋暫時無法完成",
