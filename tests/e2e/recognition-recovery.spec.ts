@@ -40,7 +40,7 @@ test("completed recognition survives navigation and a lost save response without
   await page.getByLabel("每次劑量", { exact: true }).fill("1");
   await page.getByLabel("劑量單位", { exact: true }).fill("錠");
   await page.getByLabel("頻次原文", { exact: true }).fill("QD");
-  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
+  await page.getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）").check();
   const saveUrl = `**/api/v1/recognitions/${jobId}/medications/0`;
   await page.route(saveUrl, async (route) => {
     const saved = await route.fetch();

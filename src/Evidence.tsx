@@ -19,6 +19,7 @@ import { PlainLanguageStatus } from "./PlainLanguageStatus";
 import { SourceReadingNotice } from "./SourceReadingNotice";
 import { AssistanceAnswer } from "./AssistanceAnswer";
 import { sharedQuizPresentation } from "./quiz-presentation";
+import { MedicationEducation } from "./MedicationEducation";
 
 export const learningStateLabels: Record<LearningProgress["status"], string> = {
   not_started: "未開始",
@@ -97,9 +98,15 @@ export function HealthReferences({
 function EducationSummary({ medications }: { medications: Medication[] }) {
   return (
     <section className="education-card confirmed-usage reading-prescription">
-      <h4 className="reading-note-label">你已確認的用法</h4>
+      <h4 className="reading-note-label">
+        {medications.some((m) => m.confirmed)
+          ? "你已確認的用法"
+          : "個人用法可稍後補充"}
+      </h4>
       {!medications.some((m) => m.confirmed) && (
-        <p className="muted">回到「我的藥品」查看已確認的用法。</p>
+        <p className="muted">
+          目前沒有已確認的個人用量與頻次，仍可閱讀藥品用途與衛教。需要使用提醒時，再依醫師或藥師交代補上用法。
+        </p>
       )}
       {medications
         .filter((m) => m.confirmed)
@@ -114,7 +121,13 @@ function EducationSummary({ medications }: { medications: Medication[] }) {
             {m.instructions && <p>{m.instructions}</p>}
           </div>
         ))}
-      <small>依你核對後儲存的藥袋用法顯示。</small>
+      {medications.some((m) => m.confirmed) && (
+        <small>以上只顯示你核對後儲存的個人用法。</small>
+      )}
+      {medications.some((m) => m.confirmed) &&
+        medications.some((m) => !m.confirmed) && (
+          <p className="muted">其他藥品尚未確認個人用法；可以先閱讀衛教。</p>
+        )}
     </section>
   );
 }
@@ -503,10 +516,14 @@ export function Evidence({
     >
       <div className="claim-number">{String(index + 1).padStart(2, "0")}</div>
       <div>
-        {c.category === "use" && <>
-          <span className="tag">仿單一般用法</span>
-          <p className="fine">以下為仿單的一般標示與操作；你的用量與頻次請對照已核對的藥袋用法。</p>
-        </>}
+        {c.category === "use" && (
+          <>
+            <span className="tag">仿單一般用法</span>
+            <p className="fine">
+              以下為仿單的一般標示與操作，不是你的個人處方。個人用量與頻次以醫師或藥師交代為準。
+            </p>
+          </>
+        )}
         {c.kind === "source_plain_language" && (
           <span className="tag">AI 白話說明</span>
         )}
@@ -563,6 +580,13 @@ export function Evidence({
       <PlainLanguageStatus result={result} />
       {showReading && (
         <>
+          <MedicationEducation
+            result={result}
+            medications={medications}
+            onReadClaim={(index) =>
+              focusReadingTarget(claimRefs.current.get(index) || null)
+            }
+          />
           <nav className="reading-sections" aria-label="這份說明的閱讀段落">
             <button
               type="button"
@@ -607,7 +631,7 @@ export function Evidence({
               <span className="reading-step reading-kicker">01</span>
               <div>
                 <h3 id={sectionName + "-reading"}>用途與用法</h3>
-                <p>先了解藥品用途，再對照你核對過的藥袋用法。</p>
+                <p>先了解用途與一般操作；個人用量、使用次數可稍後再補充。</p>
               </div>
             </div>
             <div className="reading-body">

@@ -301,7 +301,7 @@ test("multiple recognized medications can be saved one by one without repeating 
       String(index + 1),
     );
     await page
-      .getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）")
+      .getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）")
       .check();
     await page
       .getByRole("button", { name: "保存待核對資料", exact: true })

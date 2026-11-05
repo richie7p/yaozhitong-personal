@@ -11,11 +11,7 @@ export function leafletReady(m: {
   licenseNo?: string | null;
   identityReview?: { status?: string };
 }) {
-  return (
-    m.confirmed === true &&
-    !!m.licenseNo &&
-    m.identityReview?.status === "confirmed"
-  );
+  return !!m.licenseNo && m.identityReview?.status === "confirmed";
 }
 
 const emptyEvidence = {
@@ -159,6 +155,12 @@ export function ProductIdentityReview({
             {confirmed ? "許可證字號：" : "候選許可證："}
             {candidate.licenseNo}
           </p>
+          {confirmed && candidate.ingredients?.length > 0 && (
+            <p>
+              主要成分：{candidate.ingredients.join("、")}
+              。保存藥品後，可閱讀這款藥的用途與衛教說明；不需要先填寫個人用量或頻次。
+            </p>
+          )}
           {!confirmed && (
             <p>同名藥品可能有不同廠牌、口味或規格。選取候選尚未連結仿單。</p>
           )}
@@ -185,7 +187,7 @@ export function ProductIdentityReview({
         <>
           <Notice>{identityGuidance}</Notice>
           <p>
-            請從手上包裝另行抄錄，與候選的完整品名、含量及劑型核對。用法確認不代表產品已核對。
+            請從手上包裝另行抄錄，與候選的完整品名、含量及劑型核對。這一步只確認是哪一款藥，不需要填寫個人用量或頻次。
           </p>
         </>
       )}

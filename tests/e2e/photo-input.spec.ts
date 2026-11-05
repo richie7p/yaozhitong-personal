@@ -15,7 +15,7 @@ test("camera requests rear capture and upload clears it without losing a cancell
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await page.goto("/#add");
-  const input = page.getByLabel("藥袋照片", { exact: true });
+  const input = page.getByLabel("藥品照片", { exact: true });
   const cameraChooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "開啟相機拍攝", exact: true }).click();
   const camera = await cameraChooser;
@@ -209,7 +209,7 @@ for (const invalidPhoto of [
       page
         .getByRole("list", { name: "操作步驟" })
         .locator('[aria-current="step"]'),
-    ).toContainText("選擇藥袋");
+    ).toContainText("選擇藥品照片");
     expect(calls).toBe(1);
 
     await input.setInputFiles({

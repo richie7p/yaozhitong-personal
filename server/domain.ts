@@ -824,11 +824,10 @@ export class Domain {
           "藥品身分尚未核對，請補拍包裝或補上完整許可證、品名、含量與劑型後再產生內容。",
           409,
         );
-      if (
-        !medication.confirmed ||
-        !MedicationSchema.safeParse(medication).success
-      )
-        return fail("unconfirmed_usage", "請先核對藥袋的用量與頻次。");
+      // General education needs verified identity, not a personal prescription.
+      // Scheduling and dose logs retain their separate usage-confirmation gates.
+      if (!MedicationSchema.safeParse(medication).success)
+        return fail("invalid_medication", "藥品資料格式有誤，請重新核對保存。");
       medications.push(reviewed);
     }
     if (input.previousLearningId !== undefined) {
@@ -1287,7 +1286,11 @@ export class Domain {
                 ].filter((s): s is string => !!s),
               ),
             ],
-            usage: [doseLabel(m), m.frequencyRaw, m.instructions].join(" "),
+            usageConfirmed: m.confirmed,
+            // Unconfirmed packaging directions must not become personal dosing.
+            usage: m.confirmed
+              ? [doseLabel(m), m.frequencyRaw, m.instructions].join(" ")
+              : "",
           })),
           profile: profile
             ? {
@@ -1361,7 +1364,7 @@ export class Domain {
             : undefined;
         if (!result) {
           result = leaflets.some((l) => !l) && j.kind !== "interaction"
-            ? await assisted(llm!, String(j.input.question || "請用白話解釋這些藥品的一般用途、注意事項與我記錄的藥袋文字，並說明哪些資訊仍無法確認。"), meds, catalogDrugs, leaflets)
+            ? await assisted(llm!, String(j.input.question || "請用白話解釋這些藥品的一般用途、使用注意事項、副作用與保存方式，並說明哪些資訊仍無法確認。只依可靠資料說明，不推算個人用量或使用次數。"), meds, catalogDrugs, leaflets)
             : leaflets.some((l) => !l) ? {
                 status: "insufficient_data",
                 claims: [],
@@ -1651,7 +1654,10 @@ export class Domain {
       const m = await reader.get<Medication>("medications", r.id);
       if (!m || m.ownerId !== uid || m.archived || m.revision !== r.revision)
         return false;
-      if (!m.confirmed || catalog.review(m).status !== "confirmed")
+      if (
+        !MedicationSchema.safeParse(m).success ||
+        catalog.review(m).status !== "confirmed"
+      )
         return false;
     }
     for (const [license, version] of Object.entries(

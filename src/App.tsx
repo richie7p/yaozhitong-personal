@@ -33,6 +33,7 @@ import { Home } from "./Home";
 import { CareIllustration } from "./CareIllustration";
 import { SupportPage } from "./Support";
 import { PrivacyPage, PrivacyLink } from "./Privacy";
+import { AiUsage } from "./AiUsage";
 const navigation = [
   ["home", "今日總覽", House],
   ["medications", "我的藥品", Pill],
@@ -132,7 +133,7 @@ export function App() {
         {new URLSearchParams(pageQuery).get("from") === "demo" && (
           <div className="demo-context">
             <Presentation size={18} />
-            <span>研討會展示 · 藥袋辨識</span>
+            <span>研討會展示 · 藥品辨識</span>
             <a
               className="text-link"
               href={
@@ -231,7 +232,7 @@ export function App() {
         {!adminWorkspace && (
           <a href="#add" className="btn primary sidebar-add">
             <ScanLine size={19} />
-            新增藥袋
+            新增藥品
           </a>
         )}
         <span className="nav-label">
@@ -403,6 +404,7 @@ export function App() {
                 : "AI 尚未設定"}
             </div>
           )}
+          {!adminWorkspace && <AiUsage />}
           {pages[pageName] || pages.home}
         </main>
         <footer className="site-footer">
@@ -440,7 +442,7 @@ export function App() {
             <span className="capture-nav-icon">
               <ScanLine size={22} />
             </span>
-            <span>拍藥袋</span>
+            <span>拍藥品</span>
           </a>
           <a
             href="#learning"
@@ -517,13 +519,13 @@ function Login({ adminEntry = false }: { adminEntry?: boolean }) {
             <em>照顧得更清楚。</em>
           </h1>
           <p>
-            拍下藥袋、核對資料，讀懂自己的用藥。
+            從藥袋、藥盒與藥膏，了解藥品並記錄每一天。
             <br />
             提醒與紀錄，都在同一個地方。
           </p>
           <div className="story-steps">
             <span>
-              <b>1</b>拍下藥袋
+              <b>1</b>辨識藥品
             </span>
             <ArrowRight />
             <span>
@@ -538,7 +540,7 @@ function Login({ adminEntry = false }: { adminEntry?: boolean }) {
         <div className="login-illustration">
           <div className="illustration-label">
             <ScanLine size={19} />
-            <span>從一張藥袋，開始整理</span>
+            <span>從藥品照片，開始整理</span>
           </div>
           <CareIllustration />
           <div className="illustration-note">
@@ -579,7 +581,7 @@ function Login({ adminEntry = false }: { adminEntry?: boolean }) {
                 ? "輸入註冊時使用的信箱，我們會寄送重設密碼連結。"
                 : adminEntry
                   ? "請使用已授權的管理員帳號。"
-                  : "登入後，從第一張藥袋開始。"}
+                  : "登入後，拍下藥袋、藥盒或藥膏開始。"}
           </p>
           {authError && (
             <>

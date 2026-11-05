@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 import type { GroundedResult } from "../../shared/schema";
 
 // Synthetic display fixtures only. No account, model, source download, or
@@ -84,6 +85,7 @@ async function mockSavedReview(
       return;
     }
     const responses: Record<string, unknown> = {
+      "/api/v1/ai/usage": syntheticAiUsage(),
       "/api/v1/config": { mode: "local", ai: false },
       "/api/v1/me": {
         account: {

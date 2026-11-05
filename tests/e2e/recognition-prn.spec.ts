@@ -48,7 +48,7 @@ test.describe("new recognition drafts", () => {
       exact: true,
     });
     const confirmed = page.getByLabel(
-      "我已對照藥袋確認用法（每次用量、頻次與途徑）",
+      "我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）",
       {
         exact: true,
       },
@@ -122,7 +122,7 @@ test("editing an existing medication retains the user's PRN setting despite its 
     page.getByLabel("需要時才使用（不排定時提醒）", { exact: true }),
   ).not.toBeChecked();
   await expect(
-    page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）", {
+    page.getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）", {
       exact: true,
     }),
   ).toBeChecked();

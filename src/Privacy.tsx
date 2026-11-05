@@ -30,7 +30,7 @@ export function PrivacyPage() {
         </div>
       </a>
       <SectionTitle eyebrow="使用前，先了解" title="資料使用與隱私">
-        你的藥袋、提問與健康資料如何處理，以及你可以怎麼管理。
+        你的藥品照片、提問與健康資料如何處理，以及你可以怎麼管理。
       </SectionTitle>
       <p className="fine">更新日期：2026 年 11 月 2 日</p>
       <section className="card">
@@ -53,7 +53,7 @@ export function PrivacyPage() {
           </li>
           <li>你保存的藥品、用法、提醒、服藥紀錄，以及自行填寫的健康條件。</li>
           <li>
-            上傳的藥袋圖片、用藥提問、AI
+            上傳的藥品照片（例如藥袋、藥盒或藥膏）、用藥提問、AI
             整理結果、測驗答案，以及你主動提交的私密問題回報與管理員回覆。
           </li>
           <li>

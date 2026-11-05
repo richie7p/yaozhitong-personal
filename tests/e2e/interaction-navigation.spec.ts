@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 
 test.use({ serviceWorkers: "block" });
 
@@ -69,6 +70,7 @@ async function fixture(page: Page, pause: "job" | "refresh") {
       return;
     }
     const reads: Record<string, unknown> = {
+      "/ai/usage": syntheticAiUsage(),
       "/config": { mode: "local", ai: false },
       "/me": {
         account: {

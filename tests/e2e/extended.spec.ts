@@ -122,7 +122,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await expect(
     page.getByText("包裝資料已與官方藥品資料核對。", { exact: true }),
   ).toBeVisible();
-  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
+  await page.getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）").check();
   await page.getByRole("button", { name: "儲存已核對藥品與用法" }).click();
   await med.getByRole("button", { name: "AI 藥品解說" }).click();
   const evidence = page.locator(".evidence");
@@ -157,7 +157,7 @@ test("photo correction, evidence, quiz, interaction and failed AI retry through 
   await expect(
     page.getByText("包裝資料已與官方藥品資料核對。", { exact: true }),
   ).toBeVisible();
-  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
+  await page.getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）").check();
   await page.getByRole("button", { name: "儲存已核對藥品與用法" }).click();
   await expect(
     page.getByRole("heading", { name: "流程測試片 10mg", exact: true }),

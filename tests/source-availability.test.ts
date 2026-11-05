@@ -223,13 +223,15 @@ it("never returns an untrusted source URL as an official original", async () => 
     { licenseNo: drug.licenseNo, version: leaflet.version },
   ]);
 });
-it("allows source reading before prescription usage is confirmed without allowing an AI task", async () => {
+it("allows source reading and general AI education before personal usage is confirmed", async () => {
   const { store, med, get, post } = await fixture();
   await store.set("medications", med.id, { ...med, confirmed: false });
   expect((await get()).status).toBe(200);
   const response = await post();
-  expect((await response.json()).code).toBe("unconfirmed_usage");
-  expect(await store.list("usage")).toEqual([]);
+  expect(response.status).toBe(202);
+  const counters = await store.list<{ count: number }>("usage");
+  expect(counters.length).toBeGreaterThan(0);
+  expect(counters.every((counter) => counter.count === 1)).toBe(true);
 });
 it.each(["draft", "retired", "wrong-license"])(
   "does not provide a source reference from a %s publication",

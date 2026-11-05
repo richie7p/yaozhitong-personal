@@ -17,6 +17,15 @@ const drugs: Drug[] = [5, 10].map((n) => ({
   ingredients: ["synthetic-only"],
   revoked: false,
 }));
+drugs.push({
+  licenseNo: "SYNTHETIC-E2E-TOPICAL",
+  nameZh: "流程測試軟膏 1%",
+  nameEn: "Synthetic test ointment 1%",
+  strength: "1%",
+  form: "軟膏劑",
+  ingredients: ["synthetic-only"],
+  revoked: false,
+});
 const quote =
   "注意事項：本文件完全為合成資料，僅供軟體流程測試，不可作為用藥依據。合成情境A的讀者應閱讀說明；未記載不能判斷安全。";
 for (const drug of drugs) {

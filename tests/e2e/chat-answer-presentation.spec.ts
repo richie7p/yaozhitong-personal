@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 import type { GroundedResult } from "../../shared/schema";
 
 // Synthetic presentation fixtures only. Every API request is fulfilled in the
@@ -89,6 +90,7 @@ async function mockHistory(
       return;
     }
     const json: Record<string, unknown> = {
+      "/api/v1/ai/usage": syntheticAiUsage(),
       "/api/v1/config": { mode: "local", ai: false },
       "/api/v1/me": {
         account: {

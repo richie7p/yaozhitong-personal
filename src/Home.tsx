@@ -72,7 +72,7 @@ export function Home() {
     meds.loading || meds.error
       ? "—"
       : meds.data?.items?.filter(
-          (m: any) => !m.confirmed || m.identityReview?.status !== "confirmed",
+          (m: any) => m.identityReview?.status !== "confirmed",
         ).length || 0;
   return (
     <div className="journal-home">
@@ -107,16 +107,16 @@ export function Home() {
                 : Number(pending) > 0
                   ? "還差一步，完成藥品核對"
                   : !meds.data?.items?.length
-                    ? "從第一張藥袋開始"
+                    ? "從第一張藥品照片開始"
                     : "你的用藥，隨時清楚掌握"}
           </h2>
           <p>
             {meds.error
               ? "目前無法確認清單，重新讀取後再繼續。"
               : Number(pending) > 0
-                ? `有 ${pending} 款藥品需要你確認產品或用法。對照原藥袋，確認後再閱讀說明。`
+                ? `有 ${pending} 款藥品需要核對產品資料。對照包裝確認是哪一款藥後，即可閱讀衛教，個人用法可以留白。`
                 : !meds.data?.items?.length
-                  ? "拍下清楚的藥袋，系統先整理，你再逐項確認。也可以搜尋藥名或手動新增。"
+                  ? "拍下藥袋、藥盒、瓶身或藥膏上的清楚藥名，核對後了解用途與衛教。也可以搜尋藥名或手動新增。"
                   : "查看今天的提醒、讀懂官方說明，讓每次記錄都有依據。"}
           </p>
           {meds.error ? (
@@ -147,7 +147,7 @@ export function Home() {
         </div>
         <div className="care-hero-art">
           <span className="care-hero-art-caption">
-            從一張藥袋，開始安心的日常
+            從藥品照片，開始認識手上的藥
           </span>
           <CareIllustration />
           <span className="care-hero-art-seal">
@@ -162,9 +162,9 @@ export function Home() {
           </span>
           <div>
             <strong>
-              <b>01</b> 拍下藥袋
+              <b>01</b> 拍下藥品
             </strong>
-            <small>藥名與用法清楚入鏡</small>
+            <small>完整藥名與包裝標示清楚入鏡</small>
           </div>
         </li>
         <li>
@@ -175,7 +175,7 @@ export function Home() {
             <strong>
               <b>02</b> 由你核對
             </strong>
-            <small>確認產品、用量與頻次</small>
+            <small>確認產品，個人用法可稍後補充</small>
           </div>
         </li>
         <li>
@@ -196,7 +196,7 @@ export function Home() {
             <ScanLine size={23} />
           </span>
           <div>
-            <strong>拍藥袋・新增用藥</strong>
+            <strong>拍藥品・新增用藥</strong>
             <small>拍攝、搜尋或手動輸入</small>
           </div>
           <ArrowUpRight size={18} />
@@ -346,7 +346,7 @@ export function Home() {
               <br />
               每一步都算數。
             </h2>
-            <p>辨識結果需要你再看一次。藥名、用量與頻次，都以原藥袋為準。</p>
+            <p>藥袋、藥盒或藥膏都能拍。核對藥品後即可閱讀衛教，個人用量與頻次可以稍後補充。</p>
             <a className="care-note-link" href="#medications">
               查看我的藥品 <ArrowUpRight size={17} />
             </a>

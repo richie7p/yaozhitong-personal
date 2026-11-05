@@ -149,10 +149,13 @@ export async function assisted(
     }
   }
   const checkedAt = new Date().toISOString();
+  // Package quantities and draft directions are not personal usage instructions.
+  // Keep every identified product available for general reference education.
+  const confirmedUsage = medications.filter((m) => m.confirmed);
   const context = {
     question,
     products: drugs.filter(Boolean),
-    userLabels: medications.map((m) => ({
+    userLabels: confirmedUsage.map((m) => ({
       name: m.name,
       amount: doseLabel(m),
       frequency: m.frequencyRaw,
@@ -161,6 +164,9 @@ export async function assisted(
     references: passages,
   };
   const uncertainties = [
+    ...(confirmedUsage.length < medications.length
+      ? ["個人用法尚未確認；本次只說明可核對的一般藥品資訊，不提供個人用量或頻次。"]
+      : []),
     ...missing.map(
       (m) =>
         `${m.name}：本站尚未收錄可用的官方仿單，尚不能確認這款產品的完整核准用途與警語。`,
@@ -202,7 +208,7 @@ export async function assisted(
       uncertainties,
     },
   };
-  const labels = recordedLabels(medications);
+  const labels = recordedLabels(confirmedUsage);
   uncertainties.push(...labels.uncertainties);
   // With no evidence, no generative/reviewer agreement can authorize medical facts.
   // Keep the ordinary-user flow useful with literal fields and a finite glossary.

@@ -144,7 +144,7 @@ export function MedicationForm({
           required
           value={m.name}
           onChange={(e) => set("name", e.target.value)}
-          placeholder="依藥袋填寫完整藥名"
+          placeholder="依包裝填寫完整藥名"
         />
       </Field>
       <Field label="許可證字號">
@@ -154,7 +154,7 @@ export function MedicationForm({
         <input
           value={m.strength}
           onChange={(e) => set("strength", e.target.value)}
-          placeholder="照藥袋抄錄，不確定可留白"
+          placeholder="照包裝抄錄，不確定可留白"
         />
       </Field>
       <Field label="劑型">
@@ -171,6 +171,12 @@ export function MedicationForm({
           onRetake ? () => onRetake(m, creationOperationKey.current) : undefined
         }
       />
+      <div className="full-grid">
+        <h3>個人用法（選填）</h3>
+        <p>
+          只想了解藥品，可以留白並直接保存。照片沒有使用次數、每次用量或療程，也能閱讀已核對藥品的衛教；要設定提醒或記錄用藥時，再依醫師、藥師交代的用法填寫。
+        </p>
+      </div>
       <Field label="每次劑量">
         <input
           type="number"
@@ -206,7 +212,7 @@ export function MedicationForm({
               ...(e.target.value ? { doseAmount: null, doseUnit: "" } : {}),
             })
           }
-          placeholder="例如藥袋寫「適量」；請照原文填寫"
+          placeholder="例如標示「適量」；請照原文填寫"
         />
       </Field>
       <div>
@@ -228,7 +234,7 @@ export function MedicationForm({
         <input
           value={m.route}
           onChange={(e) => set("route", e.target.value)}
-          placeholder="依藥袋填寫"
+          placeholder="依標示或醫藥人員指示填寫"
         />
       </Field>
       <div className="full-grid">
@@ -273,7 +279,7 @@ export function MedicationForm({
           checked={m.confirmed}
           onChange={(e) => set("confirmed", e.target.checked)}
         />
-        我已對照藥袋確認用法（每次用量、頻次與途徑）
+        我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）
       </label>
       <div className="full-grid">
         {error && <Notice error>{error}</Notice>}
@@ -294,7 +300,7 @@ export function MedicationForm({
               ? "保存待核對資料"
               : m.confirmed
                 ? "儲存已核對藥品與用法"
-                : "儲存草稿"}
+                : "儲存藥品，閱讀衛教"}
         </Button>
       </div>
     </form>
@@ -324,6 +330,7 @@ export function AddMedication({
     crypto.randomUUID(),
   );
   const [photoPreview, setPhotoPreview] = useState("");
+  const [recognitionGuidance, setRecognitionGuidance] = useState("");
   const [pausedReviews, setPausedReviews] = useState<any[]>([]);
   const photoInput = useRef<HTMLInputElement>(null);
   const photoSelectionVersion = useRef(0);
@@ -364,8 +371,14 @@ export function AddMedication({
     setSavedNames(
       Object.values(j.savedMedications || {}).map((m: any) => m.name),
     );
-    if (j.result.guidance || j.result.status === "failed")
-      setError(j.result.guidance || "無法辨識，請重新拍攝。");
+    setError(
+      j.result.status === "failed"
+        ? j.result.guidance || "無法辨識，請重新拍攝。"
+        : "",
+    );
+    setRecognitionGuidance(
+      j.result.status === "failed" ? "" : j.result.guidance || "",
+    );
   }
   useEffect(() => {
     if (!recognitionId) return;
@@ -400,13 +413,14 @@ export function AddMedication({
   }
   async function scan() {
     if (!file) return;
-    setBusy("正在上傳藥袋…");
+    setBusy("正在上傳藥品照片…");
     setError("");
     setRecognized([]);
     setDraft(null);
     setSelectedRecognition(null);
     setSavedNames([]);
     setRecognitionJob(null);
+    setRecognitionGuidance("");
     try {
       const mediaType = await recognitionPhotoType(file);
       const j = await submitJob(
@@ -427,6 +441,7 @@ export function AddMedication({
     const version = ++photoSelectionVersion.current;
     setFile(null);
     setPhotoPreview("");
+    setRecognitionGuidance("");
     setRecognized([]);
     setDraft(null);
     setSelectedRecognition(null);
@@ -471,17 +486,17 @@ export function AddMedication({
   return (
     <>
       <SectionTitle eyebrow="藥品建檔" title="新增藥品">
-        拍攝藥袋或搜尋藥名，再核對藥名與用法。
+        拍攝藥袋、藥盒、瓶身、鋁箔包裝或藥膏，先認識藥品，再了解用途與注意事項。
       </SectionTitle>
       {tab === "photo" && (
         <FlowSteps
-          steps={["選擇藥袋", "辨識結果", "核對用法"]}
+          steps={["選擇藥品照片", "辨識結果", "核對藥品"]}
           current={draft ? 2 : recognized.length || recognitionJob ? 1 : 0}
         />
       )}
       <div className="tabs">
         {[
-          ["photo", "拍攝藥袋"],
+          ["photo", "拍攝藥品"],
           ["search", "搜尋藥名"],
           ["manual", "手動建檔"],
         ].map(([id, t]) => (
@@ -501,6 +516,9 @@ export function AddMedication({
         ))}
       </div>
       {error && <Notice error>{error}</Notice>}
+      {tab === "photo" && recognitionGuidance && (
+        <Notice>{recognitionGuidance}</Notice>
+      )}
       {error && (
         <a className="btn secondary" href="#jobs">
           查看 AI 處理紀錄
@@ -518,6 +536,8 @@ export function AddMedication({
               onClick={() => {
                 setTab(pausedReview.tab);
                 setRecognitionJob(pausedReview.recognitionJob);
+                setRecognitionGuidance(pausedReview.recognitionGuidance || "");
+                setError("");
                 setRecognized(pausedReview.recognized);
                 setSavedNames(pausedReview.savedNames);
                 setSelectedRecognition(pausedReview.selectedRecognition);
@@ -545,7 +565,7 @@ export function AddMedication({
         </Notice>
       )}
       {tab === "photo" && !draft && (
-        <section className="card capture-station" aria-label="藥袋辨識工作區">
+        <section className="card capture-station" aria-label="藥品辨識工作區">
           <div className="upload-area capture-workspace">
             {!photoPreview && (
               <div className="capture-art">
@@ -554,10 +574,13 @@ export function AddMedication({
             )}
             <div className="capture-station-heading">
               <ScanLine size={32} aria-hidden="true" />
-              <h2>藥袋照片</h2>
+              <h2>藥品照片</h2>
             </div>
             <p className="capture-instructions">
-              遮住姓名與身分證號，拍清楚藥名與用法。
+              讓完整藥名、含量或濃度、劑型清楚入鏡，避開反光。藥膏可拍管身或外盒；不需要有個人用量或使用次數。若有姓名、身分證號或識別條碼，請先遮住。
+            </p>
+            <p className="fine">
+              只有散裝藥丸的顏色或外觀，無法可靠確認是哪一款藥；請補拍有文字的包裝，或搜尋完整藥名。
             </p>
             <div className="row">
               <Button
@@ -580,17 +603,17 @@ export function AddMedication({
                 <span>01</span> 遮住姓名與身分證號
               </li>
               <li>
-                <span>02</span> 藥袋平放、避開反光
+                <span>02</span> 包裝文字朝前、避開反光
               </li>
               <li>
-                <span>03</span> 藥名與用法完整入鏡
+                <span>03</span> 完整藥名與規格入鏡
               </li>
             </ul>
             <input
               ref={photoInput}
               className="visually-hidden"
               type="file"
-              aria-label="藥袋照片"
+              aria-label="藥品照片"
               accept="image/jpeg,image/png"
               tabIndex={-1}
               disabled={saving || !!busy}
@@ -600,7 +623,7 @@ export function AddMedication({
               <figure className="capture-preview">
                 <img
                   src={photoPreview}
-                  alt="本次選擇的藥袋照片，請確認文字清晰"
+                  alt="本次選擇的藥品照片，請確認文字清晰"
                 />
                 <figcaption>{file?.name}</figcaption>
               </figure>
@@ -748,7 +771,7 @@ export function AddMedication({
         <section className="card capture-review">
           <div className="row spread">
             <h2 ref={reviewHeading} tabIndex={-1}>
-              核對藥品與用法
+              核對藥品（個人用法選填）
             </h2>
             {draft && (
               <Button
@@ -771,7 +794,7 @@ export function AddMedication({
             )}
           </div>
           <Notice>
-            沒有辨識到的欄位保持空白。請依藥袋或向藥師確認，切勿自行推測。
+            先核對是哪一款藥。沒有辨識到的用量與使用次數可以留白，不影響保存及閱讀衛教；請勿自行補猜。
           </Notice>
           <MedicationForm
             key={(selectedRecognition || "") + JSON.stringify(draft)}
@@ -786,6 +809,7 @@ export function AddMedication({
                   operationKey,
                   tab,
                   recognitionJob,
+                  recognitionGuidance,
                   recognized,
                   selectedRecognition,
                   savedNames,
@@ -1026,7 +1050,7 @@ export function Medications() {
           </a>
         }
       >
-        藥品、藥袋用法與 AI 解說，集中保存在這裡。尚未收錄仿單，也能查找可靠資料。
+        藥品資訊、衛教說明與個人用法，集中保存在這裡。尚未收錄仿單，也能查找可靠資料。
       </SectionTitle>
       {savedMedication && (
         <Notice>
@@ -1079,7 +1103,7 @@ export function Medications() {
           <span>
             研討會展示 ·{" "}
             {demoMedication
-              ? `${demoMedication.name}已儲存。${leafletReady(demoMedication) ? "可開啟仿單說明。" : "請先補齊產品資料並確認用法。"}`
+              ? `${demoMedication.name}已儲存。${leafletReady(demoMedication) ? "可開啟仿單說明。" : "請先核對產品資料，即可閱讀衛教。"}`
               : "選擇藥品，開啟說明後繼續展示。"}
           </span>
           <a className="text-link" href="#demo">
@@ -1132,7 +1156,7 @@ export function Medications() {
                 </span>
                 <span className="medication-file-label">用藥檔案</span>
                 <span className={"tag " + (m.confirmed ? "green" : "amber")}>
-                  {m.confirmed ? "用法已確認" : "待確認用法"}
+                  {m.confirmed ? "用法已確認" : "個人用法未確認"}
                 </span>
                 <span
                   className={
@@ -1165,6 +1189,12 @@ export function Medications() {
                     : "產品待核對，尚未連結仿單"}
                 </p>
               </div>
+              {leafletReady(m) &&
+              m.identityReview?.candidate?.ingredients?.length ? (
+                <p className="medication-file-note">
+                  主要成分：{m.identityReview.candidate.ingredients.join("、")}
+                </p>
+              ) : null}
               <dl className="usage-box medication-file-usage">
                 <div>
                   <dt>每次用量</dt>
@@ -1184,6 +1214,17 @@ export function Medications() {
                 </div>
               </dl>
               {m.prn && <p className="medication-file-note">需要時使用</p>}
+              {leafletReady(m) && !m.confirmed && (
+                <p className="medication-file-note">
+                  可以先閱讀用途與衛教，不必填寫個人使用次數。提醒與用藥紀錄需另外確認個人用法。
+                </p>
+              )}
+              {leafletReady(m) && (
+                <p className="fine">
+                  「AI 藥品解說」整理藥品用途、使用注意與其他有來源的衛教。已保存內容可直接閱讀；首次產生會使用
+                  1 次 AI 額度。
+                </p>
+              )}
               <div className="row wrap medication-file-actions">
                 <Button
                   className="secondary"
@@ -1311,7 +1352,7 @@ export function Medications() {
                 <p className="muted">
                   {(m as any).identityReview?.status !== "confirmed"
                     ? "產品資料不足，先補齊產品資料完成核對，才能開啟仿單說明、學習與問答。"
-                    : "請先確認用法，才能開啟仿單說明。"}
+                    : "請先核對產品資料，才能開啟仿單說明。"}
                 </p>
               )}
             </article>
@@ -1568,9 +1609,9 @@ export function Learning() {
       {meds.error && <Notice error>無法讀取藥品名稱：{meds.error}</Notice>}
       {meds.data?.items.some((m) => !leafletReady(m)) && (
         <Notice>
-          有藥品仍待確認用法或補齊產品資料。{identityGuidance}
+          有藥品仍待核對產品資料；個人用量與頻次可留白。{identityGuidance}
           <a className="btn secondary" href="#medications">
-            前往補齊產品資料與確認用法
+            前往補齊產品資料
           </a>
         </Notice>
       )}
@@ -1854,7 +1895,7 @@ export function Chat() {
       ? "藥品讀取失敗，請重試後再送出；你輸入的問題會保留。"
       : !confirmedMeds.length
         ? meds.data?.items.length
-          ? "目前的藥品尚未確認用法或產品，請先到「我的藥品」補齊產品資料並確認用法，才能送出問題。"
+          ? "目前的藥品尚未核對產品資料，請先到「我的藥品」確認是哪一款藥，再送出問題。個人用量與頻次可以留白。"
           : "目前還沒有可提問的藥品。請先新增並確認藥品，再回來勾選提問對象。"
         : !selectedIds.length
           ? "請先在「這次想問的藥品」勾選至少一款藥品，才能送出問題。"
@@ -1890,6 +1931,33 @@ export function Chat() {
             </div>
             <h2>關於用藥，你想了解什麼？</h2>
             <p>先選擇已核對的藥品，再提出問題。優先依官方仿單；本站未收錄時，查找官方與醫療機構資料，並說明不確定的部分。</p>
+            <div className="row wrap" aria-label="衛教提問範例">
+              {[
+                ["主要用途", "這款藥主要用來做什麼？請用容易理解的方式說明。"],
+                ["使用注意", "使用這款藥有哪些重要注意事項或不適用的情況？"],
+                [
+                  "副作用與警訊",
+                  "仿單記載哪些副作用或需要聯絡醫師、藥師的警訊？",
+                ],
+                [
+                  "藥膏與外用操作",
+                  "仿單如何說明這款藥的使用步驟與使用部位限制？請勿推測我的用量或頻次。",
+                ],
+                ["保存方式", "這款藥應如何保存？仿單有沒有開封後的注意事項？"],
+              ].map(([label, value]) => (
+                <Button
+                  key={label}
+                  className="ghost"
+                  disabled={!!busy}
+                  onClick={() => draft.update({ question: value })}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <p className="fine">
+              點選範例只會填入問題；按「送出」才會使用 AI 次數。
+            </p>
           </div>
           {historyItems.map((c: any, index: number) => (
             <details
@@ -2085,14 +2153,14 @@ export function Chat() {
           ))}
           {!loadingMeds && !meds.error && !confirmedMeds.length && (
             <p className="muted">
-              先新增藥品、補齊產品資料並確認用法，才能開始問答。
+              先新增藥品並核對產品資料，就能詢問藥品用途與衛教；不需要先確認個人用量。
             </p>
           )}
           {!loadingMeds && meds.data?.items.some((m) => !leafletReady(m)) && (
             <Notice>
               待核對的產品暫不提供選取。
               <a className="btn secondary" href="#medications">
-                補齊產品資料與確認用法
+                補齊產品資料
               </a>
             </Notice>
           )}

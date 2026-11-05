@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 
 // Every Firebase/Google request is fulfilled locally. No account, email or
 // identity credential in this fixture reaches an external service.
@@ -148,7 +149,9 @@ async function syntheticAuth(page: Page, publicAccess = "approved") {
   });
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
-    if (path.endsWith("/config")) {
+    if (path === "/api/v1/ai/usage") {
+      return route.fulfill({ json: syntheticAiUsage() });
+    } else if (path.endsWith("/config")) {
       await route.fulfill({
         json: {
           mode: "firebase",

@@ -43,7 +43,7 @@ test("daily navigation, More and the separate saved demonstration are reachable"
     await expect(navigation.getByRole("link")).toHaveText([
       "今日",
       "藥品",
-      "拍藥袋",
+      "拍藥品",
       "小教室",
     ]);
     await expect(
@@ -266,7 +266,7 @@ test("learning index, one record and saved demo deep links retain the selected c
     second.id,
   );
   for (const [step, heading] of [
-    ["recognition", "藥袋辨識"],
+    ["recognition", "藥品辨識"],
     ["reading", "仿單說明"],
     ["quiz", "理解測驗"],
   ]) {
@@ -284,7 +284,7 @@ test("learning index, one record and saved demo deep links retain the selected c
     if (step === "recognition")
       await expect(
         stage.getByText(
-          "這款藥品沒有對應的已保存辨識紀錄，可繼續查看已保存的說明，或另拍一張藥袋。",
+          "這款藥品沒有對應的已保存辨識紀錄，可繼續查看已保存的說明，或另拍一張藥品照片。",
           { exact: true },
         ),
       ).toBeVisible();
@@ -464,7 +464,7 @@ test("a new mocked demonstration photograph keeps its saved medication and learn
   await page.goto("/");
   await page.getByRole("button", { name: "本機使用者", exact: true }).click();
   await page.goto("/#demo");
-  await page.getByRole("link", { name: "從辨識藥袋開始", exact: true }).click();
+  await page.getByRole("link", { name: "從辨識藥品開始", exact: true }).click();
   await expect(page).toHaveURL(/#add\?from=demo$/);
   await page.locator('input[type="file"]').setInputFiles({
     name: "synthetic-demo.png",
@@ -495,7 +495,7 @@ test("a new mocked demonstration photograph keeps its saved medication and learn
   await expect(
     page.getByText("包裝資料已與官方藥品資料核對。", { exact: true }),
   ).toBeVisible();
-  await page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）").check();
+  await page.getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）").check();
   await page
     .getByRole("button", { name: "儲存已核對藥品與用法", exact: true })
     .click();
@@ -539,7 +539,7 @@ test("a new mocked demonstration photograph keeps its saved medication and learn
   );
   await page
     .getByRole("navigation", { name: "展示步驟", exact: true })
-    .getByRole("link", { name: "1. 藥袋辨識", exact: true })
+    .getByRole("link", { name: "1. 藥品辨識", exact: true })
     .click();
   await expect(
     page.getByRole("link", { name: "開啟辨識紀錄", exact: true }),

@@ -44,6 +44,123 @@ async function transcribe(
 }
 
 describe("bounded literal repair of originally null recognition fields", () => {
+  it("replaces stale missing-frequency guidance after recovering an originally null frequency", async () => {
+    const result = await transcribe(
+      bubdel,
+      {
+        name: "Bubdel 普德",
+        strength: "80mg/tab",
+        doseAmount: 1,
+        doseUnit: "粒",
+        route: "口服",
+      },
+      "頻次欄未見明確頻次，需對照核對。",
+    );
+    expect(result.medications[0].frequencyRaw).toBe("需要時");
+    expect(result.guidance).toBe("已從辨識原文補回缺漏用法，請對照原標示核對。");
+  });
+  it("keeps empty guidance empty after otherwise complete literal recovery", async () => {
+    const result = await transcribe(bubdel);
+    expect(result.medications[0].frequencyRaw).toBe("需要時");
+    expect(result.guidance).toBe("");
+  });
+  it.each([
+    "影像模糊，請重新拍攝。",
+    "請對照藥袋核對。",
+    "頻次欄未見明確頻次；影像模糊，請重新拍攝。",
+    "頻次欄未見明確頻次，藥名仍不確定。",
+    "含量未見明確標示，請對照藥袋核對。",
+  ])(
+    "preserves non-usage and mixed uncertainty guidance after repair: %s",
+    async (guidance) => {
+      const result = await transcribe(bubdel, {}, guidance);
+      expect(result.medications[0].frequencyRaw).toBe("需要時");
+      expect(result.guidance).toBe(guidance);
+    },
+  );
+  it("replaces only a complete, explicit missing-usage notice after repair", async () => {
+    const result = await transcribe(
+      bubdel,
+      {},
+      "用法尚有缺漏，請對照藥袋核對。",
+    );
+    expect(result.guidance).toBe("已從辨識原文補回缺漏用法，請對照原標示核對。");
+  });
+  it("preserves existing guidance when no initially null usage field was recovered", async () => {
+    const result = await transcribe(
+      bubdel,
+      {
+        doseAmount: 1,
+        doseUnit: "粒",
+        frequencyRaw: "需要時",
+        route: "口服",
+      },
+      "請對照藥袋核對。",
+    );
+    expect(result.guidance).toBe("請對照藥袋核對。");
+  });
+  it("keeps unsupported-strength guidance above the recovered-usage notice", async () => {
+    const result = await transcribe(
+      bubdel,
+      { strength: "130" },
+      "請核對原藥袋。",
+    );
+    expect(result.medications[0].frequencyRaw).toBe("需要時");
+    expect(result.medications[0].strength).toBeNull();
+    expect(result.guidance).toContain("純數字代碼不作含量");
+    expect(result.guidance).not.toContain("已從辨識原文補回");
+  });
+  it.each([
+    "外用藥\n",
+    "途徑：外用藥；",
+    "途徑：\n外用藥；",
+    "給藥途徑：外用藥；",
+    "使用方法：外用藥；",
+    "外用藥。",
+  ])(
+    "recovers an explicit external route label without filling a missing dose: %s",
+    async (label) => {
+      const result = await transcribe(label + "需要時使用；單量1.00；總量1");
+      expect(result.medications[0]).toMatchObject({
+        route: "外用",
+        doseAmount: null,
+        doseUnit: null,
+        doseText: null,
+        durationDays: null,
+        confidence: "high",
+      });
+      expect(result.guidance).toContain("尚有缺漏");
+    },
+  );
+  it.each([
+    "非外用藥；需要時使用",
+    "禁止：外用藥；需要時使用",
+    "禁止使用：外用藥；需要時使用",
+    "禁止使用：\n外用藥；需要時使用",
+    "不可使用：外用藥；需要時使用",
+    "不適用：外用藥；需要時使用",
+    "□外用藥；需要時使用",
+    "[ ] 途徑：外用藥；需要時使用",
+    "[x] 途徑：外用藥；需要時使用",
+    "未勾選：外用藥；需要時使用",
+    "商品名：外用藥；需要時使用",
+    "藥品：外用藥；需要時使用",
+    "藥品：\n外用藥；需要時使用",
+    "藥品名稱：外用藥；需要時使用",
+    "備註：外用藥；需要時使用",
+    "局部塗擦；需要時使用",
+    "外用藥；口服；需要時使用",
+  ])(
+    "does not recover an ambiguous, negated or conflicting external route: %s",
+    async (raw) => {
+      const result = await transcribe(raw);
+      expect(result.medications[0].route).toBeNull();
+    },
+  );
+  it("still recovers a standalone route following a separate product field", async () => {
+    const result = await transcribe("藥品：合成泡沫液；外用藥；需要時使用");
+    expect(result.medications[0].route).toBe("外用");
+  });
   it.each([bubdel, bubdel.replace("。使用方法", "。4 PC。使用方法")])(
     "recovers the real public bag's three explicit fields without interpreting its side code",
     async (raw) => {
@@ -74,7 +191,7 @@ describe("bounded literal repair of originally null recognition fields", () => {
       doseUnit: null,
       frequencyRaw: null,
       durationDays: null,
-      confidence: "low",
+      confidence: "high",
     });
     expect(result.guidance).toMatch(/核對/);
   });
@@ -98,9 +215,10 @@ describe("bounded literal repair of originally null recognition fields", () => {
       const result = await transcribe(raw as string);
       expect(result.medications[0]).toMatchObject({
         ...expected,
-        confidence: "low",
+        confidence: "high",
       });
       expect(result.guidance).toMatch(/核對/);
+      expect(result.guidance).not.toContain("已從辨識原文補回");
     },
   );
   it("never replaces a supplied invalid dose after clearing it during validation", async () => {
@@ -113,6 +231,7 @@ describe("bounded literal repair of originally null recognition fields", () => {
       confidence: "low",
     });
     expect(result.guidance).toContain("已清空");
+    expect(result.guidance).not.toContain("已從辨識原文補回");
   });
   it("does not recover a frequency from a PRN mention in a product name or note", async () => {
     for (const raw of [
@@ -133,6 +252,7 @@ describe("bounded literal repair of originally null recognition fields", () => {
       confidence: "low",
     });
     expect(result.guidance).toMatch(/矛盾/);
+    expect(result.guidance).not.toContain("已從辨識原文補回");
   });
   it("flags the real gel transcription's incomplete usage without claiming it read an omitted oral annotation", async () => {
     const raw =
@@ -146,7 +266,7 @@ describe("bounded literal repair of originally null recognition fields", () => {
       ...nullUsage,
       rawText: raw,
       strength: "100MG/GM",
-      confidence: "low",
+      confidence: "medium",
     });
     expect(result.guidance).toMatch(/缺漏.*核對/);
     expect(result.guidance).not.toMatch(/矛盾|衝突/);
@@ -161,10 +281,10 @@ describe("bounded literal repair of originally null recognition fields", () => {
     expect(result.medications[0]).toMatchObject({
       ...nullUsage,
       rawText,
-      confidence: "low",
+      confidence: "medium",
     });
     expect(result.guidance).toBe(
-      "每次用量、頻次或途徑尚有缺漏，請對照原藥袋核對後再確認；未由藥名或不明代碼推測用法。",
+      "每次用量、頻次或途徑尚有缺漏，未標示的欄位保持空白。可以先核對藥品身分，查看用途與衛教；設定個人提醒前，再依醫囑或向藥師確認用法。",
     );
     expect(result.guidance).not.toMatch(/紅字|勾選|矛盾|晚餐/);
   });

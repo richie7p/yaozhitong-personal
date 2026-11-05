@@ -45,9 +45,17 @@ describe("literal frequency field extraction", () => {
       const result = await transcribe(provided, raw);
       expect(result.medications[0].frequencyRaw).toBe(expected);
       expect(raw).toContain(expected);
-      expect(result.medications[0].confidence).toBe(
-        expected === "PRN" ? "high" : "low",
-      );
+      // Confidence describes the transcribed label. A clear frequency does
+      // not require an independently printed personal amount to be readable.
+      expect(result.medications[0].confidence).toBe("high");
+      if (expected === "TID") {
+        expect(result.medications[0]).toMatchObject({
+          doseAmount: null,
+          doseUnit: null,
+          doseText: null,
+        });
+        expect(result.guidance).toContain("設定個人提醒前");
+      }
     },
   );
 

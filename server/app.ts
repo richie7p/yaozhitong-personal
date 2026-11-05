@@ -22,6 +22,7 @@ import { Support } from "./support.js";
 import { AdminLeaflets } from "./admin-leaflets.js";
 import { validateRecognitionPhoto } from "./photo-validation.js";
 import { AdmissionGate } from "./admission.js";
+import { readAiUsage } from "./ai-usage.js";
 import {
   clientRequestCorrelation,
   requestCompletionEvent,
@@ -195,6 +196,13 @@ export function createApp(d: Domain, auth = authenticate) {
     );
   });
   app.get("/api/v1/me", async (c) => c.json(await d.me(uid(c))));
+  app.get("/api/v1/ai/usage", async (c) => {
+    const account = await d.active(uid(c));
+    const access = !c.get("identity").verified ? "email_unverified"
+      : !d.aiAccess(account) ? "not_eligible"
+      : !aiConnection().key ? "not_configured" : "ready";
+    return c.json(await readAiUsage(d.store, uid(c), config, access));
+  });
   app.put("/api/v1/me", async (c) =>
     c.json(await d.profile(uid(c), await c.req.json())),
   );

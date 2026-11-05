@@ -8,7 +8,7 @@ import { Evidence, learningStateLabels } from "./Evidence";
 import { Frequency } from "./medication-presentation";
 
 const stages = ["recognition", "reading", "quiz"] as const;
-const stageLabels = ["藥袋辨識", "仿單說明", "理解測驗"];
+const stageLabels = ["藥品辨識", "仿單說明", "理解測驗"];
 
 export function Demo() {
   const medications = useData<{ items: Medication[] }>("/medications");
@@ -17,12 +17,7 @@ export function Demo() {
   const params = new URLSearchParams(location.hash.split("?")[1] || "");
   const reviewedMedications = new Set(
     (medications.data?.items || [])
-      .filter(
-        (m) =>
-          m.confirmed &&
-          !!m.licenseNo &&
-          m.identityReview?.status === "confirmed",
-      )
+      .filter((m) => !!m.licenseNo && m.identityReview?.status === "confirmed")
       .map((m) => m.id),
   );
   const records = (learning.data?.items || []).filter(
@@ -117,13 +112,13 @@ export function Demo() {
                 className="btn primary"
                 href={recordId ? "#demo" : "#add?from=demo"}
               >
-                {recordId ? "返回展示入口" : "從辨識藥袋開始"}
+                {recordId ? "返回展示入口" : "從辨識藥品開始"}
               </a>
             }
           >
             {recordId
               ? "請重新選擇已保存的內容。"
-              : "完成辨識、核對產品資料與用法並產生仿單說明後，即可在這裡走完整個流程。"}
+              : "完成辨識、核對產品資料並產生仿單說明後，即可在這裡走完整個流程。"}
           </Empty>
         </section>
       ) : (
@@ -180,13 +175,13 @@ export function Demo() {
                   <span className="tag">已保存辨識結果</span>
                 </div>
                 <p>
-                  對照辨識文字與已核對的產品資料。產品身分與用法分別確認後，才能連結仿單。
+                  對照辨識文字與已核對的產品資料。確認產品身分後即可閱讀仿單，不需要先填寫個人用量。
                 </p>
                 {job ? (
                   <Notice>這款藥品有對應的已完成辨識紀錄。</Notice>
                 ) : (
                   <Notice>
-                    這款藥品沒有對應的已保存辨識紀錄，可繼續查看已保存的說明，或另拍一張藥袋。
+                    這款藥品沒有對應的已保存辨識紀錄，可繼續查看已保存的說明，或另拍一張藥品照片。
                   </Notice>
                 )}
                 {meds.map((med) => (
@@ -194,7 +189,10 @@ export function Demo() {
                     <dl className="demo-med-facts">
                       <div>
                         <dt>產品與用法</dt>
-                        <dd>產品資料已核對 · 用法已確認</dd>
+                        <dd>
+                          產品資料已核對 ·{" "}
+                          {med.confirmed ? "用法已確認" : "個人用法未確認"}
+                        </dd>
                       </div>
                       <div>
                         <dt>規格／劑型</dt>
@@ -216,7 +214,7 @@ export function Demo() {
                       </div>
                     </dl>
                     <details>
-                      <summary>查看已保存的藥袋辨識文字</summary>
+                      <summary>查看已保存的藥品辨識文字</summary>
                       <p className="recognition-literal">
                         {med.rawText || "這筆藥品沒有保存辨識文字。"}
                       </p>
@@ -237,7 +235,7 @@ export function Demo() {
                     href={`#add?from=demo&record=${encodeURIComponent(record.id)}`}
                   >
                     <ScanLine size={17} />
-                    現場拍一張藥袋
+                    現場拍一張藥品照片
                   </a>
                 </div>
               </div>

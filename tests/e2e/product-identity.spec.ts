@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 
 // All product data and API replies below are synthetic browser fixtures. These
 // tests block external traffic and never call an AI service or cloud account.
@@ -23,7 +24,7 @@ const photoMedication = {
   rawText: "合成照片：息咳寧；每次5毫升；TID PC；口服",
   candidates: [candidate],
 };
-const usageLabel = "我已對照藥袋確認用法（每次用量、頻次與途徑）";
+const usageLabel = "我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）";
 const pending = (message = "完整品名與規格不足，請補拍或抄錄完整許可證。") => ({
   status: "needs_information",
   message,
@@ -113,6 +114,7 @@ async function fixture(page: Page, initial: any[] = []) {
           status: "succeeded",
           result: {
             status: "succeeded",
+            guidance: "合成照片乙的標示提醒",
             medications: [
               { ...photoMedication, name: "另一張照片的合成藥", doseAmount: 9 },
             ],
@@ -125,7 +127,7 @@ async function fixture(page: Page, initial: any[] = []) {
           id: "identity-photo",
           kind: "recognition",
           status: "succeeded",
-          result: { status: "succeeded", medications: [photoMedication] },
+          result: { status: "succeeded", guidance: "合成照片甲的標示提醒", medications: [photoMedication] },
         },
       });
     if (
@@ -177,6 +179,7 @@ async function fixture(page: Page, initial: any[] = []) {
     }
     if (request.method() === "GET") {
       const replies: Record<string, any> = {
+        "/api/v1/ai/usage": syntheticAiUsage(),
         "/api/v1/config": {
           mode: "local",
           ai: false,
@@ -398,7 +401,7 @@ test("retake preserves unsaved usage through a rejected upload and a separate ne
   await expect(
     page.getByRole("button", { name: "上傳照片", exact: true }),
   ).toBeVisible();
-  await page.getByLabel("藥袋照片", { exact: true }).setInputFiles({
+  await page.getByLabel("藥品照片", { exact: true }).setInputFiles({
     name: "wrong.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("not an image"),
@@ -421,13 +424,13 @@ test("retake preserves unsaved usage through a rejected upload and a separate ne
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==",
     "base64",
   );
-  await page.getByLabel("藥袋照片", { exact: true }).setInputFiles({
+  await page.getByLabel("藥品照片", { exact: true }).setInputFiles({
     name: "new-package.png",
     mimeType: "image/png",
     buffer: png,
   });
   await expect(
-    page.getByAltText("本次選擇的藥袋照片，請確認文字清晰"),
+    page.getByAltText("本次選擇的藥品照片，請確認文字清晰"),
   ).toBeVisible();
   await expect(
     page.getByRole("status").filter({ hasText: "新照片會另作一次辨識" }),
@@ -436,10 +439,13 @@ test("retake preserves unsaved usage through a rejected upload and a separate ne
   await expect(
     page.getByRole("heading", { name: "另一張照片的合成藥", exact: true }),
   ).toBeVisible();
+  await expect(page.getByText("合成照片乙的標示提醒", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "返回尚未保存的核對資料", exact: true })
     .click();
   await expect(page.getByLabel("每次劑量", { exact: true })).toHaveValue("7");
+  await expect(page.getByText("合成照片甲的標示提醒", { exact: true })).toBeVisible();
+  await expect(page.getByText("合成照片乙的標示提醒", { exact: true })).toHaveCount(0);
   await expect(page.getByLabel("藥品名稱", { exact: true })).toHaveValue(
     candidate.nameZh,
   );

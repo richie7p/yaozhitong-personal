@@ -1,6 +1,7 @@
 import { jobFingerprint, PendingJobs, type PendingJob } from "./pending-jobs";
 import { setChatDraftIdentity } from "./chat-draft";
 import { publicApiErrorMessage } from "./api-error-messages";
+import { mayChangeAiUsage, notifyAiUsageChanged } from "./ai-usage-events";
 
 let tokenProvider: () => Promise<string> = async () => "";
 export function setTokenProvider(fn: () => Promise<string>) {
@@ -188,6 +189,8 @@ async function request<T = any>(
     return await Promise.race([operation, deadline]);
   } finally {
     clearTimeout(timer!);
+    if (epoch === identityEpoch && mayChangeAiUsage(path, method))
+      notifyAiUsageChanged();
   }
 }
 

@@ -112,7 +112,7 @@ export function JobHistory() {
     return () => window.clearInterval(timer);
   }, [pending]);
   const names: Record<string, string> = {
-    recognition: "藥袋辨識",
+    recognition: "藥品辨識",
     chat: "用藥問答",
     bundle: "AI 藥品解說",
     interaction: "交互作用查詢",
@@ -222,7 +222,7 @@ export function JobHistory() {
               )}
             {job.status === "failed" && job.kind === "recognition" && (
               <a className="btn" href="#add">
-                重新上傳藥袋
+                重新上傳藥品照片
               </a>
             )}
             {job.status === "succeeded" &&

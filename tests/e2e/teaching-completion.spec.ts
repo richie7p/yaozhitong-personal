@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 import type { GroundedResult, LearningRecord } from "../../shared/schema";
 test.use({serviceWorkers: "block"});
 const med = {id: "synthetic-completion-med", name: "合成補充藥品", licenseNo: "SYNTHETIC-COMPLETION", confirmed: true, revision: 1, identityReview: {status: "confirmed", missingFields: []}, frequencyRaw: "QD", doseAmount: 1, doseUnit: "錠"};
@@ -14,6 +15,7 @@ async function setup(page: Page, partial = true, loseFirst = false) {
     if (url.origin !== new URL(test.info().project.use.baseURL!).origin) {unexpected.push(request.method()+" "+url.origin+url.pathname);await route.abort();return;}
     if (!url.pathname.startsWith("/api/v1/")) {await route.continue();return;}
     const path = url.pathname.slice("/api/v1".length);
+    if (request.method() === "GET" && path === "/ai/usage") return route.fulfill({json: syntheticAiUsage()});
     if (request.method() === "POST" && path === "/bundles") {
       posts.push({body: request.postDataJSON(), key: request.headers()["idempotency-key"]});
       if (loseFirst && posts.length === 1) {await route.abort("connectionreset");return;}

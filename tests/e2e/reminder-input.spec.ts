@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 
 test.use({ serviceWorkers: "block" });
 
@@ -87,6 +88,7 @@ async function openReminder(
       return;
     }
     const responses: Record<string, unknown> = {
+      "/api/v1/ai/usage": syntheticAiUsage(),
       "/api/v1/config": { mode: "local", ai: false },
       "/api/v1/me": {
         account: {

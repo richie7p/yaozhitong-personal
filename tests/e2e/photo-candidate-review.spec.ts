@@ -92,7 +92,7 @@ for (const photo of [
       "口服",
     );
     await expect(
-      page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）"),
+      page.getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）"),
     ).not.toBeChecked();
     await page
       .getByRole("button", { name: "保存待核對資料", exact: true })
@@ -137,6 +137,6 @@ test("manual catalog search still prefills the selected official specification",
   await expect(page.getByLabel("劑型", { exact: true })).toHaveValue("錠劑");
   await expect(page.getByLabel("每次劑量", { exact: true })).toHaveValue("");
   await expect(
-    page.getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）"),
+    page.getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）"),
   ).not.toBeChecked();
 });

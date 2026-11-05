@@ -12,11 +12,11 @@ export function AssistanceAnswer({ result }: { result: GroundedResult }) {
         <span className="tag amber">尚未核對完整產品仿單</span>
       </div>
       <p className="assistance-intro">
-        沒有收錄仿單，也能繼續了解藥袋與藥品資訊。以下將查得的資料與尚待確認的部分分開呈現。
+        沒有收錄仿單，也能繼續了解藥品包裝與藥品資訊。以下將查得的資料與尚待確認的部分分開呈現。
       </p>
       {result.status === "refused" && (
         <Notice>
-          這個問題涉及個人用藥判斷，請向醫師或藥師確認。你仍可詢問藥袋文字或藥品的一般資訊。
+          這個問題涉及個人用藥判斷，請向醫師或藥師確認。你仍可詢問藥品標示或藥品的一般資訊。
         </Notice>
       )}
       {answer.claims.length > 0 && (
@@ -31,7 +31,7 @@ export function AssistanceAnswer({ result }: { result: GroundedResult }) {
         <article className="assistance-claim" key={index}>
           <span className="tag">
             {claim.basis === "user_label"
-              ? "依你記錄的藥袋文字"
+              ? "依你確認的藥品標示"
               : "可靠來源的一般資訊"}
           </span>
           <p>{claim.text}</p>
@@ -66,7 +66,7 @@ export function AssistanceAnswer({ result }: { result: GroundedResult }) {
       ))}
       {result.status !== "refused" && !answer.claims.length && (
         <Notice>
-          目前沒有能通過核對的藥品解說。仍可問「我記錄的藥袋縮寫是什麼意思？」或查看下方資料缺口。
+          目前沒有能通過核對的藥品解說。仍可問「這款藥有哪些可以核對的一般用途或注意事項？」或查看下方資料缺口。
         </Notice>
       )}
       <aside className="assistance-uncertainties" aria-label="尚待確認的部分">

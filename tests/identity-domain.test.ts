@@ -142,24 +142,50 @@ describe("server product identity admission and history", () => {
       expect(await store.list("usage")).toEqual([]);
     },
   );
-  it("accepts a proven license and refuses unconfirmed usage before charging", async () => {
+  it.each(["bundle", "chat", "interaction"] as const)(
+    "allows %s education for a proven product without personal dosing",
+    async (kind) => {
+      const { domain, store } = await setup();
+      const medication = await domain.saveMedication(identity.uid, {
+        name: drug.nameZh,
+        identityEvidence: proof,
+        confirmed: false,
+      });
+      const other = await domain.saveMedication(identity.uid, {
+        name: drug.nameZh,
+        identityEvidence: proof,
+        confirmed: false,
+      });
+      expect(medication.licenseNo).toBe(drug.licenseNo);
+      const job = await domain.enqueueJob(
+        identity.uid, true, kind,
+        { medicationIds: kind === "interaction" ? [medication.id, other.id] : [medication.id] },
+        "identity-education-operation",
+      );
+      expect(job.kind).toBe(kind);
+      expect((await store.list("usage")).every((row) => row.count === 1)).toBe(true);
+      await expect(domain.saveSchedule(identity.uid, {
+        medicationId: medication.id, times: ["09:00"], startDate: "2026-11-05",
+      })).rejects.toMatchObject({ code: "unconfirmed_usage" });
+      await expect(domain.doseLog(identity.uid, {
+        medicationId: medication.id, dueAt: null, status: "taken",
+      })).rejects.toMatchObject({ code: "unconfirmed_usage" });
+    },
+  );
+  it("retains valid general education history without personal dosing", async () => {
     const { domain, store } = await setup();
     const medication = await domain.saveMedication(identity.uid, {
-      ...input,
-      identityEvidence: proof,
-      confirmed: false,
+      name: drug.nameZh, identityEvidence: proof, confirmed: false,
     });
-    expect(medication.licenseNo).toBe(drug.licenseNo);
-    await expect(
-      domain.enqueueJob(
-        identity.uid,
-        true,
-        "bundle",
-        { medicationIds: [medication.id] },
-        "identity-usage-operation",
-      ),
-    ).rejects.toMatchObject({ code: "unconfirmed_usage" });
-    expect(await store.list("usage")).toEqual([]);
+    const row = {
+      ownerId: identity.uid,
+      medicationIds: [medication.id],
+      medicationRevisions: [{ id: medication.id, revision: medication.revision }],
+      profileVersion: 0, groundingVersion: GROUNDING_VERSION, result,
+    };
+    expect(await domain.learningCurrent(identity.uid, row)).toBe(true);
+    await store.set("medications", medication.id, { ...medication, identityEvidence: null });
+    expect(await domain.learningCurrent(identity.uid, row)).toBe(false);
   });
   it("rechecks current catalog metadata instead of trusting legacy licenses or client status", async () => {
     const { domain, store, setRows } = await setup();

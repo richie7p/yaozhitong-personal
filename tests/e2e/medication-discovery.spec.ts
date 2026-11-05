@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { syntheticAiUsage } from "../support/ai-usage-fixture";
 import type {
   GroundedResult,
   LearningRecord,
@@ -106,6 +107,7 @@ async function discoveryFixture(
     const path = url.pathname.slice("/api/v1".length);
     if (request.method() === "GET") {
       const responses: Record<string, unknown> = {
+        "/ai/usage": syntheticAiUsage(),
         "/config": { mode: "local", ai: false },
         "/me": {
           account: {
@@ -185,7 +187,7 @@ test("manual save reveals its exact record above a long list and name search can
   await page.getByLabel("頻次原文", { exact: true }).fill("TID");
   await page.getByLabel("給藥途徑", { exact: true }).fill("口服");
   await page
-    .getByLabel("我已對照藥袋確認用法（每次用量、頻次與途徑）", { exact: true })
+    .getByLabel("我已依藥袋或醫藥人員指示確認個人用法（每次用量、頻次與途徑）", { exact: true })
     .check();
   await page
     .getByRole("button", { name: "保存待核對資料", exact: true })

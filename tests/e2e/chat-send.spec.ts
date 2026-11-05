@@ -378,29 +378,31 @@ for (const staleStatus of [200, 503]) {
   });
 }
 
-test("draft medications offer confirmation rather than bypassing the confirmed-medication gate", async ({
+test("identity-confirmed medications can ask education questions without personal usage", async ({
   page,
 }) => {
   const chat = await mockChat(page);
   await page.route("**/api/v1/medications", (route) =>
     route.fulfill({
-      json: { items: [{ ...confirmedMedication, confirmed: false }] },
+      json: {
+        items: [{
+          ...confirmedMedication,
+          confirmed: false,
+          doseAmount: null,
+          doseUnit: null,
+          frequencyRaw: null,
+          route: null,
+        }],
+      },
     }),
   );
   await openChat(page);
-  await expect(page.locator("#chat-prerequisite")).toContainText(
-    "藥品尚未確認",
-  );
-  await expect(
-    page.getByRole("link", { name: "前往確認藥品", exact: true }),
-  ).toHaveAttribute("href", "#medications");
-  await expect(page.locator(".chat-selector input[type=checkbox]")).toHaveCount(
-    0,
-  );
+  await expect(page.locator(".chat-selector input[type=checkbox]")).toHaveCount(1);
+  await page.getByLabel(confirmedMedication.name, { exact: true }).check();
   await page.getByRole("textbox", { name: "用藥問題" }).fill("請說明仿單");
   await expect(
     page.getByRole("button", { name: "送出", exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   expect(chat.posts).toEqual([]);
 });
 

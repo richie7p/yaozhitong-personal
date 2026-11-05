@@ -20,7 +20,7 @@ test("upload picker accepts a supported file without opening the camera and comp
   await page.getByRole("button", { name: "上傳照片", exact: true }).click();
   const chooser = await chooserEvent;
   await expect(
-    page.getByLabel("藥袋照片", { exact: true }),
+    page.getByLabel("藥品照片", { exact: true }),
   ).not.toHaveAttribute("capture");
   await chooser.setFiles({
     name: "synthetic-upload.png",
@@ -50,7 +50,7 @@ test("a truncated JPEG receives a readable server rejection and can be replaced 
   })
     .jpeg()
     .toBuffer();
-  const input = page.getByLabel("藥袋照片", { exact: true });
+  const input = page.getByLabel("藥品照片", { exact: true });
   await input.setInputFiles({
     name: "synthetic-truncated.jpg",
     mimeType: "image/jpeg",
