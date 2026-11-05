@@ -1,14 +1,20 @@
 /** Separate from the site's reviewed, versioned leaflet evidence. */
 export const ASSISTANCE_VERSION = "reliable-reference-v6";
-export const REFERENCE_DOMAINS = [
-  "fda.gov.tw",
-  "mohw.gov.tw",
+/** Verified hospital domains, shared by retrieval and source attribution. */
+export const HOSPITAL_REFERENCE_DOMAINS = [
   "ntuh.gov.tw",
   "vghtpe.gov.tw",
   "cgmh.org.tw",
   "cth.org.tw",
   "mmh.org.tw",
   "cmuh.cmu.edu.tw",
+  "cmuh.org.tw",
+  "tmuh.org.tw",
+] as const;
+export const REFERENCE_DOMAINS = [
+  "fda.gov.tw",
+  "mohw.gov.tw",
+  ...HOSPITAL_REFERENCE_DOMAINS,
   "medlineplus.gov",
   "nhs.uk",
   "fda.gov",

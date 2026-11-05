@@ -41,7 +41,7 @@ export class JsonLlm implements Llm {
       const raw: any = await response.json();
       metric.tokens = Number(raw.usage?.total_tokens) || 0;
       this.tokens += metric.tokens;
-      const parsed = referenceSearchCandidates(raw);
+      const parsed = referenceSearchCandidates(raw, drugs);
       const readBudget = Math.min(10000, this.startedAt + config.aiJobTimeoutMs - Date.now() - 10000);
       const result = parsed.state === "found" && readBudget > 0
         ? await readReferenceContent(parsed, drugs, { signal: AbortSignal.timeout(readBudget) })

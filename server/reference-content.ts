@@ -1,13 +1,11 @@
 import { parse, type DefaultTreeAdapterMap } from "parse5";
 import { readReferencePdf } from "./reference-pdf.js";
-import {
-  reliableReferenceUrl,
-  type ReferenceSearch,
-} from "../shared/assistance.js";
+import type { ReferenceSearch } from "../shared/assistance.js";
 import type { Drug } from "../shared/schema.js";
 import {
   relevantReferenceText,
   referenceFormCompatible,
+  canonicalReferenceUrl,
 } from "./reference-search.js";
 
 const maxBytes = 1_000_000;
@@ -87,7 +85,8 @@ async function readSource(
   fetcher: typeof fetch,
 ) {
   for (let redirect = 0; redirect <= 3; redirect++) {
-    const trusted = reliableReferenceUrl(url);
+    signal.throwIfAborted();
+    const trusted = canonicalReferenceUrl(url);
     if (!trusted) throw Error("untrusted_reference");
     const response = await fetcher(trusted, {
       redirect: "manual",
@@ -152,32 +151,52 @@ export async function readReferenceContent(
     return { state: search.state, sources: [], passages: [] };
   const signal = options.signal || AbortSignal.timeout(10000);
   let readable = 0;
-  const reads = await Promise.all(
-    search.sources.slice(0, 6).map(async (source) => {
-      try {
-        const page = await readSource(
-          source.url,
-          signal,
-          options.fetcher || fetch,
-        );
-        // Omit an oversized document in full, never truncate a warning mid-condition.
-        if (page.text.length < 100 || page.text.length > 24000) return null;
-        readable++;
-        const heading = page.text.split("\n").find((line) => line.trim()) || "";
-        if (
-          !drugs.some(
-            (drug) =>
-              relevantReferenceText(page.text, [drug]) &&
-              referenceFormCompatible(heading, drug),
-          )
+  const sources: ReferenceSearch["sources"] = [];
+  for (const source of search.sources) {
+    const url = canonicalReferenceUrl(source.url);
+    if (url && !sources.some((s) => s.url === url)) sources.push({ ...source, url });
+    if (sources.length === 12) break;
+  }
+  const read = async (source: ReferenceSearch["sources"][number]) => {
+    try {
+      const page = await readSource(
+        source.url,
+        signal,
+        options.fetcher || fetch,
+      );
+      // Omit an oversized document in full, never truncate a warning mid-condition.
+      if (page.text.length < 100 || page.text.length > 24000) return null;
+      readable++;
+      const heading = page.text.split("\n").find((line) => line.trim()) || "";
+      if (
+        !drugs.some(
+          (drug) =>
+            relevantReferenceText(page.text, [drug]) &&
+            referenceFormCompatible(heading, drug),
         )
-          return null;
-        return { source: { ...source, url: page.url }, text: page.text };
-      } catch {
+      )
         return null;
-      }
-    }),
-  );
+      return { source: { ...source, url: page.url }, text: page.text };
+    } catch {
+      return null;
+    }
+  };
+  const reads: Awaited<ReturnType<typeof read>>[] = new Array(sources.length);
+  const originals = new Set<string>();
+  let next = 0;
+  // Start at most six reads. Each freed slot can reach a later candidate while
+  // a slow earlier source is pending. Two originals stop new reads; those
+  // already running may finish within the same outer deadline. A matching
+  // original remains evidence to review, never automatic clinical support.
+  const worker = async () => {
+    while (next < sources.length && !signal.aborted && (next < 6 || originals.size < 2)) {
+      const index = next++;
+      const row = await read(sources[index]);
+      reads[index] = row;
+      if (row) originals.add(row.source.url);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, sources.length) }, worker));
   const result: ReferenceSearch = {
     state: readable ? "not_found" : "unavailable",
     sources: [],
